@@ -3,6 +3,15 @@
 NoteFlow es un sistema web de gestión de notas personales y académicas que permite crear, organizar y personalizar notas mediante diferentes formatos (texto, imágenes, audios, videos y dibujos), con la posibilidad de agruparlas en carpetas, asignar etiquetas, y elegir entre modo claro u oscuro.
 El proyecto está desarrollado bajo la metodología SCRUM, integrando frontend, backend y base de datos PostgreSQL.
 
+⌛ Historia y funcion:
+Proyecto del Tecnico en Programacion de Software - SENA,demostrando y evidenciando los aprendizajes logrados en conjunto de las clases del SENA e investigaciones propias por parte del equipo;
+
+👥 Equipo:
+- Javier Steven Solis Ruiz
+- Johan Sebastian Jojoa Meneses
+- Juan Diego Monsalve Martinez
+- Sergio Andres Bustos Mondragon
+
 🚀 Estado del proyecto:
 
 Fase actual: Desarrollo del módulo de Autenticación y Cuenta
