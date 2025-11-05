@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- Configuración básica del documento -->
+    <meta charset="UTF-8"> <!-- Define el juego de caracteres -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Ajuste responsive -->
+    <title>Registro | NoteFlow</title>
+    <!-- Enlace al archivo CSS con los estilos -->
+    <link rel="stylesheet" href="formulario.css">
+</head>
+
+<body>
+    <!-- Contenedor principal del formulario -->
+    <form class="formulario">
+
+        <!-- Barra superior de navegación -->
+        <nav>
+            <img src="" alt=""> <!-- Espacio reservado para el logo -->
+            <ul class="formulario-ul">
+                <!-- Enlaces para cambiar entre páginas -->
+                <li class="li-formulario"><a href="login.html">Iniciar Sesión</a></li>
+                <li class="li-formulario"><a href="formulario.html" class="activo">Registrarse</a></li>
+            </ul>
+        </nav>
+
+        <!-- Título principal del formulario -->
+        <h2 class="h2-registro">REGISTRO</h2>
+
+        <!-- Sección que contiene los campos de entrada -->
+        <section class="inputs">
+            <!-- Campo: nombre completo -->
+            <label>Nombre completo</label>
+            <input type="text" placeholder="Ingresa tu nombre completo" required>
+
+            <!-- Campo: apellido completo -->
+            <label>Apellido completo</label>
+            <input type="text" placeholder="Ingresa tu apellido completo" required>
+
+            <!-- Campo: teléfono -->
+            <label>Teléfono</label>
+            <input type="tel" placeholder="Ej: 3123456789" required>
+
+            <!-- Campo: correo electrónico -->
+            <label>Correo electrónico</label>
+            <input type="email" placeholder="correo@ejemplo.com" required>
+
+            <!-- Campo: apodo o alias -->
+            <label>Apodo o alias</label>
+            <input type="text" placeholder="Ej: Notero123" required>
+
+            <!-- Campo: contraseña -->
+            <label>Contraseña</label>
+            <input type="password" placeholder="Crea una contraseña" required>
+        </section>
+
+        <!-- Botón principal del formulario -->
+        <button type="submit">Crear cuenta</button>
+
+        <!-- Texto de enlace hacia la página de inicio de sesión -->
+        <p>¿Ya tienes una cuenta? <a href="login.html">Iniciar sesión</a></p>
+    </form>
+</body>
+</html>
