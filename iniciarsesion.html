@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- Configuración inicial del documento -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | NoteFlow</title>
+    <!-- Enlace al archivo CSS con los estilos -->
+    <link rel="stylesheet" href="formulario.css">
+</head>
+
+<body>
+    <!-- Contenedor principal del formulario de inicio de sesión -->
+    <form class="formulario">
+
+        <!-- Barra de navegación -->
+        <nav>
+            <ul class="formulario-ul">
+                <li class="li-formulario"><a href="iniciarsesion.html" class="activo">Iniciar Sesión</a></li>
+                <li class="li-formulario"><a href="registro.html">Registro</a></li>
+            </ul>
+        </nav>
+
+        <!-- Título principal -->
+        <h2 class="h2-registro">INICIAR SESIÓN</h2>
+
+        <!-- Campos de entrada -->
+        <section class="inputs">
+            <label>Apodo o alias</label>
+            <input type="text" placeholder="Tu apodo o alias" required>
+
+            <label>Contraseña</label>
+            <input type="password" placeholder="Tu contraseña" required>
+        </section>
+
+        <!-- Botón principal -->
+        <button type="submit">Entrar</button>
+
+        <!-- Opción alternativa -->
+        <p>O inicia sesión con:</p>
+
+        <button type="button" class="google-btn">
+            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
+            <span>Iniciar sesión con Google</span>
+        </button>
+
+        <!-- Enlaces inferiores -->
+        <p style="margin-top: 15px;">¿No tienes cuenta? <a href="registro.html">Registrarse</a></p>
+        <p><a href="#">¿Olvidaste tu contraseña?</a></p>
+    </form>
+</body>
+</html>
