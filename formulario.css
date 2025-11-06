@@ -1,6 +1,12 @@
 /* ==========================
    ESTILOS GLOBALES
 ========================== */
+/* 
+   - Se eliminan márgenes y rellenos por defecto.
+   - Se establece el box-sizing para que el tamaño de los elementos
+     incluya padding y borde.
+   - Se define una fuente moderna y legible para todo el documento.
+*/
 * {
     margin: 0;
     padding: 0;
@@ -11,13 +17,18 @@
 /* ==========================
    FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO
 ========================== */
+/* 
+   El fondo del body utiliza un conjunto de gradientes radiales superpuestos
+   para crear un efecto artístico en tonos blanco, negro y gris.
+   Esto da una apariencia elegante y con profundidad visual.
+*/
 body {
-    height: 100vh;
+    height: 100vh; /* Ocupa toda la altura de la ventana */
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    background-color: #dcdcdc;
+    background-color: #dcdcdc; /* Gris base */
     background-image:
         radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%),
         radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%),
@@ -36,6 +47,11 @@ body {
 /* ==========================
    FORMULARIO PRINCIPAL
 ========================== */
+/* 
+   Estilos generales del contenedor del formulario.
+   Se usa un fondo oscuro semitransparente con desenfoque tipo "vidrio esmerilado"
+   y una animación suave al aparecer.
+*/
 form {
     background: rgba(25, 25, 25, 0.92);
     backdrop-filter: blur(10px);
@@ -49,13 +65,13 @@ form {
     z-index: 1;
     border: 1px solid rgba(255, 255, 255, 0.08);
 
-    /* 🔹 Animación al cargar o cambiar */
+    /* Animación al cargar el formulario */
     opacity: 0;
     transform: translateY(25px);
     animation: fadeSlideIn 0.8s ease forwards;
 }
 
-/* 🔸 Animación suave al cargar el formulario */
+/* Animación que hace aparecer el formulario suavemente desde abajo */
 @keyframes fadeSlideIn {
     from {
         opacity: 0;
@@ -70,6 +86,10 @@ form {
 /* ==========================
    NAV SUPERIOR CON ANIMACIÓN
 ========================== */
+/* 
+   La barra superior contiene los enlaces de navegación.
+   Se organiza en horizontal con separación entre elementos.
+*/
 nav {
     display: flex;
     justify-content: space-between;
@@ -79,12 +99,14 @@ nav {
     padding-bottom: 10px;
 }
 
+/* Lista horizontal de opciones del menú */
 .formulario-ul {
     display: flex;
     gap: 10px;
     list-style: none;
 }
 
+/* Estilos base de los enlaces del menú */
 .li-formulario a {
     color: #ddd;
     font-weight: bold;
@@ -93,7 +115,7 @@ nav {
     transition: color 0.3s ease;
 }
 
-/* 🔹 Animación de subrayado */
+/* Efecto de subrayado animado */
 .li-formulario a::after {
     content: "";
     position: absolute;
@@ -101,22 +123,27 @@ nav {
     bottom: -4px;
     width: 0;
     height: 2px;
-    background-color: #00bcd4;
+    background-color: #00bcd4; /* Color turquesa */
     transition: width 0.3s ease;
 }
 
+/* Subrayado visible al pasar el mouse o si el enlace está activo */
 .li-formulario a:hover::after,
 .li-formulario a.activo::after {
     width: 100%;
 }
 
+/* Cambia de color al pasar el cursor */
 .li-formulario a:hover {
     color: #00bcd4;
 }
 
 /* ==========================
-   TÍTULO
+   TÍTULO DEL FORMULARIO
 ========================== */
+/* 
+   Título principal del formulario, centrado y animado al aparecer.
+*/
 .h2-registro {
     text-align: center;
     font-size: 26px;
@@ -125,14 +152,19 @@ nav {
     animation: fadeInText 1s ease;
 }
 
+/* Animación para los textos principales */
 @keyframes fadeInText {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 /* ==========================
-   CAMPOS
+   CAMPOS DE ENTRADA
 ========================== */
+/* 
+   Los labels guían al usuario y los inputs tienen un diseño minimalista
+   con fondo transparente y subrayado inferior animado.
+*/
 label {
     display: block;
     color: #ccc;
@@ -152,14 +184,18 @@ input {
     transition: all 0.3s;
 }
 
+/* Efecto visual al enfocar el campo */
 input:focus {
     border-color: #00bcd4;
     box-shadow: 0 2px 6px rgba(0, 188, 212, 0.3);
 }
 
 /* ==========================
-   BOTONES
+   BOTONES PRINCIPALES
 ========================== */
+/* 
+   Botones con degradado turquesa y animaciones al pasar el cursor.
+*/
 button {
     display: block;
     width: 100%;
@@ -175,6 +211,7 @@ button {
     transition: all 0.3s ease;
 }
 
+/* Efecto de desplazamiento y sombra al pasar el mouse */
 button:hover {
     background: linear-gradient(90deg, #00acc1, #0097a7);
     transform: translateY(-2px);
@@ -184,6 +221,10 @@ button:hover {
 /* ==========================
    TEXTO INFERIOR
 ========================== */
+/* 
+   Estilo de los textos y enlaces que aparecen al final del formulario
+   ("¿Ya tienes cuenta?", "¿Olvidaste tu contraseña?", etc.).
+*/
 p {
     text-align: center;
     margin-top: 15px;
@@ -204,6 +245,10 @@ p a:hover {
 /* ==========================
    BOTÓN GOOGLE
 ========================== */
+/* 
+   Botón alternativo para iniciar sesión con Google.
+   Tiene un estilo oscuro, ícono de Google y efecto hover.
+*/
 .google-btn {
     display: flex;
     align-items: center;
@@ -221,11 +266,13 @@ p a:hover {
     animation: fadeSlideIn 1s ease;
 }
 
+/* Ícono de Google dentro del botón */
 .google-btn img {
     width: 20px;
     filter: brightness(1.5);
 }
 
+/* Efecto al pasar el cursor */
 .google-btn:hover {
     background: #2a2a2a;
     box-shadow: 0 4px 15px rgba(0, 188, 212, 0.2);
@@ -233,8 +280,11 @@ p a:hover {
 }
 
 /* ==========================
-   RESPONSIVE
+   RESPONSIVE DESIGN
 ========================== */
+/* 
+   Ajusta el tamaño del formulario en pantallas pequeñas (móviles).
+*/
 @media screen and (max-width: 480px) {
     form {
         width: 90%;

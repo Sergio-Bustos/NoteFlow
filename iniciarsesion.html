@@ -1,52 +1,98 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- Configuración inicial del documento -->
+    <!-- 
+        Configuración inicial del documento HTML.
+        - lang="es": Indica que el contenido está en español.
+    -->
     <meta charset="UTF-8">
+    <!-- 
+        Hace que la página sea adaptable a diferentes tamaños de pantalla 
+        (diseño responsive para móviles, tablets y computadoras).
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Título que aparecerá en la pestaña del navegador -->
     <title>Iniciar Sesión | NoteFlow</title>
-    <!-- Enlace al archivo CSS con los estilos -->
+    
+    <!-- Enlace al archivo CSS externo donde están los estilos visuales -->
     <link rel="stylesheet" href="formulario.css">
 </head>
 
 <body>
-    <!-- Contenedor principal del formulario de inicio de sesión -->
+    <!-- 
+        Contenedor principal del formulario de inicio de sesión.
+        La clase 'formulario' permite aplicar estilos comunes definidos en el CSS.
+    -->
     <form class="formulario">
 
-        <!-- Barra de navegación -->
+        <!-- 
+            Barra de navegación superior del formulario.
+            Permite alternar entre las páginas de inicio de sesión y registro.
+        -->
         <nav>
             <ul class="formulario-ul">
+                <!-- 
+                    Enlace a la página de inicio de sesión.
+                    La clase 'activo' indica que esta es la página actual.
+                -->
                 <li class="li-formulario"><a href="iniciarsesion.html" class="activo">Iniciar Sesión</a></li>
+                
+                <!-- Enlace a la página de registro -->
                 <li class="li-formulario"><a href="registro.html">Registro</a></li>
             </ul>
         </nav>
 
-        <!-- Título principal -->
+        <!-- 
+            Título principal del formulario.
+            Se usa la clase 'h2-registro' (reutilizada del formulario de registro)
+            para mantener un estilo coherente entre las páginas.
+        -->
         <h2 class="h2-registro">INICIAR SESIÓN</h2>
 
-        <!-- Campos de entrada -->
+        <!-- 
+            Sección que contiene los campos de entrada del formulario.
+            Cada campo incluye su respectiva etiqueta (<label>) y un campo de entrada (<input>).
+        -->
         <section class="inputs">
+            <!-- Campo para el apodo o alias del usuario -->
             <label>Apodo o alias</label>
             <input type="text" placeholder="Tu apodo o alias" required>
 
+            <!-- Campo para la contraseña -->
             <label>Contraseña</label>
             <input type="password" placeholder="Tu contraseña" required>
         </section>
 
-        <!-- Botón principal -->
+        <!-- 
+            Botón principal para enviar el formulario y acceder a la cuenta.
+            El tipo "submit" permite que el formulario se envíe al presionarlo.
+        -->
         <button type="submit">Entrar</button>
 
-        <!-- Opción alternativa -->
+        <!-- 
+            Texto informativo que ofrece una opción alternativa de inicio de sesión.
+        -->
         <p>O inicia sesión con:</p>
 
+        <!-- 
+            Botón alternativo para iniciar sesión con Google.
+            - type="button" evita que se envíe el formulario al hacer clic.
+            - Incluye el logotipo de Google y un texto descriptivo.
+        -->
         <button type="button" class="google-btn">
             <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
             <span>Iniciar sesión con Google</span>
         </button>
 
-        <!-- Enlaces inferiores -->
+        <!-- 
+            Enlaces adicionales ubicados al final del formulario:
+            - Redirige a la página de registro si no tiene cuenta.
+            - Ofrece la opción de recuperar la contraseña.
+        -->
         <p style="margin-top: 15px;">¿No tienes cuenta? <a href="registro.html">Registrarse</a></p>
         <p><a href="#">¿Olvidaste tu contraseña?</a></p>
     </form>
 </body>
 </html>
+
