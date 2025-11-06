@@ -12,8 +12,14 @@
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+<<<<<<< HEAD
 /* FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO*/
 
+=======
+/* 
+   FONDO BLANCO, NEGRO Y GRIS 
+ */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    El fondo del body utiliza un conjunto de gradientes radiales superpuestos
    para crear un efecto artístico en tonos blanco, negro y gris.
@@ -25,23 +31,29 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    background-color: #dcdcdc; /* Gris base */
+    background-color: #dddddd; /* Gris base */
     background-image:
         radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%),
-        radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%),
-        radial-gradient(circle at 40% 80%, rgba(60, 60, 60, 0.5) 0%, transparent 50%),
+        radial-gradient(circle at 80% 30%, rgba(83, 83, 83, 0.6) 0%, transparent 60%),
+        radial-gradient(circle at 40% 80%, rgba(110, 114, 113, 0.5) 0%, transparent 50%),
         radial-gradient(circle at 70% 70%, rgba(90, 90, 90, 0.45) 0%, transparent 55%),
         radial-gradient(circle at 25% 60%, rgba(0, 0, 0, 0.6) 0%, transparent 60%),
         radial-gradient(circle at 60% 20%, rgba(150, 150, 150, 0.35) 0%, transparent 55%),
         radial-gradient(circle at 85% 80%, rgba(200, 200, 200, 0.4) 0%, transparent 60%),
         radial-gradient(circle at 35% 35%, rgba(230, 230, 230, 0.45) 0%, transparent 55%),
         radial-gradient(circle at 10% 85%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
-        radial-gradient(circle at 90% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 65%);
+        radial-gradient(circle at 90% 50%, rgba(77, 75, 75, 0.7) 0%, transparent 65%);
     background-blend-mode: normal;
     background-size: cover;
 }
 
+<<<<<<< HEAD
 /*FORMULARIO PRINCIPAL*/
+=======
+/* 
+   Formulario principal 
+ */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    Estilos generales del contenedor del formulario.
    Se usa un fondo oscuro semitransparente con desenfoque tipo "vidrio esmerilado"
@@ -78,7 +90,13 @@ form {
     }
 }
 
+<<<<<<< HEAD
 /*NAV SUPERIOR CON ANIMACIÓN*/
+=======
+/* 
+   NAvegacion superior con animacion 
+ */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    La barra superior contiene los enlaces de navegación.
    Se organiza en horizontal con separación entre elementos.
@@ -131,7 +149,13 @@ nav {
     color: #00bcd4;
 }
 
+<<<<<<< HEAD
 /*TÍTULO DEL FORMULARIO*/
+=======
+/* 
+   Titulo del formulario
+ */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    Título principal del formulario, centrado y animado al aparecer.
 */
@@ -149,7 +173,13 @@ nav {
     to { opacity: 1; transform: translateY(0); }
 }
 
+<<<<<<< HEAD
 /*CAMPOS DE ENTRADA*/
+=======
+/* 
+   Campos de entrada 
+ */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    Los labels guían al usuario y los inputs tienen un diseño minimalista
    con fondo transparente y subrayado inferior animado.
@@ -179,7 +209,13 @@ input:focus {
     box-shadow: 0 2px 6px rgba(0, 188, 212, 0.3);
 }
 
+<<<<<<< HEAD
 /*BOTONES PRINCIPALES*/
+=======
+/* ==========================
+  Botones principales 
+========================== */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    Botones con degradado turquesa y animaciones al pasar el cursor.
 */
@@ -205,7 +241,13 @@ button:hover {
     box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
 }
 
+<<<<<<< HEAD
 /*TEXTO INFERIOR*/
+=======
+/* ==========================
+   Texto inferior
+========================== */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    Estilo de los textos y enlaces que aparecen al final del formulario
    ("¿Ya tienes cuenta?", "¿Olvidaste tu contraseña?", etc.).
@@ -227,7 +269,13 @@ p a:hover {
     text-decoration: underline;
 }
 
+<<<<<<< HEAD
 /*BOTÓN GOOGLE*/
+=======
+/* ==========================
+   Boton de Google
+========================== */
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    Botón alternativo para iniciar sesión con Google.
    Tiene un estilo oscuro, ícono de Google y efecto hover.
@@ -262,7 +310,13 @@ p a:hover {
     transform: translateY(-2px);
 }
 
+<<<<<<< HEAD
 /*RESPONSIVE DESIGN*/
+=======
+/*
+   RESPONSIVE DESIGN
+
+>>>>>>> 8e6610c0d8e4a2e0ac5e36f8ed2e91f2bf576ac8
 /* 
    Ajusta el tamaño del formulario en pantallas pequeñas (móviles).
 */
@@ -272,3 +326,8 @@ p a:hover {
         padding: 25px;
     }
 }
+
+/*
+   RESPONSIVE DESIGN
+
+/* 
