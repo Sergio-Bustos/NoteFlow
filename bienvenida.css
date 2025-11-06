@@ -1,7 +1,7 @@
-/* ==========================
+/* 
    ESTILOS GLOBALES
    - Se aplican a todo el documento
-========================== */
+*/
 * {
     margin: 0; /* Elimina márgenes predeterminados */
     padding: 0; /* Elimina rellenos predeterminados */
@@ -9,10 +9,10 @@
     font-family: "Poppins", "Segoe UI", Tahoma, sans-serif; /* Fuente moderna y legible */
 }
 
-/* ==========================
+/* 
    FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO (TIPO MANCHAS)
    - Crea un fondo con degradados radiales que simulan textura o manchas suaves
-========================== */
+*/
 body {
     min-height: 100vh; /* Ocupa al menos toda la altura visible */
     background-color: #dcdcdc; /* Color base gris claro */
@@ -32,9 +32,7 @@ body {
     overflow-x: hidden; /* Evita el desplazamiento horizontal */
 }
 
-/* ==========================
-   ENCABEZADO FIJO CON LOGO Y MENÚ
-========================== */
+/*ENCABEZADO FIJO CON LOGO Y MENÚ*/
 header {
     position: fixed; /* Siempre visible arriba */
     top: 0;
@@ -96,9 +94,7 @@ header {
     box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
 }
 
-/* ==========================
-   CONTENIDO PRINCIPAL
-========================== */
+/*CONTENIDO PRINCIPAL*/
 main {
     margin-top: 100px; /* Espacio para el header fijo */
     padding: 50px 20px;
@@ -141,9 +137,7 @@ main {
     line-height: 1.6;
 }
 
-/* ==========================
-   BOTONES DE LLAMADA A LA ACCIÓN (CTA)
-========================== */
+/*  BOTONES DE LLAMADA A LA ACCIÓN (CTA)*/
 .cta-buttons {
     display: flex;
     gap: 20px;

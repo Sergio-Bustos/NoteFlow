@@ -1,6 +1,4 @@
-/* ==========================
-   ESTILOS GLOBALES
-========================== */
+/* ESTILOS GLOBALES*/
 /* 
    - Se eliminan márgenes y rellenos por defecto.
    - Se establece el box-sizing para que el tamaño de los elementos
@@ -14,9 +12,8 @@
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* ==========================
-   FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO
-========================== */
+/* FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO*/
+
 /* 
    El fondo del body utiliza un conjunto de gradientes radiales superpuestos
    para crear un efecto artístico en tonos blanco, negro y gris.
@@ -44,9 +41,7 @@ body {
     background-size: cover;
 }
 
-/* ==========================
-   FORMULARIO PRINCIPAL
-========================== */
+/*FORMULARIO PRINCIPAL*/
 /* 
    Estilos generales del contenedor del formulario.
    Se usa un fondo oscuro semitransparente con desenfoque tipo "vidrio esmerilado"
@@ -83,9 +78,7 @@ form {
     }
 }
 
-/* ==========================
-   NAV SUPERIOR CON ANIMACIÓN
-========================== */
+/*NAV SUPERIOR CON ANIMACIÓN*/
 /* 
    La barra superior contiene los enlaces de navegación.
    Se organiza en horizontal con separación entre elementos.
@@ -138,9 +131,7 @@ nav {
     color: #00bcd4;
 }
 
-/* ==========================
-   TÍTULO DEL FORMULARIO
-========================== */
+/*TÍTULO DEL FORMULARIO*/
 /* 
    Título principal del formulario, centrado y animado al aparecer.
 */
@@ -158,9 +149,7 @@ nav {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ==========================
-   CAMPOS DE ENTRADA
-========================== */
+/*CAMPOS DE ENTRADA*/
 /* 
    Los labels guían al usuario y los inputs tienen un diseño minimalista
    con fondo transparente y subrayado inferior animado.
@@ -190,9 +179,7 @@ input:focus {
     box-shadow: 0 2px 6px rgba(0, 188, 212, 0.3);
 }
 
-/* ==========================
-   BOTONES PRINCIPALES
-========================== */
+/*BOTONES PRINCIPALES*/
 /* 
    Botones con degradado turquesa y animaciones al pasar el cursor.
 */
@@ -218,9 +205,7 @@ button:hover {
     box-shadow: 0 5px 15px rgba(0, 188, 212, 0.4);
 }
 
-/* ==========================
-   TEXTO INFERIOR
-========================== */
+/*TEXTO INFERIOR*/
 /* 
    Estilo de los textos y enlaces que aparecen al final del formulario
    ("¿Ya tienes cuenta?", "¿Olvidaste tu contraseña?", etc.).
@@ -242,9 +227,7 @@ p a:hover {
     text-decoration: underline;
 }
 
-/* ==========================
-   BOTÓN GOOGLE
-========================== */
+/*BOTÓN GOOGLE*/
 /* 
    Botón alternativo para iniciar sesión con Google.
    Tiene un estilo oscuro, ícono de Google y efecto hover.
@@ -279,9 +262,7 @@ p a:hover {
     transform: translateY(-2px);
 }
 
-/* ==========================
-   RESPONSIVE DESIGN
-========================== */
+/*RESPONSIVE DESIGN*/
 /* 
    Ajusta el tamaño del formulario en pantallas pequeñas (móviles).
 */

@@ -1,6 +1,4 @@
-/* ==========================
-   ESTILOS GLOBALES
-========================== */
+/* ESTILOS GLOBALES*/
 * {
     margin: 0;
     padding: 0;
@@ -8,9 +6,7 @@
     font-family: "Poppins", "Segoe UI", Tahoma, sans-serif; /* Tipografía moderna y legible */
 }
 
-/* ==========================
-   FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO
-========================== */
+/* FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO*/
 body {
     min-height: 100vh; /* Asegura que el fondo cubra toda la altura de la pantalla */
     background-color: #dcdcdc; /* Color base gris claro */
@@ -32,9 +28,7 @@ body {
     overflow-x: hidden; /* Evita el scroll horizontal */
 }
 
-/* ==========================
-   ENCABEZADO
-========================== */
+/* ENCABEZADO*/
 header {
     position: fixed; /* Siempre visible en la parte superior */
     top: 0;
@@ -96,9 +90,7 @@ header {
     box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
 }
 
-/* ==========================
-   CONTENIDO PRINCIPAL
-========================== */
+/* CONTENIDO PRINCIPAL*/
 main {
     margin-top: 100px; /* Espacio para no tapar el header fijo */
     padding: 50px 20px;
@@ -107,9 +99,7 @@ main {
     margin-right: auto; /* Centra el contenido */
 }
 
-/* ==========================
-   CABECERA DE LA PÁGINA
-========================== */
+/*CABECERA DE LA PÁGINA*/
 .page-header {
     text-align: center;
     margin-bottom: 60px;
@@ -141,9 +131,7 @@ main {
     color: #444;
 }
 
-/* ==========================
-   GRID DE CARACTERÍSTICAS
-========================== */
+/*GRID DE CARACTERÍSTICAS*/
 .features-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Adaptable */
@@ -228,9 +216,7 @@ main {
     font-weight: bold;
 }
 
-/* ==========================
-   SECCIÓN CTA (LLAMADO A LA ACCIÓN)
-========================== */
+/*SECCIÓN CTA (LLAMADO A LA ACCIÓN)*/
 .cta-section {
     text-align: center;
     padding: 60px 20px;
@@ -300,9 +286,7 @@ main {
     transform: translateY(-3px);
 }
 
-/* ==========================
-   PIE DE PÁGINA
-========================== */
+/*PIE DE PÁGINA*/
 footer {
     padding: 30px;
     text-align: center;
@@ -312,9 +296,7 @@ footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ==========================
-   DISEÑO RESPONSIVO
-========================== */
+/*DISEÑO RESPONSIVO*/
 @media screen and (max-width: 768px) {
     /* Header compacto */
     header {
