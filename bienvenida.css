@@ -136,7 +136,7 @@ main {
 
 .hero p {
     font-size: 20px;
-    color: #333;
+    color: #ffffff;
     margin-bottom: 40px;
     line-height: 1.6;
 }
@@ -189,9 +189,9 @@ main {
     transform: translateY(-3px);
 }
 
-/* ==========================
+/* 
    SECCIÓN DE CARACTERÍSTICAS
-========================== */
+ */
 .features {
     margin-top: 80px;
     display: grid;
@@ -230,9 +230,9 @@ main {
     line-height: 1.6;
 }
 
-/* ==========================
+/* 
    PIE DE PÁGINA (FOOTER)
-========================== */
+ */
 footer {
     padding: 30px;
     text-align: center;
@@ -242,9 +242,9 @@ footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* ==========================
+/* 
    RESPONSIVE (MÓVILES Y TABLETS)
-========================== */
+ */
 @media screen and (max-width: 768px) {
     header {
         padding: 15px 20px;
