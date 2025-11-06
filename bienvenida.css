@@ -137,7 +137,8 @@ main {
     line-height: 1.6;
 }
 
-/*  BOTONES DE LLAMADA A LA ACCIÓN (CTA)*/
+/* ==========================
+   BOTONES DE LLAMADA A LA ACCIÓN (CTA)*/
 .cta-buttons {
     display: flex;
     gap: 20px;
