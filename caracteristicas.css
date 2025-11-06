@@ -1,0 +1,371 @@
+/* ==========================
+   ESTILOS GLOBALES
+========================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box; /* Hace que el padding y border no aumenten el tamaño total del elemento */
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif; /* Tipografía moderna y legible */
+}
+
+/* ==========================
+   FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO
+========================== */
+body {
+    min-height: 100vh; /* Asegura que el fondo cubra toda la altura de la pantalla */
+    background-color: #dcdcdc; /* Color base gris claro */
+    
+    /* Efecto artístico con varios gradientes radiales superpuestos */
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%),
+        radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%),
+        radial-gradient(circle at 40% 80%, rgba(60, 60, 60, 0.5) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(90, 90, 90, 0.45) 0%, transparent 55%),
+        radial-gradient(circle at 25% 60%, rgba(0, 0, 0, 0.6) 0%, transparent 60%),
+        radial-gradient(circle at 60% 20%, rgba(150, 150, 150, 0.35) 0%, transparent 55%),
+        radial-gradient(circle at 85% 80%, rgba(200, 200, 200, 0.4) 0%, transparent 60%),
+        radial-gradient(circle at 35% 35%, rgba(230, 230, 230, 0.45) 0%, transparent 55%),
+        radial-gradient(circle at 10% 85%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
+        radial-gradient(circle at 90% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 65%);
+    background-blend-mode: normal;
+    background-size: cover;
+    overflow-x: hidden; /* Evita el scroll horizontal */
+}
+
+/* ==========================
+   ENCABEZADO
+========================== */
+header {
+    position: fixed; /* Siempre visible en la parte superior */
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(25, 25, 25, 0.92); /* Fondo oscuro semitransparente */
+    backdrop-filter: blur(10px); /* Efecto de desenfoque detrás */
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5); /* Sombra inferior */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1000; /* Prioridad sobre otros elementos */
+}
+
+/* Estilo del logotipo */
+.logo {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    letter-spacing: 1px;
+}
+
+/* Contenedor de enlaces de navegación */
+.nav-links {
+    display: flex;
+    gap: 20px;
+    list-style: none;
+}
+
+/* Enlaces del menú */
+.nav-links a {
+    color: #ddd;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 10px 25px;
+    border-radius: 8px;
+    transition: all 0.3s ease; /* Transiciones suaves */
+}
+
+/* Efecto hover */
+.nav-links a:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px); /* Pequeño levantamiento visual */
+}
+
+/* Botón especial de registro */
+.nav-links .btn-registro {
+    background: linear-gradient(90deg, #333, #555);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.nav-links .btn-registro:hover {
+    background: linear-gradient(90deg, #555, #777);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================
+   CONTENIDO PRINCIPAL
+========================== */
+main {
+    margin-top: 100px; /* Espacio para no tapar el header fijo */
+    padding: 50px 20px;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto; /* Centra el contenido */
+}
+
+/* ==========================
+   CABECERA DE LA PÁGINA
+========================== */
+.page-header {
+    text-align: center;
+    margin-bottom: 60px;
+    animation: fadeInDown 1s ease forwards; /* Animación de entrada */
+}
+
+/* Animación del título principal */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-header h1 {
+    font-size: 48px;
+    color: #1a1a1a;
+    margin-bottom: 15px;
+    font-weight: 800;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);
+}
+
+.page-header p {
+    font-size: 20px;
+    color: #444;
+}
+
+/* ==========================
+   GRID DE CARACTERÍSTICAS
+========================== */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Adaptable */
+    gap: 30px;
+    margin-bottom: 80px;
+    animation: fadeInUp 1s ease 0.3s forwards;
+    opacity: 0;
+}
+
+/* Animación de subida suave */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Cada tarjeta de característica */
+.feature-item {
+    background: rgba(25, 25, 25, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 40px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Efecto hover de tarjeta */
+.feature-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(40, 40, 40, 0.9);
+}
+
+/* Iconos dentro de las tarjetas */
+.feature-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+/* Títulos de las características */
+.feature-item h3 {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+/* Texto descriptivo */
+.feature-item > p {
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Lista de beneficios dentro de cada característica */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 15px;
+}
+
+.feature-list li {
+    color: #aaa;
+    padding: 8px 0;
+    padding-left: 25px;
+    position: relative;
+}
+
+/* Agrega un "check" decorativo antes de cada punto */
+.feature-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #888;
+    font-weight: bold;
+}
+
+/* ==========================
+   SECCIÓN CTA (LLAMADO A LA ACCIÓN)
+========================== */
+.cta-section {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(25, 25, 25, 0.7);
+    border-radius: 20px;
+    margin: 60px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cta-section h2 {
+    font-size: 40px;
+    color: #fff;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.cta-section p {
+    font-size: 18px;
+    color: #ccc;
+    margin-bottom: 30px;
+}
+
+/* Contenedor de botones */
+.cta-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Estilos base de botones */
+.btn {
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Botón principal oscuro */
+.btn-primary {
+    background: linear-gradient(90deg, #2a2a2a, #1a1a1a);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, #3a3a3a, #2a2a2a);
+    transform: translateY(-3px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Botón secundario claro */
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1a1a1a;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #333;
+    transform: translateY(-3px);
+}
+
+/* ==========================
+   PIE DE PÁGINA
+========================== */
+footer {
+    padding: 30px;
+    text-align: center;
+    color: #666;
+    background: rgba(25, 25, 25, 0.7);
+    margin-top: 80px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================
+   DISEÑO RESPONSIVO
+========================== */
+@media screen and (max-width: 768px) {
+    /* Header compacto */
+    header {
+        padding: 15px 20px;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .logo {
+        font-size: 24px;
+    }
+
+    .nav-links {
+        gap: 10px;
+    }
+
+    .nav-links a {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    /* Ajustes del título principal */
+    .page-header h1 {
+        font-size: 32px;
+    }
+
+    .page-header p {
+        font-size: 16px;
+    }
+
+    /* La cuadrícula se convierte en una sola columna */
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .feature-item {
+        padding: 30px 20px;
+    }
+
+    /* CTA más compacta */
+    .cta-section h2 {
+        font-size: 28px;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}

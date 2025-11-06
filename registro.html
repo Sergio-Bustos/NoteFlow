@@ -1,54 +1,97 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- Configuración básica del documento -->
+    <!-- 
+        Configuración básica del documento HTML.
+        - lang="es" indica que el contenido está en español.
+    -->
     <meta charset="UTF-8">
+    <!-- 
+        Hace que el diseño sea adaptable a distintos tamaños de pantalla 
+        (necesario para diseño responsive).
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Título que aparece en la pestaña del navegador -->
     <title>Registro | NoteFlow</title>
-    <!-- Enlace al archivo CSS con los estilos -->
+    
+    <!-- Enlace al archivo CSS externo que contiene los estilos visuales -->
     <link rel="stylesheet" href="formulario.css">
 </head>
 
 <body>
-    <!-- Contenedor principal del formulario -->
+    <!-- 
+        Contenedor principal del formulario de registro.
+        Se usa una clase para aplicar estilos desde CSS.
+    -->
     <form class="formulario">
 
-        <!-- Barra superior de navegación -->
+        <!-- 
+            Barra superior de navegación dentro del formulario.
+            Permite alternar entre las páginas de "Iniciar sesión" y "Registro".
+        -->
         <nav>
             <ul class="formulario-ul">
+                <!-- 
+                    Enlace a la página de inicio de sesión. 
+                    No tiene clase 'activo' porque no es la página actual.
+                -->
                 <li class="li-formulario"><a href="iniciarsesion.html">Iniciar Sesión</a></li>
+                
+                <!-- 
+                    Enlace a la página de registro.
+                    Se marca como activa (clase 'activo') para resaltar visualmente la página actual.
+                -->
                 <li class="li-formulario"><a href="registro.html" class="activo">Registro</a></li>
             </ul>
         </nav>
 
-        <!-- Título principal -->
+        <!-- 
+            Título principal del formulario. 
+            Se utiliza una clase para su estilo personalizado.
+        -->
         <h2 class="h2-registro">REGISTRO</h2>
 
-        <!-- Sección de campos -->
+        <!-- 
+            Sección que contiene todos los campos de entrada del formulario.
+            Incluye etiquetas (<label>) y campos de texto (<input>).
+        -->
         <section class="inputs">
+            <!-- Campo para el nombre -->
             <label>Nombre completo</label>
             <input type="text" placeholder="Ingresa tu nombre completo" required>
 
+            <!-- Campo para el apellido -->
             <label>Apellido completo</label>
             <input type="text" placeholder="Ingresa tu apellido completo" required>
 
+            <!-- Campo para el teléfono -->
             <label>Teléfono</label>
             <input type="tel" placeholder="Ej: 3123456789" required>
 
+            <!-- Campo para el correo electrónico -->
             <label>Correo electrónico</label>
             <input type="email" placeholder="correo@ejemplo.com" required>
 
+            <!-- Campo para el apodo o alias -->
             <label>Apodo o alias</label>
             <input type="text" placeholder="Ej: Notero123" required>
 
+            <!-- Campo para la contraseña -->
             <label>Contraseña</label>
             <input type="password" placeholder="Crea una contraseña" required>
         </section>
 
-        <!-- Botón principal -->
+        <!-- 
+            Botón principal para enviar el formulario.
+            El tipo "submit" permite que el formulario se envíe cuando se hace clic.
+        -->
         <button type="submit">Crear cuenta</button>
 
-        <!-- Enlace inferior -->
+        <!-- 
+            Enlace alternativo para usuarios que ya tienen una cuenta,
+            los redirige a la página de inicio de sesión.
+        -->
         <p>¿Ya tienes una cuenta? <a href="iniciarsesion.html">Iniciar sesión</a></p>
     </form>
 </body>

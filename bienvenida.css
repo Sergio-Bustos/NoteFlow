@@ -1,0 +1,285 @@
+/* ==========================
+   ESTILOS GLOBALES
+   - Se aplican a todo el documento
+========================== */
+* {
+    margin: 0; /* Elimina márgenes predeterminados */
+    padding: 0; /* Elimina rellenos predeterminados */
+    box-sizing: border-box; /* Incluye borde y padding en el tamaño total */
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif; /* Fuente moderna y legible */
+}
+
+/* ==========================
+   FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO (TIPO MANCHAS)
+   - Crea un fondo con degradados radiales que simulan textura o manchas suaves
+========================== */
+body {
+    min-height: 100vh; /* Ocupa al menos toda la altura visible */
+    background-color: #dcdcdc; /* Color base gris claro */
+    background-image:
+        radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%),
+        radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%),
+        radial-gradient(circle at 40% 80%, rgba(60, 60, 60, 0.5) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(90, 90, 90, 0.45) 0%, transparent 55%),
+        radial-gradient(circle at 25% 60%, rgba(0, 0, 0, 0.6) 0%, transparent 60%),
+        radial-gradient(circle at 60% 20%, rgba(150, 150, 150, 0.35) 0%, transparent 55%),
+        radial-gradient(circle at 85% 80%, rgba(200, 200, 200, 0.4) 0%, transparent 60%),
+        radial-gradient(circle at 35% 35%, rgba(230, 230, 230, 0.45) 0%, transparent 55%),
+        radial-gradient(circle at 10% 85%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
+        radial-gradient(circle at 90% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 65%);
+    background-blend-mode: normal; /* Mezcla normal de capas */
+    background-size: cover; /* Cubre toda la pantalla */
+    overflow-x: hidden; /* Evita el desplazamiento horizontal */
+}
+
+/* ==========================
+   ENCABEZADO FIJO CON LOGO Y MENÚ
+========================== */
+header {
+    position: fixed; /* Siempre visible arriba */
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 50px; /* Espaciado interno */
+    display: flex; /* Usa flexbox para alinear elementos */
+    justify-content: space-between; /* Logo a la izquierda, menú a la derecha */
+    align-items: center;
+    background: rgba(25, 25, 25, 0.92); /* Fondo oscuro semi-transparente */
+    backdrop-filter: blur(10px); /* Efecto de desenfoque de fondo */
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5); /* Sombra inferior */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1000; /* Se mantiene sobre otros elementos */
+}
+
+/* LOGO */
+.logo {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    letter-spacing: 1px;
+}
+
+/* NAVEGACIÓN (LISTA DE ENLACES) */
+.nav-links {
+    display: flex;
+    gap: 20px; /* Separación entre enlaces */
+    list-style: none; /* Sin viñetas */
+}
+
+.nav-links a {
+    color: #ddd;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 10px 25px;
+    border-radius: 8px;
+    transition: all 0.3s ease; /* Suaviza animaciones */
+    position: relative;
+}
+
+/* Efecto al pasar el mouse por un enlace */
+.nav-links a:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+/* BOTÓN DESTACADO (REGISTRO) */
+.nav-links .btn-registro {
+    background: linear-gradient(90deg, #333, #555);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.nav-links .btn-registro:hover {
+    background: linear-gradient(90deg, #555, #777);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================
+   CONTENIDO PRINCIPAL
+========================== */
+main {
+    margin-top: 100px; /* Espacio para el header fijo */
+    padding: 50px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 100px);
+    text-align: center;
+}
+
+/* SECCIÓN HERO (TEXTO PRINCIPAL) */
+.hero {
+    max-width: 900px; /* Limita el ancho del texto */
+    animation: fadeInUp 1s ease forwards;
+    opacity: 0; /* Inicia invisible hasta animarse */
+}
+
+/* Animación de entrada */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero h1 {
+    font-size: 56px;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+.hero p {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 40px;
+    line-height: 1.6;
+}
+
+/* ==========================
+   BOTONES DE LLAMADA A LA ACCIÓN (CTA)
+========================== */
+.cta-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap; /* Se adaptan si el espacio es pequeño */
+}
+
+.btn {
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* BOTÓN PRINCIPAL (NEGRO) */
+.btn-primary {
+    background: linear-gradient(90deg, #2a2a2a, #1a1a1a);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(90deg, #3a3a3a, #2a2a2a);
+    transform: translateY(-3px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+/* BOTÓN SECUNDARIO (BLANCO) */
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.8);
+    color: #1a1a1a;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #333;
+    transform: translateY(-3px);
+}
+
+/* ==========================
+   SECCIÓN DE CARACTERÍSTICAS
+========================== */
+.features {
+    margin-top: 80px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Diseño adaptable */
+    gap: 30px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* TARJETAS DE CARACTERÍSTICAS */
+.feature-card {
+    background: rgba(25, 25, 25, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(40, 40, 40, 0.9);
+}
+
+.feature-card h3 {
+    font-size: 22px;
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+.feature-card p {
+    color: #ccc;
+    line-height: 1.6;
+}
+
+/* ==========================
+   PIE DE PÁGINA (FOOTER)
+========================== */
+footer {
+    padding: 30px;
+    text-align: center;
+    color: #666;
+    background: rgba(25, 25, 25, 0.7);
+    margin-top: 80px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================
+   RESPONSIVE (MÓVILES Y TABLETS)
+========================== */
+@media screen and (max-width: 768px) {
+    header {
+        padding: 15px 20px;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .logo {
+        font-size: 24px;
+    }
+
+    .nav-links {
+        gap: 10px;
+    }
+
+    .nav-links a {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    .hero h1 {
+        font-size: 36px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}
