@@ -3,10 +3,10 @@
    - Se aplican a todo el documento
 */
 * {
-    margin: 0; /* Elimina márgenes predeterminados */
-    padding: 0; /* Elimina rellenos predeterminados */
-    box-sizing: border-box; /* Incluye borde y padding en el tamaño total */
-    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif; /* Fuente moderna y legible */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;
 }
 
 /* 
@@ -14,8 +14,8 @@
    - Crea un fondo con degradados radiales que simulan textura o manchas suaves
 */
 body {
-    min-height: 100vh; /* Ocupa al menos toda la altura visible */
-    background-color: #dcdcdc; /* Color base gris claro */
+    min-height: 100vh;
+    background-color: #dcdcdc;
     background-image:
         radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%),
         radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%),
@@ -27,26 +27,41 @@ body {
         radial-gradient(circle at 35% 35%, rgba(230, 230, 230, 0.45) 0%, transparent 55%),
         radial-gradient(circle at 10% 85%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
         radial-gradient(circle at 90% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 65%);
-    background-blend-mode: normal; /* Mezcla normal de capas */
-    background-size: cover; /* Cubre toda la pantalla */
-    overflow-x: hidden; /* Evita el desplazamiento horizontal */
+    background-blend-mode: normal;
+    background-size: cover;
+    overflow-x: hidden;
 }
 
 /*ENCABEZADO FIJO CON LOGO Y MENÚ*/
 header {
-    position: fixed; /* Siempre visible arriba */
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    padding: 20px 50px; /* Espaciado interno */
-    display: flex; /* Usa flexbox para alinear elementos */
-    justify-content: space-between; /* Logo a la izquierda, menú a la derecha */
+    padding: 20px 50px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    background: rgba(25, 25, 25, 0.92); /* Fondo oscuro semi-transparente */
-    backdrop-filter: blur(10px); /* Efecto de desenfoque de fondo */
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5); /* Sombra inferior */
+    background: rgba(25, 25, 25, 0.92);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    z-index: 1000; /* Se mantiene sobre otros elementos */
+    z-index: 1000;
+}
+
+/* CONTENEDOR DEL LOGO CON IMAGEN */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
 
 /* LOGO */
@@ -61,8 +76,8 @@ header {
 /* NAVEGACIÓN (LISTA DE ENLACES) */
 .nav-links {
     display: flex;
-    gap: 20px; /* Separación entre enlaces */
-    list-style: none; /* Sin viñetas */
+    gap: 20px;
+    list-style: none;
 }
 
 .nav-links a {
@@ -71,7 +86,7 @@ header {
     font-weight: 600;
     padding: 10px 25px;
     border-radius: 8px;
-    transition: all 0.3s ease; /* Suaviza animaciones */
+    transition: all 0.3s ease;
     position: relative;
 }
 
@@ -96,7 +111,7 @@ header {
 
 /*CONTENIDO PRINCIPAL*/
 main {
-    margin-top: 100px; /* Espacio para el header fijo */
+    margin-top: 100px;
     padding: 50px 20px;
     display: flex;
     flex-direction: column;
@@ -108,9 +123,9 @@ main {
 
 /* SECCIÓN HERO (TEXTO PRINCIPAL) */
 .hero {
-    max-width: 900px; /* Limita el ancho del texto */
+    max-width: 900px;
     animation: fadeInUp 1s ease forwards;
-    opacity: 0; /* Inicia invisible hasta animarse */
+    opacity: 0;
 }
 
 /* Animación de entrada */
@@ -137,13 +152,12 @@ main {
     line-height: 1.6;
 }
 
-/* ==========================
-   BOTONES DE LLAMADA A LA ACCIÓN (CTA)*/
+/* BOTONES DE LLAMADA A LA ACCIÓN (CTA) */
 .cta-buttons {
     display: flex;
     gap: 20px;
     justify-content: center;
-    flex-wrap: wrap; /* Se adaptan si el espacio es pequeño */
+    flex-wrap: wrap;
 }
 
 .btn {
@@ -184,13 +198,11 @@ main {
     transform: translateY(-3px);
 }
 
-/* 
-   SECCIÓN DE CARACTERÍSTICAS
- */
+/* SECCIÓN DE CARACTERÍSTICAS */
 .features {
     margin-top: 80px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Diseño adaptable */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 30px;
     max-width: 1200px;
     width: 100%;
@@ -225,9 +237,7 @@ main {
     line-height: 1.6;
 }
 
-/* 
-   PIE DE PÁGINA (FOOTER)
- */
+/* PIE DE PÁGINA (FOOTER) */
 footer {
     padding: 30px;
     text-align: center;
@@ -237,14 +247,17 @@ footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 
-   RESPONSIVE (MÓVILES Y TABLETS)
- */
+/* RESPONSIVE (MÓVILES Y TABLETS) */
 @media screen and (max-width: 768px) {
     header {
         padding: 15px 20px;
         flex-direction: column;
         gap: 15px;
+    }
+
+    .logo-img {
+        width: 35px;
+        height: 35px;
     }
 
     .logo {
