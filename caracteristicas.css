@@ -2,16 +2,15 @@
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box; /* Hace que el padding y border no aumenten el tamaño total del elemento */
-    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif; /* Tipografía moderna y legible */
+    box-sizing: border-box;
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;
 }
 
 /* FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO*/
 body {
-    min-height: 100vh; /* Asegura que el fondo cubra toda la altura de la pantalla */
-    background-color: #dcdcdc; /* Color base gris claro */
+    min-height: 100vh;
+    background-color: #dcdcdc;
     
-    /* Efecto artístico con varios gradientes radiales superpuestos */
     background-image:
         radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%),
         radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%),
@@ -25,12 +24,12 @@ body {
         radial-gradient(circle at 90% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 65%);
     background-blend-mode: normal;
     background-size: cover;
-    overflow-x: hidden; /* Evita el scroll horizontal */
+    overflow-x: hidden;
 }
 
 /* ENCABEZADO*/
 header {
-    position: fixed; /* Siempre visible en la parte superior */
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -38,11 +37,26 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(25, 25, 25, 0.92); /* Fondo oscuro semitransparente */
-    backdrop-filter: blur(10px); /* Efecto de desenfoque detrás */
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5); /* Sombra inferior */
+    background: rgba(25, 25, 25, 0.92);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    z-index: 1000; /* Prioridad sobre otros elementos */
+    z-index: 1000;
+}
+
+/* CONTENEDOR DEL LOGO CON IMAGEN */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
 
 /* Estilo del logotipo */
@@ -68,14 +82,14 @@ header {
     font-weight: 600;
     padding: 10px 25px;
     border-radius: 8px;
-    transition: all 0.3s ease; /* Transiciones suaves */
+    transition: all 0.3s ease;
 }
 
 /* Efecto hover */
 .nav-links a:hover {
     color: #fff;
     background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px); /* Pequeño levantamiento visual */
+    transform: translateY(-2px);
 }
 
 /* Botón especial de registro */
@@ -92,18 +106,18 @@ header {
 
 /* CONTENIDO PRINCIPAL*/
 main {
-    margin-top: 100px; /* Espacio para no tapar el header fijo */
+    margin-top: 100px;
     padding: 50px 20px;
     max-width: 1400px;
     margin-left: auto;
-    margin-right: auto; /* Centra el contenido */
+    margin-right: auto;
 }
 
-/*CABECERA DE LA PÁGINA*/
+/* CABECERA DE LA PÁGINA*/
 .page-header {
     text-align: center;
     margin-bottom: 60px;
-    animation: fadeInDown 1s ease forwards; /* Animación de entrada */
+    animation: fadeInDown 1s ease forwards;
 }
 
 /* Animación del título principal */
@@ -131,10 +145,10 @@ main {
     color: #ffffff;
 }
 
-/*GRID DE CARACTERÍSTICAS*/
+/* GRID DE CARACTERÍSTICAS*/
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Adaptable */
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 30px;
     margin-bottom: 80px;
     animation: fadeInUp 1s ease 0.3s forwards;
@@ -216,7 +230,7 @@ main {
     font-weight: bold;
 }
 
-/*SECCIÓN CTA (LLAMADO A LA ACCIÓN)*/
+/* SECCIÓN CTA (LLAMADO A LA ACCIÓN)*/
 .cta-section {
     text-align: center;
     padding: 60px 20px;
@@ -286,7 +300,7 @@ main {
     transform: translateY(-3px);
 }
 
-/*PIE DE PÁGINA*/
+/* PIE DE PÁGINA*/
 footer {
     padding: 30px;
     text-align: center;
@@ -296,13 +310,18 @@ footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/*DISEÑO RESPONSIVO*/
+/* DISEÑO RESPONSIVO*/
 @media screen and (max-width: 768px) {
     /* Header compacto */
     header {
         padding: 15px 20px;
         flex-direction: column;
         gap: 15px;
+    }
+
+    .logo-img {
+        width: 35px;
+        height: 35px;
     }
 
     .logo {
