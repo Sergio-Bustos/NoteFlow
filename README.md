@@ -11,6 +11,7 @@ Proyecto del Tecnico en Programacion de Software - SENA,demostrando y evidencian
 - Johan Sebastian Jojoa Meneses
 - Juan Diego Monsalve Martinez
 - Sergio Andres Bustos Mondragon
+- Juan Alejandro Tamayo Manzano
 
 🚀 Estado del proyecto:
 
