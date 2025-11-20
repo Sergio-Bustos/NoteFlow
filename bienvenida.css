@@ -156,22 +156,30 @@ main {
 .cta-buttons {
     display: flex;
     gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
+    justify-content: center; /* Esto asegura que los botones se alineen horizontalmente */
+    flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas más pequeñas */
+    width: 100%; /* Esto garantiza que el contenedor de los botones ocupe el 100% del espacio disponible */
+    max-width: 400px; /* Limita el ancho máximo si es necesario */
+    margin: 0 auto; /* Centra el contenedor de botones */
 }
 
+@media screen and (max-width: 768px) {
+    .cta-buttons {
+        flex-direction: column; /* Los botones se apilan verticalmente */
+        gap: 15px; /* Espacio entre los botones cuando están apilados */
+        align-items: center; /* Alinea los botones al centro cuando están apilados */
+    }
+}
 .btn {
-    padding: 15px 40px;
-    font-size: 16px;
+    padding: 15px 35px;
+    font-size: 18px;
     font-weight: 600;
     border: none;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
-
 /* BOTÓN PRINCIPAL (NEGRO) */
 .btn-primary {
     background: linear-gradient(90deg, #2a2a2a, #1a1a1a);
