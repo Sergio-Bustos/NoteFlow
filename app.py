@@ -13,7 +13,7 @@ app.static_url_path = '/static'
 # Configuracion de conexion a la base de datos PostgreSQL:
 DB_CONFIG = {
     'host': 'localhost',
-    'database': 'Base de datos NoteFlow',
+    'database': 'dbnoteflow',
     'user': 'postgres',
     'password': '123456',
     'port': 5432
@@ -63,6 +63,10 @@ def caracteristicas():
 # RUTAS PARA PROCESAR FORMULARIOS (POST)
 # ============================================
 
+# ============================================
+# REGISTRO AL SISTEMA
+# ============================================
+
 @app.route('/procesar-registro', methods=['POST'])
 def procesar_registro():
     """Procesa el registro de un nuevo usuario"""
@@ -81,7 +85,7 @@ def procesar_registro():
         Correo = datos.get('correo', '').strip()
         Usuario = datos.get('usuario', '').strip()
         Contraseña = datos.get('contraseña', '').strip()
-        Color_principal = '#3498db'  # Color por defecto
+        Color_principal = "Blanco"  # Color por defecto
 
         # Validar campos obligatorios
         if not all([Nombres, Apellidos, Telefono, Correo, Usuario, Contraseña]):
@@ -100,7 +104,7 @@ def procesar_registro():
         """, (Usuario, Correo))
         
         if cursor.fetchone():
-            return jsonify({'error': 'El usuario o correo ya está registrado'}), 409
+            return jsonify({'error': 'El usuario o correo ya está registrado en NoteFlow'}), 409
 
         # Generar nuevo ID
         cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"')
@@ -132,7 +136,7 @@ def procesar_registro():
         if conexion:
             conexion.rollback()
         print(f"Error de integridad: {e}")
-        return jsonify({'error': 'El usuario o correo ya existe'}), 409
+        return jsonify({'error': 'El usuario o correo ya existe en NoteFlow'}), 409
 
     except Exception as e:
         if conexion:
@@ -145,7 +149,9 @@ def procesar_registro():
             cursor.close()
         if conexion:
             conexion.close()
-
+# ============================================
+# INICIO DE SESION
+# ============================================
 
 @app.route('/procesar-login', methods=['POST'])
 def procesar_login():
@@ -199,7 +205,9 @@ def procesar_login():
             cursor.close()
         if conexion:
             conexion.close()
-
+# ============================================
+# CERRAR SESION
+# ============================================
 
 @app.route('/cerrar-sesion')
 def cerrar_sesion():
@@ -208,53 +216,24 @@ def cerrar_sesion():
     return redirect(url_for('inicio'))
 
 
-@app.route('/dashboard')
-def dashboard():
-    """Página principal después del login (DEBES CREAR ESTE HTML)"""
-    if 'usuario_id' not in session:
-        return redirect(url_for('mostrar_login'))
+# Esta es la pagina dashboard donde se vera la pagina principal de crear nota y demas:
+# Aun no se hace ya que falta el html
+
+# @app.route('/dashboard')
+# def dashboard():
+#     """Página principal después del login (DEBES CREAR ESTE HTML)"""
+#     if 'usuario_id' not in session:
+#         return redirect(url_for('mostrar_login'))
     
-    return f"""
-    <h1>Bienvenido {session.get('usuario_nombre')}</h1>
-    <p>Dashboard - Aquí irán tus notas</p>
-    <a href="/cerrar-sesion">Cerrar Sesión</a>
-    """
+#     return f"""
+#     <h1>Bienvenido {session.get('usuario_nombre')}</h1>
+#     <p>Dashboard - Aquí irán tus notas</p>
+#     <a href="/cerrar-sesion">Cerrar Sesión</a>
+#     """
 
 
-# ============================================
-# RUTAS DE API (para consultas)
-# ============================================
-
-@app.route('/api/ver-cuentas', methods=['GET'])
-def ver_cuentas():
-    """Devuelve todas las cuentas registradas en formato JSON"""
-    conexion = None
-    cursor = None
-    try:
-        conexion = conectar_db()
-        if conexion is None:
-            return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
-
-        cursor = conexion.cursor(cursor_factory=RealDictCursor)
-
-        cursor.execute("""
-            SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", "Telefono", "Correo", "Color_principal"
-            FROM public."Cuentas"
-            ORDER BY "ID_Cuenta" DESC;
-        """)
-        cuentas = cursor.fetchall()
-
-        return jsonify(cuentas), 200
-
-    except Exception as e:
-        print(f"Error al obtener cuentas: {e}")
-        return jsonify({'error': 'Error al obtener cuentas'}), 500
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conexion:
-            conexion.close()
+# APIS:
+# AUN NO SE SABE SI SERA POR APIS CON ROUTES O NO
 
 
 # Punto de inicio del servidor Flask
