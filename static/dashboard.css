@@ -1,0 +1,95 @@
+:root {
+    --fondo: #f4f4f4;
+    --texto: #333;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: Arial;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 230px;
+    background: var(--color-principal);
+    height: 100vh;
+    padding: 20px;
+    color: white;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 30px;
+}
+
+.menu li {
+    list-style: none;
+    margin: 15px 0;
+}
+
+.menu a {
+    text-decoration: none;
+    color: white;
+}
+
+.menu .active {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* Main */
+.main {
+    flex: 1;
+    padding: 20px 40px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.buscador input {
+    padding: 8px;
+    width: 250px;
+}
+
+.usuario-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.usuario-info img {
+    width: 35px;
+    border-radius: 50%;
+}
+
+/* Tarjetas */
+.stats {
+    display: flex;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 150px;
+    text-align: center;
+}
+
+.recientes .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.nota-card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+}

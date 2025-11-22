@@ -5,6 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro | NoteFlow</title>
     <link rel="stylesheet" href="/static/formulario.css">
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formRegistro = document.querySelector('form[action="/procesar-registro"]');
+    
+    if (formRegistro) {
+        formRegistro.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const btnText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registrando...';
+            
+            try {
+                const response = await fetch('/procesar-registro', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('¡Registro exitoso!');
+                    window.location.href = data.redirect;
+                } else {
+                    alert(data.error || 'Error al registrar usuario');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = btnText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión');
+                submitBtn.disabled = false;
+                submitBtn.textContent = btnText;
+            }
+        });
+    }
+});
+</script>
+
+
+
+
 </head>
 <body>
     <form class="formulario" action="/procesar-registro" method="POST">
