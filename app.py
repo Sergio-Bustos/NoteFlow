@@ -16,11 +16,23 @@ app.secret_key = 'tu_clave_secreta_aqui_cambiala'  # cambiar en producción
 app.static_folder = 'static'
 app.static_url_path = '/static'
 
-# Carpeta para guardar uploads (adjuntos)
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-# Tamaños límites y extensiones se pueden validar en endpoints de adjuntos
+# ============================================
+# CONFIGURACIÓN DE CARPETA UPLOADS
+# ============================================
+import os
+
+# Ruta absoluta del proyecto (donde está app.py)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Carpeta de uploads dentro del proyecto
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+
+# Si la carpeta NO existe, se crea automáticamente
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# Se asigna la carpeta al config de Flask
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # --------------------------------------------------
 # Configuración de la base de datos (ajusta si es necesario)
