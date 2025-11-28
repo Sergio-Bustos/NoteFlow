@@ -163,9 +163,11 @@
                 <p class="description">{{ nota.Descripcion|truncate(120, True) }}</p>
                 
 <div class="tags-container">
-    {% if nota.tags %}
-        {% for tag in nota.tags[:3] %}
-            <span class="tag-chip">{{ tag.nombre_etiqueta }}</span>
+    {% if nota.Etiquetas %}
+        {% for tag in nota.Etiquetas[:3] %}
+            <span 
+            class="tag-chip">{{ tag.Nombre_etiqueta }}
+        </span>
         {% endfor %}
     {% else %}
         <span class="tag-chip no-tag">Sin etiquetas</span>
