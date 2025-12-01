@@ -176,8 +176,8 @@ def procesar_registro():
 
         cursor.execute("""
             INSERT INTO public."Cuentas"
-            ("ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Color_principal", "Fecha_creacion")
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE)
+            ("ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Color_principal")
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING "ID_Cuenta";
         """, (nuevo_id, Usuario, Contraseña, Nombres, Apellidos, Telefono, Correo, Color_principal))
 
@@ -752,7 +752,7 @@ def notas():
                 'Nombre_carpeta': carpeta_nombre,
                 'ID_Categorias': r.get('ID_Categorias'),
                 'Formato': r.get('Formato'),
-                'Fecha_creacion': r.get('Fecha_creacion'),
+                'Fecha_decreacion': r.get('Fecha_decreacion'),
                 'Fecha_deedicion': r.get('Fecha_deedicion'),
                 'Etiquetas': etiquetas_list,
                 'Has_Adjuntos': has_adj
