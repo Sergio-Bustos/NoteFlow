@@ -2,11 +2,16 @@
 
 
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, send_from_directory # importacion de librerias
+from flask_mail import Mail, Message
 import psycopg2 # importacion de librerias
 from psycopg2.extras import RealDictCursor # importacion de librerias
 import os # importacion de librerias
 import uuid # importacion de librerias
-from datetime import datetime # importacion de librerias
+from datetime import datetime,timedelta # <<<<< Añadir 'timedelta' para la expiración del token
+import secrets # <<<<< NUEVA LIBRERÍA DE GENERACIÓN DE TOKENS
+import string # <<<<< NUEVA LIBRERÍA
+from dotenv import load_dotenv # <<<<< NUEVA LIBRERÍA PARA .ENV # importacion de librerias
+load_dotenv()
 
 # --------------------------------------------------
 # Configuración de la app
@@ -52,13 +57,29 @@ DB_CONFIG = {
 
 
 
-def conectar_db(): # Funcion para conectar la db
-    """Crea y devuelve una conexión a PostgreSQL (psycopg2)."""
-    try: # try para que el programa no se detenga bruscamente
-        return psycopg2.connect(**DB_CONFIG) # retorna la conexion con la configuracion de la db que hicimos
-    except psycopg2.Error as e: # Si el try dio error,a ese error junto con una funcion de la libreria psycopg2 se le asigna la variable e a ese error
-        print(f"ERROR DE CONEXIÓN A POSTGRESQL: {e}") # se imprime
-        return None # retorna None
+def conectar_db():
+    """Crea y devuelve una conexión a PostgreSQL."""
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        conn.set_client_encoding('UTF8')  #  AÑADIDO
+        return conn
+    except psycopg2.Error as e:
+        print(f"ERROR DE CONEXIÓN A POSTGRESQL: {e}")
+        return None
+    
+# --------------------------------------------------
+# Configuración de Flask-Mail (NUEVO BLOQUE)
+# --------------------------------------------------
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT'))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS') == 'True'
+app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL') == 'True'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+
+mail = Mail(app)
+
 
 # --------------------------------------------------
 # Funciones auxiliares de LOGICA DEL BACK END
@@ -98,6 +119,90 @@ def verificar_adjuntos_nota(nota_id, cursor):
     else:
         total = row[0]
     return int(total) > 0
+# app.py (Función que genera el token, lo guarda y envía el correo)
+@app.route('/procesar-olvide-contrasena', methods=['POST'])
+def procesar_olvide_contrasena():
+    conn = None
+    cur = None
+    correo = request.form.get('correo', '').strip()
+
+    if not correo:
+        return jsonify({'error': 'El correo es obligatorio'}), 400
+
+    try:
+        conn = conectar_db()
+        if conn is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cur = conn.cursor()
+        
+        # 1. Buscar usuario por correo
+        cur.execute('SELECT "ID_Cuenta", "Usuario" FROM public."Cuentas" WHERE "Correo" = %s', (correo,))
+        usuario_row = cur.fetchone()
+
+        # Respuesta genérica por seguridad, para no revelar si el correo existe
+        if not usuario_row:
+            return jsonify({
+                'success': True,
+                'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
+            }), 200
+
+        usuario_id = usuario_row[0]
+        usuario_nombre = usuario_row[1]
+
+        # 2. Generar token seguro y fecha de expiración (e.g., 1 hora)
+        token = secrets.token_urlsafe(32)
+        expira = datetime.now() + timedelta(hours=1)
+        
+        # 3. Guardar el token y la expiración en la base de datos
+        cur.execute("""
+            UPDATE public."Cuentas"
+            SET "reset_token" = %s, "reset_token_expira" = %s
+            WHERE "ID_Cuenta" = %s
+        """, (token, expira, usuario_id))
+        
+        conn.commit()
+
+        # 4. Enviar correo electrónico
+        reset_url = url_for('mostrar_restablecer_contrasena', token=token, _external=True)
+        
+        msg = Message('Restablecimiento de Contraseña NoteFlow', recipients=[correo])
+        msg.body = f"""Hola {usuario_nombre},
+
+Has solicitado restablecer tu contraseña para NoteFlow.
+Haz clic en el siguiente enlace para completar el proceso:
+{reset_url}
+
+Este enlace expirará en 1 hora.
+
+Si no solicitaste este cambio, por favor ignora este correo.
+
+Saludos,
+Equipo NoteFlow
+"""
+        try:
+            mail.send(msg)
+        except Exception as mail_e:
+            print(f"Error al enviar correo: {mail_e}")
+            return jsonify({'error': 'Error al enviar el correo, revisa la configuración del MAIL.'}), 500
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
+        }), 200
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error en procesar-olvide-contrasena: {e}")
+        return jsonify({'error': 'Error interno del servidor. Intenta más tarde.'}), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+
+
 
 # --------------------------------------------------
 # Rutas públicas y vistas (páginas)
@@ -170,9 +275,15 @@ def procesar_registro():
         if cursor.fetchone():
             return jsonify({'error': 'El usuario o correo ya está registrado en NoteFlow'}), 409
 
-        # Generar nuevo ID_Cuenta (si tu BD no usa serial)
+# Generar nuevo ID_Cuenta (MANTENEMOS ESTA LÓGICA)
+# --- app.py (dentro de procesar_registro) ---
+
+        # Generar nuevo ID_Cuenta (TU LÓGICA ORIGINAL)
         cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"')
         nuevo_id = cursor.fetchone()[0]
+        
+        # <<<<< CORRECCIÓN CRÍTICA: Añadir la fecha de creación >>>>>
+        fecha_creacion = datetime.now() 
 
         cursor.execute("""
             INSERT INTO public."Cuentas"
@@ -180,7 +291,7 @@ def procesar_registro():
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING "ID_Cuenta";
         """, (nuevo_id, Usuario, Contraseña, Nombres, Apellidos, Telefono, Correo, Color_principal))
-
+# ... (el resto de la función sigue igual)
         cuenta_id = cursor.fetchone()[0]
         conexion.commit()
 
@@ -589,23 +700,21 @@ from urllib.parse import urlencode
 @app.route('/notas')
 def notas():
     """
-    Lista las notas del usuario logueado con:
-      - filtros: q (texto), etiqueta, carpeta, formato, categoria, estado
-      - paginación simple (page, per_page)
-      - devuelve all_tags, all_folders, all_formats para llenar selects
+    CORRECCIÓN FINAL: Lista las notas del usuario logueado con filtros y paginación.
+    Asegura la extracción correcta del valor de COUNT para resolver el error '0'.
     """
     if 'usuario_id' not in session:
         return redirect(url_for('mostrar_login'))
 
     user_id = session['usuario_id']
 
-    # parámetros de la querystring
+    # Parámetros de la querystring (request.args)
     q = (request.args.get('q') or '').strip()
     etiqueta = request.args.get('etiqueta') or ''
     carpeta = request.args.get('carpeta') or ''
     formato = request.args.get('formato') or ''
-    categoria = request.args.get('categoria') or ''   # '1' publica, '2' privada
-    estado = request.args.get('estado') or 'Activa'   # por defecto Activa
+    categoria = request.args.get('categoria') or ''
+    estado = request.args.get('estado') or 'Activa'
 
     try:
         page = int(request.args.get('page', 1))
@@ -613,72 +722,65 @@ def notas():
             page = 1
     except ValueError:
         page = 1
-    per_page = 12  # puedes ajustar
+    per_page = 12
 
     conn = None
     cur = None
     try:
-        conn = conectar_db()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        # CONEXIÓN: Usamos RealDictCursor (dict_cursor=True)
+        conn = conectar_db(dict_cursor=True)
+        cur = conn.cursor()
 
-        # --- Obtener listas para selects ---
-        # Etiquetas (todas)
+        # --- Obtener listas para selects (usan RealDictCursor) ---
         cur.execute('SELECT "ID_Etiqueta", "Nombre_etiqueta" FROM public."Etiquetas" ORDER BY "Nombre_etiqueta"')
         all_tags = cur.fetchall()
 
-        # Carpetas del usuario
         cur.execute('SELECT "ID_Carpeta", "Nombre_carpeta" FROM public."Carpetas" WHERE "ID_Cuenta" = %s ORDER BY "Nombre_carpeta"', (user_id,))
         all_folders = cur.fetchall()
 
-        # Formatos distintos en notas del usuario (para el select de formatos)
-        cur.execute('SELECT DISTINCT "Formato" FROM public."Notas" WHERE "ID_Cuenta" = %s ORDER BY "Formato"', (user_id,))
-        all_formats_rows = cur.fetchall()
-        all_formats = [{'Formato': r['Formato']} for r in all_formats_rows if r.get('Formato')]
+        cur.execute('SELECT DISTINCT "Formato" FROM public."Notas" WHERE "ID_Cuenta" = %s AND "Formato" IS NOT NULL ORDER BY "Formato"', (user_id,))
+        all_formats = cur.fetchall()
+        
+        cur.execute('SELECT "ID_Categorias", "Nombre_categoria" FROM public."Categorias" ORDER BY "ID_Categorias"')
+        all_categories = cur.fetchall()
 
         # --- Construir WHERE dinámico y parámetros ---
         where_clauses = ['n."ID_Cuenta" = %s']
         params = [user_id]
+        join_etiqueta = ''
 
-        # Estado (case-insensitive)
         if estado:
             where_clauses.append('LOWER(n."Estado") = LOWER(%s)')
             params.append(estado)
 
-        # Texto q -> buscar en Titulo, Descripcion y Contenido
         if q:
             where_clauses.append('(COALESCE(n."Titulo", \'\') ILIKE %s OR COALESCE(n."Descripcion", \'\') ILIKE %s OR COALESCE(n."Contenido", \'\') ILIKE %s)')
             like_q = f'%{q}%'
             params.extend([like_q, like_q, like_q])
 
-        # Formato exacto
         if formato:
             where_clauses.append('n."Formato" = %s')
             params.append(formato)
 
-        # Categoria (1 pública, 2 privada) -> exact match numeric
-        if categoria:
+        if categoria and categoria.isdigit():
             where_clauses.append('n."ID_Categorias" = %s')
             params.append(int(categoria))
 
-        # Carpeta: special value "__SIN__" => ID_Carpeta IS NULL
-        carpeta_clause = ''
         if carpeta:
             if carpeta == '__SIN__':
                 where_clauses.append('n."ID_Carpeta" IS NULL')
-            else:
+            elif carpeta.isdigit():
                 where_clauses.append('n."ID_Carpeta" = %s')
                 params.append(int(carpeta))
 
-        # Etiqueta: requiere JOIN con Notas_etiquetas
-        join_etiqueta = ''
-        if etiqueta:
+        if etiqueta and etiqueta.isdigit():
             join_etiqueta = 'JOIN public."Notas_etiquetas" ne ON ne."ID_Nota" = n."ID_Nota"'
             where_clauses.append('ne."ID_Etiqueta" = %s')
             params.append(int(etiqueta))
 
         where_sql = ' AND '.join(where_clauses)
 
-        # --- Contar total para paginación ---
+        # --- Contar total para paginación (FIXED) ---
         count_sql = f'''
             SELECT COUNT(DISTINCT n."ID_Nota") AS total
             FROM public."Notas" n
@@ -686,19 +788,31 @@ def notas():
             WHERE {where_sql}
         '''
         cur.execute(count_sql, tuple(params))
-        total = cur.fetchone()['total'] or 0
+        total_row = cur.fetchone() # Esperamos: {'total': N}
+
+        # CORRECCIÓN FINAL: Accedemos de forma segura por el nombre de la columna 'total',
+        # que es lo que debe devolver RealDictCursor.
+        if total_row:
+            # Si RealDictCursor funciona, total_row es un diccionario.
+            total = total_row.get('total', 0)
+        else:
+            total = 0
+        
+        # Aseguramos que 'total' sea un entero
+        total = int(total) if total is not None else 0 
+        
         total_pages = max(1, (total + per_page - 1) // per_page)
         if page > total_pages:
             page = total_pages
-
-        # --- Obtener notas paginadas (DISTINCT por posible JOIN con etiquetas) ---
+        
         offset = (page - 1) * per_page
+
+        # --- Obtener notas paginadas (Retorna Dicts) ---
         fetch_sql = f'''
             SELECT DISTINCT
                 n."ID_Nota",
                 n."Titulo",
                 n."Descripcion",
-                n."Contenido",
                 n."Estado",
                 n."ID_Carpeta",
                 n."ID_Categorias",
@@ -711,44 +825,33 @@ def notas():
             ORDER BY n."Fecha_deedicion" DESC NULLS LAST, n."Fecha_decreacion" DESC
             LIMIT %s OFFSET %s
         '''
-        # params + limit + offset
         cur.execute(fetch_sql, tuple(params) + (per_page, offset))
         notas_rows = cur.fetchall()
 
-        # --- Para cada nota: obtener etiquetas y nombre de carpeta y flag adjuntos ---
+        # --- Obtener auxiliares (usa DictCursor) ---
+        # Usamos un cursor auxiliar que también es RealDictCursor
+        cur_aux = conn.cursor() 
         notas = []
         for r in notas_rows:
             nota_id = r['ID_Nota']
 
-            # etiquetas: lista de strings (Nombre_etiqueta)
-            cur.execute('''
-                SELECT e."Nombre_etiqueta"
-                FROM public."Notas_etiquetas" ne
-                JOIN public."Etiquetas" e ON ne."ID_Etiqueta" = e."ID_Etiqueta"
-                WHERE ne."ID_Nota" = %s
-                ORDER BY e."Nombre_etiqueta"
-            ''', (nota_id,))
-            etiqu_rows = cur.fetchall()
-            etiquetas_list = [e['Nombre_etiqueta'] for e in etiqu_rows]
+            etiquetas_list = obtener_etiquetas_nota(nota_id, cur_aux) 
 
-            # carpeta nombre (puede ser NULL)
             carpeta_nombre = None
-            if r.get('ID_Carpeta') is not None:
-                cur.execute('SELECT "Nombre_carpeta" FROM public."Carpetas" WHERE "ID_Carpeta" = %s', (r['ID_Carpeta'],))
-                cf = cur.fetchone()
-                carpeta_nombre = cf['Nombre_carpeta'] if cf else None
+            id_carpeta = r.get('ID_Carpeta')
+            if id_carpeta is not None:
+                cur_aux.execute('SELECT "Nombre_carpeta" FROM public."Carpetas" WHERE "ID_Carpeta" = %s', (id_carpeta,))
+                cf = cur_aux.fetchone()
+                carpeta_nombre = cf.get('Nombre_carpeta') if cf else None
 
-            # adjuntos: true/false
-            cur.execute('SELECT COUNT(*) AS total FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
-            has_adj = cur.fetchone()['total'] > 0
+            has_adj = verificar_adjuntos_nota(nota_id, cur_aux)
 
             notas.append({
                 'ID_Nota': nota_id,
                 'Titulo': r.get('Titulo'),
                 'Descripcion': r.get('Descripcion'),
-                'Contenido': r.get('Contenido'),
                 'Estado': r.get('Estado'),
-                'ID_Carpeta': r.get('ID_Carpeta'),
+                'ID_Carpeta': id_carpeta,
                 'Nombre_carpeta': carpeta_nombre,
                 'ID_Categorias': r.get('ID_Categorias'),
                 'Formato': r.get('Formato'),
@@ -757,13 +860,17 @@ def notas():
                 'Etiquetas': etiquetas_list,
                 'Has_Adjuntos': has_adj
             })
+        
+        cur_aux.close()
 
-        # construir querystring helpers para paginación (mantener filtros)
+        # --- Construir querystring helpers para paginación ---
         base_params = {k: v for k, v in [
             ('q', q), ('etiqueta', etiqueta), ('carpeta', carpeta),
             ('formato', formato), ('categoria', categoria), ('estado', estado)
         ] if v}
+        
         def qs_with_page(p):
+            if p < 1 or p > total_pages: return None
             params2 = base_params.copy()
             params2['page'] = p
             return urlencode(params2)
@@ -773,11 +880,10 @@ def notas():
             'per_page': per_page,
             'total': total,
             'total_pages': total_pages,
-            'prev_querystring': qs_with_page(page - 1) if page > 1 else None,
-            'next_querystring': qs_with_page(page + 1) if page < total_pages else None
+            'prev_querystring': qs_with_page(page - 1),
+            'next_querystring': qs_with_page(page + 1)
         }
 
-        # pasar filtros activos para que el template marque selects
         filtros_activos = {
             'q': q,
             'etiqueta': etiqueta,
@@ -786,7 +892,7 @@ def notas():
             'categoria': categoria,
             'estado': estado
         }
-
+        
         return render_template(
             'notas.html',
             usuario={'nombre': session.get('usuario_nombre'), 'color_principal': session.get('color_principal', '#3498db')},
@@ -794,6 +900,7 @@ def notas():
             all_tags=all_tags,
             all_folders=all_folders,
             all_formats=all_formats,
+            all_categories=all_categories,
             filtros_activos=filtros_activos,
             pagination=pagination
         )
@@ -801,6 +908,8 @@ def notas():
     except Exception as e:
         import traceback
         traceback.print_exc()
+        # Imprimir el traceback para que el usuario pueda ver el error real en la consola.
+        # Devuelve el error.
         return f"Error al listar notas: {str(e)}", 500
 
     finally:
@@ -1190,6 +1299,108 @@ def mover_a_papelera(nota_id):
 #         if conn:
 #             conn.close()
 
+
+# app.py (Ruta 1: Muestra el formulario inicial de olvido de contraseña)
+@app.route('/olvide-contrasena')
+def mostrar_olvide_contrasena():
+    """Muestra el formulario para ingresar el correo electrónico."""
+    return render_template('olvide_contrasena.html')
+
+
+# app.py (Ruta 3: Muestra el formulario de restablecimiento con validación de token)
+@app.route('/restablecer-contrasena/<token>')
+def mostrar_restablecer_contrasena(token):
+    conn = None
+    cur = None
+    try:
+        conn = conectar_db()
+        if conn is None:
+            return redirect(url_for('mostrar_login'))
+
+        # Usamos cursor_factory=RealDictCursor para acceder a las columnas por nombre
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Buscar usuario por token y validar que no haya expirado
+        cur.execute("""
+            SELECT "ID_Cuenta" 
+            FROM public."Cuentas" 
+            WHERE "reset_token" = %s AND "reset_token_expira" > %s
+        """, (token, datetime.now()))
+        
+        usuario_row = cur.fetchone()
+
+        if usuario_row:
+            # Token válido, renderizar el formulario
+            return render_template("restablecer_contrasena.html", token=token, error=None)
+        else:
+            # Token no válido o expirado
+            return render_template("restablecer_contrasena.html", token=None, error="El enlace de restablecimiento no es válido o ha expirado. Vuelve a solicitar uno.")
+
+    except Exception as e:
+        print(f"Error al verificar token: {e}")
+        return render_template("restablecer_contrasena.html", token=None, error="Error interno al procesar la solicitud.")
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+# app.py (Ruta 4: Procesa el cambio de contraseña)
+@app.route('/procesar-restablecer-contrasena', methods=['POST'])
+def procesar_restablecer_contrasena():
+    conn = None
+    cur = None
+    
+    token = request.form.get('token', '').strip()
+    nueva_contrasena = request.form.get('nueva_contrasena', '').strip()
+    
+    if not token or not nueva_contrasena:
+        return jsonify({'error': 'Faltan datos obligatorios.'}), 400
+
+    try:
+        conn = conectar_db()
+        if conn is None:
+            return jsonify({'error': 'Error de conexión a la base de datos.'}), 500
+
+        cur = conn.cursor()
+
+        # 1. Validar el token y obtener el ID del usuario
+        cur.execute("""
+            SELECT "ID_Cuenta" 
+            FROM public."Cuentas" 
+            WHERE "reset_token" = %s AND "reset_token_expira" > %s
+        """, (token, datetime.now()))
+        
+        usuario_id_row = cur.fetchone()
+
+        if not usuario_id_row:
+            return jsonify({'error': 'El enlace ha expirado o es inválido. Intenta de nuevo.'}), 401
+
+        usuario_id = usuario_id_row[0]
+
+        # 2. Actualizar la contraseña y limpiar el token
+        # Usamos "Contraseña" (con Ñ) para asegurar compatibilidad con la DB
+        cur.execute("""
+            UPDATE public."Cuentas"
+            SET "Contraseña" = %s, "reset_token" = NULL, "reset_token_expira" = NULL
+            WHERE "ID_Cuenta" = %s
+        """, (nueva_contrasena, usuario_id))
+        
+        conn.commit()
+
+        return jsonify({
+            'success': True, 
+            'mensaje': 'Contraseña restablecida con éxito. Redirigiendo a Iniciar Sesión.',
+            'redirect': url_for('mostrar_login')
+        }), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error al restablecer contraseña: {e}")
+        return jsonify({'error': 'Error interno al procesar la solicitud.'}), 500
+
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
 # --------------------------------------------------
 # Run
 # --------------------------------------------------

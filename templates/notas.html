@@ -1,193 +1,209 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mis Notas | NoteFlow</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-  <style>
-    /* (incluye estilos mínimos aquí o usa tu dashboard.css) */
-    :root { --primary: {{ usuario.color_principal or '#3498db' }}; }
-    body { margin:0; font-family: Inter, system-ui, Arial; background:#f5f7fb; color:#263238; }
-    .page { margin-left:260px; padding:28px; min-height:100vh; }
-    .topbar { display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; }
-    h2 { margin:0; font-size:1.6rem; }
-    .btn { background:var(--primary); color:#fff; padding:10px 14px; border-radius:8px; text-decoration:none; }
-    .btn.sec { background:#eef2f6; color:#263238; }
-    .search-bar, .filters { background:#fff; border-radius:12px; box-shadow:0 6px 20px rgba(20,30,50,.04); padding:14px; }
-    .search-bar { display:flex; gap:10px; align-items:center; margin-top:18px; }
-    .filters { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); margin-top:14px; }
-    .grid { display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); margin-top:22px; }
-    .card { background:#fff; border-radius:12px; padding:16px; box-shadow:0 6px 18px rgba(20,30,50,.04); border-left:5px solid var(--primary); display:flex; flex-direction:column; min-height:160px; }
-    .chip { background:#f1c40f; color:#fff; padding:6px 10px; border-radius:999px; font-weight:600; font-size:.8rem; }
-    .chip.gray { background:#eff2f6; color:#6c7a89; }
-    .controls { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
-    .controls a, .controls button { padding:6px 10px; border-radius:8px; text-decoration:none; border:1px solid #e6eef6; background:#fafcff; color:#263238; }
-    @media(max-width:720px){ .page{margin-left:0;padding:16px} }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Notas | NoteFlow</title>
+    <link rel="stylesheet" href="/static/notas.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-  <div class="page">
-    <div class="topbar">
-      <div>
-        <h2>Mis notas</h2>
-        <div style="color:#6b7785;font-size:.95rem;margin-top:6px;">Aquí están tus notas — filtra y busca como quieras.</div>
-      </div>
-
-      <div style="display:flex;gap:10px;align-items:center;">
-        <a href="/crear-nota" class="btn">+ Nueva nota</a>
-        <a href="{{ url_for('dashboard') }}" class="btn sec">Volver</a>
-      </div>
-    </div>
-
-    <form method="get" action="{{ url_for('notas') }}">
-      <div class="search-bar">
-        <input name="q" type="text" placeholder="Buscar por título, contenido o etiqueta..." value="{{ filtros_activos.q }}" style="flex:1;padding:10px 12px;border-radius:10px;border:1px solid #e6eef6;">
-        <button class="btn" type="submit">Buscar</button>
-      </div>
-
-      <div class="filters">
-        <div>
-          <label style="font-weight:700;font-size:.85rem">Etiqueta</label>
-          <select name="etiqueta" style="width:100%;padding:8px;border-radius:8px;margin-top:6px;">
-            <option value="">Todas</option>
-            {% for t in all_tags %}
-              <option value="{{ t.ID_Etiqueta }}" {% if filtros_activos.etiqueta == t.ID_Etiqueta|string %}selected{% endif %}>{{ t.Nombre_etiqueta }}</option>
-            {% endfor %}
-          </select>
+    <header>
+        <div class="header-content">
+            <h1><i class="fas fa-sticky-note"></i> NoteFlow</h1>
+            <nav>
+                <a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/notas" class="active"><i class="fas fa-clipboard"></i> Notas</a>
+                <a href="/logout" class="logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+            </nav>
         </div>
+    </header>
 
-        <div>
-          <label style="font-weight:700;font-size:.85rem">Carpeta</label>
-          <select name="carpeta" style="width:100%;padding:8px;border-radius:8px;margin-top:6px;">
-            <option value="">Todas</option>
-            <option value="__SIN__" {% if filtros_activos.carpeta == '__SIN__' %}selected{% endif %}>Sin carpeta</option>
-            {% for f in all_folders %}
-              <option value="{{ f.ID_Carpeta }}" {% if filtros_activos.carpeta == f.ID_Carpeta|string %}selected{% endif %}>{{ f.Nombre_carpeta }}</option>
-            {% endfor %}
-          </select>
-        </div>
+    <main class="container">
+        <section class="filters-panel">
+            <h2>Filtros y Búsqueda</h2>
+            <form action="/notas" method="GET" id="filter-form">
+                
+                <div class="filter-group search-group">
+                    <input type="search" name="q" placeholder="Buscar por título, descripción o contenido..." 
+                           value="{{ filtros_activos.q or '' }}">
+                    <button type="submit" class="search-btn"><i class="fas fa-search"></i></button>
+                    {% if filtros_activos.q %}<a href="/notas?{{ pagination.prev_querystring.split('&page=')[0] if pagination.prev_querystring else '' }}" class="clear-search"><i class="fas fa-times"></i></a>{% endif %}
+                </div>
 
-        <div>
-          <label style="font-weight:700;font-size:.85rem">Formato</label>
-          <select name="formato" style="width:100%;padding:8px;border-radius:8px;margin-top:6px;">
-            <option value="">Todos</option>
-            {% for fm in all_formats %}
-              <option value="{{ fm.Formato }}" {% if filtros_activos.formato == fm.Formato %}selected{% endif %}>{{ fm.Formato }}</option>
-            {% endfor %}
-          </select>
-        </div>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="estado">Estado:</label>
+                        <select name="estado" id="estado">
+                            <option value="Activa" {% if filtros_activos.estado == 'Activa' %}selected{% endif %}>Activa</option>
+                            <option value="Papelera" {% if filtros_activos.estado == 'Papelera' %}selected{% endif %}>Papelera</option>
+                        </select>
+                    </div>
 
-        <div>
-          <label style="font-weight:700;font-size:.85rem">Categoría</label>
-          <select name="categoria" style="width:100%;padding:8px;border-radius:8px;margin-top:6px;">
-            <option value="">Todas</option>
-            <option value="1" {% if filtros_activos.categoria == '1' %}selected{% endif %}>Pública</option>
-            <option value="2" {% if filtros_activos.categoria == '2' %}selected{% endif %}>Privada</option>
-          </select>
-        </div>
+                    <div class="filter-group">
+                        <label for="carpeta">Carpeta:</label>
+                        <select name="carpeta" id="carpeta">
+                            <option value="">Todas</option>
+                            <option value="__SIN__" {% if filtros_activos.carpeta == '__SIN__' %}selected{% endif %}>Sin Carpeta</option>
+                            {% for folder in all_folders %}
+                                <option value="{{ folder.ID_Carpeta }}" {% if filtros_activos.carpeta|string == folder.ID_Carpeta|string %}selected{% endif %}>
+                                    {{ folder.Nombre_carpeta }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-        <div>
-          <label style="font-weight:700;font-size:.85rem">Estado</label>
-          <select name="estado" style="width:100%;padding:8px;border-radius:8px;margin-top:6px;">
-            <option value="Activa" {% if filtros_activos.estado == 'Activa' %}selected{% endif %}>Activa</option>
-            <option value="Papelera" {% if filtros_activos.estado == 'Papelera' %}selected{% endif %}>Papelera</option>
-            <option value="Archivada" {% if filtros_activos.estado == 'Archivada' %}selected{% endif %}>Archivada</option>
-          </select>
-        </div>
+                    <div class="filter-group">
+                        <label for="etiqueta">Etiqueta:</label>
+                        <select name="etiqueta" id="etiqueta">
+                            <option value="">Todas</option>
+                            {% for tag in all_tags %}
+                                <option value="{{ tag.ID_Etiqueta }}" {% if filtros_activos.etiqueta|string == tag.ID_Etiqueta|string %}selected{% endif %}>
+                                    {{ tag.Nombre_etiqueta }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="categoria">Categoría:</label>
+                        <select name="categoria" id="categoria">
+                            <option value="">Todas</option>
+                            {% for cat in all_categories %}
+                                <option value="{{ cat.ID_Categorias }}" {% if filtros_activos.categoria|string == cat.ID_Categorias|string %}selected{% endif %}>
+                                    {{ cat.Nombre_categoria }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="formato">Formato:</label>
+                        <select name="formato" id="formato">
+                            <option value="">Todos</option>
+                            {% for fmt in all_formats %}
+                                <option value="{{ fmt.Formato }}" {% if filtros_activos.formato == fmt.Formato %}selected{% endif %}>
+                                    {{ fmt.Formato }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="apply-filters-btn"><i class="fas fa-filter"></i> Aplicar Filtros</button>
+                <a href="/notas" class="clear-filters-btn"><i class="fas fa-undo"></i> Limpiar</a>
+            </form>
+        </section>
 
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;">
-          <button class="btn" type="submit">Aplicar</button>
-          <a class="btn sec" href="{{ url_for('notas') }}">Limpiar</a>
-        </div>
-      </div>
-    </form>
+        <section class="notes-list">
+            <div class="notes-header">
+                <h2>Mostrando {{ notas|length }} de {{ pagination.total }} Notas</h2>
+                <a href="/nota/crear" class="new-note-btn"><i class="fas fa-plus-circle"></i> Nueva Nota</a>
+            </div>
 
-    {% if notas %}
-      <div class="grid">
-        {% for nota in notas %}
-          <article class="card">
-            <div style="display:flex;justify-content:space-between;gap:12px;">
-              <div style="flex:1">
-                <h3 style="margin:0 0 8px 0;">{{ nota.Titulo or '(Sin título)' }}</h3>
-                <div style="color:#6b7785;font-size:.95rem;">{{ nota.Descripcion or (nota.Contenido[:180] if nota.Contenido else '(Sin descripción)') }}</div>
+            {% if notas %}
+                <div class="notes-grid">
+                    {% for nota in notas %}
+                        <div class="note-card" data-note-id="{{ nota.ID_Nota }}">
+                            <div class="note-card-header">
+                                <h3>{{ nota.Titulo }}</h3>
+                                <div class="note-actions">
+                                    {% if nota.Has_Adjuntos %}
+                                        <i class="fas fa-paperclip attachment-icon" title="Tiene adjuntos"></i>
+                                    {% endif %}
+                                    <button class="action-btn edit-btn" title="Editar nota"><i class="fas fa-edit"></i></button>
+                                    <button class="action-btn delete-btn" data-id="{{ nota.ID_Nota }}" title="Mover a Papelera"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                            
+                            <p class="note-description">{{ nota.Descripcion|truncate(80) }}</p>
+                            
+                            <div class="note-metadata">
+                                <span class="metadata-item folder"><i class="fas fa-folder"></i> {{ nota.Nombre_carpeta or 'Sin Carpeta' }}</span>
+                                <span class="metadata-item format"><i class="fas fa-file-alt"></i> {{ nota.Formato or 'Texto' }}</span>
+                                <span class="metadata-item date"><i class="fas fa-calendar-alt"></i> Editado: {{ nota.Fecha_deedicion.strftime('%Y-%m-%d') if nota.Fecha_deedicion else 'N/A' }}</span>
+                            </div>
 
-                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-                  {% if nota.Etiquetas %}
-                    {% for et in nota.Etiquetas[:4] %}
-                      <span class="chip">{{ et }}</span>
+                            <div class="note-tags">
+                                {% for tag in nota.Etiquetas %}
+                                    <span class="tag">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
                     {% endfor %}
-                    {% if nota.Etiquetas|length > 4 %}
-                      <span class="chip gray">+{{ nota.Etiquetas|length - 4 }} más</span>
-                    {% endif %}
-                  {% else %}
-                    <span class="chip gray">Sin etiquetas</span>
-                  {% endif %}
                 </div>
-              </div>
-
-              <div style="text-align:right;min-width:140px;">
-                <div style="font-size:.85rem;color:#6b7785;">{{ nota.Formato or 'Texto' }}</div>
-                <div style="margin-top:8px;font-size:.85rem;color:#6b7785;">{{ nota.Nombre_carpeta or '—' }}</div>
-                <div style="margin-top:12px;font-size:.8rem;color:#95a5a6;">
-                  {{ nota.Fecha_deedicion or nota.Fecha_creacion or '—' }}
-                </div>
-              </div>
+            {% else %}
+                <p class="empty-state"><i class="fas fa-box-open"></i> No se encontraron notas con los filtros aplicados.</p>
+            {% endif %}
+            
+            <div class="pagination">
+                {% if pagination.prev_querystring %}
+                    <a href="/notas?{{ pagination.prev_querystring }}" class="page-link prev"><i class="fas fa-arrow-left"></i> Anterior</a>
+                {% else %}
+                    <span class="page-link disabled"><i class="fas fa-arrow-left"></i> Anterior</span>
+                {% endif %}
+                
+                <span class="page-info">Página {{ pagination.page }} de {{ pagination.total_pages }}</span>
+                
+                {% if pagination.next_querystring %}
+                    <a href="/notas?{{ pagination.next_querystring }}" class="page-link next">Siguiente <i class="fas fa-arrow-right"></i></a>
+                {% else %}
+                    <span class="page-link disabled">Siguiente <i class="fas fa-arrow-right"></i></span>
+                {% endif %}
             </div>
 
-            <div class="controls" aria-hidden="false">
-              <a href="/nota/{{ nota.ID_Nota }}">Ver</a>
-              <a href="/nota/{{ nota.ID_Nota }}/editar">Editar</a>
-              <a href="/nota/{{ nota.ID_Nota }}/mover">Mover</a>
-              {% if filtros_activos.estado == 'Papelera' %}
-                <button onclick="restaurarNota({{ nota.ID_Nota }})">Restaurar</button>
-                <button onclick="eliminarDefinitivo({{ nota.ID_Nota }})" class="danger">Eliminar definitivo</button>
-              {% else %}
-                <button onclick="eliminarNota({{ nota.ID_Nota }})" class="danger">Eliminar</button>
-              {% endif %}
-            </div>
-          </article>
-        {% endfor %}
-      </div>
+        </section>
+    </main>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Script para manejar los filtros con un solo submit al cambiar select
+            const filterForm = document.getElementById('filter-form');
+            const selectFilters = filterForm.querySelectorAll('select');
+            
+            selectFilters.forEach(select => {
+                select.addEventListener('change', function() {
+                    filterForm.submit();
+                });
+            });
 
-      <!-- PAGINACIÓN -->
-      <div style="margin-top:18px;display:flex;justify-content:center;gap:12px;align-items:center;">
-        {% if pagination.prev_querystring %}
-          <a class="btn sec" href="{{ url_for('notas') }}?{{ pagination.prev_querystring }}">Anterior</a>
-        {% endif %}
-        <div style="color:#6b7785;">Página {{ pagination.page }} / {{ pagination.total_pages }}</div>
-        {% if pagination.next_querystring %}
-          <a class="btn" href="{{ url_for('notas') }}?{{ pagination.next_querystring }}">Siguiente</a>
-        {% endif %}
-      </div>
-
-    {% else %}
-      <div style="margin-top:24px;">
-        <div class="no-results">
-          <div style="font-size:28px;margin-bottom:8px;">📭</div>
-          <div style="font-weight:700;margin-bottom:6px;">No hay notas para los filtros seleccionados</div>
-          <div style="color:#6b7785;margin-bottom:12px;">Prueba a limpiar los filtros o crea una nueva nota.</div>
-          <a class="btn" href="/crear-nota">+ Crear nota</a>
-        </div>
-      </div>
-    {% endif %}
-  </div>
-
-  <script>
-    function eliminarNota(id){
-      if(!confirm('¿Mover nota a la papelera?')) return;
-      fetch(`/nota/${id}/eliminar`, { method: 'POST' })
-        .then(r => r.json()).then(d => { if(d.success) location.reload(); else alert(d.error||'Error'); })
-        .catch(()=>alert('Error de conexión'));
-    }
-    function restaurarNota(id){
-      if(!confirm('Restaurar nota?')) return;
-      fetch(`/nota/${id}/restaurar`, { method:'POST' }).then(r=>r.json()).then(d=>{ if(d.success) location.reload(); else alert(d.error||'Error');});
-    }
-    function eliminarDefinitivo(id){
-      if(!confirm('Eliminar definitivamente? Esta acción no se puede deshacer')) return;
-      fetch(`/nota/${id}/eliminar-definitivo`, { method:'POST' }).then(r=>r.json()).then(d=>{ if(d.success) location.reload(); else alert(d.error||'Error');});
-    }
-  </script>
+            // Script para la acción de mover a papelera
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const notaId = this.dataset.id;
+                    if (confirm(`¿Estás seguro de mover la nota #${notaId} a la papelera?`)) {
+                        try {
+                            const response = await fetch(`/nota/${notaId}/eliminar`, {
+                                method: 'POST'
+                            });
+                            
+                            if (response.ok) {
+                                alert('Nota movida a la papelera con éxito.');
+                                // Recargar la página para ver los cambios
+                                window.location.reload();
+                            } else {
+                                const data = await response.json();
+                                alert('Error al mover a papelera: ' + (data.error || response.statusText));
+                            }
+                        } catch (error) {
+                            console.error('Fetch error:', error);
+                            alert('Error de conexión al servidor.');
+                        }
+                    }
+                });
+            });
+            
+            // Script para simular el click en editar (redirige a una URL de ejemplo)
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const notaId = this.closest('.note-card').dataset.noteId;
+                    // En un sistema real, esto redirigiría a la vista de edición
+                    alert(`Redirigiendo a /nota/editar/${notaId}`);
+                    // window.location.href = `/nota/editar/${notaId}`;
+                });
+            });
+            
+        });
+    </script>
 </body>
 </html>

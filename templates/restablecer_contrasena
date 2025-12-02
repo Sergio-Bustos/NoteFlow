@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablecer Contraseña | NoteFlow</title>
+    <link rel="stylesheet" href="/static/formulario.css">
+</head>
+<body>
+    {% if error %}
+    <div class="formulario">
+        <h2 class="h2-registro">ERROR</h2>
+        <p class="error-msg" style="color: red; text-align: center;">{{ error }}</p>
+        <p><a href="/olvide-contrasena">Solicitar un nuevo enlace</a></p>
+    </div>
+    {% elif token %}
+    <form class="formulario" action="/procesar-restablecer-contrasena" method="POST" id="form-restablecer">
+        <h2 class="h2-registro">NUEVA CONTRASEÑA</h2>
+        <p class="instruccion">Ingresa tu nueva contraseña (mínimo 6 caracteres).</p>
+
+        <input type="hidden" name="token" value="{{ token }}">
+
+        <section class="inputs">
+            <label>Nueva Contraseña</label>
+            <input type="password" name="nueva_contrasena" id="nueva_contrasena" required minlength="6">
+            
+            <label>Confirmar Contraseña</label>
+            <input type="password" name="confirmar_contrasena" id="confirmar_contrasena" required minlength="6">
+        </section>
+
+        <button type="submit">Restablecer Contraseña</button>
+    </form>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('form-restablecer');
+            
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const nueva = document.getElementById('nueva_contrasena').value;
+                    const confirmar = document.getElementById('confirmar_contrasena').value;
+                    
+                    if (nueva !== confirmar) {
+                        alert('Las contraseñas no coinciden.');
+                        return;
+                    }
+
+                    if (nueva.length < 6) {
+                        alert('La contraseña debe tener al menos 6 caracteres.');
+                        return;
+                    }
+                    
+                    const formData = new FormData(this);
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const btnText = submitBtn.textContent;
+                    
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Actualizando...';
+                    
+                    try {
+                        const response = await fetch('/procesar-restablecer-contrasena', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            alert(data.mensaje);
+                            window.location.href = data.redirect;
+                        } else {
+                            alert(data.error || 'Error al restablecer la contraseña.');
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = btnText;
+                        }
+                    } catch (error) {
+                        alert('Error de conexión. Intenta más tarde.');
+                    } finally {
+                        // El botón solo se habilita si no fue exitoso para que el usuario pueda reintentar
+                        if (!data || !data.success) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = btnText;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    {% endif %}
+</body>
+</html>

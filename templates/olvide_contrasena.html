@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olvidé Contraseña | NoteFlow</title>
+    <link rel="stylesheet" href="/static/formulario.css">
+</head>
+<body>
+    <form class="formulario" action="/procesar-olvide-contrasena" method="POST" id="form-olvide">
+        <nav>
+            <ul class="formulario-ul">
+                <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
+                <li class="li-formulario"><a href="/registro.html">Registro</a></li>
+            </ul>
+        </nav>
+
+        <h2 class="h2-registro">RECUPERAR CONTRASEÑA</h2>
+        <p class="instruccion">Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+
+        <section class="inputs">
+            <label>Correo electrónico</label>
+            <input type="email" name="correo" placeholder="correo@ejemplo.com" required>
+        </section>
+
+        <button type="submit">Enviar Enlace de Recuperación</button>
+        
+        <p><a href="/iniciarsesion.html">Volver a Iniciar Sesión</a></p>
+    </form>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('form-olvide');
+            
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const btnText = submitBtn.textContent;
+                    
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Enviando...';
+                    
+                    try {
+                        const response = await fetch('/procesar-olvide-contrasena', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        // Siempre mostrar mensaje de éxito (genérico por seguridad)
+                        alert(data.mensaje);
+                        
+                    } catch (error) {
+                        alert('Error de conexión. Intenta más tarde.');
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = btnText;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
