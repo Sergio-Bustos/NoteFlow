@@ -17,15 +17,15 @@ Proyecto del Tecnico en Programacion de Software - SENA,demostrando y evidencian
 
 Fase actual: Desarrollo del módulo de Autenticación y Cuenta
 
-- Modelos conceptuales y relacionales (MER/MR)
+- Pruebas de autenticacion en las busquedas para el usuario en la seccion notas y carpetas
 
-- Diccionario de datos completo
+- Pruebas de autenticacion de restablecer contraseña
 
+- Documentacion clara por parte de los sprints y del codigo back end y front end
+  
 - Product Backlog y Sprint Planning (11 semanas)
 
-- Creación de base de datos en PostgreSQL
-
-- Implementación de pantallas de registro e inicio de sesión (HTML + CSS)
+- Implementación de pantalla de busqueda de notas
 
 - Conexión al backend y pruebas de autenticación
 
