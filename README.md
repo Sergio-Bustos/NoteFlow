@@ -1,6 +1,6 @@
 📝 NoteFlow:
 
-NoteFlow es un sistema web de gestión de notas personales y académicas que permite crear, organizar y personalizar notas mediante diferentes formatos (texto, imágenes, audios, videos y dibujos), con la posibilidad de agruparlas en carpetas, asignar etiquetas, y elegir entre modo claro u oscuro.
+NoteFlow es un sistema web de gestión de notas personales que permite crear, organizar y personalizar notas mediante diferentes formatos (texto, imágenes, audios, videos y dibujos), con la posibilidad de agruparlas en carpetas, asignar etiquetas, y elegir entre modo claro u oscuro.
 El proyecto está desarrollado bajo la metodología SCRUM, integrando frontend, backend y base de datos PostgreSQL.
 
 ⌛ Historia y funcion:
