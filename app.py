@@ -57,11 +57,17 @@ DB_CONFIG = {
 
 
 
-def conectar_db():
-    """Crea y devuelve una conexión a PostgreSQL."""
+def conectar_db(dict_cursor=False):
+    """Crea y devuelve una conexión a PostgreSQL. Si dict_cursor es True, 
+       la conexión se configura para usar RealDictCursor por defecto."""
     try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        conn.set_client_encoding('UTF8')  #  AÑADIDO
+        # Si queremos RealDictCursor, lo pasamos al connect.
+        # Esto configura el cursor_factory a nivel de CONEXIÓN.
+        # RealDictCursor es necesario para la ruta /notas y dashboard
+        cursor_factory = RealDictCursor if dict_cursor else None
+        
+        conn = psycopg2.connect(cursor_factory=cursor_factory, **DB_CONFIG)
+        conn.set_client_encoding('UTF8')  # AÑADIDO
         return conn
     except psycopg2.Error as e:
         print(f"ERROR DE CONEXIÓN A POSTGRESQL: {e}")
@@ -171,7 +177,9 @@ def procesar_olvide_contrasena():
         msg.body = f"""Hola {usuario_nombre},
 
 Has solicitado restablecer tu contraseña para NoteFlow.
+
 Haz clic en el siguiente enlace para completar el proceso:
+
 {reset_url}
 
 Este enlace expirará en 1 hora.
