@@ -16,10 +16,10 @@
 body {
     min-height: 100vh;
     background-color: #dcdcdc;
-    background-image:
-        radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%),
-        radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%),
-        radial-gradient(circle at 40% 80%, rgba(60, 60, 60, 0.5) 0%, transparent 50%),
+    background-image: /*   */ 
+        radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%), /*  degradado transparente negro */
+        radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%), /*  degradado transparente gris oscuro */
+        radial-gradient(circle at 40% 80%, rgba(60, 60, 60, 0.5) 0%, transparent 50%),  /*    */ 
         radial-gradient(circle at 70% 70%, rgba(90, 90, 90, 0.45) 0%, transparent 55%),
         radial-gradient(circle at 25% 60%, rgba(0, 0, 0, 0.6) 0%, transparent 60%),
         radial-gradient(circle at 60% 20%, rgba(150, 150, 150, 0.35) 0%, transparent 55%),
@@ -33,8 +33,8 @@ body {
 }
 
 /*ENCABEZADO FIJO CON LOGO Y MENÚ*/
-header {
-    position: fixed;
+header {    
+    position: fixed;    
     top: 0;
     left: 0;
     right: 0;
