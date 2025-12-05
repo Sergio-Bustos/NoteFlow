@@ -685,6 +685,201 @@ def subir_adjunto(nota_id):     # funcion para subir adjunto
         if conexion: # si la conexion sigue
             conexion.close() # se cierra
 
+
+
+
+
+
+
+
+
+
+
+
+
+# --------------------------------------------------
+from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
+import os
+from psycopg2.extras import RealDictCursor
+
+# ---------------------------
+#  PERFIL
+# ---------------------------
+
+@app.route('/perfil')
+def perfil():
+    if 'usuario_id' not in session:
+        return redirect(url_for('mostrar_login'))
+
+    user_id = session['usuario_id']
+
+    conn = conectar_db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute("""
+        SELECT "ID_Cuenta", "Nombres", "Correo", "Foto", "Color_principal"
+        FROM public."Cuentas"
+        WHERE "ID_Cuenta" = %s
+    """, (user_id,))
+
+    usuario = cur.fetchone()
+
+    conn.close()
+
+    if not usuario:
+        return "Usuario no encontrado", 404
+
+    return render_template("perfil.html", usuario=usuario)
+
+
+
+# ---------------------------
+# CAMBIAR TEMA (CLARO / OSCURO)
+# ---------------------------
+
+@app.route('/perfil/cambiar-tema', methods=['POST'])
+def cambiar_tema():
+    if 'usuario_id' not in session:
+        return jsonify({"error": "Sesión expirada"}), 403
+
+    tema = request.form.get("tema")
+    if tema not in ["claro", "oscuro"]:
+        return jsonify({"error": "Tema inválido"}), 400
+
+    user_id = session['usuario_id']
+
+    conn = conectar_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE public."Cuentas"
+        SET color_principal = %s
+        WHERE "ID_Cuenta" = %s
+    """, (tema, user_id))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    session["color_principal"] = tema
+
+    return jsonify({"success": True, "mensaje": "Tema actualizado"})
+
+
+# ---------------------------
+# CAMBIAR CONTRASEÑA
+# ---------------------------
+
+@app.route('/perfil/cambiar-password', methods=['POST'])
+def cambiar_password():
+    if 'usuario_id' not in session:
+        return redirect(url_for("mostrar_login"))
+
+    user_id = session["usuario_id"]
+
+    actual = request.form["password_actual"]
+    nueva = request.form["password_nueva"]
+    confirm = request.form["password_confirmacion"]
+
+    if nueva != confirm:
+        return "Las nuevas contraseñas no coinciden."
+
+    if len(nueva) > 15:
+        return "La contraseña no puede superar 15 caracteres."
+
+    conn = conectar_db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    cur.execute('SELECT "password" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+    user = cur.fetchone()
+
+    if not user or not check_password_hash(user["password"], actual):
+        return "La contraseña actual es incorrecta."
+
+    if check_password_hash(user["password"], nueva):
+        return "La nueva contraseña no puede ser igual a la anterior."
+
+    nueva_hash = generate_password_hash(nueva)
+
+    cur.execute("""
+        UPDATE public."Cuentas"
+        SET "password" = %s
+        WHERE "ID_Cuenta" = %s
+    """, (nueva_hash, user_id))
+
+    conn.commit()
+    conn.close()
+
+    return "Tu contraseña ha sido actualizada exitosamente."
+
+
+# ---------------------------
+# SUBIR FOTO DE PERFIL
+# ---------------------------
+
+UPLOAD_FOLDER = "static/uploads/profile"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route('/perfil/subir-foto', methods=["POST"])
+def subir_foto():
+    if "usuario_id" not in session:
+        return redirect(url_for("mostrar_login"))
+
+    archivo = request.files.get("foto")
+
+    if not archivo:
+        return "No se seleccionó ninguna imagen."
+
+    filename = secure_filename(archivo.filename)
+    ruta = os.path.join(UPLOAD_FOLDER, filename)
+    archivo.save(ruta)
+
+    ruta_db = f"uploads/profile/{filename}"
+
+    user_id = session["usuario_id"]
+
+    conn = conectar_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE public."Cuentas"
+        SET "Foto" = %s
+        WHERE "ID_Cuenta" = %s
+    """, (ruta_db, user_id))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("perfil"))
+
+
+# ---------------------------
+# CERRAR SESIÓN
+# ---------------------------
+
+@app.route("/perfil/cerrar-sesion")
+def cerrar_sesion_perfil():
+    session.clear()
+    return redirect(url_for("mostrar_login"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # --------------------------------------------------
 # ENDPOINTS PARA ETIQUETAS (CRUD mínimo)
 # --------------------------------------------------
