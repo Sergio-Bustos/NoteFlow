@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
+import email
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, send_from_directory # importacion de librerias
 from flask_mail import Mail, Message
 import psycopg2 # importacion de librerias
 from psycopg2.extras import RealDictCursor # importacion de librerias
+from google_auth_oauthlib.flow import Flow # importacion de librerias
+import requests
 import os # importacion de librerias
 import uuid # importacion de librerias
 from datetime import datetime,timedelta # <<<<< Añadir 'timedelta' para la expiración del token
@@ -12,6 +15,21 @@ import secrets # <<<<< NUEVA LIBRERÍA DE GENERACIÓN DE TOKENS
 import string # <<<<< NUEVA LIBRERÍA
 from dotenv import load_dotenv # <<<<< NUEVA LIBRERÍA PARA .ENV # importacion de librerias
 load_dotenv()
+
+# --------------------------------------------------
+# Configuración para permitir OAuth en http (no solo HTTPS) - SOLO PARA DESARROLLO
+# --------------------------------------------------
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # Permite OAuth en HTTP (no solo HTTPS) - SOLO PARA DESARROLLO
+
+
+# -------------------------------
+# Datos de google oauth desde .env
+# -------------------------------
+
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID') # se obtiene del .env
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET') # se obtiene del .env
+GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI') # se obtiene del .env
+
 
 # --------------------------------------------------
 # Configuración de la app
@@ -348,9 +366,127 @@ def procesar_restablecer_contrasena():
 
 
 
+# ============================================
+# Creamos la ruta del /google/login para iniciar el flujo de OAuth2
+# ============================================
+@app.route("/google/login") # Iniciar login con Google
+def google_login(): # Definimos la función para manejar el login con Google
+
+    client_config = { # Configuración del cliente para Google OAuth
+        "web": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "project_id": "note-flow",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_secret": os.getenv("Google_CLIENT_SECRET"),
+            "redirect_uris": [os.getenv("GOOGLE_REDIRECT_URI")]
+        }
+    }
+
+    flow = Flow.from_client_config( # Crear Flow de Google
+        client_config,
+        scopes=[
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "openid"
+        ],
+        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI") # Redirigir a esta URL después del login
+    )
+
+    authorization_url, state = flow.authorization_url( # Obtener URL de autorización
+        access_type="offline",
+        include_granted_scopes="true",
+        prompt="consent"
+    )
+
+    session["state"] = state # Guardar el estado en la sesión para verificar después
+    return redirect(authorization_url) # Redirigir al usuario a la URL de autorización de Google
 
 
+# ========================================================================
+# Creamos la ruta del /google/callback para manejar la respuesta de Google
+# ========================================================================
+@app.route("/google/callback") # Manejar la respuesta de Google después del login
+def google_callback(): # Definimos la función para manejar el callback de Google
+    
+    client_config = { # Configuración del cliente para Google OAuth
+        "web": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "project_id": "note-flow",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+            "redirect_uris": [os.getenv("GOOGLE_REDIRECT_URI")]
+        }
+    }
 
+    # Crear Flow de Google
+    flow = Flow.from_client_config(
+        client_config,
+        scopes=[
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "openid"
+        ],
+        state=session.get("state"),
+        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
+    )
+
+    # Obtener token
+    flow.fetch_token(authorization_response=request.url)
+    credentials = flow.credentials
+
+    # Obtener información del usuario desde Google
+    user_info = requests.get(
+        "https://www.googleapis.com/oauth2/v1/userinfo",
+        params={"alt": "json", "access_token": credentials.token}
+    ).json()
+
+    # -------------------------------
+    # DATOS QUE NECESITAMOS
+    # -------------------------------
+    email = user_info.get("email")
+    if not email:
+        return "No se pudo obtener el correo desde Google.", 400
+
+    # -------------------------------
+    # REVISAR SI EL CORREO EXISTE
+    # -------------------------------
+    conn = None
+    cur = None
+
+    try:
+        conn = conectar_db()
+        if conn is None:
+            return "Error de conexión con la base de datos", 500
+        cur = conn.cursor()
+
+        # ¿Existe este correo en la BD?
+        cur.execute('SELECT "ID_Cuenta" FROM public."Cuentas" WHERE "Correo" = %s', (email,))
+        row = cur.fetchone()
+
+        if not row:
+            # ❌ EL CORREO NO EXISTE → MOSTRAR MENSAJE BONITO
+            return render_template("cuenta_no_registrada.html")
+
+        # ✔ Usuario encontrado → iniciar sesión normal
+        user_id = int(row[0])
+
+        session["usuario_id"] = user_id
+        session["usuario_nombre"] = user_info.get("name") or email
+
+        return redirect("/dashboard") # Redirigir al dashboard después del login
+
+    except Exception as e: # Manejo de errores
+        print("Error en google_callback:", e) # Imprimir el error en consola
+        return "Error interno al procesar login con Google.", 500 # Respuesta de error al usuario
+
+    finally: # Cerrar conexiones
+        if cur: cur.close() # Cerrar cursor
+        if conn: conn.close() # Cerrar conexión
+    
 # --------------------------------------------------
 # Rutas públicas y vistas (páginas)
 # --------------------------------------------------
