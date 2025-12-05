@@ -109,7 +109,11 @@
             <img src="{{ url_for('static', filename=usuario.Foto or 'img/default_profile.png') }}">
 
             <div class="data">
+<<<<<<< HEAD
                 <p><strong>Nombre:</strong> {{ usuario.Nombre }}</p>
+=======
+                <p><strong>Nombre:</strong> {{ usuario.Nombres }}</p>
+>>>>>>> 61fb48e563ed1cd5681603d2b1caeaf69a86659c
                 <p><strong>Correo:</strong> {{ usuario.Correo }}</p>
             </div>
 
@@ -132,8 +136,13 @@
             <div class="form-group">
                 <label>Tema del sistema</label>
                 <select name="tema">
+<<<<<<< HEAD
                     <option value="claro" {% if usuario.color_principal == "claro" %}selected{% endif %}>Modo claro</option>
                     <option value="oscuro" {% if usuario.color_principal == "oscuro" %}selected{% endif %}>Modo oscuro</option>
+=======
+                    <option value="claro" {% if usuario.color_principal == "Blanco" %}selected{% endif %}>Modo claro</option>
+                    <option value="oscuro" {% if usuario.color_principal == "Negro" %}selected{% endif %}>Modo oscuro</option>
+>>>>>>> 61fb48e563ed1cd5681603d2b1caeaf69a86659c
                 </select>
             </div>
 
