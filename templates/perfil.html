@@ -109,7 +109,7 @@
             <img src="{{ url_for('static', filename=usuario.Foto or 'img/default_profile.png') }}">
 
             <div class="data">
-                <p><strong>Nombre:</strong> {{ usuario.Nombre }}</p>
+                <p><strong>Nombre:</strong> {{ usuario.Nombres }}</p>
                 <p><strong>Correo:</strong> {{ usuario.Correo }}</p>
             </div>
 
@@ -132,8 +132,8 @@
             <div class="form-group">
                 <label>Tema del sistema</label>
                 <select name="tema">
-                    <option value="claro" {% if usuario.color_principal == "claro" %}selected{% endif %}>Modo claro</option>
-                    <option value="oscuro" {% if usuario.color_principal == "oscuro" %}selected{% endif %}>Modo oscuro</option>
+                    <option value="claro" {% if usuario.color_principal == "Blanco" %}selected{% endif %}>Modo claro</option>
+                    <option value="oscuro" {% if usuario.color_principal == "Negro" %}selected{% endif %}>Modo oscuro</option>
                 </select>
             </div>
 

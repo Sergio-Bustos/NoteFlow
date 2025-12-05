@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-
+# =============================================== IMPORTACIONES DE LIBRERIAS =========================================================
 import email
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, send_from_directory # importacion de librerias
 from flask_mail import Mail, Message
@@ -15,9 +15,20 @@ import secrets # <<<<< NUEVA LIBRERÍA DE GENERACIÓN DE TOKENS
 import string # <<<<< NUEVA LIBRERÍA
 from dotenv import load_dotenv # <<<<< NUEVA LIBRERÍA PARA .ENV # importacion de librerias
 load_dotenv()
+# =====================================================================================================================================
 
-# --------------------------------------------------
-# Configuración para permitir OAuth en http (no solo HTTPS) - SOLO PARA DESARROLLO
+
+
+
+
+
+
+
+
+
+
+# ======================== Configuración para permitir OAuth en http (no solo HTTPS)  para boton de Google ==========================
+
 # --------------------------------------------------
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # Permite OAuth en HTTP (no solo HTTPS) - SOLO PARA DESARROLLO
 
@@ -31,9 +42,19 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET') # se obtiene del .env
 GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI') # se obtiene del .env
 
 
+# =====================================================================================================================================
+
+
+
+# ======================== Configuración de la APP ==========================
+
+
+
+
+
 # --------------------------------------------------
-# Configuración de la app
-# --------------------------------------------------
+# Configuración del Flask App
+
 app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_aqui_cambiala'  # cambiar en producción
 app.static_folder = 'static' # carpeta para que python la reconozca del static
@@ -57,6 +78,11 @@ if not os.path.exists(UPLOAD_FOLDER): # Si no existe
 # Se asigna la carpeta al config de Flask
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER # se le asigna
 
+
+
+
+
+
 # --------------------------------------------------
 # Configuración de la base de datos 
 # --------------------------------------------------
@@ -68,10 +94,12 @@ DB_CONFIG = {
     'port': 5432 # puerto por default
 }
 
+# ===========================================================================
 
-# ===========================
+
+# ======================================================================
 # FUNCION PARA CONECTAR LA DB
-# ===========================
+# ======================================================================
 
 
 
@@ -91,10 +119,22 @@ def conectar_db(dict_cursor=False):
         print(f"ERROR DE CONEXIÓN A POSTGRESQL: {e}")
         return None
 
-# ================================================================
+
+# ==============================================================================
+#                  RESTABLECIMIENTO DE CONTRASEÑA                              
+# ==============================================================================
+
+
+
+# ----------------------------------------------------------------  
 # Configuración de Flask-Mail (Para restablecimiento de contraseña)
-# ================================================================
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER') # Todo esto estara en el .ENV que luego se oculta con el .gitignore para la proteccion segura de NoteFlow
+# -----------------------------------------------------------------
+
+# --------------------------------------------------------------------------------------------------------
+
+# Todo esto estara en el .ENV que luego se oculta con el .gitignore para la proteccion segura de NoteFlow:
+
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER') 
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT'))
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS') == 'True'
 app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL') == 'True'
@@ -104,103 +144,51 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_DEFAULT_CHARSET'] = 'utf-8'
 
 mail = Mail(app)
+# --------------------------------------------------------------------------------------------------------
 
-
-# ===========================================
-# Funciones auxiliares de LOGICA DEL BACK END
-# ===========================================
-
-
-
-# =============================================
-# FUNCION PARA OBTENER LA ETIQUETA DE CADA NOTA
-# =============================================
-
-def obtener_etiquetas_nota(nota_id, cursor): # Para obtener la etiqueta de la nota
-    """
-    Obtiene las etiquetas asociadas a una nota.
-    Retorna lista de dicts con clave 'Nombre_etiqueta' (si se usa RealDictCursor).
-    """
-    cursor.execute("""
-        SELECT e."ID_Etiqueta", e."Nombre_etiqueta"
-        FROM public."Notas_etiquetas" ne
-        JOIN public."Etiquetas" e ON ne."ID_Etiqueta" = e."ID_Etiqueta"
-        WHERE ne."ID_Nota" = %s
-        ORDER BY e."Nombre_etiqueta" ASC
-    """, (nota_id,)) # Busqueda atravez de llaves foraneas con Inner Join
-    rows = cursor.fetchall() # Funcion cursor 
-    # Si salen dicts (RealDictCursor) ya están listos
-    if rows and isinstance(rows[0], dict): # Si ya esta listo lo retorna
-        return rows # se retorna
-    # Si salen tuplas -> convertir
-    return [{'ID_Etiqueta': r[0], 'Nombre_etiqueta': r[1]} for r in rows] # Se convierte si son tuplas y se muestra el id de etiqueta,el nombre de etiqueta con un bucle for y se retornara en el front end
-
-# =============================================
-# FUNCION PARA OBTENER EL ADJUNTO DE CADA NOTA
-# =============================================
-
-def verificar_adjuntos_nota(nota_id, cursor): # Para obtener los adjuntos de la nota
-    """
-    Devuelve True si la nota tiene al menos un adjunto en la tabla Adjuntos.
-    """
-    cursor.execute("""
-        SELECT COUNT(*) AS total
-        FROM public."Adjuntos"
-        WHERE "ID_Nota" = %s
-    """, (nota_id,))
-    row = cursor.fetchone()
-    if isinstance(row, dict):
-        total = row.get('total', 0)
-    else:
-        total = row[0]
-    return int(total) > 0
-
-
-
-# ========================
-# RESTABLECIMIENTO DE CLAVE
-# ========================
-
+# --------------------------------------------------------------------------------------------------------
+# PROCESO DE RESTABLECER CONTRASEÑA
+# --------------------------------------------------------------------------------------------------------
 
 # app.py (Ruta 1: Muestra el formulario inicial de olvido de contraseña)
 @app.route('/olvide-contrasena')
-def mostrar_olvide_contrasena():
+def mostrar_olvide_contrasena(): # Funcion para mostrar el template olvido de contrasena
     """Muestra el formulario para ingresar el correo electrónico."""
-    return render_template('olvide_contrasena.html')
+    return render_template('olvide_contrasena.html') # Retorna el template olvide_contrasena.html
 
 
 
 # app.py (Función que genera el token, lo guarda y envía el correo - TEMPORAL: RECORDAR QUE SOLO ES POR UNA HORA)
 # Ruta 2: Procesar la solicitud
 @app.route('/procesar-olvide-contrasena', methods=['POST'])
-def procesar_olvide_contrasena():
-    conn = None
-    cur = None
-    correo = request.form.get('correo', '').strip()
+def procesar_olvide_contrasena(): # Funcion para procesar el olvide contraseña
+    conn = None # Conexion en 0 por ahora
+    cur = None # Cursor en 0 por ahora
+    correo = request.form.get('correo', '').strip() # Se atrapa sin espacios el correo del formulario
 
-    if not correo:
-        return jsonify({'error': 'El correo es obligatorio'}), 400
+    if not correo: # Si no hay nada en el campo de correo
+        return jsonify({'error': 'El correo es obligatorio'}), 400 # error
 
-    try:
-        conn = conectar_db()
-        if conn is None:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    try: # try para que el programa no se detenga bruscamente
+        conn = conectar_db() # variable que ejecutara la conexion
+        if conn is None: # si la conexion es nula
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500 # error
 
-        cur = conn.cursor()
+        cur = conn.cursor() # cursor para ejecutar procesos en la db
         
         # 1. Buscar usuario por correo
-        cur.execute('SELECT "ID_Cuenta", "Usuario" FROM public."Cuentas" WHERE "Correo" = %s', (correo,))
-        usuario_row = cur.fetchone()
+        cur.execute('SELECT "ID_Cuenta", "Usuario" FROM public."Cuentas" WHERE "Correo" = %s', (correo,)) # ejecuta y busca el id de cuenta y usuario en la tabla cuentas donde el correo sea igual al correo que se envio
+        usuario_row = cur.fetchone() # fetchone para atraparlo
 
         # Respuesta genérica por seguridad, para no revelar si el correo existe
-        if not usuario_row:
-            return jsonify({
+        if not usuario_row: # si no existe el usuario
+            return jsonify({ 
                 'success': True,
                 'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
-            }), 200
+            }), 200 # buen mensaje ya que esta registrado y si se le enviara el correo
 
-        usuario_id = usuario_row[0]
-        usuario_nombre = usuario_row[1]
+        usuario_id = usuario_row[0] # se guarda el id de cuenta en la variable usuario_id
+        usuario_nombre = usuario_row[1] # se atrapa el nombre del usuario con el indice 1
 
         # 2. Generar token seguro y fecha de expiración (e.g., 1 hora)
         token = secrets.token_urlsafe(32) #  genera una cadena de texto aleatoria, segura para URL, de 32 bytes que se almacena en la variable token. Esto se utiliza principalmente para crear tokens de seguridad únicos
@@ -211,7 +199,7 @@ def procesar_olvide_contrasena():
             UPDATE public."Cuentas" 
             SET "reset_token" = %s, "reset_token_expira" = %s
             WHERE "ID_Cuenta" = %s
-        """, (token, expira, usuario_id)) 
+        """, (token, expira, usuario_id)) # actualiza la tabla donde se reinicia el token
 
         # cur.execute: Llama al método execute del cursor cur
         # UPDATE public."Cuentas": Actualizar registros existentes de la tabla Cuentas
@@ -230,7 +218,7 @@ def procesar_olvide_contrasena():
         # 4. Enviar correo electrónico
         reset_url = url_for('mostrar_restablecer_contrasena', token=token, _external=True)
         
-        msg = Message('Restablecimiento de Contraseña NoteFlow', recipients=[correo])
+        msg = Message('Restablecimiento de Contraseña NoteFlow', recipients=[correo]) # se crea el mensaje con el asunto y el correo del destinatario
         msg.body = f"""Hola {usuario_nombre},
 
 Has solicitado restablecer tu contraseña para NoteFlow.
@@ -246,37 +234,37 @@ Si no solicitaste este cambio, por favor ignora este correo.
 Saludos,
 Equipo NoteFlow
 """
-        try:
-            mail.send(msg)
-        except Exception as mail_e:
-            print(f"Error al enviar correo: {mail_e}")
-            return jsonify({'error': 'Error al enviar el correo, revisa la configuración del MAIL.'}), 500
+        try: # try para que no se detenga bruscamente
+            mail.send(msg) # envia el mensaje
+        except Exception as mail_e: # y si da error se guuarda el error como la variable e
+            print(f"Error al enviar correo: {mail_e}") # imprime al enviar el correo
+            return jsonify({'error': 'Error al enviar el correo, revisa la configuración del MAIL.'}), 500 # retorna en formato JSON se da este error
 
-        return jsonify({
-            'success': True,
-            'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
+        return jsonify({ # retorna en formato JSON
+            'success': True, # si pasa
+            'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.' # mensaje
         }), 200
 
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        print(f"Error en procesar-olvide-contrasena: {e}")
-        return jsonify({'error': 'Error interno del servidor. Intenta más tarde.'}), 500
+    except Exception as e: # y si da error se guarda el error como la variable e
+        if conn: # si la conexion sigue estando
+            conn.rollback() # se borra lo que no se guardo
+        print(f"Error en procesar-olvide-contrasena: {e}") # se imprime el error
+        return jsonify({'error': 'Error interno del servidor. Intenta más tarde.'}), 500 # y tambien en formato JSON
 
-    finally:
+    finally: # finalmente se cierra cur y conn si siguen en True
         if cur: cur.close()
         if conn: conn.close()
 
 
 # app.py (Ruta 3: Muestra el formulario de restablecimiento con validación de token)
-@app.route('/restablecer-contrasena/<token>')
-def mostrar_restablecer_contrasena(token):
-    conn = None
-    cur = None
-    try:
-        conn = conectar_db()
-        if conn is None:
-            return redirect(url_for('mostrar_login'))
+@app.route('/restablecer-contrasena/<token>') # Ruta para restablecer la contraseña con el token
+def mostrar_restablecer_contrasena(token): # Funcion para mostrar el restablecimiento de contraseña
+    conn = None # Conexion a la base de datos
+    cur = None # Cursor para ejecutar consultas
+    try: # try para que no se detenga bruscamente
+        conn = conectar_db() #  variable que ejecutara la conexion
+        if conn is None: # si la conexion es nula
+            return redirect(url_for('mostrar_login')) # redirecciona al login
 
         # Usamos cursor_factory=RealDictCursor para acceder a las columnas por nombre
         cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -286,11 +274,11 @@ def mostrar_restablecer_contrasena(token):
             SELECT "ID_Cuenta" 
             FROM public."Cuentas" 
             WHERE "reset_token" = %s AND "reset_token_expira" > %s
-        """, (token, datetime.now()))
+        """, (token, datetime.now())) # se selecciona el id de cuenta donde el token sea igual al token que se envio y que la fecha de expiracion sea mayor a la fecha actual
         
-        usuario_row = cur.fetchone()
+        usuario_row = cur.fetchone() # fetchone para atraparlo
 
-        if usuario_row:
+        if usuario_row: 
             # Token válido, renderizar el formulario
             return render_template("restablecer_contrasena.html", token=token, error=None)
         else:
@@ -486,6 +474,62 @@ def google_callback(): # Definimos la función para manejar el callback de Googl
     finally: # Cerrar conexiones
         if cur: cur.close() # Cerrar cursor
         if conn: conn.close() # Cerrar conexión
+
+
+# ===========================================
+# Funciones de LOGICA DEL BACK END
+# ===========================================
+
+
+
+# =============================================
+# FUNCION PARA OBTENER LA ETIQUETA DE CADA NOTA
+# =============================================
+
+def obtener_etiquetas_nota(nota_id, cursor): # Para obtener la etiqueta de la nota
+    """
+    Obtiene las etiquetas asociadas a una nota.
+    Retorna lista de dicts con clave 'Nombre_etiqueta' (si se usa RealDictCursor).
+    """
+    cursor.execute("""
+        SELECT e."ID_Etiqueta", e."Nombre_etiqueta"
+        FROM public."Notas_etiquetas" ne
+        JOIN public."Etiquetas" e ON ne."ID_Etiqueta" = e."ID_Etiqueta"
+        WHERE ne."ID_Nota" = %s
+        ORDER BY e."Nombre_etiqueta" ASC
+    """, (nota_id,)) # Busqueda atravez de llaves foraneas con Inner Join
+    rows = cursor.fetchall() # Funcion cursor 
+    # Si salen dicts (RealDictCursor) ya están listos
+    if rows and isinstance(rows[0], dict): # Si ya esta listo lo retorna
+        return rows # se retorna
+    # Si salen tuplas -> convertir
+    return [{'ID_Etiqueta': r[0], 'Nombre_etiqueta': r[1]} for r in rows] # Se convierte si son tuplas y se muestra el id de etiqueta,el nombre de etiqueta con un bucle for y se retornara en el front end
+
+
+
+# =============================================
+# FUNCION PARA OBTENER EL ADJUNTO DE CADA NOTA
+# =============================================
+
+def verificar_adjuntos_nota(nota_id, cursor): # Para obtener los adjuntos de la nota
+    """
+    Devuelve True si la nota tiene al menos un adjunto en la tabla Adjuntos.
+    """
+    cursor.execute("""
+        SELECT COUNT(*) AS total
+        FROM public."Adjuntos"
+        WHERE "ID_Nota" = %s
+    """, (nota_id,))
+    row = cursor.fetchone()
+    if isinstance(row, dict):
+        total = row.get('total', 0)
+    else:
+        total = row[0]
+    return int(total) > 0
+
+
+
+
     
 # --------------------------------------------------
 # Rutas públicas y vistas (páginas)
@@ -927,13 +971,13 @@ def cambiar_password():
     conn = conectar_db()
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    cur.execute('SELECT "password" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+    cur.execute('SELECT "Contraseña" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
     user = cur.fetchone()
 
-    if not user or not check_password_hash(user["password"], actual):
+    if not user or not check_password_hash(user["Contraseña"], actual):
         return "La contraseña actual es incorrecta."
 
-    if check_password_hash(user["password"], nueva):
+    if check_password_hash(user["Contraseñas"], nueva):
         return "La nueva contraseña no puede ser igual a la anterior."
 
     nueva_hash = generate_password_hash(nueva)
