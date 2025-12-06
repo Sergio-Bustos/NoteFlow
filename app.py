@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
 
 # =============================================== IMPORTACIONES =========================================================
-from flask import Flask, jsonify, render_template, request, redirect, url_for, session
-from flask_mail import Mail, Message
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from google_auth_oauthlib.flow import Flow
-import requests
-import os
-import uuid
-from datetime import datetime, timedelta
-import secrets
-from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-load_dotenv()
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session # Importaciones nesesarias de Flask
+from flask_mail import Mail, Message # Importaciones para enviar correos
+import psycopg2 # Importación para conectar con PostgreSQL
+from psycopg2.extras import RealDictCursor # Cursor que devuelve diccionarios
+from google_auth_oauthlib.flow import Flow # Importación para OAuth con Google
+import requests # Importación para hacer solicitudes HTTP
+import os # Importación para manejo de rutas y variables de entorno
+import uuid # Importación para generar IDs únicos 
+from datetime import datetime, timedelta # Importaciones para manejo de fechas y tiempos
+import secrets # Importación para generar tokens seguros
+from werkzeug.utils import secure_filename # Importación para asegurar nombres de archivos
+from dotenv import load_dotenv # Importación para cargar variables de entorno desde .env
+load_dotenv() # Cargar variables de entorno desde archivo .env
 # =====================================================================================================================
 
 # ======================== Configuración OAuth en HTTP (desarrollo) ==========================
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
-# Datos de Google OAuth desde .env
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" 
+# Datos de Google OAuth desde .env 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI')
@@ -42,8 +41,8 @@ if not os.path.exists(PROFILE_UPLOAD_FOLDER):
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 # Configuración de base de datos
-DB_CONFIG = {
-    'host': 'localhost',
+DB_CONFIG = {  
+    'host': 'localhost', 
     'database': 'dbnoteflow',
     'user': 'postgres',
     'password': '123456',
@@ -66,217 +65,218 @@ mail = Mail(app)
 # ======================================================================
 # FUNCIÓN: Conectar a la base de datos
 # ======================================================================
-def conectar_db(dict_cursor=False):
-    """Crea y devuelve una conexión a PostgreSQL."""
-    try:
-        cursor_factory = RealDictCursor if dict_cursor else None
-        conn = psycopg2.connect(cursor_factory=cursor_factory, **DB_CONFIG)
-        conn.set_client_encoding('UTF8')
-        return conn
-    except psycopg2.Error as e:
-        print(f"ERROR DE CONEXIÓN A POSTGRESQL: {e}")
-        return None
+def conectar_db(dict_cursor=False): # Funcion para conectar a PostgreSQL
+    """Crea y devuelve una conexión a PostgreSQL.""" 
+    try: # try para que el programa no se caiga si hay un error
+        cursor_factory = RealDictCursor if dict_cursor else None # Elegir tipo de cursor
+        conn = psycopg2.connect(cursor_factory=cursor_factory, **DB_CONFIG) # Conectar a la base de datos
+        conn.set_client_encoding('UTF8') # Asegurar codificación UTF-8
+        return conn # Devolver la conexión
+    except psycopg2.Error as e: # Manejo de errores de conexión con variable e
+        print(f"ERROR DE CONEXIÓN A POSTGRESQL: {e}")  # Imprimir error en consola
+        return None # Devolver None si hay error
 
 # ======================================================================
 # FUNCIÓN: Verificar extensión de archivo
 # ======================================================================
-def allowed_file(filename):
+def allowed_file(filename): # Verificar si el archivo tiene una extensión permitida
     """Verifica si la extensión del archivo es válida"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS # las anteriores que guardamos en el diccionario
 
 # ======================================================================
 # FUNCIÓN: Obtener etiquetas de una nota (para notas recientes)
 # ======================================================================
-def obtener_etiquetas_nota(nota_id, cursor):
+def obtener_etiquetas_nota(nota_id, cursor):  # Funcion para obtener etiquetas de una nota
     """Obtiene las etiquetas asociadas a una nota."""
-    cursor.execute("""
+    cursor.execute(""" 
         SELECT e."ID_Etiqueta", e."Nombre_etiqueta"
         FROM public."Notas_etiquetas" ne
         JOIN public."Etiquetas" e ON ne."ID_Etiqueta" = e."ID_Etiqueta"
         WHERE ne."ID_Nota" = %s
         ORDER BY e."Nombre_etiqueta" ASC
-    """, (nota_id,))
+    """, (nota_id,)) # Selecciona el id y el nonmbre de la etiqueta donde el id sea el mismo que el de la nota
+    # Ejecuta la consulta SQL para obtener las etiquetas de la nota
     rows = cursor.fetchall()
-    if rows and isinstance(rows[0], dict):
-        return rows
-    return [{'ID_Etiqueta': r[0], 'Nombre_etiqueta': r[1]} for r in rows]
+    if rows and isinstance(rows[0], dict): # Si el cursor devuelve diccionarios
+        return rows # Devolver las filas tal cual
+    return [{'ID_Etiqueta': r[0], 'Nombre_etiqueta': r[1]} for r in rows] # Devolver las filas como diccionarios
 
 # ======================================================================
 # FUNCIÓN: Verificar si una nota tiene adjuntos (para notas recientes)
-# ======================================================================
-def verificar_adjuntos_nota(nota_id, cursor):
-    """Devuelve True si la nota tiene al menos un adjunto."""
+# ======================================================================  
+def verificar_adjuntos_nota(nota_id, cursor): # Funcion para verificar si una nota tiene adjuntos
+    """Devuelve True si la nota tiene al menos un adjunto.""" 
     cursor.execute("""
         SELECT COUNT(*) AS total
         FROM public."Adjuntos"
         WHERE "ID_Nota" = %s
-    """, (nota_id,))
-    row = cursor.fetchone()
-    if isinstance(row, dict):
-        total = row.get('total', 0)
-    else:
-        total = row[0]
-    return int(total) > 0
+    """, (nota_id,)) # Consulta para contar adjuntos de la nota
+    row = cursor.fetchone() # Obtener la fila resultante
+    if isinstance(row, dict): # Si el cursor devuelve diccionarios
+        total = row.get('total', 0) # Obtener el total desde el diccionario
+    else: # Si el cursor devuelve tuplas
+        total = row[0] # Obtener el total desde la tupla
+    return int(total) > 0 # Devolver True si hay al menos un adjunto
 
 # ==============================================================================
-# ✅ 1. PÁGINA DE BIENVENIDA
+#  1. PÁGINA DE BIENVENIDA
 # ==============================================================================
-@app.route('/')
-def inicio():
+@app.route('/') # Ruta principal
+def inicio(): # Funcion que lo muestra
     """Página de bienvenida (antes de autenticarse)."""
-    return render_template("bienvenidoalapagina.html")
+    return render_template("bienvenidoalapagina.html") # Renderizar plantilla de bienvenida
 
-@app.route('/caracteristicas.html')
-def caracteristicas():
+@app.route('/caracteristicas.html') # Ruta de características
+def caracteristicas(): # Funcion que lo muestra
     """Página de características."""
-    return render_template("caracteristicas.html")
+    return render_template("caracteristicas.html") # Renderizar plantilla de características
 
 # ==============================================================================
-# ✅ 2. REGISTRARSE
+#  2. REGISTRARSE
 # ==============================================================================
-@app.route('/registro.html')
-def mostrar_registro():
+@app.route('/registro.html') # Ruta de registro
+def mostrar_registro(): # Funcion que lo muestra
     """Formulario de registro."""
-    return render_template("registro.html")
+    return render_template("registro.html") # Renderizar plantilla de registro
 
-@app.route('/procesar-registro', methods=['POST'])
-def procesar_registro():
-    """Procesa el registro de un nuevo usuario."""
-    conexion = None
-    cursor = None
-    try:
-        conexion = conectar_db()
-        if conexion is None:
-            return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
+@app.route('/procesar-registro', methods=['POST']) # Ruta para procesar el registro
+def procesar_registro(): # Funcion para procesar el registro
+    """Procesa el registro de un nuevo usuario.""" 
+    conexion = None # Conexion a la base de datos nula por ahora
+    cursor = None # al igual que el cursor para devolver filas en formato diccionario
+    try: # try para que el programa no se caiga si hay un error
+        conexion = conectar_db() # Conectar a la base de datos
+        if conexion is None: # si la conexion sigue en none:
+            return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500 # Devolver error 500
 
-        datos = request.form
-        Nombres = datos.get('nombre', '').strip()
-        Apellidos = datos.get('apellido', '').strip()
-        Telefono = datos.get('telefono', '').strip()
-        Correo = datos.get('correo', '').strip()
-        Usuario = datos.get('usuario', '').strip()
-        Contraseña = datos.get('contraseña', '').strip()
-        Color_principal = datos.get('color_principal', 'Blanco').strip()
+        datos = request.form # Obtener datos del formulario
+        Nombres = datos.get('nombre', '').strip() # Obtener y limpiar cada campo del formulario
+        Apellidos = datos.get('apellido', '').strip() # Obtener y limpiar cada campo del formulario
+        Telefono = datos.get('telefono', '').strip() # Obtener y limpiar cada campo del formulario
+        Correo = datos.get('correo', '').strip() # Obtener y limpiar cada campo del formulario
+        Usuario = datos.get('usuario', '').strip() # Obtener y limpiar cada campo del formulario
+        Contraseña = datos.get('contraseña', '').strip() # Obtener y limpiar cada campo del formulario
+        Color_principal = datos.get('color_principal', 'Blanco').strip() # Obtener y limpiar cada campo del formulario
 
-        if not all([Nombres, Apellidos, Telefono, Correo, Usuario, Contraseña]):
-            return jsonify({'error': 'Todos los campos son obligatorios'}), 400
+        if not all([Nombres, Apellidos, Telefono, Correo, Usuario, Contraseña]): # Verificar que todos los campos estén completos
+            return jsonify({'error': 'Todos los campos son obligatorios'}), 400 # Devolver error 400 si falta algún campo
 
-        if not Telefono.isdigit():
-            return jsonify({'error': 'El teléfono debe contener solo números'}), 400
+        if not Telefono.isdigit(): # Verificar que el teléfono contenga solo números
+            return jsonify({'error': 'El teléfono debe contener solo números'}), 400 # Devolver error 400 si el teléfono no es válido
 
-        cursor = conexion.cursor()
+        cursor = conexion.cursor() # Crear cursor para ejecutar consultas
 
         # Verificar duplicados
         cursor.execute("""
             SELECT "ID_Cuenta" FROM public."Cuentas"
             WHERE "Usuario" = %s OR "Correo" = %s
-        """, (Usuario, Correo))
+        """, (Usuario, Correo)) # Consulta para verificar si el usuario o correo ya existen
         
-        if cursor.fetchone():
+        if cursor.fetchone(): # Si se encuentra alguna fila
             return jsonify({'error': 'El usuario o correo ya está registrado en NoteFlow'}), 409
 
         # Generar nuevo ID_Cuenta
-        cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"')
-        nuevo_id = cursor.fetchone()[0]
+        cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"') # Consulta para obtener el siguiente ID disponible
+        nuevo_id = cursor.fetchone()[0] # Obtener el nuevo ID
 
         cursor.execute("""
             INSERT INTO public."Cuentas"
             ("ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Color_principal")
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING "ID_Cuenta";
-        """, (nuevo_id, Usuario, Contraseña, Nombres, Apellidos, Telefono, Correo, Color_principal))
+        """, (nuevo_id, Usuario, Contraseña, Nombres, Apellidos, Telefono, Correo, Color_principal)) # Insertar nuevo usuario en la base de datos
 
-        cuenta_id = cursor.fetchone()[0]
-        conexion.commit()
+        cuenta_id = cursor.fetchone()[0] # Obtener el ID de la cuenta recién creada
+        conexion.commit() # Confirmar los cambios en la base de datos
 
         # Iniciar sesión automáticamente
-        session['usuario_id'] = cuenta_id
-        session['usuario_nombre'] = Usuario
+        session['usuario_id'] = cuenta_id # Guardar el ID de usuario en la sesión
+        session['usuario_nombre'] = Usuario # Guardar el nombre de usuario en la sesión
 
-        return jsonify({
+        return jsonify({ 
             'success': True,
             'mensaje': 'Registro exitoso',
             'id': cuenta_id,
             'redirect': '/dashboard'
-        }), 201
+        }), 201 # retorna el mensaje en formato json con código 201
 
-    except Exception as e:
-        if conexion:
-            conexion.rollback()
-        print(f"Error al registrar el usuario: {e}")
-        return jsonify({'error': 'Error al procesar la solicitud'}), 500
+    except Exception as e: # Manejo de errores
+        if conexion: # si la conexion sigue
+            conexion.rollback() # Revertir cambios en caso de error
+        print(f"Error al registrar el usuario: {e}") # Imprimir error en consola
+        return jsonify({'error': 'Error al procesar la solicitud'}), 500 # Devolver error 500
 
-    finally:
-        if cursor:
-            cursor.close()
-        if conexion:
-            conexion.close()
+    finally:  # Finalmente
+        if cursor: # si el cursor sigue abierto
+            cursor.close() # Cerrar el cursor
+        if conexion: # si la conexion sigue abierta
+            conexion.close() # Cerrar la conexión
 
 # ==============================================================================
-# ✅ 3. INICIAR SESIÓN (Usuario/Contraseña)
+# 3. INICIAR SESIÓN (Usuario/Contraseña)
 # ==============================================================================
-@app.route('/iniciarsesion.html')
-def mostrar_login():
+@app.route('/iniciarsesion.html') # Ruta de inicio de sesión
+def mostrar_login(): # funcion que lo muestra
     """Formulario de inicio de sesión."""
-    return render_template("iniciarsesion.html")
+    return render_template("iniciarsesion.html") # Renderizar plantilla de inicio de sesión
 
-@app.route('/procesar-login', methods=['POST'])
-def procesar_login():
+@app.route('/procesar-login', methods=['POST']) # Ruta para procesar el inicio de sesión
+def procesar_login(): # Funcion para procesar el inicio de sesión
     """Valida credenciales del usuario y crea la sesión."""
-    conexion = None
-    cursor = None
-    try:
-        conexion = conectar_db()
-        if conexion is None:
-            return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
+    conexion = None # Conexion a la base de datos nula por ahora
+    cursor = None # al igual que el cursor para devolver filas en formato diccionario
+    try: # try para que el programa no se caiga si hay un error
+        conexion = conectar_db() # Conectar a la base de datos
+        if conexion is None: # si la conexion sigue en none:
+            return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500 # Devolver error 500
 
-        datos = request.form
-        Usuario = datos.get('usuario', '').strip()
-        Contraseña = datos.get('contraseña', '').strip()
+        datos = request.form # Obtener datos del formulario 
+        Usuario = datos.get('usuario', '').strip() # Obtener y limpiar cada campo del formulario
+        Contraseña = datos.get('contraseña', '').strip() # Obtener y limpiar cada campo del formulario
 
-        if not Usuario or not Contraseña:
-            return jsonify({'error': 'Usuario y contraseña son obligatorios'}), 400
+        if not Usuario or not Contraseña: # Verificar que ambos campos estén completos
+            return jsonify({'error': 'Usuario y contraseña son obligatorios'}), 400 # Devolver error 400 si falta algún campo
 
-        cursor = conexion.cursor(cursor_factory=RealDictCursor)
+        cursor = conexion.cursor(cursor_factory=RealDictCursor) # Crear cursor para ejecutar consultas y devolver filas como diccionarios
 
-        cursor.execute("""
+        cursor.execute(""" 
             SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", "Color_principal"
             FROM public."Cuentas"
             WHERE "Usuario" = %s AND "Contraseña" = %s
-        """, (Usuario, Contraseña))
+        """, (Usuario, Contraseña)) # Consulta para verificar credenciales
 
-        usuario = cursor.fetchone()
+        usuario = cursor.fetchone() # Obtener la fila resultante
 
-        if usuario:
-            session['usuario_id'] = usuario['ID_Cuenta']
-            session['usuario_nombre'] = usuario['Usuario']
+        if usuario: # Si se encuentra el usuario
+            session['usuario_id'] = usuario['ID_Cuenta'] # Guardar el ID de usuario en la sesión
+            session['usuario_nombre'] = usuario['Usuario'] # Guardar el nombre de usuario en la sesión
             
-            return jsonify({
+            return jsonify({ 
                 'success': True,
                 'mensaje': 'Inicio de sesión exitoso',
                 'redirect': '/dashboard'
-            }), 200
+            }), 200 # retorna el mensaje en formato json con código 200
         else:
-            return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
+            return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401 # Devolver error 401 si las credenciales son incorrectas
 
-    except Exception as e:
-        print(f"Error al iniciar sesión: {e}")
-        return jsonify({'error': 'Error al procesar la solicitud'}), 500
+    except Exception as e: # Manejo de errores
+        print(f"Error al iniciar sesión: {e}") # Imprimir error en consola
+        return jsonify({'error': 'Error al procesar la solicitud'}), 500 # Devolver error 500
 
-    finally:
-        if cursor:
-            cursor.close()
-        if conexion:
-            conexion.close()
+    finally: # Finalmente
+        if cursor: # si el cursor sigue abierto
+            cursor.close() # Cerrar el cursor
+        if conexion: # si la conexion sigue abierta
+            conexion.close() # Cerrar la conexión
 
 # ==============================================================================
-# ✅ 4. INICIAR SESIÓN CON GOOGLE
+# 4. INICIAR SESIÓN CON GOOGLE
 # ==============================================================================
 @app.route("/google/login") # Iniciar login con Google
 def google_login(): # Definimos la función para manejar el login con Google
 
     client_config = { # Configuración del cliente para Google OAuth
-        "web": {
+        "web": { 
             "client_id": os.getenv("GOOGLE_CLIENT_ID"),
             "project_id": "note-flow",
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -288,8 +288,8 @@ def google_login(): # Definimos la función para manejar el login con Google
     }
 
     flow = Flow.from_client_config( # Crear Flow de Google
-        client_config,
-        scopes=[
+        client_config, 
+        scopes=[ 
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile",
             "openid"
@@ -371,7 +371,7 @@ def google_callback(): # Definimos la función para manejar el callback de Googl
         row = cur.fetchone()
 
         if not row:
-            # ❌ EL CORREO NO EXISTE → MOSTRAR MENSAJE BONITO
+            #  EL CORREO NO EXISTE → MOSTRAR template de cuenta no registrada
             return render_template("cuenta_no_registrada.html")
 
         # ✔ Usuario encontrado → iniciar sesión normal
@@ -392,10 +392,10 @@ def google_callback(): # Definimos la función para manejar el callback de Googl
 
 
 # ==============================================================================
-# ✅ 5. OLVIDÉ MI CONTRASEÑA (Restablecer)
+# 5. OLVIDÉ MI CONTRASEÑA (Restablecer)
 # ==============================================================================
-@app.route('/olvide-contrasena')
-def mostrar_olvide_contrasena():
+@app.route('/olvide-contrasena') # Ruta para mostrar el formulario de olvido de contraseña
+def mostrar_olvide_contrasena(): 
     """Muestra el formulario para ingresar el correo electrónico."""
     return render_template('olvide_contrasena.html')
 
