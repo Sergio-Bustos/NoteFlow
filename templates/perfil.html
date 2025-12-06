@@ -4,187 +4,663 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil | NoteFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
     <style>
         :root {
+            /* Colores Tema Claro */
             --primary: #3498db;
-            --bg: #f5f6fa;
-            --text: #2c3e50;
-            --card-bg: #ffffff;
+            --bg-claro: #f5f6fa;
+            --text-claro: #2c3e50;
+            --card-bg-claro: #ffffff;
+            --border-claro: #e1e4ea;
+            
+            /* Colores Tema Oscuro */
+            --bg-oscuro: #1a1a1a;
+            --text-oscuro: #e0e0e0;
+            --card-bg-oscuro: #2d2d2d;
+            --border-oscuro: #404040;
+            
+            /* Colores comunes */
             --radius: 12px;
-            --border: #e1e4ea;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
         }
 
-        body {
+        * {
+            box-sizing: border-box;
             margin: 0;
-            background: var(--bg);
-            font-family: "Segoe UI", sans-serif;
-            color: var(--text);
+            padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
+        /* ========== TEMA CLARO (por defecto) ========== */
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        body.tema-claro {
+            background: var(--bg-claro);
+            color: var(--text-claro);
+        }
+
+        body.tema-claro .card {
+            background: var(--card-bg-claro);
+            color: var(--text-claro);
+            border: 1px solid var(--border-claro);
+        }
+
+        body.tema-claro input,
+        body.tema-claro select {
+            background: white;
+            color: var(--text-claro);
+            border-color: var(--border-claro);
+        }
+
+        body.tema-claro .back-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ========== TEMA OSCURO ========== */
+        body.tema-oscuro {
+            background: var(--bg-oscuro);
+            color: var(--text-oscuro);
+        }
+
+        body.tema-oscuro .card {
+            background: var(--card-bg-oscuro);
+            color: var(--text-oscuro);
+            border: 1px solid var(--border-oscuro);
+        }
+
+        body.tema-oscuro input,
+        body.tema-oscuro select {
+            background: #333;
+            color: var(--text-oscuro);
+            border-color: var(--border-oscuro);
+        }
+
+        body.tema-oscuro input::placeholder {
+            color: #888;
+        }
+
+        body.tema-oscuro .back-btn {
+            background: var(--primary);
+            color: white;
+        }
+
+        body.tema-oscuro .title {
+            color: var(--primary);
+        }
+
+        body.tema-oscuro .password-requirements {
+            color: #aaa;
+        }
+
+        /* ========== ESTILOS GENERALES ========== */
         .container {
-            max-width: 850px;
+            max-width: 900px;
             margin: 40px auto;
             padding: 20px;
         }
 
-        .card {
-            background: var(--card-bg);
-            padding: 25px;
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
             border-radius: var(--radius);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #2980b9 !important;
+            transform: translateX(-3px);
+        }
+
+        .card {
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             margin-bottom: 25px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
         }
 
         .title {
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .perfil-info {
             display: flex;
             gap: 30px;
             align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .perfil-info .avatar-container {
+            position: relative;
         }
 
         .perfil-info img {
-            width: 110px;
-            height: 110px;
+            width: 120px;
+            height: 120px;
             object-fit: cover;
             border-radius: 50%;
-            border: 3px solid var(--primary);
+            border: 4px solid var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .perfil-info .data {
+            flex: 1;
         }
 
         .perfil-info .data p {
-            margin: 5px 0;
-            font-size: 1rem;
+            margin: 10px 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .perfil-info .data p i {
+            color: var(--primary);
+            width: 20px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         label {
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            display: block;
+            margin-bottom: 8px;
         }
 
         input, select {
             width: 100%;
-            padding: 10px;
+            padding: 12px 15px;
             border-radius: var(--radius);
-            border: 1px solid var(--border);
-            margin-top: 5px;
+            border: 2px solid;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            cursor: pointer;
         }
 
         button {
-            padding: 10px 18px;
+            padding: 12px 24px;
             background: var(--primary);
             border: none;
             border-radius: var(--radius);
             color: white;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.3s;
+            font-size: 1rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         button:hover {
-            opacity: 0.9;
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         .logout {
-            background: #b71c1c;
+            background: var(--danger);
+            width: 100%;
+        }
+
+        .logout:hover {
+            background: #c0392b;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .password-requirements {
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .preview-foto {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .preview-foto img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: var(--radius);
+            border: 2px solid;
+        }
+
+        .tema-actual {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        body.tema-claro .tema-actual {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        body.tema-oscuro .tema-actual {
+            background: #1f3a52;
+            color: #64b5f6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 20px auto;
+            }
+
+            .perfil-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Animaciones para notificaciones */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
+    
+    <div class="header">
+        <a href="/dashboard" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
 
+    <!-- Alertas -->
+    <div id="alert-container"></div>
+
+    <!-- INFORMACIÓN DEL PERFIL -->
     <div class="card">
-        <div class="title">Perfil del Usuario</div>
-
-        <div class="perfil-info">
-
-            <img src="{{ url_for('static', filename=usuario.Foto or 'img/default_profile.png') }}">
-
-            <div class="data">
-<<<<<<< HEAD
-                <p><strong>Nombre:</strong> {{ usuario.Nombre }}</p>
-=======
-                <p><strong>Nombre:</strong> {{ usuario.Nombres }}</p>
->>>>>>> 61fb48e563ed1cd5681603d2b1caeaf69a86659c
-                <p><strong>Correo:</strong> {{ usuario.Correo }}</p>
-            </div>
-
+        <div class="title">
+            <i class="fas fa-user-circle"></i>
+            Información del Perfil
         </div>
 
-        <form action="/perfil/subir-foto" method="POST" enctype="multipart/form-data" style="margin-top:20px;">
-            <label>Cambiar foto de perfil</label>
-            <input type="file" name="foto" accept="image/*" required>
-            <button>Cargar nueva imagen</button>
+        <div class="perfil-info">
+            <div class="avatar-container">
+                <img id="foto-perfil" src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}" alt="Foto de perfil">
+            </div>
+
+            <div class="data">
+                <p><i class="fas fa-user"></i> <strong>Nombre:</strong> {{ usuario.Nombres }} {{ usuario.Apellidos }}</p>
+                <p><i class="fas fa-envelope"></i> <strong>Correo:</strong> {{ usuario.Correo }}</p>
+                <p><i class="fas fa-at"></i> <strong>Usuario:</strong> {{ usuario.Usuario }}</p>
+                <p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> {{ usuario.Telefono }}</p>
+            </div>
+        </div>
+
+        <!-- SUBIR FOTO DE PERFIL -->
+        <form id="form-foto" enctype="multipart/form-data" style="margin-top: 30px; border-top: 1px solid var(--border-claro); padding-top: 20px;">
+            <div class="form-group">
+                <label><i class="fas fa-camera"></i> Cambiar foto de perfil</label>
+                <input type="file" name="foto" id="input-foto" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
+                <small class="password-requirements">Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 5MB)</small>
+            </div>
+            <div class="preview-foto" id="preview-foto" style="display: none;">
+                <p><strong>Vista previa:</strong></p>
+                <img id="preview-img" src="" alt="Vista previa">
+            </div>
+            <button type="submit">
+                <i class="fas fa-upload"></i> Cargar nueva imagen
+            </button>
         </form>
     </div>
 
-
-
+    <!-- PREFERENCIAS DE APARIENCIA -->
     <div class="card">
-        <div class="title">Preferencias de Apariencia</div>
+        <div class="title">
+            <i class="fas fa-palette"></i>
+            Preferencias de Apariencia
+        </div>
 
-        <form action="/perfil/cambiar-tema" method="POST">
+        <div class="tema-actual" id="tema-actual-badge">
+            <i class="fas fa-sun" id="tema-icon"></i>
+            <span id="tema-texto">Tema Claro Activo</span>
+        </div>
 
+        <form id="form-tema">
             <div class="form-group">
-                <label>Tema del sistema</label>
-                <select name="tema">
-<<<<<<< HEAD
-                    <option value="claro" {% if usuario.color_principal == "claro" %}selected{% endif %}>Modo claro</option>
-                    <option value="oscuro" {% if usuario.color_principal == "oscuro" %}selected{% endif %}>Modo oscuro</option>
-=======
-                    <option value="claro" {% if usuario.color_principal == "Blanco" %}selected{% endif %}>Modo claro</option>
-                    <option value="oscuro" {% if usuario.color_principal == "Negro" %}selected{% endif %}>Modo oscuro</option>
->>>>>>> 61fb48e563ed1cd5681603d2b1caeaf69a86659c
+                <label><i class="fas fa-adjust"></i> Cambiar tema del sistema</label>
+                <select name="tema" id="select-tema">
+                    <option value="claro" {% if usuario.Color_principal == "Blanco" %}selected{% endif %}>
+                        ☀️ Modo Claro
+                    </option>
+                    <option value="oscuro" {% if usuario.Color_principal == "Negro" %}selected{% endif %}>
+                        🌙 Modo Oscuro
+                    </option>
                 </select>
             </div>
 
-            <button>Guardar Cambios</button>
+            <button type="submit">
+                <i class="fas fa-save"></i> Aplicar Tema
+            </button>
         </form>
     </div>
 
-
-
+    <!-- CAMBIAR CONTRASEÑA -->
     <div class="card">
-        <div class="title">Cambiar Contraseña</div>
+        <div class="title">
+            <i class="fas fa-lock"></i>
+            Cambiar Contraseña
+        </div>
 
-        <form action="/perfil/cambiar-password" method="POST">
-
+        <form id="form-password">
             <div class="form-group">
-                <label>Contraseña actual</label>
-                <input type="password" name="password_actual" required>
+                <label><i class="fas fa-key"></i> Contraseña actual</label>
+                <input type="password" name="password_actual" id="password_actual" required>
             </div>
 
             <div class="form-group">
-                <label>Nueva contraseña</label>
-                <input type="password" name="password_nueva" maxlength="15" required>
+                <label><i class="fas fa-lock"></i> Nueva contraseña</label>
+                <input type="password" name="password_nueva" id="password_nueva" minlength="6" maxlength="15" required>
+                <small class="password-requirements">Entre 6 y 15 caracteres</small>
             </div>
 
             <div class="form-group">
-                <label>Confirmar nueva contraseña</label>
-                <input type="password" name="password_confirmacion" maxlength="15" required>
+                <label><i class="fas fa-check-circle"></i> Confirmar nueva contraseña</label>
+                <input type="password" name="password_confirmacion" id="password_confirmacion" minlength="6" maxlength="15" required>
             </div>
 
-            <button>Actualizar Contraseña</button>
+            <button type="submit">
+                <i class="fas fa-sync-alt"></i> Actualizar Contraseña
+            </button>
         </form>
     </div>
 
-
-
+    <!-- CERRAR SESIÓN -->
     <div class="card">
-        <form action="/perfil/cerrar-sesion">
-            <button class="logout">Cerrar sesión</button>
-        </form>
+        <button class="logout" onclick="confirmarCerrarSesion()">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </button>
     </div>
 
 </div>
+
+<script>
+    // ========== APLICAR TEMA AL CARGAR LA PÁGINA ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorPrincipal = "{{ usuario.Color_principal }}";
+        aplicarTemaVisual(colorPrincipal === "Negro" ? "oscuro" : "claro");
+    });
+
+    function aplicarTemaVisual(tema) {
+        const body = document.body;
+        const icon = document.getElementById('tema-icon');
+        const texto = document.getElementById('tema-texto');
+        
+        if (tema === "oscuro") {
+            body.classList.add('tema-oscuro');
+            body.classList.remove('tema-claro');
+            icon.className = 'fas fa-moon';
+            texto.textContent = 'Tema Oscuro Activo';
+        } else {
+            body.classList.add('tema-claro');
+            body.classList.remove('tema-oscuro');
+            icon.className = 'fas fa-sun';
+            texto.textContent = 'Tema Claro Activo';
+        }
+    }
+
+    // ========== FUNCIONES DE ALERTA ==========
+    function mostrarAlerta(mensaje, tipo) {
+        const container = document.getElementById('alert-container');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${tipo} show`;
+        alert.innerHTML = `
+            <i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${mensaje}</span>
+        `;
+        container.innerHTML = '';
+        container.appendChild(alert);
+        
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        setTimeout(() => {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    }
+
+    // ========== PREVIEW DE FOTO ==========
+    document.getElementById('input-foto').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                mostrarAlerta('El archivo es muy grande. Máximo 5MB', 'error');
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const previewContainer = document.getElementById('preview-foto');
+                const previewImg = document.getElementById('preview-img');
+                previewImg.src = event.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // ========== SUBIR FOTO DE PERFIL ==========
+    document.getElementById('form-foto').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const btn = this.querySelector('button');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+
+        try {
+            const response = await fetch('/perfil/subir-foto', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                mostrarAlerta(data.mensaje, 'success');
+                document.getElementById('foto-perfil').src = data.nueva_foto;
+                document.getElementById('preview-foto').style.display = 'none';
+                this.reset();
+            } else {
+                mostrarAlerta(data.error || 'Error al subir la foto', 'error');
+            }
+        } catch (error) {
+            mostrarAlerta('Error de conexión al subir la foto', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload"></i> Cargar nueva imagen';
+        }
+    });
+
+    // ========== CAMBIAR TEMA ==========
+    document.getElementById('form-tema').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const temaNuevo = formData.get('tema');
+        const btn = this.querySelector('button');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aplicando...';
+
+        try {
+            const response = await fetch('/perfil/cambiar-tema', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Aplicar tema inmediatamente SIN recargar
+                aplicarTemaVisual(temaNuevo);
+                mostrarAlerta(data.mensaje, 'success');
+            } else {
+                mostrarAlerta(data.error || 'Error al cambiar tema', 'error');
+            }
+        } catch (error) {
+            mostrarAlerta('Error de conexión', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Aplicar Tema';
+        }
+    });
+
+    // ========== CAMBIAR CONTRASEÑA ==========
+    document.getElementById('form-password').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const actual = document.getElementById('password_actual').value;
+        const nueva = document.getElementById('password_nueva').value;
+        const confirma = document.getElementById('password_confirmacion').value;
+
+        if (nueva !== confirma) {
+            mostrarAlerta('Las contraseñas nuevas no coinciden', 'error');
+            return;
+        }
+
+        if (nueva.length < 6 || nueva.length > 15) {
+            mostrarAlerta('La contraseña debe tener entre 6 y 15 caracteres', 'error');
+            return;
+        }
+
+        const formData = new FormData(this);
+        const btn = this.querySelector('button');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+
+        try {
+            const response = await fetch('/perfil/cambiar-password', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                mostrarAlerta(data.mensaje, 'success');
+                this.reset();
+            } else {
+                mostrarAlerta(data.error || 'Error al cambiar contraseña', 'error');
+            }
+        } catch (error) {
+            mostrarAlerta('Error de conexión', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Contraseña';
+        }
+    });
+
+    // ========== CERRAR SESIÓN ==========
+    function confirmarCerrarSesion() {
+        if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            window.location.href = '/perfil/cerrar-sesion';
+        }
+    }
+</script>
 
 </body>
 </html>

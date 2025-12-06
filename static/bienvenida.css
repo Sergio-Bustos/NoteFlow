@@ -15,18 +15,7 @@
 */
 body {
     min-height: 100vh;
-    background-color: #dcdcdc;
-    background-image: /*   */ 
-        radial-gradient(circle at 15% 20%, rgba(0, 0, 0, 0.7) 0%, transparent 55%), /*  degradado transparente negro */
-        radial-gradient(circle at 80% 30%, rgba(30, 30, 30, 0.6) 0%, transparent 60%), /*  degradado transparente gris oscuro */
-        radial-gradient(circle at 40% 80%, rgba(60, 60, 60, 0.5) 0%, transparent 50%),  /*    */ 
-        radial-gradient(circle at 70% 70%, rgba(90, 90, 90, 0.45) 0%, transparent 55%),
-        radial-gradient(circle at 25% 60%, rgba(0, 0, 0, 0.6) 0%, transparent 60%),
-        radial-gradient(circle at 60% 20%, rgba(150, 150, 150, 0.35) 0%, transparent 55%),
-        radial-gradient(circle at 85% 80%, rgba(200, 200, 200, 0.4) 0%, transparent 60%),
-        radial-gradient(circle at 35% 35%, rgba(230, 230, 230, 0.45) 0%, transparent 55%),
-        radial-gradient(circle at 10% 85%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
-        radial-gradient(circle at 90% 50%, rgba(255, 255, 255, 0.7) 0%, transparent 65%);
+    background-color: #706a6a; /* Gris base */
     background-blend-mode: normal;
     background-size: cover;
     overflow-x: hidden;
