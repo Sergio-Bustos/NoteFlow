@@ -322,53 +322,53 @@ def google_callback(): # Definimos la función para manejar el callback de Googl
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
             "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
             "redirect_uris": [os.getenv("GOOGLE_REDIRECT_URI")]
-        }
+        } # Cierre del diccionario
     }
 
     # Crear Flow de Google
-    flow = Flow.from_client_config(
-        client_config,
+    flow = Flow.from_client_config( # Crear Flow de Google
+        client_config, # Configuración del cliente
         scopes=[
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile",
             "openid"
         ],
-        state=session.get("state"),
-        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
+        state=session.get("state"), # Verificar el estado guardado en la sesión
+        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI") # Redirigir a esta URL después del login
     )
 
     # Obtener token
-    flow.fetch_token(authorization_response=request.url)
-    credentials = flow.credentials
+    flow.fetch_token(authorization_response=request.url) # Intercambiar el código de autorización por un token
+    credentials = flow.credentials # Obtener las credenciales del flujo
 
     # Obtener información del usuario desde Google
-    user_info = requests.get(
-        "https://www.googleapis.com/oauth2/v1/userinfo",
-        params={"alt": "json", "access_token": credentials.token}
-    ).json()
+    user_info = requests.get( # Hacer solicitud a la API de Google para obtener información del usuario
+        "https://www.googleapis.com/oauth2/v1/userinfo", # Endpoint de la API
+        params={"alt": "json", "access_token": credentials.token} # Parámetros de la solicitud
+    ).json() #  Convertir la respuesta a JSON
 
     # -------------------------------
     # DATOS QUE NECESITAMOS
     # -------------------------------
-    email = user_info.get("email")
-    if not email:
-        return "No se pudo obtener el correo desde Google.", 400
+    email = user_info.get("email") # Obtener el correo electrónico del usuario
+    if not email: # Si no se pudo obtener el correo
+        return "No se pudo obtener el correo desde Google.", 400 # Respuesta de error al usuario
 
     # -------------------------------
     # REVISAR SI EL CORREO EXISTE
     # -------------------------------
-    conn = None
-    cur = None
+    conn = None # Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
 
     try:
-        conn = conectar_db()
-        if conn is None:
-            return "Error de conexión con la base de datos", 500
-        cur = conn.cursor()
+        conn = conectar_db() # Conectar a la base de datos
+        if conn is None: # si la conexion sigue en none:
+            return "Error de conexión con la base de datos", 500 # Respuesta de error al usuario
+        cur = conn.cursor()  # Crear cursor para ejecutar consultas
 
         # ¿Existe este correo en la BD?
-        cur.execute('SELECT "ID_Cuenta" FROM public."Cuentas" WHERE "Correo" = %s', (email,))
-        row = cur.fetchone()
+        cur.execute('SELECT "ID_Cuenta" FROM public."Cuentas" WHERE "Correo" = %s', (email,)) # Consulta para verificar si el correo existe
+        row = cur.fetchone() # Obtener la fila resultante
 
         if not row:
             #  EL CORREO NO EXISTE → MOSTRAR template de cuenta no registrada
@@ -395,60 +395,60 @@ def google_callback(): # Definimos la función para manejar el callback de Googl
 # 5. OLVIDÉ MI CONTRASEÑA (Restablecer)
 # ==============================================================================
 @app.route('/olvide-contrasena') # Ruta para mostrar el formulario de olvido de contraseña
-def mostrar_olvide_contrasena(): 
+def mostrar_olvide_contrasena(): # Funcion que lo muestra
     """Muestra el formulario para ingresar el correo electrónico."""
-    return render_template('olvide_contrasena.html')
+    return render_template('olvide_contrasena.html') # Renderizar plantilla de olvido de contraseña
 
-@app.route('/procesar-olvide-contrasena', methods=['POST'])
-def procesar_olvide_contrasena():
+@app.route('/procesar-olvide-contrasena', methods=['POST']) # Ruta para procesar el olvido de contraseña
+def procesar_olvide_contrasena(): # Funcion para procesar el olvido de contraseña
     """Genera token, lo guarda y envía el correo."""
-    conn = None
-    cur = None
-    correo = request.form.get('correo', '').strip()
+    conn = None # Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
+    correo = request.form.get('correo', '').strip() # Obtener y limpiar el correo del formulario
 
-    if not correo:
-        return jsonify({'error': 'El correo es obligatorio'}), 400
+    if not correo: # Verificar que el correo esté completo
+        return jsonify({'error': 'El correo es obligatorio'}), 400 # Devolver error 400 si falta el correo
 
     try:
-        conn = conectar_db()
-        if conn is None:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        conn = conectar_db() # Conectar a la base de datos
+        if conn is None: # si la conexion sigue en none:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500 # Devolver error 500
 
-        cur = conn.cursor()
+        cur = conn.cursor() # Crear cursor para ejecutar consultas
         
-        cur.execute('SELECT "ID_Cuenta", "Usuario" FROM public."Cuentas" WHERE "Correo" = %s', (correo,))
-        usuario_row = cur.fetchone()
+        cur.execute('SELECT "ID_Cuenta", "Usuario" FROM public."Cuentas" WHERE "Correo" = %s', (correo,)) # Consulta para verificar si el correo existe
+        usuario_row = cur.fetchone() # Obtener la fila resultante
 
-        if not usuario_row:
-            return jsonify({
+        if not usuario_row:# Si no se encuentra el correo
+            return jsonify({  # Devolver mensaje genérico para evitar revelar si el correo existe
                 'success': True,
                 'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
-            }), 200
+            }), 200 # retorna el mensaje en formato json con código 200
 
-        usuario_id = usuario_row[0]
-        usuario_nombre = usuario_row[1]
+        usuario_id = usuario_row[0] # Obtener el ID del usuario
+        usuario_nombre = usuario_row[1] # Obtener el nombre del usuario
 
-        token = secrets.token_urlsafe(32)
-        expira = datetime.now() + timedelta(hours=1)
+        token = secrets.token_urlsafe(32) # Generar token seguro
+        expira = datetime.now() + timedelta(hours=1) # Establecer expiración del token (1 hora)
         
-        cur.execute("""
+        cur.execute(""" 
             UPDATE public."Cuentas" 
             SET "reset_token" = %s, "reset_token_expira" = %s
             WHERE "ID_Cuenta" = %s
-        """, (token, expira, usuario_id))
+        """, (token, expira, usuario_id)) # Guardar el token y su expiración en la base de datos
 
-        conn.commit()
+        conn.commit() # Confirmar los cambios en la base de datos|
 
-        reset_url = url_for('mostrar_restablecer_contrasena', token=token, _external=True)
-        
-        msg = Message('Restablecimiento de Contraseña NoteFlow', recipients=[correo])
-        msg.body = f"""Hola {usuario_nombre},
+        reset_url = url_for('mostrar_restablecer_contrasena', token=token, _external=True)# Generar URL de restablecimiento
+         
+        msg = Message('Restablecimiento de Contraseña NoteFlow', recipients=[correo]) # Crear el mensaje de correo
+        msg.body = f"""Hola {usuario_nombre}, 
 
 Has solicitado restablecer tu contraseña para NoteFlow.
 
 Haz clic en el siguiente enlace para completar el proceso:
 
-{reset_url}
+{reset_url} 
 
 Este enlace expirará en 1 hora.
 
@@ -458,194 +458,194 @@ Saludos,
 Equipo NoteFlow
 """
         try:
-            mail.send(msg)
-        except Exception as mail_e:
-            print(f"Error al enviar correo: {mail_e}")
-            return jsonify({'error': 'Error al enviar el correo, revisa la configuración del MAIL.'}), 500
+            mail.send(msg) # Enviar el correo
+        except Exception as mail_e: # Manejo de errores al enviar correo
+            print(f"Error al enviar correo: {mail_e}") # Imprimir error en consola
+            return jsonify({'error': 'Error al enviar el correo, revisa la configuración del MAIL.'}), 500  # Devolver error 500 si falla el envío
 
-        return jsonify({
-            'success': True,
-            'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
-        }), 200
+        return jsonify({ # Devolver mensaje de éxito
+            'success': True, #  Indica que la operación fue exitosa
+            'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.' # Mensaje genérico para evitar revelar si el correo existe
+        }), 200 # retorna el mensaje en formato json con código 200
 
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        print(f"Error en procesar-olvide-contrasena: {e}")
-        return jsonify({'error': 'Error interno del servidor. Intenta más tarde.'}), 500
+    except Exception as e: # Manejo de errores
+        if conn: # si la conexion sigue
+            conn.rollback() # Revertir cambios en caso de error
+        print(f"Error en procesar-olvide-contrasena: {e}") # Imprimir error en consola
+        return jsonify({'error': 'Error interno del servidor. Intenta más tarde.'}), 500 # Devolver error 500
 
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    finally: # Finalmente
+        if cur: # si el cursor sigue abierto
+            cur.close() # Cerrar el cursor
+        if conn: # si la conexion sigue abierta
+            conn.close() # Cerrar la conexión
 
-@app.route('/restablecer-contrasena/<token>')
-def mostrar_restablecer_contrasena(token):
-    """Muestra el formulario de restablecimiento con validación de token"""
-    conn = None
-    cur = None
+@app.route('/restablecer-contrasena/<token>') # Ruta para mostrar el formulario de restablecimiento de contraseña con token
+def mostrar_restablecer_contrasena(token):  # Funcion que lo muestra
+    """Muestra el formulario de restablecimiento con validación de token""" # Muestra el formulario de restablecimiento de contraseña
+    conn = None # Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
     try:
-        conn = conectar_db()
-        if conn is None:
-            return redirect(url_for('mostrar_login'))
+        conn = conectar_db() # Conectar a la base de datos
+        if conn is None: # si la conexion sigue en none:
+            return redirect(url_for('mostrar_login')) # Redirigir al login si hay error de conexión
 
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur = conn.cursor(cursor_factory=RealDictCursor) # Crear cursor para ejecutar consultas y devolver filas como diccionarios
 
         cur.execute("""
             SELECT "ID_Cuenta" 
             FROM public."Cuentas" 
             WHERE "reset_token" = %s AND "reset_token_expira" > %s
-        """, (token, datetime.now()))
+        """, (token, datetime.now())) # Consulta para verificar si el token es válido y no ha expirado
         
-        usuario_row = cur.fetchone()
+        usuario_row = cur.fetchone() # Obtener la fila resultante
 
-        if usuario_row:
-            return render_template("restablecer_contrasena.html", token=token, error=None)
-        else:
-            return render_template("restablecer_contrasena.html", token=None, error="El enlace de restablecimiento no es válido o ha expirado. Vuelve a solicitar uno.")
+        if usuario_row: # Si el token es válido
+            return render_template("restablecer_contrasena.html", token=token, error=None) # Renderizar plantilla de restablecimiento con el token
+        else: # Si el token no es válido o ha expirado
+            return render_template("restablecer_contrasena.html", token=None, error="El enlace de restablecimiento no es válido o ha expirado. Vuelve a solicitar uno.") # Renderizar plantilla de restablecimiento sin token y con mensaje de error
 
-    except Exception as e:
-        print(f"Error al verificar token: {e}")
-        return render_template("restablecer_contrasena.html", token=None, error="Error interno al procesar la solicitud.")
+    except Exception as e: # Manejo de errores
+        print(f"Error al verificar token: {e}") # Imprimir error en consola
+        return render_template("restablecer_contrasena.html", token=None, error="Error interno al procesar la solicitud.") # Renderizar plantilla de restablecimiento sin token y con mensaje de error
 
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    finally: # Finalmente
+        if cur: #   si el cursor sigue abierto
+            cur.close() # Cerrar el cursor
+        if conn: # si la conexion sigue abierta
+            conn.close() # Cerrar la conexión
 
-@app.route('/procesar-restablecer-contrasena', methods=['POST'])
-def procesar_restablecer_contrasena():
+@app.route('/procesar-restablecer-contrasena', methods=['POST']) # Ruta para procesar el restablecimiento de contraseña
+def procesar_restablecer_contrasena(): # Funcion para procesar el restablecimiento de contraseña
     """Procesa el cambio de contraseña"""
-    conn = None
-    cur = None
+    conn = None # Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
     
-    token = request.form.get('token', '').strip()
-    nueva_contrasena = request.form.get('nueva_contrasena', '').strip()
+    token = request.form.get('token', '').strip() # Obtener y limpiar el token del formulario
+    nueva_contrasena = request.form.get('nueva_contrasena', '').strip() # Obtener y limpiar la nueva contraseña del formulario
     
-    if not token or not nueva_contrasena:
-        return jsonify({'error': 'Faltan datos obligatorios.'}), 400
+    if not token or not nueva_contrasena: # Verificar que ambos campos estén completos
+        return jsonify({'error': 'Faltan datos obligatorios.'}), 400 # Devolver error 400 si falta algún campo
 
     try:
-        conn = conectar_db()
-        if conn is None:
-            return jsonify({'error': 'Error de conexión a la base de datos.'}), 500
+        conn = conectar_db() # Conectar a la base de datos
+        if conn is None: # si la conexion sigue en none:
+            return jsonify({'error': 'Error de conexión a la base de datos.'}), 500 # Devolver error 500
 
-        cur = conn.cursor()
+        cur = conn.cursor() # Crear cursor para ejecutar consultas
 
         cur.execute("""
             SELECT "ID_Cuenta" 
             FROM public."Cuentas" 
             WHERE "reset_token" = %s AND "reset_token_expira" > %s
-        """, (token, datetime.now()))
+        """, (token, datetime.now())) # Consulta para verificar si el token es válido y no ha expirado
         
-        usuario_id_row = cur.fetchone()
+        usuario_id_row = cur.fetchone() # Obtener la fila resultante
 
-        if not usuario_id_row:
-            return jsonify({'error': 'El enlace ha expirado o es inválido. Intenta de nuevo.'}), 401
+        if not usuario_id_row: # Si el token no es válido o ha expirado
+            return jsonify({'error': 'El enlace ha expirado o es inválido. Intenta de nuevo.'}), 401 # Devolver error 401
 
-        usuario_id = usuario_id_row[0]
+        usuario_id = usuario_id_row[0] # Obtener el ID del usuario
 
         cur.execute("""
             UPDATE public."Cuentas"
             SET "Contraseña" = %s, "reset_token" = NULL, "reset_token_expira" = NULL
             WHERE "ID_Cuenta" = %s
-        """, (nueva_contrasena, usuario_id))
+        """, (nueva_contrasena, usuario_id)) # Actualizar la contraseña y limpiar el token
         
-        conn.commit()
+        conn.commit() # Confirmar los cambios en la base de datos|
 
-        return jsonify({
-            'success': True, 
-            'mensaje': 'Contraseña restablecida con éxito. Redirigiendo a Iniciar Sesión.',
-            'redirect': url_for('mostrar_login')
-        }), 200
+        return jsonify({ # Devolver mensaje de éxito
+            'success': True,  # Indica que la operación fue exitosa
+            'mensaje': 'Contraseña restablecida con éxito. Redirigiendo a Iniciar Sesión.', # Mensaje de éxito
+            'redirect': url_for('mostrar_login') # URL de redirección al login
+        }), 200 # retorna el mensaje en formato json con código 200
 
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        print(f"Error al restablecer contraseña: {e}")
-        return jsonify({'error': 'Error interno al procesar la solicitud.'}), 500
+    except Exception as e: # Manejo de errores
+        if conn: # si la conexion sigue
+            conn.rollback() # Revertir cambios en caso de error
+        print(f"Error al restablecer contraseña: {e}") # Imprimir error en consola
+        return jsonify({'error': 'Error interno al procesar la solicitud.'}), 500 # Devolver error 500
 
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    finally: # Finalmente
+        if cur: # si el cursor sigue abierto
+            cur.close() # Cerrar el cursor
+        if conn: # si la conexion sigue abierta
+            conn.close() # Cerrar la conexión
 
 # ==============================================================================
 # ✅ 6. CERRAR SESIÓN
 # ==============================================================================
-@app.route('/logout')
-def cerrar_sesion():
-    """Limpia la sesión activa y redirige a la página de inicio."""
-    session.clear()
-    return redirect(url_for('inicio'))
+@app.route('/logout') # Ruta para cerrar sesión
+def cerrar_sesion(): # Funcion para cerrar sesión
+    """Limpia la sesión activa y redirige a la página de inicio.""" # Limpia la sesión activa
+    session.clear() # Limpiar la sesión
+    return redirect(url_for('inicio')) # Redirigir a la página de inicio"
 
-@app.route("/perfil/cerrar-sesion")
-def cerrar_sesion_perfil():
-    """Cierra la sesión del usuario y redirige al login"""
-    session.clear()
-    return redirect(url_for('mostrar_login'))
+@app.route("/perfil/cerrar-sesion")  # Ruta para cerrar sesión desde el perfil
+def cerrar_sesion_perfil(): # Funcion para cerrar sesión desde el perfil
+    """Cierra la sesión del usuario y redirige al login""" # Limpia la sesión activa
+    session.clear() # Limpiar la sesión
+    return redirect(url_for('mostrar_login')) # Redirigir a la página de inicio de sesión
 
 # ==============================================================================
 # ✅ 7. DASHBOARD CON NOTAS RECIENTES
 # ==============================================================================
-@app.route('/dashboard')
-def dashboard():
+@app.route('/dashboard') # Ruta para el dashboard
+def dashboard(): # Funcion para mostrar el dashboard
     """
     Carga página de dashboard con:
       - datos del usuario (Nombres, color_principal, Foto)
       - conteos: notas activas, carpetas, notas en papelera
       - listado de notas recientes (limit 6)
-    """
-    if 'usuario_id' not in session:
-        return redirect(url_for('mostrar_login'))
+    """ # Verificar si el usuario está autenticado
+    if 'usuario_id' not in session: # Si no está autenticado
+        return redirect(url_for('mostrar_login')) # Redirigir al login
 
-    user_id = session['usuario_id']
-
-    conn = None
-    cur = None
+    user_id = session['usuario_id'] # Obtener el ID del usuario desde la sesión
+  
+    conn = None # Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
     try:
-        conn = conectar_db()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        conn = conectar_db() # Conectar a la base de datos
+        cur = conn.cursor(cursor_factory=RealDictCursor) # Crear cursor para ejecutar consultas y devolver filas como diccionarios
 
         # Datos del usuario
         cur.execute("""
             SELECT "Nombres", "Color_principal", "Foto"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
-        """, (user_id,))
-        usuario_row = cur.fetchone()
+        """, (user_id,)) # Consulta para obtener datos del usuario
+        usuario_row = cur.fetchone() # Obtener la fila resultante
         
-        if not usuario_row:
-            session.clear()
-            return redirect(url_for('mostrar_login'))
-
-        usuario_para_template = {
-            'nombre': usuario_row.get('Nombres'),
-            'color_principal': usuario_row.get('Color_principal', 'Blanco'),
-            'foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'img/default_profile.png'
+        if not usuario_row: # Si no se encuentra el usuario
+            session.clear() # Limpiar la sesión
+            return redirect(url_for('mostrar_login')) # Redirigir al login
+ 
+        usuario_para_template = { # Preparar datos para la plantilla
+            'nombre': usuario_row.get('Nombres'), # Nombre del usuario
+            'color_principal': usuario_row.get('Color_principal', 'Blanco'), # Color principal del usuario
+            'foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'img/default_profile.png' # Foto del usuario o imagen por defecto
         }
 
         # Conteos
         cur.execute("""
             SELECT COUNT(*) AS total_notas FROM public."Notas"
             WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'activa'
-        """, (user_id,))
-        total_notas = cur.fetchone()['total_notas']
+        """, (user_id,)) # Consulta para contar notas activas
+        total_notas = cur.fetchone()['total_notas'] # Obtener el total de notas activas
 
         cur.execute("""
             SELECT COUNT(*) AS total_carpetas FROM public."Carpetas"
             WHERE "ID_Cuenta" = %s
-        """, (user_id,))
-        total_carpetas = cur.fetchone()['total_carpetas']
+        """, (user_id,)) # Consulta para contar carpetas
+        total_carpetas = cur.fetchone()['total_carpetas'] # Obtener el total de carpetas
 
         cur.execute("""
             SELECT COUNT(*) AS notas_papelera FROM public."Notas"
             WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
-        """, (user_id,))
-        notas_papelera = cur.fetchone()['notas_papelera']
+        """, (user_id,)) # Consulta para contar notas en papelera
+        notas_papelera = cur.fetchone()['notas_papelera'] # Obtener el total de notas en papelera
 
         # Notas recientes (limit 6)
         cur.execute("""
@@ -659,295 +659,295 @@ def dashboard():
             WHERE n."ID_Cuenta" = %s AND LOWER(n."Estado") = 'activa'
             ORDER BY n."Fecha_deedicion" DESC NULLS LAST
             LIMIT 6
-        """, (user_id,))
-        notas_raw = cur.fetchall()
+        """, (user_id,)) # Consulta para obtener notas recientes
+        notas_raw = cur.fetchall() # Obtener las filas resultantes
 
-        notas_recientes = []
-        for nota in notas_raw:
-            nota_id = nota['ID_Nota']
-            etiquetas = obtener_etiquetas_nota(nota_id, cur)
-            has_adj = verificar_adjuntos_nota(nota_id, cur)
-            notas_recientes.append({
-                'ID_Nota': nota_id,
-                'Titulo': nota.get('Titulo'),
-                'Descripcion': nota.get('Descripcion'),
-                'Fecha_deedicion': nota.get('Fecha_deedicion'),
-                'ID_Categorias': nota.get('ID_Categorias'),
-                'Etiquetas': etiquetas,
-                'Has_Adjuntos': has_adj
+        notas_recientes = [] # Lista para notas recientes procesadas
+        for nota in notas_raw: 
+            nota_id = nota['ID_Nota'] # Obtener el ID de la nota
+            etiquetas = obtener_etiquetas_nota(nota_id, cur) # Obtener etiquetas de la nota
+            has_adj = verificar_adjuntos_nota(nota_id, cur) # Verificar si la nota tiene adjuntos
+            notas_recientes.append({ # Agregar nota procesada a la lista    
+                'ID_Nota': nota_id, # ID de la nota
+                'Titulo': nota.get('Titulo'), # Título de la nota
+                'Descripcion': nota.get('Descripcion'), # Descripción de la nota
+                'Fecha_deedicion': nota.get('Fecha_deedicion'), # Fecha de edición de la nota
+                'ID_Categorias': nota.get('ID_Categorias'), # Categoría de la nota
+                'Etiquetas': etiquetas, # Etiquetas asociadas a la nota
+                'Has_Adjuntos': has_adj # Indica si la nota tiene adjuntos
             })
 
-        return render_template(
-            'dashboard.html',
-            usuario=usuario_para_template,
-            total_notas=total_notas,
-            total_carpetas=total_carpetas,
-            notas_papelera=notas_papelera,
-            notas_recientes=notas_recientes
+        return render_template( #   Renderizar plantilla del dashboard
+            'dashboard.html', # Nombre de la plantilla
+            usuario=usuario_para_template, # Datos del usuario para la plantilla
+            total_notas=total_notas, # Total de notas activas
+            total_carpetas=total_carpetas, # Total de carpetas
+            notas_papelera=notas_papelera, # Total de notas en papelera
+            notas_recientes=notas_recientes #   Notas recientes para la plantilla
         )
+ 
+    except Exception as e: # Manejo de errores
+        import traceback # Importar módulo traceback para imprimir el error completo
+        traceback.print_exc() # Imprimir el error completo en consola
+        return f"Error al cargar dashboard: {str(e)}", 500 # Devolver error 500
 
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return f"Error al cargar dashboard: {str(e)}", 500
-
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    finally: # Finalmente
+        if cur:  # si el cursor sigue abierto
+            cur.close() # Cerrar el cursor
+        if conn: # si la conexion sigue abierta
+            conn.close() # Cerrar la conexión
 
 # ==============================================================================
 # ✅ 8. SECCIÓN PERFIL COMPLETA
 # ==============================================================================
-@app.route('/perfil')
-def perfil():
+@app.route('/perfil') # Ruta para la página de perfil
+def perfil(): # Funcion para mostrar la página de perfil
     """Muestra la página de perfil del usuario con toda su información"""
-    if 'usuario_id' not in session:
-        return redirect(url_for('mostrar_login'))
+    if 'usuario_id' not in session: # Verificar si el usuario está autenticado
+        return redirect(url_for('mostrar_login')) # Redirigir al login si no está autenticado
 
-    user_id = session['usuario_id']
-    conn = None
-    cur = None
+    user_id = session['usuario_id'] # Obtener el ID del usuario desde la sesión
+    conn = None # Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
 
     try:
-        conn = conectar_db(dict_cursor=True)
-        cur = conn.cursor()
+        conn = conectar_db(dict_cursor=True) # Conectar a la base de datos con cursor de diccionario
+        cur = conn.cursor() # Crear cursor para ejecutar consultas
 
         cur.execute("""
             SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", 
                    "Correo", "Telefono", "Foto", "Color_principal"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
-        """, (user_id,))
+        """, (user_id,)) # Consulta para obtener datos del usuario
 
-        usuario = cur.fetchone()
+        usuario = cur.fetchone() # Obtener la fila resultante
 
-        if not usuario:
-            session.clear()
-            return redirect(url_for('mostrar_login'))
+        if not usuario: # Si no se encuentra el usuario
+            session.clear() # Limpiar la sesión
+            return redirect(url_for('mostrar_login')) # Redirigir al login
 
-        return render_template("perfil.html", usuario=usuario)
+        return render_template("perfil.html", usuario=usuario) # Renderizar plantilla de perfil con datos del usuario
 
-    except Exception as e:
-        print(f"Error al cargar perfil: {e}")
-        return "Error al cargar el perfil", 500
+    except Exception as e: # Manejo de errores
+        print(f"Error al cargar perfil: {e}") # Imprimir error en consola
+        return "Error al cargar el perfil", 500 # Devolver error 500
 
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    finally: #  Finalmente
+        if cur: # si el cursor sigue abierto
+            cur.close() # Cerrar el cursor
+        if conn: # si la conexion sigue abierta
+            conn.close() # Cerrar la conexión
 
 # --- CAMBIAR TEMA ---
-@app.route('/perfil/cambiar-tema', methods=['POST'])
-def cambiar_tema():
+@app.route('/perfil/cambiar-tema', methods=['POST']) # Ruta para cambiar el tema del usuario
+def cambiar_tema(): # Funcion para cambiar el tema del usuario
     """Cambia el tema del usuario entre claro y oscuro"""
-    if 'usuario_id' not in session:
-        return jsonify({"error": "Sesión expirada"}), 403
+    if 'usuario_id' not in session: # Verificar si el usuario está autenticado
+        return jsonify({"error": "Sesión expirada"}), 403 # Devolver error 403 si no está autenticado
 
-    tema = request.form.get("tema")
-    
-    if tema not in ["claro", "oscuro"]:
-        return jsonify({"error": "Tema inválido"}), 400
+    tema = request.form.get("tema") # Obtener el tema del formulario
+     
+    if tema not in ["claro", "oscuro"]: # Verificar que el tema sea válido
+        return jsonify({"error": "Tema inválido"}), 400 # Devolver error 400 si el tema es inválido
 
-    color_map = {
-        "claro": "Blanco",
-        "oscuro": "Negro"
+    color_map = { # Mapeo de temas a colores en la base de datos
+        "claro": "Blanco", # Tema claro
+        "oscuro": "Negro" # Tema oscuro
     }
-    color_db = color_map.get(tema)
+    color_db = color_map.get(tema) # Obtener el color correspondiente para la base de datos
 
-    user_id = session['usuario_id']
-    conn = None
-    cur = None
+    user_id = session['usuario_id'] # Obtener el ID del usuario desde la sesión
+    conn = None #   Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
 
-    try:
-        conn = conectar_db()
-        cur = conn.cursor()
+    try: 
+        conn = conectar_db() # Conectar a la base de datos
+        cur = conn.cursor() # Crear cursor para ejecutar consultas
 
         cur.execute("""
             UPDATE public."Cuentas"
             SET "Color_principal" = %s
             WHERE "ID_Cuenta" = %s
-        """, (color_db, user_id))
+        """, (color_db, user_id)) # Consulta para actualizar el color principal del usuario
 
-        conn.commit()
-        session["color_principal"] = color_db
+        conn.commit() # Confirmar los cambios en la base de datos|
+        session["color_principal"] = color_db # Actualizar el color en la sesión
 
-        return jsonify({
-            "success": True, 
-            "mensaje": f"Tema cambiado a {tema}"
-        }), 200
+        return jsonify({ # Devolver mensaje de éxito
+            "success": True,  #Indica que la operación fue exitosa
+            "mensaje": f"Tema cambiado a {tema}" # Mensaje de éxito
+        }), 200 # retorna el mensaje en formato json con código 200
 
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        print(f"Error al cambiar tema: {e}")
-        return jsonify({"error": "Error al actualizar tema"}), 500
+    except Exception as e: # Manejo de errores
+        if conn: #  si la conexion sigue
+            conn.rollback() # Revertir cambios en caso de error
+        print(f"Error al cambiar tema: {e}") # Imprimir error en consola
+        return jsonify({"error": "Error al actualizar tema"}), 500 # Devolver error 500
 
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    finally: # Finalmente
+        if cur: # si el cursor sigue abierto
+            cur.close() # Cerrar el cursor
+        if conn: # si la conexion sigue abierta
+            conn.close() # Cerrar la conexión
 
 # --- CAMBIAR CONTRASEÑA ---
-@app.route('/perfil/cambiar-password', methods=['POST'])
-def cambiar_password():
-    """Cambia la contraseña del usuario"""
-    if 'usuario_id' not in session:
-        return jsonify({"error": "Sesión expirada"}), 403
+@app.route('/perfil/cambiar-password', methods=['POST']) # Ruta para cambiar la contraseña del usuario
+def cambiar_password(): # Funcion para cambiar la contraseña del usuario
+    """Cambia la contraseña del usuario""" # Verificar si el usuario está autenticado
+    if 'usuario_id' not in session: # Si no está autenticado
+        return jsonify({"error": "Sesión expirada"}), 403 # Devolver error 403 si no está autenticado
 
-    user_id = session["usuario_id"]
+    user_id = session["usuario_id"] # Obtener el ID del usuario desde la sesión
 
-    actual = request.form.get("password_actual", "").strip()
-    nueva = request.form.get("password_nueva", "").strip()
-    confirm = request.form.get("password_confirmacion", "").strip()
+    actual = request.form.get("password_actual", "").strip() # Obtener y limpiar la contraseña actual
+    nueva = request.form.get("password_nueva", "").strip() # Obtener y limpiar la nueva contraseña
+    confirm = request.form.get("password_confirmacion", "").strip() # Obtener y limpiar la confirmación de la nueva contraseña
 
-    if not actual or not nueva or not confirm:
-        return jsonify({"error": "Todos los campos son obligatorios"}), 400
+    if not actual or not nueva or not confirm: # Verificar que todos los campos estén completos
+        return jsonify({"error": "Todos los campos son obligatorios"}), 400 # Devolver error 400 si falta algún campo
 
-    if nueva != confirm:
-        return jsonify({"error": "Las nuevas contraseñas no coinciden"}), 400
+    if nueva != confirm: # Verificar que la nueva contraseña y la confirmación coincidan
+        return jsonify({"error": "Las nuevas contraseñas no coinciden"}), 400 # Devolver error 400 si no coinciden
 
-    if len(nueva) > 15:
-        return jsonify({"error": "La contraseña no puede superar 15 caracteres"}), 400
+    if len(nueva) > 15: # Verificar que la nueva contraseña no supere los 15 caracteres
+        return jsonify({"error": "La contraseña no puede superar 15 caracteres"}), 400 # Devolver error 400 si supera el límite
 
-    if len(nueva) < 6:
-        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400
+    if len(nueva) < 6: # Verificar que la nueva contraseña tenga al menos 6 caracteres
+        return jsonify({"error": "La contraseña debe tener al menos 6 caracteres"}), 400 # Devolver error 400 si no cumple el mínimo
 
-    conn = None
-    cur = None
+    conn = None # Conexión a la base de datos nula por ahora
+    cur = None # al igual que el cursor para devolver filas en formato diccionario
 
     try:
-        conn = conectar_db(dict_cursor=True)
-        cur = conn.cursor()
+        conn = conectar_db(dict_cursor=True) # Conectar a la base de datos con cursor de diccionario
+        cur = conn.cursor() # Crear cursor para ejecutar consultas
 
         cur.execute("""
             SELECT "Contraseña" 
             FROM public."Cuentas" 
             WHERE "ID_Cuenta" = %s
-        """, (user_id,))
-        
-        user = cur.fetchone()
+        """, (user_id,)) # Consulta para obtener la contraseña actual del usuario
+         
+        user = cur.fetchone() # Obtener la fila resultante
 
-        if not user:
-            return jsonify({"error": "Usuario no encontrado"}), 404
+        if not user: # Si no se encuentra el usuario
+            return jsonify({"error": "Usuario no encontrado"}), 404 # Devolver error 404
 
-        if user["Contraseña"] != actual:
-            return jsonify({"error": "La contraseña actual es incorrecta"}), 401
+        if user["Contraseña"] != actual: # Verificar que la contraseña actual coincida
+            return jsonify({"error": "La contraseña actual es incorrecta"}), 401 # Devolver error 401 si no coincide
 
-        if user["Contraseña"] == nueva:
-            return jsonify({"error": "La nueva contraseña debe ser diferente"}), 400
-
+        if user["Contraseña"] == nueva: # Verificar que la nueva contraseña sea diferente
+            return jsonify({"error": "La nueva contraseña debe ser diferente"}), 400 # Devolver error 400 si es igual
+ 
         cur.execute("""
             UPDATE public."Cuentas"
             SET "Contraseña" = %s
             WHERE "ID_Cuenta" = %s
-        """, (nueva, user_id))
+        """, (nueva, user_id)) # Consulta para actualizar la contraseña del usuario
 
-        conn.commit()
+        conn.commit() # Confirmar los cambios en la base de datos|
 
-        return jsonify({
-            "success": True,
-            "mensaje": "Contraseña actualizada exitosamente"
-        }), 200
+        return jsonify({ # Devolver mensaje de éxito
+            "success": True, # Indica que la operación fue exitosa
+            "mensaje": "Contraseña actualizada exitosamente" # Mensaje de éxito
+        }), 200 # retorna el mensaje en formato json con código 200
 
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        print(f"Error al cambiar contraseña: {e}")
-        return jsonify({"error": "Error al procesar la solicitud"}), 500
+    except Exception as e: # Manejo de errores
+        if conn: # si la conexion sigue
+            conn.rollback() # Revertir cambios en caso de error
+        print(f"Error al cambiar contraseña: {e}") # Imprimir error en consola
+        return jsonify({"error": "Error al procesar la solicitud"}), 500 # Devolver error 500
 
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+    finally: # Finalmente
+        if cur: # si el cursor sigue abierto
+            cur.close() # Cerrar el cursor
+        if conn: # si la conexion sigue abierta
+            conn.close() # Cerrar la conexión
 
-# --- SUBIR FOTO DE PERFIL ---
-@app.route('/perfil/subir-foto', methods=["POST"])
-def subir_foto():
-    """Sube y actualiza la foto de perfil del usuario"""
-    if "usuario_id" not in session:
-        return jsonify({"error": "Sesión expirada"}), 403
+# --- SUBIR FOTO DE PERFIL --- 
+@app.route('/perfil/subir-foto', methods=["POST"]) # Ruta para subir la foto de perfil del usuario
+def subir_foto(): # Funcion para subir la foto de perfil del usuario
+    """Sube y actualiza la foto de perfil del usuario""" # Verificar si el usuario está autenticado
+    if "usuario_id" not in session: # Si no está autenticado
+        return jsonify({"error": "Sesión expirada"}), 403 # Devolver error 403 si no está autenticado
 
-    archivo = request.files.get("foto")
+    archivo = request.files.get("foto") # Obtener el archivo de la solicitud
 
-    if not archivo or archivo.filename == '':
-        return jsonify({"error": "No se seleccionó ninguna imagen"}), 400
+    if not archivo or archivo.filename == '': # Verificar que se haya seleccionado un archivo
+        return jsonify({"error": "No se seleccionó ninguna imagen"}), 400 # Devolver error 400 si no se seleccionó ningún archivo
 
-    if not allowed_file(archivo.filename):
-        return jsonify({
-            "error": "Formato no permitido. Usa: PNG, JPG, JPEG, GIF o WEBP"
-        }), 400
+    if not allowed_file(archivo.filename): # Verificar que el archivo tenga una extensión permitida
+        return jsonify({ # Devolver error 400 si la extensión no es permitida
+            "error": "Formato no permitido. Usa: PNG, JPG, JPEG, GIF o WEBP" # Mensaje de error
+        }), 400 # retorna el mensaje en formato json con código 400
 
-    user_id = session["usuario_id"]
+    user_id = session["usuario_id"] # Obtener el ID del usuario desde la sesión
 
     try:
-        ext = os.path.splitext(archivo.filename)[1].lower()
-        filename_unique = f"user_{user_id}_{uuid.uuid4().hex}{ext}"
-        
-        ruta_completa = os.path.join(PROFILE_UPLOAD_FOLDER, filename_unique)
-        archivo.save(ruta_completa)
+        ext = os.path.splitext(archivo.filename)[1].lower() # Obtener la extensión del archivo
+        filename_unique = f"user_{user_id}_{uuid.uuid4().hex}{ext}" # Generar nombre de archivo único
+         
+        ruta_completa = os.path.join(PROFILE_UPLOAD_FOLDER, filename_unique) # Ruta completa para guardar el archivo
+        archivo.save(ruta_completa) # Guardar el archivo en la ruta especificada
 
-        ruta_db = f"uploads/profile/{filename_unique}"
+        ruta_db = f"uploads/profile/{filename_unique}" # Ruta relativa para almacenar en la base de datos
 
-        conn = None
-        cur = None
+        conn = None # Conexión a la base de datos nula por ahora
+        cur = None # al igual que el cursor para devolver filas en formato diccionario
 
         try:
-            conn = conectar_db()
-            cur = conn.cursor()
+            conn = conectar_db() # Conectar a la base de datos
+            cur = conn.cursor() # Crear cursor para ejecutar consultas
 
             cur.execute("""
                 SELECT "Foto" FROM public."Cuentas" 
                 WHERE "ID_Cuenta" = %s
-            """, (user_id,))
-            
-            result = cur.fetchone()
-            foto_anterior = result[0] if result else None
+            """, (user_id,)) # Consulta para obtener la foto anterior del usuario
+             
+            result = cur.fetchone() # Obtener la fila resultante
+            foto_anterior = result[0] if result else None # Obtener la foto anterior si existe
 
             cur.execute("""
                 UPDATE public."Cuentas"
                 SET "Foto" = %s
                 WHERE "ID_Cuenta" = %s
-            """, (ruta_db, user_id))
+            """, (ruta_db, user_id)) # Consulta para actualizar la foto del usuario
 
-            conn.commit()
+            conn.commit() # Confirmar los cambios en la base de datos|
 
-            if foto_anterior and foto_anterior != "uploads/profile/default_profile.png":
+            if foto_anterior and foto_anterior != "uploads/profile/default_profile.png": # Si hay una foto anterior y no es la por defecto
                 try:
-                    ruta_anterior = os.path.join(BASE_DIR, "static", foto_anterior)
-                    if os.path.exists(ruta_anterior):
-                        os.remove(ruta_anterior)
-                except Exception as e:
-                    print(f"No se pudo eliminar foto anterior: {e}")
+                    ruta_anterior = os.path.join(BASE_DIR, "static", foto_anterior) # Ruta completa de la foto anterior
+                    if os.path.exists(ruta_anterior): # Verificar si el archivo existe
+                        os.remove(ruta_anterior) # Eliminar el archivo de la foto anterior
+                except Exception as e: # Manejo de errores al eliminar la foto anterior
+                    print(f"No se pudo eliminar foto anterior: {e}") # Imprimir error en consola
 
-            return jsonify({
-                "success": True,
-                "mensaje": "Foto de perfil actualizada",
-                "nueva_foto": url_for('static', filename=ruta_db)
-            }), 200
+            return jsonify({ # Devolver mensaje de éxito
+                "success": True, # Indica que la operación fue exitosa
+                "mensaje": "Foto de perfil actualizada", # Mensaje de éxito
+                "nueva_foto": url_for('static', filename=ruta_db) # URL de la nueva foto para actualizar en el frontend
+            }), 200 # retorna el mensaje en formato json con código 200
 
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            print(f"Error al actualizar BD: {e}")
-            return jsonify({"error": "Error al guardar en base de datos"}), 500
+        except Exception as e: # Manejo de errores al actualizar la base de datos
+            if conn: # si la conexion sigue
+                conn.rollback() # Revertir cambios en caso de error
+            print(f"Error al actualizar BD: {e}") # Imprimir error en consola
+            return jsonify({"error": "Error al guardar en base de datos"}), 500 # Devolver error 500
 
-        finally:
-            if cur:
-                cur.close()
-            if conn:
-                conn.close()
+        finally: # Finalmente
+            if cur: # si el cursor sigue abierto
+                cur.close() # Cerrar el cursor
+            if conn: # si la conexion sigue abierta
+                conn.close() # Cerrar la conexión
 
-    except Exception as e:
-        print(f"Error al subir archivo: {e}")
-        return jsonify({"error": "Error al subir el archivo"}), 500
+    except Exception as e: # Manejo de errores al subir el archivo
+        print(f"Error al subir archivo: {e}") # Imprimir error en consola
+        return jsonify({"error": "Error al subir el archivo"}), 500 # Devolver error 500
 
 # ==============================================================================
 # RUN
 # ==============================================================================
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+if __name__ == '__main__': # Si se ejecuta este archivo directamente
+    app.run(debug=True, host='0.0.0.0', port=5000) # Ejecutar la aplicación Flask en modo debug
