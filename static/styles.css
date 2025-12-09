@@ -1,13 +1,11 @@
 /* ========== VARIABLES DE COLOR ========== */
 :root {
-    /* Tema Claro */
     --bg-claro: #ffffff;
     --text-claro: #333333;
     --card-claro: #f5f5f5;
     --border-claro: #e0e0e0;
     --sidebar-claro: #f8f9fa;
     
-    /* Tema Oscuro */
     --bg-oscuro: #1a1a1a;
     --text-oscuro: #e0e0e0;
     --card-oscuro: #2d2d2d;
@@ -15,11 +13,10 @@
     --sidebar-oscuro: #242424;
 }
 
-/* ========== TEMA CLARO (Por defecto) ========== */
+/* ========== TEMA CLARO ========== */
 body.tema-claro {
     background-color: var(--bg-claro);
     color: var(--text-claro);
-    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .tema-claro .card,
@@ -57,7 +54,6 @@ body.tema-claro {
 body.tema-oscuro {
     background-color: var(--bg-oscuro);
     color: var(--text-oscuro);
-    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .tema-oscuro .card,
@@ -96,7 +92,6 @@ body.tema-oscuro {
     color: var(--text-oscuro);
 }
 
-/* Ajustar botones en tema oscuro */
 .tema-oscuro .btn-secondary {
     background-color: #444;
     color: #e0e0e0;
@@ -107,7 +102,6 @@ body.tema-oscuro {
     background-color: #555;
 }
 
-/* Ajustar tablas */
 .tema-oscuro table {
     background-color: var(--card-oscuro);
     color: var(--text-oscuro);
@@ -118,7 +112,6 @@ body.tema-oscuro {
     border-color: var(--border-oscuro);
 }
 
-/* Ajustar modales */
 .tema-oscuro .modal-content {
     background-color: var(--card-oscuro);
     color: var(--text-oscuro);
@@ -139,7 +132,6 @@ body.tema-oscuro {
     border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
-    transition: all 0.3s ease;
 }
 
 .tema-claro .btn-cambiar-tema {
@@ -158,32 +150,4 @@ body.tema-oscuro {
 
 .tema-oscuro .btn-cambiar-tema:hover {
     background-color: white;
-}
-
-/* ========== ANIMACIONES ========== */
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-/* ========== TRANSICIONES SUAVES ========== */
-* {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }

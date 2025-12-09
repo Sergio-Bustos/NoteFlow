@@ -1,7 +1,4 @@
-/* 
-   ESTILOS GLOBALES
-   - Se aplican a todo el documento
-*/
+/* ========== ESTILOS GLOBALES ========== */
 * {
     margin: 0;
     padding: 0;
@@ -9,21 +6,15 @@
     font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;
 }
 
-/* 
-   FONDO BLANCO, NEGRO Y GRIS ARTÍSTICO (TIPO MANCHAS)
-   - Crea un fondo con degradados radiales que simulan textura o manchas suaves
-*/
 body {
     min-height: 100vh;
-    background-color: #706a6a; /* Gris base */
-    background-blend-mode: normal;
-    background-size: cover;
+    background-color: #706a6a;
     overflow-x: hidden;
 }
 
-/*ENCABEZADO FIJO CON LOGO Y MENÚ*/
+/* ========== ENCABEZADO ========== */
 header {    
-    position: fixed;    
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -38,8 +29,7 @@ header {
     z-index: 1000;
 }
 
-/* CONTENEDOR DEL LOGO CON IMAGEN */
-.logo-container {
+.logo-container {  
     display: flex;
     align-items: center;
     gap: 12px;
@@ -50,19 +40,16 @@ header {
     height: 45px;
     object-fit: contain;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
 
-/* LOGO */
 .logo {
     font-size: 28px;
     font-weight: 700;
     color: #fff;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
     letter-spacing: 1px;
 }
 
-/* NAVEGACIÓN (LISTA DE ENLACES) */
+/* ========== NAVEGACIÓN ========== */
 .nav-links {
     display: flex;
     gap: 20px;
@@ -75,30 +62,23 @@ header {
     font-weight: 600;
     padding: 10px 25px;
     border-radius: 8px;
-    transition: all 0.3s ease;
-    position: relative;
 }
 
-/* Efecto al pasar el mouse por un enlace */
 .nav-links a:hover {
     color: #fff;
     background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
 }
 
-/* BOTÓN DESTACADO (REGISTRO) */
 .nav-links .btn-registro {
     background: linear-gradient(90deg, #333, #555);
     color: #fff;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
 }
 
 .nav-links .btn-registro:hover {
     background: linear-gradient(90deg, #555, #777);
-    box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
 }
 
-/*CONTENIDO PRINCIPAL*/
+/* ========== CONTENIDO PRINCIPAL ========== */
 main {
     margin-top: 100px;
     padding: 50px 20px;
@@ -110,26 +90,14 @@ main {
     text-align: center;
 }
 
-/* SECCIÓN HERO (TEXTO PRINCIPAL) */
 .hero {
     max-width: 900px;
-    animation: fadeInUp 1s ease forwards;
-    opacity: 0;
-}
-
-/* Animación de entrada */
-@keyframes fadeInUp {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .hero h1 {
     font-size: 56px;
     color: #1a1a1a;
     margin-bottom: 20px;
-    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.3);
     line-height: 1.2;
     font-weight: 800;
 }
@@ -141,24 +109,17 @@ main {
     line-height: 1.6;
 }
 
-/* BOTONES DE LLAMADA A LA ACCIÓN (CTA) */
+/* ========== BOTONES ========== */
 .cta-buttons {
     display: flex;
     gap: 20px;
-    justify-content: center; /* Esto asegura que los botones se alineen horizontalmente */
-    flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas más pequeñas */
-    width: 100%; /* Esto garantiza que el contenedor de los botones ocupe el 100% del espacio disponible */
-    max-width: 400px; /* Limita el ancho máximo si es necesario */
-    margin: 0 auto; /* Centra el contenedor de botones */
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
-@media screen and (max-width: 768px) {
-    .cta-buttons {
-        flex-direction: column; /* Los botones se apilan verticalmente */
-        gap: 15px; /* Espacio entre los botones cuando están apilados */
-        align-items: center; /* Alinea los botones al centro cuando están apilados */
-    }
-}
 .btn {
     padding: 15px 35px;
     font-size: 18px;
@@ -166,23 +127,18 @@ main {
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
-/* BOTÓN PRINCIPAL (NEGRO) */
+
 .btn-primary {
     background: linear-gradient(90deg, #2a2a2a, #1a1a1a);
     color: #fff;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .btn-primary:hover {
     background: linear-gradient(90deg, #3a3a3a, #2a2a2a);
-    transform: translateY(-3px);
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
 }
 
-/* BOTÓN SECUNDARIO (BLANCO) */
 .btn-secondary {
     background: rgba(255, 255, 255, 0.8);
     color: #1a1a1a;
@@ -192,10 +148,9 @@ main {
 .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.95);
     border-color: #333;
-    transform: translateY(-3px);
 }
 
-/* SECCIÓN DE CARACTERÍSTICAS */
+/* ========== CARACTERÍSTICAS ========== */
 .features {
     margin-top: 80px;
     display: grid;
@@ -205,20 +160,16 @@ main {
     width: 100%;
 }
 
-/* TARJETAS DE CARACTERÍSTICAS */
 .feature-card {
     background: rgba(25, 25, 25, 0.85);
     backdrop-filter: blur(10px);
     padding: 30px;
     border-radius: 15px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     border-color: rgba(255, 255, 255, 0.3);
     background: rgba(40, 40, 40, 0.9);
 }
@@ -234,7 +185,7 @@ main {
     line-height: 1.6;
 }
 
-/* PIE DE PÁGINA (FOOTER) */
+/* ========== FOOTER ========== */
 footer {
     padding: 30px;
     text-align: center;
@@ -244,7 +195,7 @@ footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* RESPONSIVE (MÓVILES Y TABLETS) */
+/* ========== RESPONSIVE ========== */
 @media screen and (max-width: 768px) {
     header {
         padding: 15px 20px;
