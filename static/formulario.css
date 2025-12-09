@@ -12,7 +12,7 @@ body {
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #727272, #51368f, #ffffff); 
 }
 
 /* ========== FORMULARIO ========== */
@@ -49,13 +49,13 @@ nav {
 }
 
 .li-formulario a:hover {
-    color: #667eea;
-    background: #f5f7ff;
+    color:#5e12a5  ;
+    background: #faedfd;
 }
 
 .li-formulario a.activo {
-    color: #667eea;
-    background: #f5f7ff;
+    color:#5e12a5  ;
+    background: #faedfd;
 }
 
 /* ========== TÍTULO ========== */
@@ -97,7 +97,7 @@ button {
     display: block;
     width: 100%;
     height: 45px;
-    background: #667eea;
+    background: #5e12a5;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -108,7 +108,7 @@ button {
 }
 
 button:hover {
-    background: #5568d3;
+    background:#5931b8;
 }
 
 /* ========== TEXTO INFERIOR ========== */

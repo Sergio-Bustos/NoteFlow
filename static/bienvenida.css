@@ -1,88 +1,95 @@
 /* ========== ESTILOS GLOBALES ========== */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;
+    margin: 0;  /* Margen para eliminar espacios predeterminados */
+    padding: 0; /* Relleno para eliminar espacios predeterminados */
+    box-sizing: border-box; /* Incluye el padding y border en el tamaño total del elemento */
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif; /* Tipografía moderna y legible con esas 3 fuentes */
 }
 
-body {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    overflow-x: hidden;
+body { /*Estilo del cuerpo de la página*/
+    min-height: 100vh; /* Altura mínima para cubrir toda la ventana del navegador */
+    background: linear-gradient(135deg, #727272, #51368f, #ffffff); /* Degradado de fondo atractivo */
+    overflow-x: hidden; /* Evita el desplazamiento horizontal */
 }
 
 /* ========== ENCABEZADO ========== */
-header {    
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding: 20px 50px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #ffffff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+header {    /* Estilo del encabezado fijo en la parte superior */ 
+    position: fixed;/*Posicion fija del encabezado*/
+    top: 0; /* Posición en la parte superior */
+    left: 0; /* Posición a la izquierda */
+    right: 0; /* Posición a la derecha = 0 para que no se aplique alli*/
+    padding: 20px 50px; /*Relleno interno del encabezado*/
+    display: flex; /* Usamos flexbox para alinear los elementos */
+    justify-content: space-between; /*Espacio entre los elementos*/
+    align-items: center; /*Todos los elementos esten centrados*/
+    background: #e0e0e0; /* Color de fondo blanco para el encabezado */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra para dar profundidad */
+    z-index: 1000; /*Asegura que el indice sea 1000 para que el encabezado esté por encima de otros elementos */
 }
 
-.logo-container {  
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.logo-container {  /* Contenedor del logo */
+    display: flex; /* Usamos flexbox para alinear el logo y el texto al mismo nivel */
+    align-items: center;/*Alinea los temas todos en el centro*/
+    gap: 12px; /*Espacio entre el logo y el texto */
 }
 
-.logo-img {
-    width: 45px;
-    height: 45px;
-    object-fit: contain;
-    border-radius: 8px;
+.logo-img {  /* Contenedor de la imagen */
+    width: 45px; /* Ancho de la imagen del logo */
+    height: 45px; /* Alto de la imagen del logo */
+    object-fit: contain;   /* Ajusta la imagen para que se contenga dentro del contenedor */
+    border-radius: 8px;   /* Contenedor redondeado */
 }
 
-.logo {
-    font-size: 28px;
-    font-weight: 700;
-    color: #333;
-    letter-spacing: 1px;
+.logo { /* Estilo del texto del logo */
+    font-size: 28px; /* Tamaño de fuente grande para el logo */
+    font-weight: 700; /* Fuente en negrita para resaltar el logo */
+    color: #000000; /* Color del texto del logo */
+    letter-spacing: 1px;  /* Espaciado entre letras para mejorar la legibilidad */
 }
 
 /* ========== NAVEGACIÓN ========== */
-.nav-links {
-    display: flex;
-    gap: 15px;
-    list-style: none;
+.nav-links {  /* Estilo de los enlaces de navegación */
+    display: flex;/*Alinear los logos para que estén en línea*/
+    gap: 15px;/*Espacio entre los enlaces*/
+    list-style: none;/*Quitar los puntos de la lista para que no salgan como si fueran 
+    ul:
+    - Hola
+    - Hola
+    Ni ol:
+    1 - Hola
+    2- Holaa;*/
 }
 
-.nav-links a {
-    color: #555;
-    text-decoration: none;
-    font-weight: 600;
-    padding: 10px 25px;
-    border-radius: 8px;
+.nav-links a { /*Estilos de los links de navegacion
+    2da parte para mas orden*/
+    color: #000000; /*Color de cada link de navegacion */
+    text-decoration: none; /*No haya nada entre los textos,sin decoracion alguna*/
+    font-weight: 600;/*Fuente en negrita para resaltar los links*/
+    padding: 10px 25px; /*Relleno interno de los links*/
+    border-radius: 8px; /*Bordes redondeados de los links*/
 }
 
-.nav-links a:hover {
-    color: #667eea;
-    background: #f5f7ff;
+.nav-links a:hover { /*Estilo de los links al pasar el mouse por encima*/
+    color: #6300c0; /*Color morado al pasar el mouse*/
+    background: #f5f7ff; /*Fondo claro al pasar el mouse*/
 }
 
-.nav-links .btn-registro {
-    background: #667eea;
-    color: #fff;
+.nav-links .btn-registro { /*ESTILO PARA EL BOTON DE REGISTRO*/
+    background: #ffffff; /*FONDO BLANCO*/
+    color: #000000; /*COLOR DE LA LETRA*/
 }
 
-.nav-links .btn-registro:hover {
-    background: #5568d3;
+.nav-links .btn-registro:hover { /*ESTILO PARA EL BOTON DE REGISTRO AL PASAR EL MOUSE POR ENCIMA*/
+    background: #ffffff;  /*FONDO BLANCO*/
 }
 
 /* ========== CONTENIDO PRINCIPAL ========== */
-main {
-    margin-top: 100px;
-    padding: 50px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+main {  /*Estilo para el contenido principal */
+    margin-top: 100px; /*margen de 100px para separar del encabezado fijo y que no este por encima*/
+    padding: 50px 20px;  /*Rellenos para el contenido principal*/
+    display: flex; /* Usamos flexbox para alinear todo el contenedor al mismo nivel */
+    flex-direction: column;  /* Usamos flex-direction column para apilar los elementos verticalmente */
+    align-items: center; /* Alinea todos los items al centro*/
     justify-content: center;
     min-height: calc(100vh - 100px);
     text-align: center;
@@ -132,7 +139,7 @@ main {
 
 .btn-primary {
     background: #ffffff;
-    color: #667eea;
+    color: #001055;
 }
 
 .btn-primary:hover {
@@ -147,7 +154,7 @@ main {
 }
 
 .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(4, 0, 255, 0.1);
 }
 
 /* ========== CARACTERÍSTICAS ========== */
