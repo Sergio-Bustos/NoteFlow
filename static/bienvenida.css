@@ -80,7 +80,7 @@ header {    /* Estilo del encabezado fijo en la parte superior */
 }
 
 .nav-links .btn-registro:hover { /*ESTILO PARA EL BOTON DE REGISTRO AL PASAR EL MOUSE POR ENCIMA*/
-    background: #ffffff;  /*FONDO BLANCO*/
+    background: #ffffff;  /*FONDO BLANCO DEL BOTON*/
 }
 
 /* ========== CONTENIDO PRINCIPAL ========== */
