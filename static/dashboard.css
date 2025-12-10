@@ -358,18 +358,62 @@
             font-style: italic; /* Texto en cursiva */
         }
 
-        @media (max-width: 768px) { /* Estilos para pantallas pequeñas */
-            .sidebar { /* Barra lateral en pantallas pequeñas */
-                width: 100%; /* Ancho completo */
-                height: auto; /* Altura automática */
-                position: relative; /* Posición relativa */
-            }
-            
-            .main { /* Contenedor principal en pantallas pequeñas */
-                margin-left: 0; /* Sin margen izquierdo */
-            }
-            
-            .stats { /* Contenedor de estadísticas en pantallas pequeñas */
-                flex-direction: column; /* Dirección de columna */
-            }
-        }
+@media (max-width: 768px) {
+
+    /* -------------------------------------------
+       Sidebar en móviles
+       - Se hace horizontal ocupando el ancho completo.
+       - Se vuelve relativa para no quedar fija en pantalla.
+       - Se reduce padding para ahorrar espacio.
+       ------------------------------------------- */
+    .sidebar {
+        width: 100%;        /* Ahora ocupa todo el ancho */
+        height: auto;       /* Permite que crezca según su contenido */
+        position: relative; /* Evita que tape el contenido */
+        padding: 10px 0;    /* Reduce el espacio en móviles */
+    }
+
+    /* -------------------------------------------
+       Items del menú
+       - Se ajusta el padding para pantallas pequeñas.
+       ------------------------------------------- */
+    .menu li a {
+        padding: 10px 15px; /* Más compacto en móviles */
+    }
+
+    /* -------------------------------------------
+       Contenedor principal
+       - Se elimina el margen izquierdo usado para la sidebar.
+       - Se reduce el padding para aprovechar mejor el espacio.
+       ------------------------------------------- */
+    .main {
+        margin-left: 0;  /* Sidebar ya no ocupa espacio a la izquierda */
+        padding: 15px;   /* Menos relleno: más espacio útil */
+    }
+
+    /* -------------------------------------------
+       Tarjetas de estadísticas
+       - El diseño pasa de horizontal a vertical.
+       ------------------------------------------- */
+    .stats {
+        flex-direction: column; /* Apila las tarjetas una debajo de otra */
+    }
+
+    /* -------------------------------------------
+       Grid de notas
+       - Fuerza que exista solo una columna para lectura óptima.
+       ------------------------------------------- */
+    .grid {
+        grid-template-columns: 1fr; /* Una sola columna */
+    }
+
+    /* -------------------------------------------
+       📌 Encabezado
+       - Se reorganiza verticalmente para que no se deforme.
+       ------------------------------------------- */
+    header {
+        flex-direction: column;     /* De fila → columna */
+        align-items: flex-start;    /* Alineación más natural */
+        gap: 10px;                  /* Espaciado entre elementos */
+    }
+}
