@@ -1,129 +1,130 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
+<!DOCTYPE html> <!-- Tipo html -->
+<html lang="es"> <!-- Lenguaje español-->
+<head> <!-- Head -->
+    <meta charset="UTF-8"> <!-- admite varios caracteres-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Características - NoteFlow</title>
-    <link rel="stylesheet" href="/static/caracteristicas.css">
-</head>
-<body>
-    <header>
-        <div class="logo-container">
-            <img src="/static/logo.jpg" alt="Logo NoteFlow" class="logo-img" />
-            <div class="logo">NoteFlow</div>
-        </div>
-        <ul class="nav-links">
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
-            <li><a href="/registro.html" class="btn-registro">Registro</a></li>
-        </ul>
-    </header>
+    <title>Características - NoteFlow</title> <!-- Titulo del documento -->
+    <link rel="stylesheet" href="/static/public_pages.css"> <!-- Tiene el estilo de caracteristicas -->
+</head> <!-- Se  cierra el head -->
+<body> <!-- Cuerpo principal de la pagina -->
+    <header> <!-- Se abre el header -->
+        <div class="logo-container"> <!-- Logo para NoteFlow con el contenedor logo-container -->
+            <img src="/static/logo.jpg" alt="Logo NoteFlow" class="logo-img" /> <!-- Imagen del logo -->
+            <div class="logo">NoteFlow</div> <!-- Titulo al lado del logo -->
+        </div><!-- Se cierra el logo-container -->
+        <ul class="nav-links"> <!-- Lista desordenada con los links de navegacion -->
+            <li><a href="/">Inicio</a></li> <!-- Ruta de flask por default -->
+            <li><a href="/iniciarsesion.html">Iniciar Sesión</a></li> <!-- Ruta html para iniciar sesion -->
+            <li><a href="/registro.html" class="btn-registro">Registro</a></li> <!-- Ruta html para registro-->
+        </ul> <!-- Se cierra la lista desordenada-->
+    </header> <!-- Se cierra el header -->
 
-    <main>
-        <section class="page-header">
-            <h1>Características Principales</h1>
-            <p>Descubre todo lo que NoteFlow puede hacer por ti</p>
-        </section>
+    <main> <!-- sirve para definir el contenido principal y único de una página web, conteniendo la información más relevante y central, no repetitiva
+        Es lo principal de BODY --- ES SOLO PARA DIFERENCIARLO DE LO DEMAS PARA QUE SE SEPA QUE ES LO MAS RELEVANTE -->
+        <section class="page-header">   <!--Seccion para centrar el texto-->
+            <h1>Características Principales</h1>  <!-- Titulo tipo h1 -->
+            <p>Descubre todo lo que NoteFlow puede hacer por ti</p> <!-- Texto normal-->
+        </section> <!-- Se cierra la seccion -->
 
-        <section class="features-grid">
-            <div class="feature-item">
-                <h3>Notas comodas</h3>
-                <p>Crea, edita y organiza tus notas con nuestro editor avanzado.</p>
-                <ul class="feature-list">
-                    <li>Editor de texto enriquecido</li>
-                    <li>Formatos integrados</li>
-                    <li>Atajos</li>
-                </ul>
-            </div>
+        <section class="features-grid"> <!-- Seccion para las caracteristicas en forma de grilla -->
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Notas comodas</h3> <!-- Titulo de la caracteristica -->
+                <p>Crea, edita y organiza tus notas con nuestro editor avanzado.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Editor de texto enriquecido</li>  <!-- Elemento de la lista -->
+                    <li>Formatos integrados</li> <!-- Elemento de la lista -->
+                    <li>Atajos</li> <!-- Elemento de la lista -->
+                </ul> <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Seguridad Total</h3>
-                <p>Tus datos están completamente seguros.</p>
-                <ul class="feature-list">
-                    <li>Datos bien controlados</li>
-                    <li>Respaldos seguros</li>
-                </ul>
-            </div>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Seguridad Total</h3> <!-- Titulo de la caracteristica -->
+                <p>Tus datos están completamente seguros.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Datos bien controlados</li> <!-- Elemento de la lista -->
+                    <li>Respaldos seguros</li> <!-- Elemento de la lista -->
+                </ul> <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Rápido y Eficiente</h3>
-                <p>Interfaz optimizada para máxima productividad sin sacrificar rendimiento.</p>
-                <ul class="feature-list">
-                    <li>Búsqueda instantánea</li>
-                    <li>Sincronización en tiempo real</li>
-                    <li>Carga rápida</li>
-                </ul>
-            </div>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Rápido y Eficiente</h3> <!-- Titulo de la caracteristica -->
+                <p>Interfaz optimizada para máxima productividad sin sacrificar rendimiento.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Búsqueda instantánea</li> <!-- Elemento de la lista -->
+                    <li>Sincronización en tiempo real</li> <!-- Elemento de la lista -->
+                    <li>Carga rápida</li> <!-- Elemento de la lista -->
+                </ul> <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Colaboración en Equipo</h3>
-                <p>Trabaja con tu equipo en tiempo real, comparte notas y colabora sin fricciones.</p>
-                <ul class="feature-list">
-                    <li>Edición colaborativa</li>
-                    <li>Espacios de trabajo compartidos con fechas, etc.</li>
-                </ul>
-            </div>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Colaboración en Equipo</h3> <!-- Titulo de la caracteristica -->
+                <p>Trabaja con tu equipo en tiempo real, comparte notas y colabora sin fricciones.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Edición colaborativa</li> <!-- Elemento de la lista -->
+                    <li>Espacios de trabajo compartidos con fechas, etc.</li> <!-- Elemento de la lista -->
+                </ul> <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Multiplataforma</h3>
-                <p>Accede a tus notas desde cualquier dispositivo, en cualquier momento y lugar.</p>
-                <ul class="feature-list">
-                    <li>Aplicación web responsive</li>
-                    <li>Compatibilidad en la web</li>
-                </ul>
-            </div>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Multiplataforma</h3> <!-- Titulo de la caracteristica -->
+                <p>Accede a tus notas desde cualquier dispositivo, en cualquier momento y lugar.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Aplicación web responsive</li> <!-- Elemento de la lista -->
+                    <li>Compatibilidad en la web</li> <!-- Elemento de la lista -->
+                </ul> <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Personalización Total</h3>
-                <p>Adapta NoteFlow a tu estilo de trabajo con temas,y configuraciones.</p>
-                <ul class="feature-list">
-                    <li>Temas claros y oscuros</li>
-                    <li>Etiquetas y categorías personalizables</li>
-                </ul>
-            </div>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Personalización Total</h3> <!-- Titulo de la caracteristica -->
+                <p>Adapta NoteFlow a tu estilo de trabajo con temas,y configuraciones.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Temas claros y oscuros</li> <!-- Elemento de la lista -->
+                    <li>Etiquetas y categorías personalizables</li> <!-- Elemento de la lista -->
+                </ul> <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Organización Inteligente</h3>
-                <p>Mantén todo ordenado con carpetas, etiquetas y filtros avanzados.</p>
-                <ul class="feature-list">
-                    <li>Carpetas y subcarpetas ilimitadas</li>
-                    <li>Sistema de etiquetas múltiples</li>
-                    <li>Filtros y vistas personalizadas</li>
-                </ul>
-            </div>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Organización Inteligente</h3> <!-- Titulo de la caracteristica -->
+                <p>Mantén todo ordenado con carpetas, etiquetas y filtros avanzados.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Carpetas y subcarpetas ilimitadas</li> <!-- Elemento de la lista -->
+                    <li>Sistema de etiquetas múltiples</li> <!-- Elemento de la lista -->
+                    <li>Filtros y vistas personalizadas</li> <!-- Elemento de la lista -->
+                </ul> <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Buena interfaz</h3>
-                <p>Nunca olvides nada importante con nuestra interfaz bien legible.</p>
-                <ul class="feature-list">
-                    <li>Totalmente legible</li>
-                    <li>Bonita</li>
-                    <li>Comoda</li>
-                </ul>
-            </div>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Buena interfaz</h3> <!-- Titulo de la caracteristica -->
+                <p>Nunca olvides nada importante con nuestra interfaz bien legible.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Totalmente legible</li> <!-- Elemento de la lista -->
+                    <li>Bonita</li> <!-- Elemento de la lista -->
+                    <li>Comoda</li> <!-- Elemento de la lista -->
+                </ul>   <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
 
-            <div class="feature-item">
-                <h3>Usabilidad</h3>
-                <p>Trabaja con NoteFlow para lo que desees,organizar tu dia,tus gastos,etc.</p>
-                <ul class="feature-list">
-                    <li>Gratis</li>
-                    <li>Bueno y seguro</li>
-                </ul>
-            </div>
-        </section>
+            <div class="feature-item"> <!-- Cada caracteristica es un item -->
+                <h3>Usabilidad</h3> <!-- Titulo de la caracteristica -->
+                <p>Trabaja con NoteFlow para lo que desees,organizar tu dia,tus gastos,etc.</p> <!-- Descripcion de la caracteristica -->
+                <ul class="feature-list"> <!-- Lista desordenada de caracteristicas -->
+                    <li>Gratis</li>      <!-- Elemento de la lista -->
+                    <li>Bueno y seguro</li> <!-- Elemento de la lista -->
+                </ul>  <!-- Se cierra la lista -->
+            </div> <!-- Se cierra el item -->
+        </section> <!-- Se cierra la seccion -->
 
-        <section class="cta-section">
-            <h2>¿Listo para comenzar?</h2>
-            <p>Únete y confía en NoteFlow</p>
-            <div class="cta-buttons">
-                <a href="/registro.html" class="btn btn-primary">Crear Cuenta Gratis</a>
-                <a href="/" class="btn btn-secondary">Volver al Inicio</a>
-            </div>
-        </section>
-    </main>
+        <section class="cta-section"> <!-- Seccion de llamada a la accion -->
+            <h2>¿Listo para comenzar?</h2> <!-- Titulo tipo h2 -->
+            <p>Únete y confía en NoteFlow</p> <!-- Texto normal -->
+            <div class="cta-buttons"> <!-- Contenedor de botones -->
+                <a href="/registro.html" class="btn btn-primary">Crear Cuenta Gratis</a> <!-- Boton primario -->
+                <a href="/" class="btn btn-secondary">Volver al Inicio</a> <!-- Boton secundario -->
+            </div> <!-- Se cierra el contenedor de botones -->
+        </section> <!-- Se cierra la seccion -->
+    </main> <!-- Se cierra el main -->
 
-    <footer>
-        <p>&copy; 2025 NoteFlow. Todos los derechos reservados.</p>
-    </footer>
+    <footer> <!-- Pie de pagina -->
+        <p>&copy; 2025 NoteFlow. Todos los derechos reservados.</p> <!--Pie de pagina -->
+    </footer> <!-- Se cierra el pie de pagina -->
 </body>
 </html>

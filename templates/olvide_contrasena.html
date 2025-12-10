@@ -1,68 +1,67 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olvidé Contraseña | NoteFlow</title>
-    <link rel="stylesheet" href="/static/formulario.css">
-</head>
-<body>
-    <form class="formulario" action="/procesar-olvide-contrasena" method="POST" id="form-olvide">
-        <nav>
-            <ul class="formulario-ul">
-                <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
-                <li class="li-formulario"><a href="/registro.html">Registro</a></li>
-            </ul>
-        </nav>
+<!DOCTYPE html><!--Declaración de documento HTML5-->
+<html lang="es"><!--Elemento raíz con idioma español-->
+<head><!--Inicio de metadatos del documento-->
+    <meta charset="UTF-8"><!--Codificación UTF-8 para caracteres especiales-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Configuración responsive-->
+    <title>Olvidé Contraseña | NoteFlow</title><!--Título de la pestaña del navegador-->
+    <link rel="stylesheet" href="/static/formulario.css"><!--Enlace a hoja de estilos de formularios-->
+</head><!--Cierre del head-->
+<body><!--Inicio del cuerpo del documento-->
+    <form class="formulario" action="/procesar-olvide-contrasena" method="POST" id="form-olvide"><!--Formulario con ID único, action al endpoint de procesamiento, método POST-->
+        <nav><!--Navegación entre pestañas del formulario-->
+            <ul class="formulario-ul"><!--Lista de navegación-->
+                <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li><!--Enlace a página de login-->
+                <li class="li-formulario"><a href="/registro.html">Registro</a></li><!--Enlace a página de registro-->
+            </ul><!--Cierre de la lista-->
+        </nav><!--Cierre del nav-->
 
-        <h2 class="h2-registro">RECUPERAR CONTRASEÑA</h2>
-        <p class="instruccion">Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+        <h2 class="h2-registro">RECUPERAR CONTRASEÑA</h2><!--Título principal del formulario en mayúsculas-->
+        <p class="instruccion">Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p><!--Instrucciones para el usuario-->
 
-        <section class="inputs">
-            <label>Correo electrónico</label>
-            <input type="email" name="correo" placeholder="correo@ejemplo.com" required>
-        </section>
+        <section class="inputs"><!--Sección para agrupar campos de entrada-->
+            <label>Correo electrónico</label><!--Etiqueta descriptiva del campo-->
+            <input type="email" name="correo" placeholder="correo@ejemplo.com" required><!--Campo de email con validación HTML5, requerido-->
+        </section><!--Cierre de la sección inputs-->
 
-        <button type="submit">Enviar Enlace de Recuperación</button>
+        <button type="submit">Enviar Enlace de Recuperación</button><!--Botón de envío del formulario-->
         
-        <p><a href="/iniciarsesion.html">Volver a Iniciar Sesión</a></p>
-    </form>
+        <p><a href="/iniciarsesion.html">Volver a Iniciar Sesión</a></p><!--Enlace para regresar al login-->
+    </form><!--Cierre del formulario-->
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('form-olvide');
+    <script><!--Inicio del bloque JavaScript-->
+        document.addEventListener('DOMContentLoaded', function() {//Evento que espera a que el DOM esté listo
+            const form = document.getElementById('form-olvide');//Selecciona el formulario por su ID
             
-            if (form) {
-                form.addEventListener('submit', async function(e) {
-                    e.preventDefault();
+            if (form) {//Verifica que el formulario exista
+                form.addEventListener('submit', async function(e) {//Agrega listener al evento submit, función asíncrona
+                    e.preventDefault();//Previene el envío tradicional del formulario
                     
-                    const formData = new FormData(this);
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    const btnText = submitBtn.textContent;
+                    const formData = new FormData(this);//Crea objeto FormData con los datos del formulario
+                    const submitBtn = this.querySelector('button[type="submit"]');//Selecciona el botón de envío
+                    const btnText = submitBtn.textContent;//Guarda el texto original del botón
                     
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Enviando...';
-                    
-                    try {
-                        const response = await fetch('/procesar-olvide-contrasena', {
-                            method: 'POST',
-                            body: formData
-                        });
+                    submitBtn.disabled = true;//Deshabilita el botón para prevenir doble envío
+                    submitBtn.textContent = 'Enviando...';//Cambia texto a estado de carga
+                   
+                    try {//Inicio del bloque try para manejo de errores
+                        const response = await fetch('/procesar-olvide-contrasena', {//Petición fetch asíncrona al servidor
+                            method: 'POST',//Método HTTP POST
+                            body: formData//Envía los datos del formulario
+                        });//Cierre de configuración fetch
                         
-                        const data = await response.json();
+                        const data = await response.json();//Parsea la respuesta JSON
                         
-                        // Siempre mostrar mensaje de éxito (genérico por seguridad)
-                        alert(data.mensaje);
+                        alert(data.mensaje);//Muestra mensaje del servidor (siempre genérico por seguridad)
                         
-                    } catch (error) {
-                        alert('Error de conexión. Intenta más tarde.');
-                    } finally {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = btnText;
-                    }
-                });
-            }
-        });
-    </script>
-</body>
-</html>
+                    } catch (error) {//Captura errores de red
+                        alert('Error de conexión. Intenta más tarde.');//Mensaje de error al usuario
+                    } finally {//Bloque que siempre se ejecuta
+                        submitBtn.disabled = false;//Reactiva el botón
+                        submitBtn.textContent = btnText;//Restaura el texto original
+                    }//Cierre del finally
+                });//Cierre del event listener submit
+            }//Cierre del if
+        });//Cierre del DOMContentLoaded
+    </script><!--Cierre del script-->
+</body><!--Cierre del body-->
+</html><!--Cierre del documento HTML-->

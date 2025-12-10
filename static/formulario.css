@@ -1,4 +1,33 @@
-/* ========== ESTILOS GLOBALES ========== */
+/*** ============================================================================
+ * ESTRUCTURA:
+ * 1. Reset y estilos globales
+ * 2. Estilos del formulario principal
+ * 3. Navegación entre formularios
+ * 4. Títulos y encabezados
+ * 5. Campos de entrada (inputs)
+ * 6. Botones
+ * 7. Texto y enlaces
+ * 8. Botón de inicio de sesión con Google
+ * 9. Responsive design (adaptabilidad móvil)
+ * ============================================================================
+ */
+
+
+/* ========================================================================== */
+/* SECCIÓN 1: RESET Y ESTILOS GLOBALES                                       */
+/* ========================================================================== */
+
+/**
+ * Selector universal (*)
+ * 
+ * Reinicia los estilos por defecto del navegador para asegurar
+ * consistencia visual en todos los navegadores.
+ * 
+ * Propiedades:
+ * - margin: 0 → Elimina todos los márgenes externos
+ * - padding: 0 → Elimina todos los espacios internos
+ * - box-sizing: border-box → Incluye padding y border en el ancho/alto total
+ */
 * {
     margin: 0;
     padding: 0;
@@ -6,169 +35,418 @@
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/**
+ * Estilos del elemento body
+ * 
+ * Configura la página completa como un contenedor centrado con:
+ * - 100vh: Altura completa de la ventana del navegador
+ * - Flexbox: Para centrar el formulario vertical y horizontalmente
+ * - Fondo degradado: De gris a morado a blanco (marca visual de NoteFlow)
+ * - overflow: hidden → Oculta barras de desplazamiento
+ */
 body {
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    background: linear-gradient(135deg, #727272, #51368f, #ffffff); 
+    height: 100vh;                                                      /* Altura completa de la ventana */
+    display: flex;                                                      /* Activar flexbox */
+    justify-content: center;                                            /* Centrado horizontal */
+    align-items: center;                                                /* Centrado vertical */
+    overflow: hidden;                                                   /* Sin scroll */
+    background: linear-gradient(135deg, #727272, #51368f, #ffffff);    /* Degradado diagonal */
 }
 
-/* ========== FORMULARIO ========== */
+
+
+
+
+
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 2: ESTILOS DEL FORMULARIO PRINCIPAL                               */
+/* ========================================================================== */
+
+/**
+ * Elemento form
+ * 
+ * Contenedor principal del formulario de autenticación.
+ * 
+ * Características:
+ * - Fondo blanco para destacar sobre el degradado
+ * - Ancho fijo de 380px para diseño consistente
+ * - Bordes redondeados (12px) para apariencia moderna
+ * - Padding interno para espaciar el contenido
+ * - box-shadow: Sombra sutil para efecto de elevación
+ */
 form {
-    background: #ffffff;
-    width: 380px;
-    border-radius: 12px;
-    padding: 30px 35px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: #ffffff;                             /* Fondo blanco */
+    width: 380px;                                    /* Ancho fijo */
+    border-radius: 12px;                             /* Esquinas redondeadas */
+    padding: 30px 35px;                              /* Espaciado interno (vertical horizontal) */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);      /* Sombra suave para profundidad */
 }
 
-/* ========== NAVEGACIÓN ========== */
+
+
+
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 3: NAVEGACIÓN ENTRE FORMULARIOS                                   */
+/* ========================================================================== */
+
+/**
+ * Elemento nav
+ * 
+ * Barra de navegación superior del formulario que permite alternar
+ * entre "Iniciar Sesión" y "Registro".
+ * 
+ * Layout:
+ * - Flexbox para distribuir elementos horizontalmente
+ * - space-between: Máxima separación entre elementos
+ * - Borde inferior para separación visual del contenido
+ */
 nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid #f0f0f0;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
+    display: flex;                                   /* Activar flexbox */
+    justify-content: space-between;                  /* Separar elementos al máximo */
+    align-items: center;                             /* Alineación vertical centrada */
+    border-bottom: 2px solid #f0f0f0;               /* Línea separadora inferior */
+    margin-bottom: 15px;                             /* Espacio inferior */
+    padding-bottom: 10px;                            /* Espacio interno inferior */
 }
 
+/**
+ * Clase: .formulario-ul
+ * 
+ * Lista de enlaces de navegación (Iniciar Sesión / Registro)
+ * 
+ * Características:
+ * - Flexbox para disposición horizontal
+ * - Gap de 10px entre elementos
+ * - Sin viñetas (list-style: none)
+ */
 .formulario-ul {
-    display: flex;
-    gap: 10px;
-    list-style: none;
+    display: flex;                                   /* Disposición horizontal */
+    gap: 10px;                                       /* Espacio entre elementos */
+    list-style: none;                                /* Sin puntos de lista */
 }
 
+/**
+ * Clase: .li-formulario a
+ * 
+ * Enlaces individuales de navegación entre formularios.
+ * 
+ * Estados:
+ * - Normal: Color gris (#666)
+ * - Hover: Color morado con fondo claro
+ * - Activo (.activo): Color morado con fondo claro (persiste)
+ */
 .li-formulario a {
-    color: #666;
-    font-weight: 600;
-    text-decoration: none;
-    padding: 5px 10px;
-    border-radius: 5px;
+    color: #666;                                     /* Color gris por defecto */
+    font-weight: 600;                                /* Texto semi-negrita */
+    text-decoration: none;                           /* Sin subrayado */
+    padding: 5px 10px;                               /* Espaciado interno */
+    border-radius: 5px;                              /* Esquinas redondeadas */
 }
 
 .li-formulario a:hover {
-    color:#5e12a5  ;
-    background: #faedfd;
+    color: #5e12a5;                                  /* Color morado al hover */
+    background: #faedfd;                             /* Fondo lila claro al hover */
 }
 
 .li-formulario a.activo {
-    color:#5e12a5  ;
-    background: #faedfd;
+    color: #5e12a5;                                  /* Color morado cuando está activo */
+    background: #faedfd;                             /* Fondo lila claro cuando está activo */
 }
 
-/* ========== TÍTULO ========== */
+
+
+
+
+
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 4: TÍTULOS Y ENCABEZADOS                                          */
+/* ========================================================================== */
+
+/**
+ * Clase: .h2-registro
+ * 
+ * Título principal del formulario (ej: "INICIAR SESIÓN", "REGISTRO").
+ * 
+ * Características:
+ * - Centrado horizontalmente
+ * - Tamaño de fuente grande (26px) para jerarquía visual
+ * - Color gris oscuro (#333) para contraste
+ * - Márgenes verticales para espaciado
+ */
 .h2-registro {
-    text-align: center;
-    font-size: 26px;
-    color: #333;
-    margin: 20px 0;
+    text-align: center;                              /* Centrado horizontal */
+    font-size: 26px;                                 /* Tamaño grande */
+    color: #333;                                     /* Gris oscuro */
+    margin: 20px 0;                                  /* Márgenes superior e inferior */
 }
 
-/* ========== CAMPOS DE ENTRADA ========== */
+
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 5: CAMPOS DE ENTRADA (INPUTS)                                     */
+/* ========================================================================== */
+
+/**
+ * Elemento label
+ * 
+ * Etiquetas descriptivas para los campos de entrada.
+ * 
+ * Características:
+ * - display: block → Ocupa toda la línea
+ * - Color gris medio (#555) para jerarquía visual
+ * - Margen superior para separación de elementos anteriores
+ * - font-weight: 500 → Peso medio (semi-negrita)
+ */
 label {
-    display: block;
-    color: #555;
-    margin-top: 15px;
-    font-size: 14px;
-    font-weight: 500;
+    display: block;                                  /* Bloque completo */
+    color: #555;                                     /* Gris medio */
+    margin-top: 15px;                                /* Espacio superior */
+    font-size: 14px;                                 /* Tamaño de fuente */
+    font-weight: 500;                                /* Peso medio */
 }
 
+/**
+ * Elemento input
+ * 
+ * Campos de entrada de texto para el formulario.
+ * 
+ * Características:
+ * - Ancho completo (100%) para uniformidad
+ * - Altura fija (38px) para consistencia
+ * - Borde sutil (2px solid #e0e0e0)
+ * - Fondo gris muy claro (#fafafa) por defecto
+ * - Padding interno para espaciar el texto
+ * 
+ * Estado focus:
+ * - Borde azul (#667eea) para indicar campo activo
+ * - Fondo blanco para máximo contraste
+ * - Sin outline por defecto del navegador
+ */
 input {
-    width: 100%;
-    height: 38px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    background: #fafafa;
-    color: #333;
-    padding: 0 12px;
-    font-size: 15px;
+    width: 100%;                                     /* Ancho completo del contenedor */
+    height: 38px;                                    /* Altura fija */
+    border: 2px solid #e0e0e0;                      /* Borde gris claro */
+    border-radius: 6px;                              /* Esquinas redondeadas */
+    background: #fafafa;                             /* Fondo gris muy claro */
+    color: #333;                                     /* Texto gris oscuro */
+    padding: 0 12px;                                 /* Espaciado interno horizontal */
+    font-size: 15px;                                 /* Tamaño de fuente */
 }
 
 input:focus {
-    border-color: #667eea;
-    outline: none;
-    background: #fff;
+    border-color: #667eea;                           /* Borde azul al enfocar */
+    outline: none;                                   /* Eliminar outline por defecto */
+    background: #fff;                                /* Fondo blanco al enfocar */
 }
 
-/* ========== BOTONES ========== */
+
+
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 6: BOTONES                                                         */
+/* ========================================================================== */
+
+/**
+ * Elemento button
+ * 
+ * Botón principal de envío del formulario (submit).
+ * 
+ * Características:
+ * - display: block → Ocupa toda la línea
+ * - Ancho completo (100%)
+ * - Altura fija (45px)
+ * - Color de fondo morado (#5e12a5) - color corporativo de NoteFlow
+ * - Texto blanco para máximo contraste
+ * - Sin borde para diseño limpio
+ * - Bordes redondeados (8px)
+ * - cursor: pointer → Indica interactividad
+ * 
+ * Estado hover:
+ * - Color más oscuro (#5931b8) para feedback visual
+ */
 button {
-    display: block;
-    width: 100%;
-    height: 45px;
-    background: #5e12a5;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    margin-top: 25px;
-    cursor: pointer;
+    display: block;                                  /* Elemento de bloque */
+    width: 100%;                                     /* Ancho completo */
+    height: 45px;                                    /* Altura fija */
+    background: #5e12a5;                            /* Morado corporativo */
+    color: #fff;                                     /* Texto blanco */
+    border: none;                                    /* Sin borde */
+    border-radius: 8px;                              /* Esquinas redondeadas */
+    font-size: 15px;                                 /* Tamaño de fuente */
+    font-weight: 600;                                /* Texto semi-negrita */
+    margin-top: 25px;                                /* Espacio superior */
+    cursor: pointer;                                 /* Cursor de mano */
 }
 
 button:hover {
-    background:#5931b8;
+    background: #5931b8;                            /* Morado más oscuro al hover */
 }
 
-/* ========== TEXTO INFERIOR ========== */
+
+
+
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 7: TEXTO Y ENLACES                                                */
+/* ========================================================================== */
+
+/**
+ * Elemento p
+ * 
+ * Párrafos de texto informativo (ej: "¿Ya tienes cuenta?").
+ * 
+ * Características:
+ * - Centrado horizontalmente
+ * - Margen superior para separación
+ * - Color gris (#666) para jerarquía secundaria
+ */
 p {
-    text-align: center;
-    margin-top: 15px;
-    color: #666;
+    text-align: center;                              /* Centrado horizontal */
+    margin-top: 15px;                                /* Espacio superior */
+    color: #666;                                     /* Gris medio */
 }
 
+/**
+ * Enlaces dentro de párrafos (p a)
+ * 
+ * Enlaces de navegación (ej: "Registrarse", "Iniciar sesión").
+ * 
+ * Estados:
+ * - Normal: Color azul (#667eea)
+ * - Hover: Subrayado para indicar interactividad
+ */
 p a {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 600;
+    color: #667eea;                                  /* Azul para enlaces */
+    text-decoration: none;                           /* Sin subrayado por defecto */
+    font-weight: 600;                                /* Texto semi-negrita */
 }
 
 p a:hover {
-    text-decoration: underline;
+    text-decoration: underline;                      /* Subrayado al hover */
 }
 
+/**
+ * Clase: .forgot-password
+ * 
+ * Enlace de "¿Olvidaste tu contraseña?" alineado a la derecha.
+ */
 .forgot-password {
-    text-align: right;
-    margin-top: 10px;
+    text-align: right;                               /* Alineado a la derecha */
+    margin-top: 10px;                                /* Espacio superior */
 }
 
+/**
+ * Clase: .instruccion
+ * 
+ * Texto de instrucciones para el usuario (ej: "Ingresa tu correo...").
+ * 
+ * Características:
+ * - Tamaño de fuente más pequeño (14px)
+ * - Color gris (#666) para menor prominencia
+ * - Margen inferior para separación del siguiente elemento
+ */
 .instruccion {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 15px;
+    font-size: 14px;                                 /* Tamaño pequeño */
+    color: #666;                                     /* Gris medio */
+    margin-bottom: 15px;                             /* Espacio inferior */
 }
 
-/* ========== BOTÓN GOOGLE ========== */
+
+
+
+
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 8: BOTÓN DE GOOGLE                                                */
+/* ========================================================================== */
+
+/**
+ * Clase: .google-btn
+ * 
+ * Botón de inicio de sesión con Google.
+ * 
+ * Características:
+ * - Flexbox para alinear ícono y texto
+ * - Gap de 8px entre ícono y texto
+ * - Fondo blanco con borde gris
+ * - Texto oscuro (#333)
+ * - Altura consistente con otros botones (45px)
+ * 
+ * Estado hover:
+ * - Fondo gris muy claro (#fafafa)
+ * - Borde azul (#667eea) para feedback visual
+ */
 .google-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: #fff;
-    color: #333;
-    border: 2px solid #e0e0e0;
-    width: 100%;
-    height: 45px;
-    border-radius: 8px;
-    margin-top: 10px;
-    cursor: pointer;
-    font-weight: 500;
+    display: flex;                                   /* Activar flexbox */
+    align-items: center;                             /* Alineación vertical centrada */
+    justify-content: center;                         /* Centrado horizontal */
+    gap: 8px;                                        /* Espacio entre ícono y texto */
+    background: #fff;                                /* Fondo blanco */
+    color: #333;                                     /* Texto gris oscuro */
+    border: 2px solid #e0e0e0;                      /* Borde gris claro */
+    width: 100%;                                     /* Ancho completo */
+    height: 45px;                                    /* Altura fija */
+    border-radius: 8px;                              /* Esquinas redondeadas */
+    margin-top: 10px;                                /* Espacio superior */
+    cursor: pointer;                                 /* Cursor de mano */
+    font-weight: 500;                                /* Peso medio */
 }
 
+/**
+ * Ícono de Google dentro del botón
+ * 
+ * Tamaño fijo de 20x20px para el logotipo de Google.
+ */
 .google-btn img {
-    width: 20px;
+    width: 20px;                                     /* Ancho del ícono */
 }
 
 .google-btn:hover {
-    background: #fafafa;
-    border-color: #667eea;
+    background: #fafafa;                             /* Fondo gris claro al hover */
+    border-color: #667eea;                           /* Borde azul al hover */
 }
 
-/* ========== RESPONSIVE ========== */
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 9: RESPONSIVE DESIGN                                              */
+/* ========================================================================== */
+
+/**
+ * Media Query para pantallas pequeñas (móviles)
+ * 
+ * Se activa cuando el ancho de la pantalla es menor o igual a 480px.
+ * 
+ * Ajustes:
+ * - Formulario ocupa 90% del ancho disponible (en lugar de 380px fijo)
+ * - Padding reducido (25px) para aprovechar mejor el espacio
+ * 
+ * Propósito:
+ * Garantizar que el formulario sea completamente funcional y legible
+ * en dispositivos móviles sin necesidad de hacer zoom o scroll horizontal.
+ */
 @media screen and (max-width: 480px) {
     form {
-        width: 90%;
-        padding: 25px;
+        width: 90%;                                  /* Ancho relativo en móviles */
+        padding: 25px;                               /* Padding reducido */
     }
 }
+

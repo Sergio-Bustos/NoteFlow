@@ -1,0 +1,375 @@
+/* ========== VARIABLES PARA TEMAS ========== */
+        :root {
+            --color-principal: #5452d3; /* Color principal */
+             
+            /* Tema Claro */
+            --bg-claro: #ecf0f1; /* Fondo claro */
+            --sidebar-claro: #5452d3; /* Barra lateral clara */
+            --texto-claro: #2c3e50; /* Texto claro */
+            --card-claro: #ffffff; /* Tarjetas claras */
+            --border-claro: #bdc3c7; /* Bordes claros */
+            
+            /* Tema Oscuro */
+            --bg-oscuro: #1a1a1a; /* Fondo oscuro */
+            --sidebar-oscuro: #1f1f1f; /* Barra lateral oscura */
+            --texto-oscuro: #e0e0e0; /* Texto oscuro */
+            --card-oscuro: #2d2d2d; /* Tarjetas oscuras */
+            --border-oscuro: #404040; /* Bordes oscuros */
+            
+            /* Colores comunes */
+            --color-secundario: #f39c12; /* Color secundario */
+            --color-peligro: #e74c3c; /* Color de peligro */
+            --color-exito: #2ecc71; /* Color de éxito */
+        }
+        
+        * {
+            margin: 0; /*Eliminar espacios por defecto*/
+            padding: 0; /*Eliminar espacios por defecto en el relleno*/
+            box-sizing: border-box; /* Incluir bordes y padding en el tamaño total de los elementos */
+        }
+
+        /* ========== TEMA CLARO (Por defecto) ========== */
+        body.tema-claro {  /* Estilo para tema claro */
+            background-color: var(--bg-claro);  /* Fondo claro */
+            color: var(--texto-claro); /* Texto claro */
+            font-family: sans-serif; /* Fuente sans-serif */
+        }
+
+        body.tema-claro .sidebar { /* Estilo de la barra lateral en tema claro */
+            background-color: var(--sidebar-claro); /* Barra lateral clara */
+        }
+ 
+        body.tema-claro .nota-card,  /* Estilo de las tarjetas de notas en tema claro */
+        body.tema-claro .stats .card {   /*  Estilo de las tarjetas de estadísticas en tema claro */
+            background-color: var(--card-claro); /* Color del fondo blanco*/
+            color: var(--texto-claro); /*Texto blanco */
+        }
+ 
+        body.tema-claro header { /* Header cuando el tema es claro*/
+            border-bottom: 1px solid var(--border-claro); /* Borde claro de boton*/
+        }
+
+        body.tema-claro .usuario-info { /* Info del usuario cuando esta claro en blanco */
+            color: var(--texto-claro); /* Color del texto claro/blanco */
+        }
+
+        body.tema-claro .bienvenida h2, /*  Body de bienvenida y de notas recientes en tema claro el titulo h2 */
+        body.tema-claro .recientes h2 { /*  de recientes el titulo h2*/
+            color: var(--texto-claro); /* color del texto claro/blanco*/
+        } 
+
+        /* ========== TEMA OSCURO ========== */
+        body.tema-oscuro { /* Estilo para tema oscuro */ 
+            background-color: var(--bg-oscuro); /* fondo de color negro */
+            color: var(--texto-oscuro);  /* color del texto oscuro/blanco */
+            font-family: sans-serif; /* Fuente sans-serif */
+        }
+ 
+        body.tema-oscuro .sidebar { /*  Barra lateral en tema oscuro */
+            background-color: var(--sidebar-oscuro); /* fondo de color negro */
+            border-right: 1px solid var(--border-oscuro); /* borde oscuro */
+        }
+
+        body.tema-oscuro .nota-card, /* Tarjetas de notas en tema oscuro */
+        body.tema-oscuro .stats .card { /* Tarjetas de estadísticas en tema oscuro */
+            background-color: var(--card-oscuro); /* fondo oscuro */
+            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* sombra para profundidad */
+        }
+
+        body.tema-oscuro header { /* Encabezado en tema oscuro */
+            border-bottom: 1px solid var(--border-oscuro); /* borde oscuro */
+        }
+
+        body.tema-oscuro .usuario-info { /* Información del usuario en tema oscuro */
+            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
+        }
+
+        body.tema-oscuro .bienvenida h2, /* Títulos de bienvenida en tema oscuro */
+        body.tema-oscuro .recientes h2 { /* Títulos de notas recientes en tema oscuro */
+            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
+        }
+
+        body.tema-oscuro .nota-card h4 { /* Título h4 de las tarjetas de notas en tema oscuro */
+            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
+        } 
+
+        body.tema-oscuro .description { /* Descripción de las tarjetas de notas en tema oscuro */
+            color: #95a5a6 !important; /* color gris claro para mejor legibilidad */
+        }
+
+        body.tema-oscuro .card-footer { /* Pie de las tarjetas en tema oscuro */
+            border-top-color: var(--border-oscuro); /* color del borde superior oscuro */
+        }
+
+        body.tema-oscuro .card-footer small { /* Texto pequeño en el pie de las tarjetas en tema oscuro */
+            color: #7f8c8d; /* color gris medio para mejor legibilidad */
+        }
+
+        /* ========== ESTILOS GENERALES ========== */
+        .sidebar {
+            width: 250px; /* Ancho fijo de la barra lateral */
+            height: 100vh; /* Altura completa de la ventana */
+            position: fixed; /* Posición fija */
+            color: white; /* Color del texto blanco */
+            padding: 20px 0; /* Relleno superior e inferior */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* Sombra para profundidad */
+        }
+
+        .logo {  /* Estilo del logo en la barra lateral */
+            text-align: center; /* Centrar el logo */
+            font-size: 1.8em; /* Tamaño de fuente grande */
+            font-weight: bold; /* Fuente en negrita */
+            margin-bottom: 30px; /* Margen inferior */
+            color: white; /* Color del texto blanco */
+        }
+
+        .menu { /* Estilo del menú de navegación */
+            list-style: none; /* Eliminar viñetas de la lista */
+            padding: 0; /* Eliminar relleno */
+        }
+
+        .menu li a {  /* Estilo de los enlaces del menú */
+            display: block; /* Mostrar como bloque */
+            padding: 12px 20px; /* Relleno */
+            color: #ecf0f1; /* Color del texto claro */
+            text-decoration: none; /* Eliminar subrayado */
+            transition: background-color 0.2s; /* Transición suave para el fondo */
+        }
+
+        .menu li a:hover, /* Estilo al pasar el ratón sobre los enlaces del menú */
+        .menu li a.active { /* Estilo para el enlace activo del menú */
+            background-color: rgba(255,255,255,0.1); /* Fondo ligeramente más claro */
+            border-left: 5px solid var(--color-principal);  /* Borde izquierdo destacado */
+            padding-left: 15px; /* Ajuste del relleno izquierdo */
+        }
+
+        .menu li a i { /* Estilo de los iconos en los enlaces del menú */
+            margin-right: 10px; /* Espacio entre el icono y el texto */
+        }
+
+        .separator { /* Estilo del separador en la barra lateral */
+            border-top: 1px solid rgba(255,255,255,0.1);    /* Línea superior tenue */
+            margin: 15px 0; /* Margen superior e inferior */
+        }
+
+        .logout-btn { /* Estilo del botón de cierre de sesión */
+            display: block; /* Mostrar como bloque */
+            text-align: center; /* Centrar el texto */
+            margin: 30px 20px 0; /* Margen */
+            padding: 10px 0; /* Relleno */
+            background-color: var(--color-peligro);  /* Fondo rojo */
+            color: white; /* Color del texto blanco */
+            text-decoration: none; /* Eliminar subrayado */
+            border-radius: 5px; /* Bordes redondeados */
+            transition: background-color 0.2s; /* Transición suave para el fondo */
+        }
+
+        .logout-btn:hover { /* Estilo al pasar el ratón sobre el botón de cierre de sesión */
+            background-color: #c0392b; /* Fondo rojo oscuro */
+        }
+
+        .main { /* Estilo del contenedor principal */
+            margin-left: 250px; /* Margen izquierdo para dejar espacio a la barra lateral */
+            padding: 30px; /* Relleno */
+        }
+
+        header { /* Estilo del encabezado */
+            display: flex; /* Usar flexbox */
+            justify-content: space-between; /* Espacio entre elementos */
+            align-items: center; /* Alinear verticalmente */
+            padding-bottom: 20px; /* Relleno inferior */
+            margin-bottom: 30px; /* Margen inferior */
+        }
+
+        .search-btn { /* Estilo del botón de búsqueda */
+            background-color: var(--color-principal); /* Fondo del color principal */
+            color: white; /* Color del texto blanco */
+            border: none; /* Sin borde */
+            padding: 10px 15px; /* Relleno */
+            border-radius: 5px; /* Bordes redondeados */
+            cursor: pointer; /* Cambiar el cursor al pasar sobre el botón */
+            transition: background-color 0.2s; /* Transición suave para el fondo */
+            font-size: 1em; /* Tamaño de fuente */
+        }
+
+        .search-btn:hover { /* Estilo al pasar el ratón sobre el botón de búsqueda */
+            background-color: #2980b9; /* Fondo azul oscuro */
+        }
+
+        .usuario-info { /* Estilo de la información del usuario */
+            display: flex; /* Usar flexbox */
+            align-items: center; /* Alinear verticalmente */
+            text-decoration: none; /* Eliminar subrayado */
+        }
+
+        .usuario-info img { /* Estilo de la imagen del usuario */
+            width: 40px; /* Ancho */
+            height: 40px; /* Alto */
+            border-radius: 50%; /* Hacerla circular */
+            margin-right: 10px; /* Margen derecho */
+            border: 2px solid var(--color-principal); /* Borde del color principal */
+            object-fit: cover; /* Ajustar la imagen */
+        }
+
+        .profile-dropdown-icon { /* Estilo del icono desplegable del perfil */
+            margin-left: 10px; /* Espacio entre el icono y el texto */
+        }
+
+        .bienvenida h2 { /* Estilo del título de bienvenida */
+            margin-bottom: 5px; /* Margen inferior */
+        }
+
+        .stats { /* Estilo del contenedor de estadísticas */
+            display: flex; /* Usar flexbox */
+            gap: 20px; /* Espacio entre las tarjetas */
+            margin-bottom: 40px; /* Margen inferior */
+        }
+
+        .stats .card { /* Estilo de las tarjetas de estadísticas */
+            flex: 1; /* Tomar igual espacio */
+            padding: 20px; /* Relleno */
+            border-radius: 8px; /* Bordes redondeados */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Sombra para profundidad */
+            text-align: center; /* Centrar el texto */
+        }
+
+        .stats .stat-icon { /* Estilo de los iconos de estadísticas */
+            font-size: 2em; /* Tamaño grande */
+            color: var(--color-principal);  /* Color del icono */
+            margin-bottom: 10px; /* Margen inferior */
+        }
+
+        .stats .warning-card .stat-icon { /* Estilo del icono de advertencia */
+            color: var(--color-secundario); /* Color secundario */
+        } 
+
+        .stats h3 { /* Estilo del título h3 en las tarjetas de estadísticas */
+            margin: 0; /* Eliminar margen */
+            font-size: 2em; /* Tamaño grande */
+        }
+
+        .recientes h2 { /* Estilo del título de notas recientes */
+            margin-bottom: 20px; /* Margen inferior */
+        }
+
+        .grid { /* Estilo del contenedor de la cuadrícula de notas */
+            display: grid; /* Usar grid layout */
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Columnas responsivas */
+            gap: 20px; /* Espacio entre las tarjetas */
+        }
+ 
+        .nota-card { /* Estilo de las tarjetas de notas */
+            padding: 15px; /* Relleno */
+            border-radius: 8px; /* Bordes redondeados */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra para profundidad */
+            border-left: 5px solid var(--color-principal); /* Borde izquierdo del color principal */
+            display: flex; /* Usar flexbox */
+            flex-direction: column; /* Dirección de columna */
+        }
+
+        .nota-card h4 { /* Estilo del título h4 de las tarjetas de notas */
+            margin-top: 0; /* Eliminar margen superior */
+            margin-bottom: 5px; /* Margen inferior */
+        }
+
+        .nota-card .description { /* Estilo de la descripción en las tarjetas de notas */
+            font-size: 0.9em;   /* Tamaño de fuente más pequeño */
+            color: #7f8c8d;     /* Color gris medio */
+            flex-grow: 1; /* Permitir que la descripción crezca */
+            margin-bottom: 10px; /* Margen inferior */
+        }
+
+        .card-header { /* Estilo del encabezado de las tarjetas */
+            display: flex; /* Usar flexbox */
+            justify-content: space-between; /* Espacio entre elementos */
+            margin-bottom: 10px; /* Margen inferior */
+        }
+
+        .visibility-indicator i { /* Estilo de los iconos de visibilidad */
+            font-size: 1.1em; /* Tamaño del icono */
+            margin-right: 5px; /* Espacio entre el icono y el texto */
+        } 
+
+        .fa-lock { /* Estilo del icono de candado */
+            color: var(--color-peligro); /* Color de peligro */
+        }
+
+        .fa-globe { /* Estilo del icono de globo */
+            color: var(--color-exito); /* Color de éxito */
+        }
+
+        .attachment-indicator i { /* Estilo del icono de adjunto */
+            color: var(--color-principal); /* Color del icono */
+        }
+
+        .tags-container { /* Estilo del contenedor de etiquetas */
+            margin-bottom: 15px; /* Margen inferior */
+            display: flex; /* Usar flexbox */
+            flex-wrap: wrap; /* Permitir que las etiquetas se envuelvan */
+            gap: 5px; /* Espacio entre las etiquetas */
+        }
+
+        .tag-chip { /* Estilo de las etiquetas tipo chip */
+            background-color: #f1c40f; /* Fondo amarillo */
+            color: #2c3e50; /* Color del texto oscuro */
+            font-size: 0.75em; /* Tamaño de fuente pequeño */
+            padding: 3px 8px; /* Relleno */
+            border-radius: 12px; /* Bordes redondeados */
+            font-weight: bold; /* Fuente en negrita */
+        }
+
+        .tag-chip.no-tag { /* Estilo para la etiqueta "Sin etiquetas" */
+            background-color: #95a5a6; /* Fondo gris */
+            color: white; /* Color del texto blanco */
+            font-style: italic; /* Texto en cursiva */
+        }
+
+        .card-footer { /* Estilo del pie de las tarjetas */
+            display: flex; /* Usar flexbox */
+            justify-content: space-between; /* Espacio entre elementos */
+            align-items: center; /* Alinear verticalmente */
+            border-top: 1px solid; /* Borde superior */
+            padding-top: 10px; /* Relleno superior */
+            margin-top: auto; /* Empujar el pie al final */
+        }
+
+        .card-footer small {  /* Estilo del texto pequeño en el pie de las tarjetas */
+            color: #95a5a6; /* Color gris claro */
+            font-size: 0.8em; /* Tamaño de fuente pequeño */
+        }
+
+        .view-btn { /* Estilo del botón de ver nota */
+            background-color: var(--color-principal); /* Fondo del color principal */
+            color: white; /* Color del texto blanco */
+            text-decoration: none; /* Eliminar subrayado */
+            padding: 5px 10px; /* Relleno */
+            border-radius: 5px; /* Bordes redondeados */
+            font-size: 0.9em; /* Tamaño de fuente */
+            transition: background-color 0.2s; /* Transición suave para el fondo */
+        }
+
+        .view-btn:hover { /* Estilo al pasar el ratón sobre el botón de ver nota */
+            background-color: #2980b9; /* Fondo azul oscuro */
+        }   
+
+        .no-results-message { /* Estilo del mensaje de no resultados */
+            color: #95a5a6; /* Color gris claro */
+            font-style: italic; /* Texto en cursiva */
+        }
+
+        @media (max-width: 768px) { /* Estilos para pantallas pequeñas */
+            .sidebar { /* Barra lateral en pantallas pequeñas */
+                width: 100%; /* Ancho completo */
+                height: auto; /* Altura automática */
+                position: relative; /* Posición relativa */
+            }
+            
+            .main { /* Contenedor principal en pantallas pequeñas */
+                margin-left: 0; /* Sin margen izquierdo */
+            }
+            
+            .stats { /* Contenedor de estadísticas en pantallas pequeñas */
+                flex-direction: column; /* Dirección de columna */
+            }
+        }

@@ -1,0 +1,352 @@
+/* ========== ESTILOS GLOBALES ========== */
+* {
+    margin: 0;                                /* Quita todos los márgenes predeterminados */
+    padding: 0;                               /* Quita todos los rellenos predeterminados */
+    box-sizing: border-box;                   /* Hace que el tamaño incluya borde y padding */
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;  /* Tipo de letra general */
+}
+
+body {
+    min-height: 100vh;                        /* El cuerpo ocupa al menos toda la pantalla */
+    background: linear-gradient(135deg, #727272, #51368f, #ffffff); /* Fondo con degradado diagonal */
+    overflow-x: hidden;                       /* Evita que salga scroll horizontal */
+}
+
+/* ========== HEADER FIJO ========== */
+header {
+    position: fixed;                          /* El header queda fijo arriba */
+    top: 0;                                    /* Pegado al borde superior */
+    left: 0;                                   /* Pegado al borde izquierdo */
+    right: 0;                                  /* Pegado al borde derecho */
+    padding: 20px 50px;                        /* Espacio interno del header */
+    display: flex;                             /* Activa un contenedor flexible */
+    justify-content: space-between;            /* Separa logo a la izquierda y menú a la derecha */
+    align-items: center;                       /* Centra los elementos verticalmente */
+    background: #ffffff;                       /* Fondo blanco */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Sombra para dar profundidad */
+    z-index: 1000;                             /* Lo mantiene por encima de todo */
+}
+
+.logo-container {
+    display: flex;                             /* Coloca elementos del logo en fila */
+    align-items: center;                       /* Centra verticalmente la imagen y texto */
+    gap: 12px;                                 /* Espacio entre imagen y texto */
+}
+
+.logo-img {
+    width: 45px;                               /* Ancho de la imagen */
+    height: 45px;                              /* Alto de la imagen */
+    object-fit: contain;                       /* La imagen mantiene proporción sin deformarse */
+    border-radius: 8px;                        /* Bordes redondeados */
+}
+
+.logo {
+    font-size: 28px;                           /* Tamaño del texto del logo */
+    font-weight: 700;                          /* Texto grueso */
+    color: #333;                               /* Color gris oscuro */
+    letter-spacing: 1px;                       /* Espacio entre letras */
+}
+
+/* ========== NAVEGACIÓN ========== */
+.nav-links {
+    display: flex;                             /* Menú de navegación en fila */
+    gap: 15px;                                 /* Espaciado entre links */
+    list-style: none;                          /* Quita puntos de lista UL */
+}
+
+.nav-links a {
+    color: #555;                               /* Color gris del texto */
+    text-decoration: none;                     /* Quita subrayado */
+    font-weight: 600;                          /* Hace el texto más grueso */
+    padding: 10px 25px;                        /* Aumenta área clickeable */
+    border-radius: 8px;                        /* Redondea bordes */
+}
+
+.nav-links a:hover {
+    color: #5568d3;                            /* Cambia color al pasar el mouse */
+    background: #f5f7ff;                       /* Suaviza fondo al pasar el mouse */
+}
+
+.nav-links .btn-registro {
+    background: #667eea;                       /* Botón morado */
+    color: #fff;                               /* Texto blanco */
+}
+
+.nav-links .btn-registro:hover {
+    background: #f5f7ff;                       /* Fondo claro al pasar el mouse */
+}
+
+/* ========== CONTENIDO PRINCIPAL ========== */
+main {
+    margin-top: 100px;                         /* Empuja contenido para no quedar debajo del header */
+    padding: 50px 20px;                        /* Espacio interno */
+    display: flex;                             /* Contenedor flexible */
+    flex-direction: column;                    /* Elementos uno debajo del otro */
+    align-items: center;                       /* Centra horizontalmente */
+    text-align: center;                        /* Centra texto */
+    max-width: 1400px;                         /* Ancho máximo del contenido */
+    margin-left: auto;                         /* Centra hacia la izquierda */
+    margin-right: auto;                        /* Centra hacia la derecha */
+}
+
+/* ========== SECCIÓN HERO ========== */
+.hero {
+    max-width: 900px;                          /* Ancho máximo del texto principal */
+    margin-bottom: 80px;                       /* Espacio inferior */
+}
+
+.hero h1 {
+    font-size: 56px;                           /* Título muy grande */
+    color: #ffffff;                            /* Texto blanco */
+    margin-bottom: 20px;                       /* Separación con párrafo */
+    line-height: 1.2;                          /* Espaciado entre líneas del título */
+    font-weight: 800;                          /* Muy grueso */
+}
+
+.hero p {
+    font-size: 20px;                           /* Texto descriptivo */
+    color: #f0f0f0;                            /* Color blanco suave */
+    margin-bottom: 40px;                       /* Separación inferior */
+    line-height: 1.6;                          /* Mejora legibilidad */
+}
+
+/* ========== PAGE HEADER ========== */
+.page-header {
+    max-width: 900px;                          /* Ancho máximo */
+    margin-bottom: 60px;                       /* Espacio inferior */
+}
+
+.page-header h1 {
+    font-size: 48px;                           /* Título grande */
+    color: #ffffff;                            /* Blanco */
+    margin-bottom: 15px;                       /* Separación */
+    font-weight: 800;                          /* Grueso */
+}
+
+.page-header p {
+    font-size: 20px;                           /* Texto descriptivo */
+    color: #f0f0f0;                            /* Blanco suave */
+}
+
+/* ========== BOTONES CTA ========== */
+.cta-buttons {
+    display: flex;                             /* Coloca botones en fila */
+    gap: 20px;                                 /* Separación entre botones */
+    justify-content: center;                   /* Los centra */
+    flex-wrap: wrap;                           /* Si no caben, se bajan */
+    width: 100%;                               /* Ocupan todo el ancho disponible */
+    max-width: 400px;                          /* Ancho máximo del grupo */
+    margin: 0 auto;                            /* Centrado */
+}
+
+.btn {
+    padding: 15px 40px;                        /* Tamaño del botón */
+    font-size: 18px;                           /* Tamaño del texto del botón */
+    font-weight: 600;                          /* Texto grueso */
+    border: none;                              /* Sin borde por defecto */
+    border-radius: 10px;                       /* Bordes redondeados */
+    cursor: pointer;                           /* Cambia el cursor a mano */
+    text-decoration: none;                     /* Sin subrayado */
+    display: inline-block;                     /* Se comporta como botón real */
+}
+
+.btn-primary {
+    background: #667eea;                       /* Fondo morado */
+    color: #fff;                               /* Texto blanco */
+}
+
+.btn-primary:hover {
+    background: #5568d3;                       /* Morado más oscuro */
+}
+
+.btn-secondary {
+    background: transparent;                   /* Fondo transparente */
+    color: #ffffff;                            /* Texto blanco */
+    border: 2px solid #ffffff;                 /* Borde blanco */
+}
+
+.btn-secondary:hover {
+    background: rgba(102, 126, 234, 0.1);      /* Fondo ligeramente morado */
+}
+
+/* ========== TARJETAS DE CARACTERÍSTICAS ========== */
+.features {
+    margin-top: 80px;                          /* Separación superior */
+    display: grid;                             /* Activa cuadrícula */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+                                                /* Ajusta columnas automáticamente */
+    gap: 30px;                                  /* Espacio entre tarjetas */
+    max-width: 1200px;                          /* Ancho máximo */
+    width: 100%;                                /* Ocupa todo el ancho */
+}
+
+.feature-card {
+    background: #ffffff;                       /* Fondo blanco */
+    padding: 30px;                             /* Espacio interno */
+    border-radius: 15px;                       /* Bordes redondeados */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Sombra */
+}
+
+.feature-card h3 {
+    font-size: 22px;                           /* Tamaño del título */
+    color: #333;                               /* Gris oscuro */
+    margin-bottom: 15px;                       /* Separación */
+    font-weight: 700;                          /* Grueso */
+}
+
+.feature-card p {
+    color: #666;                               /* Gris */
+    line-height: 1.6;                          /* Espaciado para legibilidad */
+}
+
+/* ========== GRID DE CARACTERÍSTICAS (Página aparte) ========== */
+.features-grid {
+    display: grid;                             /* Cuadrícula */
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+                                                /* Columnas más grandes */
+    gap: 30px;                                 /* Espacio */
+    margin-bottom: 80px;                       /* Separación inferior */
+    width: 100%;
+}
+
+.feature-item {
+    background: #ffffff;                       /* Fondo blanco */
+    padding: 40px;                             /* Relleno interno */
+    border-radius: 15px;                       /* Bordes redondeados */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Sombra */
+}
+
+.feature-item h3 {
+    font-size: 24px;                           /* Título grande */
+    color: #333;                               /* Gris oscuro */
+    margin-bottom: 15px;                       /* Separación */
+    font-weight: 700;                          /* Grueso */
+}
+
+.feature-item > p {
+    color: #666;                               /* Gris */
+    line-height: 1.6;                          /* Mejor lectura */
+    margin-bottom: 20px;                       /* Separación inferior */
+}
+
+.feature-list {
+    list-style: none;                          /* Quita viñetas */
+    padding: 0;                                /* Sin relleno */
+    margin-top: 15px;                          /* Separación superior */
+}
+
+.feature-list li {
+    color: #555;                               /* Color gris */
+    padding: 8px 0;                            /* Espacio vertical */
+    padding-left: 25px;                        /* Deja espacio para el check */
+    position: relative;                        /* Para colocar el check con posición absoluta */
+}
+
+.feature-list li::before {
+    content: "✓";                              /* Check antes del texto */
+    position: absolute;                        /* Posición relativa al li */
+    left: 0;                                   /* A la izquierda del texto */
+    color: #667eea;                            /* Color morado */
+    font-weight: bold;                         /* Grueso */
+}
+
+/* ========== CTA FINAL ========== */
+.cta-section {
+    text-align: center;                        /* Centra texto */
+    padding: 60px 20px;                        /* Espacio interno */
+    background: #ffffff;                       /* Fondo blanco */
+    border-radius: 20px;                       /* Bordes redondeados */
+    margin: 60px auto;                         /* Centrada y con espacio arriba/abajo */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Sombra */
+    max-width: 900px;                          /* Ancho máximo */
+}
+
+.cta-section h2 {
+    font-size: 40px;                           /* Título grande */
+    color: #333;                               /* Gris oscuro */
+    margin-bottom: 15px;                       /* Separación */
+    font-weight: 700;                          /* Grueso */
+}
+
+.cta-section p {
+    font-size: 18px;                           /* Tamaño del texto */
+    color: #666;                               /* Gris */
+    margin-bottom: 30px;                       /* Separación inferior */
+}
+
+/* ========== FOOTER ========== */
+footer {
+    padding: 30px;                             /* Espacio interno */
+    text-align: center;                        /* Centra contenido */
+    color: #f0f0f0;                            /* Texto gris claro */
+    background: rgba(0, 0, 0, 0.2);            /* Fondo transparente oscuro */
+    margin-top: 80px;                          /* Separación superior */
+}
+
+/* ========== RESPONSIVE ========== */
+@media screen and (max-width: 768px) {         /* Reglas para pantallas pequeñas */
+
+    header {
+        padding: 15px 20px;                    /* Header más pequeño */
+        flex-direction: column;                /* Logo arriba, menú abajo */
+        gap: 15px;                             /* Espacio entre ambos */
+    }
+
+    .logo-img {
+        width: 35px;                           /* Logo más pequeño */
+        height: 35px;
+    }
+
+    .logo {
+        font-size: 24px;                       /* Texto del logo más pequeño */
+    }
+
+    .nav-links {
+        gap: 10px;                             /* Menos espacio entre links */
+    }
+
+    .nav-links a {
+        padding: 8px 15px;                     /* Enlaces más pequeños */
+        font-size: 14px;                        /* Texto más pequeño */
+    }
+
+    .hero h1 {
+        font-size: 36px;                       /* Título reducido */
+    }
+
+    .hero p {
+        font-size: 16px;                       /* Texto reducido */
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+    }
+
+    .page-header p {
+        font-size: 16px;
+    }
+
+    .cta-buttons {
+        flex-direction: column;                /* Botones uno debajo de otro */
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .btn {
+        width: 100%;                           /* Botones que ocupan todo el ancho */
+        font-size: 16px;                       /* Texto más pequeño */
+    }
+
+    .features-grid,
+    .features {
+        grid-template-columns: 1fr;            /* Todo en una columna */
+    }
+
+    .feature-item {
+        padding: 30px 20px;                    /* Menos relleno */
+    }
+
+    .cta-section h2 {
+        font-size: 28px;                       /* Título más pequeño */
+    }
+}

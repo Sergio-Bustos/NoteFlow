@@ -1,93 +1,92 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restablecer Contraseña | NoteFlow</title>
-    <link rel="stylesheet" href="/static/formulario.css">
-</head>
-<body>
-    {% if error %}
-    <div class="formulario">
-        <h2 class="h2-registro">ERROR</h2>
-        <p class="error-msg" style="color: red; text-align: center;">{{ error }}</p>
-        <p><a href="/olvide-contrasena">Solicitar un nuevo enlace</a></p>
-    </div>
-    {% elif token %}
-    <form class="formulario" action="/procesar-restablecer-contrasena" method="POST" id="form-restablecer">
-        <h2 class="h2-registro">NUEVA CONTRASEÑA</h2>
-        <p class="instruccion">Ingresa tu nueva contraseña (mínimo 6 caracteres).</p>
+<!DOCTYPE html><!--Declaración de documento HTML5-->
+<html lang="es"><!--Elemento raíz con idioma español-->
+<head><!--Inicio de la sección de metadatos-->
+    <meta charset="UTF-8"><!--Codificación UTF-8 para caracteres especiales-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Configuración responsive para dispositivos móviles-->
+    <title>Restablecer Contraseña | NoteFlow</title><!--Título de la pestaña del navegador-->
+    <link rel="stylesheet" href="/static/formulario.css"><!--Enlace a hoja de estilos CSS para formularios-->
+</head><!--Cierre del head-->
+<body><!--Inicio del cuerpo del documento-->
+    {% if error %}<!--Inicio de bloque condicional Jinja2: verifica si hay un error-->
+    <div class="formulario"><!--Contenedor con clase formulario para mostrar error-->
+        <h2 class="h2-registro">ERROR</h2><!--Título indicando error-->
+        <p class="error-msg" style="color: red; text-align: center;">{{ error }}</p><!--Párrafo mostrando mensaje de error en rojo y centrado-->
+        <p><a href="/olvide-contrasena">Solicitar un nuevo enlace</a></p><!--Enlace para solicitar nuevo token de recuperación-->
+    </div><!--Cierre del contenedor de error-->
+    {% elif token %}<!--Else-if: si no hay error pero sí existe token válido-->
+    <form class="formulario" action="/procesar-restablecer-contrasena" method="POST" id="form-restablecer"><!--Formulario con ID único, action al endpoint de procesamiento, método POST-->
+        <h2 class="h2-registro">NUEVA CONTRASEÑA</h2><!--Título del formulario en mayúsculas-->
+        <p class="instruccion">Ingresa tu nueva contraseña (mínimo 6 caracteres).</p><!--Instrucciones sobre requisitos de contraseña-->
 
-        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" name="token" value="{{ token }}"><!--Campo oculto que contiene el token de recuperación desde el servidor-->
 
-        <section class="inputs">
-            <label>Nueva Contraseña</label>
-            <input type="password" name="nueva_contrasena" id="nueva_contrasena" required minlength="6">
+        <section class="inputs"><!--Sección para agrupar campos de entrada-->
+            <label>Nueva Contraseña</label><!--Etiqueta para primer campo de contraseña-->
+            <input type="password" name="nueva_contrasena" id="nueva_contrasena" required minlength="6"><!--Campo password con validación mínima de 6 caracteres, requerido-->
             
-            <label>Confirmar Contraseña</label>
-            <input type="password" name="confirmar_contrasena" id="confirmar_contrasena" required minlength="6">
-        </section>
+            <label>Confirmar Contraseña</label><!--Etiqueta para campo de confirmación-->
+            <input type="password" name="confirmar_contrasena" id="confirmar_contrasena" required minlength="6"><!--Campo password para confirmar, misma validación-->
+        </section><!--Cierre de la sección inputs-->
 
-        <button type="submit">Restablecer Contraseña</button>
-    </form>
+        <button type="submit">Restablecer Contraseña</button><!--Botón de envío del formulario-->
+    </form><!--Cierre del formulario-->
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('form-restablecer');
+    <script><!--Inicio del bloque JavaScript-->
+        document.addEventListener('DOMContentLoaded', function() {// Evento que espera a que el DOM esté completamente cargado
+            const form = document.getElementById('form-restablecer');// --Selecciona el formulario por su ID
             
-            if (form) {
-                form.addEventListener('submit', async function(e) {
-                    e.preventDefault();
+            if (form) {//Verifica que el formulario exista
+                form.addEventListener('submit', async function(e) { //Agrega listener al evento submit con función asíncrona
+                    e.preventDefault();//Previene el comportamiento por defecto del formulario
                     
-                    const nueva = document.getElementById('nueva_contrasena').value;
-                    const confirmar = document.getElementById('confirmar_contrasena').value;
+                    const nueva = document.getElementById('nueva_contrasena').value;//Obtiene el valor de la nueva contraseña
+                    const confirmar = document.getElementById('confirmar_contrasena').value;//Obtiene el valor de la confirmación
                     
-                    if (nueva !== confirmar) {
-                        alert('Las contraseñas no coinciden.');
-                        return;
-                    }
+                    if (nueva !== confirmar) {//Valida que ambas contraseñas coincidan-->
+                        alert('Las contraseñas no coinciden.');//--Muestra alerta si no coinciden-->
+                        return;//--Detiene la ejecución de la función-->
+                    }//Cierre del if de coincidencia
 
-                    if (nueva.length < 6) {
-                        alert('La contraseña debe tener al menos 6 caracteres.');
-                        return;
-                    }
+                    if (nueva.length < 6) {//Valida longitud mínima de la contraseña
+                        alert('La contraseña debe tener al menos 6 caracteres.');//Muestra alerta si es muy corta
+                        return;//Detiene la ejecución-->
+                    }//Cierre del if de longitud
                     
-                    const formData = new FormData(this);
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    const btnText = submitBtn.textContent;
+                    const formData = new FormData(this);//Crea objeto FormData con los datos del formulario
+                    const submitBtn = this.querySelector('button[type="submit"]');//Selecciona el botón de envío
+                    const btnText = submitBtn.textContent;//Guarda el texto original del botón
                     
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Actualizando...';
+                    submitBtn.disabled = true;//Deshabilita el botón para prevenir múltiples envíos
+                    submitBtn.textContent = 'Actualizando...';//Cambia el texto del botón a estado de carga
                     
-                    try {
-                        const response = await fetch('/procesar-restablecer-contrasena', {
-                            method: 'POST',
-                            body: formData
-                        });
+                    try {//Inicio del bloque try para manejo de errores
+                        const response = await fetch('/procesar-restablecer-contrasena', {//Petición fetch asíncrona al servidor
+                            method: 'POST',//Método HTTP POST
+                            body: formData //Envía los datos del formulario
+                        });//Cierre de la configuración fetch
                         
-                        const data = await response.json();
+                        const data = await response.json();//Parsea la respuesta JSON del servidor
                         
-                        if (data.success) {
-                            alert(data.mensaje);
-                            window.location.href = data.redirect;
-                        } else {
-                            alert(data.error || 'Error al restablecer la contraseña.');
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = btnText;
-                        }
-                    } catch (error) {
-                        alert('Error de conexión. Intenta más tarde.');
-                    } finally {
-                        // El botón solo se habilita si no fue exitoso para que el usuario pueda reintentar
-                        if (!data || !data.success) {
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = btnText;
-                        }
-                    }
-                });
-            }
-        });
-    </script>
-    {% endif %}
-</body>
-</html>
+                        if (data.success) {//Verifica si la operación fue exitosa
+                            alert(data.mensaje);//Muestra mensaje de éxito del servidor
+                            window.location.href = data.redirect;//Redirige a la URL proporcionada
+                        } else {//Si no fue exitoso
+                            alert(data.error || 'Error al restablecer la contraseña.');//Muestra error específico o genérico
+                            submitBtn.disabled = false;//Reactiva el botón
+                            submitBtn.textContent = btnText;//Restaura el texto original
+                        }//Cierre del if de success
+                    } catch (error) {//Captura errores de red o parsing
+                        alert('Error de conexión. Intenta más tarde.');//Muestra mensaje de error al usuario
+                    } finally {//Bloque que siempre se ejecuta
+                        if (!data || !data.success) {//Si no hubo éxito, reactiva el botón
+                            submitBtn.disabled = false;//Reactiva el botón para reintentar
+                            submitBtn.textContent = btnText;//Restaura el texto
+                        }//Cierre del if
+                    }//Cierre del finally
+                });//Cierre del event listener submit
+            }//Cierre del if que verifica existencia del form-->
+        });//Cierre del DOMContentLoaded-->
+    </script><!--Cierre del bloque script-->
+    {% endif %}<!--Cierre del bloque condicional Jinja2-->
+</body><!--Cierre del body-->
+</html><!--Cierre del documento HTML-->

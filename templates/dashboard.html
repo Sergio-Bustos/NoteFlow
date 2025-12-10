@@ -1,466 +1,99 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NoteFlow - Dashboard</title>
+<!DOCTYPE html> <!-- Documento HTML5 -->
+<html lang="es"> <!-- Lenguaje español -->
+<head> <!-- Sección de encabezado -->
+    <meta charset="UTF-8"> <!-- Codificación de caracteres UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Adaptación para dispositivos móviles -->
+    <title>NoteFlow - Dashboard</title> <!-- Título de la ventana/navegador -->
+
+    <!-- Hoja de iconos Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <style>
-        /* ========== VARIABLES PARA TEMAS ========== */
-        :root {
-            --color-principal: #3498db;
-            
-            /* Tema Claro */
-            --bg-claro: #ecf0f1;
-            --sidebar-claro: #2c3e50;
-            --texto-claro: #2c3e50;
-            --card-claro: #ffffff;
-            --border-claro: #bdc3c7;
-            
-            /* Tema Oscuro */
-            --bg-oscuro: #1a1a1a;
-            --sidebar-oscuro: #1f1f1f;
-            --texto-oscuro: #e0e0e0;
-            --card-oscuro: #2d2d2d;
-            --border-oscuro: #404040;
-            
-            /* Colores comunes */
-            --color-secundario: #f39c12;
-            --color-peligro: #e74c3c;
-            --color-exito: #2ecc71;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }
 
-        /* ========== TEMA CLARO (Por defecto) ========== */
-        body.tema-claro {
-            background-color: var(--bg-claro);
-            color: var(--texto-claro);
-            font-family: sans-serif;
-        }
-
-        body.tema-claro .sidebar {
-            background-color: var(--sidebar-claro);
-        }
-
-        body.tema-claro .nota-card,
-        body.tema-claro .stats .card {
-            background-color: var(--card-claro);
-            color: var(--texto-claro);
-        }
-
-        body.tema-claro header {
-            border-bottom: 1px solid var(--border-claro);
-        }
-
-        body.tema-claro .usuario-info {
-            color: var(--texto-claro);
-        }
-
-        body.tema-claro .bienvenida h2,
-        body.tema-claro .recientes h2 {
-            color: var(--texto-claro);
-        }
-
-        /* ========== TEMA OSCURO ========== */
-        body.tema-oscuro {
-            background-color: var(--bg-oscuro);
-            color: var(--texto-oscuro);
-            font-family: sans-serif;
-        }
-
-        body.tema-oscuro .sidebar {
-            background-color: var(--sidebar-oscuro);
-            border-right: 1px solid var(--border-oscuro);
-        }
-
-        body.tema-oscuro .nota-card,
-        body.tema-oscuro .stats .card {
-            background-color: var(--card-oscuro);
-            color: var(--texto-oscuro);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        body.tema-oscuro header {
-            border-bottom: 1px solid var(--border-oscuro);
-        }
-
-        body.tema-oscuro .usuario-info {
-            color: var(--texto-oscuro);
-        }
-
-        body.tema-oscuro .bienvenida h2,
-        body.tema-oscuro .recientes h2 {
-            color: var(--texto-oscuro);
-        }
-
-        body.tema-oscuro .nota-card h4 {
-            color: var(--texto-oscuro);
-        }
-
-        body.tema-oscuro .description {
-            color: #95a5a6 !important;
-        }
-
-        body.tema-oscuro .card-footer {
-            border-top-color: var(--border-oscuro);
-        }
-
-        body.tema-oscuro .card-footer small {
-            color: #7f8c8d;
-        }
-
-        /* ========== ESTILOS GENERALES ========== */
-        .sidebar {
-            width: 250px;
-            height: 100vh;
-            position: fixed;
-            color: white;
-            padding: 20px 0;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-
-        .logo {
-            text-align: center;
-            font-size: 1.8em;
-            font-weight: bold;
-            margin-bottom: 30px;
-            color: white;
-        }
-
-        .menu {
-            list-style: none;
-            padding: 0;
-        }
-
-        .menu li a {
-            display: block;
-            padding: 12px 20px;
-            color: #ecf0f1;
-            text-decoration: none;
-            transition: background-color 0.2s;
-        }
-
-        .menu li a:hover,
-        .menu li a.active {
-            background-color: rgba(255,255,255,0.1);
-            border-left: 5px solid var(--color-principal);
-            padding-left: 15px;
-        }
-
-        .menu li a i {
-            margin-right: 10px;
-        }
-
-        .separator {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            margin: 15px 0;
-        }
-
-        .logout-btn {
-            display: block;
-            text-align: center;
-            margin: 30px 20px 0;
-            padding: 10px 0;
-            background-color: var(--color-peligro);
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.2s;
-        }
-
-        .logout-btn:hover {
-            background-color: #c0392b;
-        }
-
-        .main {
-            margin-left: 250px;
-            padding: 30px;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        .search-btn {
-            background-color: var(--color-principal);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            font-size: 1em;
-        }
-
-        .search-btn:hover {
-            background-color: #2980b9;
-        }
-
-        .usuario-info {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-        }
-
-        .usuario-info img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-            border: 2px solid var(--color-principal);
-            object-fit: cover;
-        }
-
-        .profile-dropdown-icon {
-            margin-left: 10px;
-        }
-
-        .bienvenida h2 {
-            margin-bottom: 5px;
-        }
-
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stats .card {
-            flex: 1;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-
-        .stats .stat-icon {
-            font-size: 2em;
-            color: var(--color-principal);
-            margin-bottom: 10px;
-        }
-
-        .stats .warning-card .stat-icon {
-            color: var(--color-secundario);
-        }
-
-        .stats h3 {
-            margin: 0;
-            font-size: 2em;
-        }
-
-        .recientes h2 {
-            margin-bottom: 20px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .nota-card {
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border-left: 5px solid var(--color-principal);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .nota-card h4 {
-            margin-top: 0;
-            margin-bottom: 5px;
-        }
-
-        .nota-card .description {
-            font-size: 0.9em;
-            color: #7f8c8d;
-            flex-grow: 1;
-            margin-bottom: 10px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .visibility-indicator i {
-            font-size: 1.1em;
-            margin-right: 5px;
-        }
-
-        .fa-lock {
-            color: var(--color-peligro);
-        }
-
-        .fa-globe {
-            color: var(--color-exito);
-        }
-
-        .attachment-indicator i {
-            color: var(--color-principal);
-        }
-
-        .tags-container {
-            margin-bottom: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-
-        .tag-chip {
-            background-color: #f1c40f;
-            color: #2c3e50;
-            font-size: 0.75em;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-
-        .tag-chip.no-tag {
-            background-color: #95a5a6;
-            color: white;
-            font-style: italic;
-        }
-
-        .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid;
-            padding-top: 10px;
-            margin-top: auto;
-        }
-
-        .card-footer small {
-            color: #95a5a6;
-            font-size: 0.8em;
-        }
-
-        .view-btn {
-            background-color: var(--color-principal);
-            color: white;
-            text-decoration: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.9em;
-            transition: background-color 0.2s;
-        }
-
-        .view-btn:hover {
-            background-color: #2980b9;
-        }
-
-        .no-results-message {
-            color: #95a5a6;
-            font-style: italic;
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
-            
-            .main {
-                margin-left: 0;
-            }
-            
-            .stats {
-                flex-direction: column;
-            }
-        }
-    </style>
+    <!-- Hoja de estilos CSS personalizada del dashboard -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 
-<body>
+<body> <!-- Cuerpo principal -->
 
-<div class="sidebar">
-    <div class="logo">NoteFlow</div>
+<div class="sidebar"> <!-- Barra lateral -->
+    <div class="logo">NoteFlow</div> <!-- Logo -->
 
-    <ul class="menu">
-        <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li>
-        <li><a href="/carpetas"><i class="fas fa-folder"></i> Carpetas</a></li>
-        <li class="separator"></li> 
-        <li><a href="/crear-nota"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
-        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
-        <li class="separator"></li> 
-        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
+    <ul class="menu"> <!-- Lista del menú lateral -->
+        <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-home"></i> Inicio</a></li> <!-- Inicio -->
+        <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li> <!-- Mis notas -->
+        <li><a href="/carpetas"><i class="fas fa-folder"></i> Carpetas</a></li> <!-- Carpetas -->
+        <li class="separator"></li> <!-- Línea separadora -->
+        <li><a href="/crear-nota"><i class="fas fa-plus-circle"></i> Crear nota</a></li> <!-- Crear nota -->
+        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li> <!-- Papelera -->
+        <li class="separator"></li> <!-- Línea separadora -->
+        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li> <!-- Perfil -->
     </ul>
 
-    <a href="{{ url_for('cerrar_sesion') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
+    <!-- Botón de cerrar sesión -->
+    <a href="{{ url_for('cerrar_sesion') }}" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+    </a>
 </div>
 
-<div class="main">
+<div class="main"> <!-- Contenido principal -->
 
-    <header>
-        <div class="buscador">
+    <header> <!-- Encabezado -->
+        <div class="buscador"> <!-- Contenedor del botón de búsqueda -->
             <button id="open-search-modal" class="search-btn" title="Buscar notas o carpetas">
                 <i class="fas fa-search"></i> Búsqueda Inteligente
             </button>
         </div>
 
+        <!-- Información del usuario -->
         <a href="/perfil" class="usuario-info">
-            {% if usuario.foto %}
+            {% if usuario.foto %} <!-- Si el usuario tiene foto -->
                 <img src="{{ url_for('static', filename=usuario.foto) }}" alt="Foto de perfil">
-            {% else %}
+            {% else %} <!-- Foto por defecto -->
                 <img src="{{ url_for('static', filename='img/default_profile.png') }}" alt="Foto de perfil">
             {% endif %}
-            <span>Hola, <strong>{{ usuario.nombre }}</strong></span>
-            <i class="fas fa-chevron-down profile-dropdown-icon"></i>
+            <span>Hola, <strong>{{ usuario.nombre }}</strong></span> <!-- Nombre del usuario -->
+            <i class="fas fa-chevron-down profile-dropdown-icon"></i> <!-- Icono adicional -->
         </a>
     </header>
 
-    <section class="bienvenida">
-        <h2>Hola, {{ usuario.nombre }} 👋</h2> 
-        <p>Tu resumen de NoteFlow:</p>
-        <br>
+    <section class="bienvenida"> <!-- Sección de bienvenida -->
+        <h2>Hola, {{ usuario.nombre }} 👋</h2> <!-- Título -->
+        <p>Tu resumen de NoteFlow:</p> <!-- Texto -->
+        <br> <!-- Espacio -->
     </section>
 
-    <section class="stats">
+    <section class="stats"> <!-- Tarjetas de estadísticas -->
         <div class="card">
-            <i class="fas fa-clipboard-list stat-icon"></i>
-            <h3>{{ total_notas }}</h3>
+            <i class="fas fa-clipboard-list stat-icon"></i> <!-- Icono -->
+            <h3>{{ total_notas }}</h3> <!-- Número de notas -->
             <p>Notas activas</p>
         </div>
+
         <div class="card">
-            <i class="fas fa-folder stat-icon"></i>
-            <h3>{{ total_carpetas }}</h3>
+            <i class="fas fa-folder stat-icon"></i> <!-- Icono -->
+            <h3>{{ total_carpetas }}</h3> <!-- Total carpetas -->
             <p>Total Carpetas</p>
         </div>
-        <div class="card warning-card">
+
+        <div class="card warning-card"> <!-- Tarjeta especial -->
             <a href="/papelera" style="text-decoration: none; color: inherit;">
-                <i class="fas fa-recycle stat-icon"></i>
-                <h3>{{ notas_papelera }}</h3>
+                <i class="fas fa-recycle stat-icon"></i> <!-- Icono -->
+                <h3>{{ notas_papelera }}</h3> <!-- Cantidad -->
                 <p>En papelera</p>
             </a>
         </div>
     </section>
 
-    <section class="recientes">
+    <section class="recientes"> <!-- Sección notas recientes -->
         <h2><i class="fas fa-history"></i> Notas recientes</h2>
 
-        {% if notas_recientes %}
-        <div class="grid">
-            {% for nota in notas_recientes %}
-            <div class="nota-card" data-note-id="{{ nota.ID_Nota }}">
-                
-                <div class="card-header">
-                    <span class="visibility-indicator">
+        {% if notas_recientes %} <!-- Si hay notas recientes -->
+        <div class="grid"> <!-- Contenedor de tarjetas -->
+
+            {% for nota in notas_recientes %} <!-- Ciclo por cada nota reciente -->
+            <div class="nota-card" data-note-id="{{ nota.ID_Nota }}"> <!-- Tarjeta de nota -->
+
+                <div class="card-header"> <!-- Encabezado de la tarjeta -->
+                    <span class="visibility-indicator"> <!-- Indicador de privacidad -->
                         {% if nota.ID_Categorias == 1 %}
                             <i class="fas fa-globe" title="Pública (compartible)"></i>
                         {% else %}
@@ -468,34 +101,37 @@
                         {% endif %}
                     </span>
 
-                    {% if nota.Has_Adjuntos %} 
+                    {% if nota.Has_Adjuntos %} <!-- Si la nota tiene archivos adjuntos -->
                         <span class="attachment-indicator" title="Contiene archivos adjuntos">
                             <i class="fas fa-paperclip"></i>
                         </span>
                     {% endif %}
                 </div>
 
-                <h4>{{ nota.Titulo }}</h4>
-                <p class="description">{{ nota.Descripcion|truncate(120, True) }}</p>
-                
-                <div class="tags-container">
+                <h4>{{ nota.Titulo }}</h4> <!-- Título de la nota -->
+
+                <p class="description">{{ nota.Descripcion|truncate(120, True) }}</p> <!-- Descripción truncada -->
+
+                <div class="tags-container"> <!-- Contenedor de etiquetas -->
                     {% if nota.Etiquetas %}
-                        {% for tag in nota.Etiquetas[:3] %}
+                        {% for tag in nota.Etiquetas[:3] %} <!-- Muestra máximo 3 -->
                             <span class="tag-chip">{{ tag.Nombre_etiqueta }}</span>
                         {% endfor %}
                     {% else %}
-                        <span class="tag-chip no-tag">Sin etiquetas</span>
+                        <span class="tag-chip no-tag">Sin etiquetas</span> <!-- Sin etiquetas -->
                     {% endif %}
                 </div>
 
-                <div class="card-footer">
+                <div class="card-footer"> <!-- Pie de la tarjeta -->
                     <small><i class="fas fa-clock"></i> Modificada: {{ nota.Fecha_deedicion }}</small>
-                    <a href="/nota/{{ nota.ID_Nota }}" class="view-btn">Ver Nota</a>
+                    <a href="/nota/{{ nota.ID_Nota }}" class="view-btn">Ver Nota</a> <!-- Enlace -->
                 </div>
+
             </div>
             {% endfor %}
+
         </div>
-        {% else %}
+        {% else %} <!-- Si NO hay notas recientes -->
         <p class="no-results-message">
             No tienes notas activas recientemente. ¡Crea una nueva nota para empezar! 
             <a href="/crear-nota" style="color: var(--color-principal);">Crear nota</a>
@@ -503,31 +139,31 @@
         {% endif %}
     </section>
 
-</div>
+</div> <!-- Fin de main -->
 
 <script>
     // ========== APLICAR TEMA AL CARGAR ==========
-    document.addEventListener('DOMContentLoaded', function() {
-        const colorPrincipal = "{{ usuario.color_principal if usuario else 'Blanco' }}";
+    document.addEventListener('DOMContentLoaded', function() { // Cuando cargue la página
+        const colorPrincipal = "{{ usuario.color_principal if usuario else 'Blanco' }}"; // Color guardado del usuario
         
-        if (colorPrincipal === "Negro") {
+        if (colorPrincipal === "Negro") { // Tema oscuro
             document.body.classList.add('tema-oscuro');
             document.body.classList.remove('tema-claro');
-        } else {
+        } else { // Tema claro
             document.body.classList.add('tema-claro');
             document.body.classList.remove('tema-oscuro');
         }
     });
 
     // ========== CONFIRMACIÓN DE CERRAR SESIÓN ==========
-    document.querySelector('.logout-btn').addEventListener('click', function(e) {
-        if (!confirm('¿Seguro que deseas cerrar sesión?')) {
-            e.preventDefault();
+    document.querySelector('.logout-btn').addEventListener('click', function(e) { // Clic en cerrar sesión
+        if (!confirm('¿Seguro que deseas cerrar sesión?')) { // Pregunta confirmación
+            e.preventDefault(); // Cancela acción si el usuario dice "No"
         }
     });
     
     // ========== PLACEHOLDER BÚSQUEDA INTELIGENTE ==========
-    document.getElementById('open-search-modal').addEventListener('click', function() {
+    document.getElementById('open-search-modal').addEventListener('click', function() { // Botón búsqueda inteligente
         alert('Activando modal de Búsqueda Inteligente: Aquí el usuario elegiría entre "Buscar Notas" o "Buscar Carpetas" con sus filtros específicos.');
     });
 </script>

@@ -1,90 +1,86 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro | NoteFlow</title>
-    <link rel="stylesheet" href="/static/formulario.css">
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const formRegistro = document.querySelector('form[action="/procesar-registro"]');
+<!DOCTYPE html><!--Declaración de documento HTML5-->
+<html lang="es"><!--Elemento raíz con idioma español-->
+<head><!--Inicio de la sección de metadatos-->
+    <meta charset="UTF-8"><!--Codificación UTF-8 para caracteres especiales-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Meta tag para diseño responsivo-->
+    <title>Registro | NoteFlow</title><!--Título mostrado en la pestaña del navegador-->
+    <link rel="stylesheet" href="/static/formulario.css"><!--Enlace a hoja de estilos CSS para formularios-->
+    <script><!--Inicio del bloque JavaScript-->
+document.addEventListener('DOMContentLoaded', function() {//Evento que se ejecuta al cargar completamente el DOM
+    const formRegistro = document.querySelector('form[action="/procesar-registro"]');//Selecciona el formulario de registro por su atributo action
     
-    if (formRegistro) {
-        formRegistro.addEventListener('submit', async function(e) {
-            e.preventDefault();
+    if (formRegistro) {//Verifica que el formulario exista en el documento
+        formRegistro.addEventListener('submit', async function(e) {//Agrega listener al evento submit con función asíncrona
+            e.preventDefault();//Previene el comportamiento por defecto de recarga de página
             
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const btnText = submitBtn.textContent;
+            const formData = new FormData(this);//Crea objeto FormData con todos los campos del formulario
+            const submitBtn = this.querySelector('button[type="submit"]');//Selecciona el botón de envío
+            const btnText = submitBtn.textContent;//Almacena el texto original del botón
             
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Registrando...';
+            submitBtn.disabled = true;//Deshabilita el botón para evitar envíos múltiples
+            submitBtn.textContent = 'Registrando...';//Cambia el texto del botón para feedback visual
             
-            try {
-                const response = await fetch('/procesar-registro', {
-                    method: 'POST',
-                    body: formData
-                });
+            try {//Inicio del bloque try para manejo de errores
+                const response = await fetch('/procesar-registro', {//Realiza petición fetch asíncrona al endpoint de registro
+                    method: 'POST',//Especifica método HTTP POST
+                    body: formData//Envía los datos del formulario en el cuerpo de la petición
+                });//Cierre de la configuración fetch
                 
-                const data = await response.json();
+                const data = await response.json();//Espera y parsea la respuesta JSON del servidor
                 
-                if (data.success) {
-                    alert('¡Registro exitoso!');
-                    window.location.href = data.redirect;
-                } else {
-                    alert(data.error || 'Error al registrar usuario');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = btnText;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error de conexión');
-                submitBtn.disabled = false;
-                submitBtn.textContent = btnText;
-            }
-        });
-    }
-});
-</script>
+                if (data.success) {//Verifica si el registro fue exitoso
+                    alert('¡Registro exitoso!');//Muestra mensaje de confirmación
+                    window.location.href = data.redirect;// Redirige a la URL proporcionada por el servidor
+                } else {//Si el registro falló
+                    alert(data.error || 'Error al registrar usuario');// Muestra error específico del servidor o mensaje genérico
+                    submitBtn.disabled = false;//Reactiva el botón
+                    submitBtn.textContent = btnText;//Restaura el texto original del botón
+                }//Cierre del condicional
+            } catch (error) {//Captura errores de red o de parsing
+                console.error('Error:', error);//Registra el error en la consola del navegador
+                alert('Error de conexión');//Muestra alerta de error de conexión al usuario
+                submitBtn.disabled = false;//Reactiva el botón de envío
+                submitBtn.textContent = btnText;//Restaura el texto del botón
+            }//Cierre del bloque catch
+        });//Cierre del event listener submit
+    }//Cierre del condicional if
+});//Cierre del event listener DOMContentLoaded
+</script><!--Cierre del bloque script-->
+</head><!--Cierre de la sección head-->
+<body><!--Inicio del cuerpo del documento-->
+    <form class="formulario" action="/procesar-registro" method="POST"><!--Formulario con clase CSS, action al endpoint de procesamiento, método POST-->
+        <nav><!--Elemento de navegación-->
+            <ul class="formulario-ul"><!--Lista desordenada para pestañas de navegación-->
+                <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li><!--Pestaña para ir a inicio de sesión-->
+                <li class="li-formulario"><a href="/registro.html" class="activo">Registro</a></li><!--Pestaña activa del formulario de registro-->
+            </ul><!--Cierre de la lista-->
+        </nav><!--Cierre del nav-->
 
+        <h2 class="h2-registro">REGISTRO</h2><!--Título principal del formulario en mayúsculas-->
 
+        <section class="inputs"><!--Sección que agrupa todos los campos de entrada-->
+            <label>Nombre completo</label><!--Etiqueta para el campo de nombre-->
+            <input type="text" name="nombre" placeholder="Ingresa tu nombre completo" required><!--Campo de texto para nombre, requerido por HTML5-->
 
+            <label>Apellido completo</label><!--Etiqueta para el campo de apellido-->
+            <input type="text" name="apellido" placeholder="Ingresa tu apellido completo" required><!--Campo de texto para apellido, requerido-->
 
-</head>
-<body>
-    <form class="formulario" action="/procesar-registro" method="POST">
-        <nav>
-            <ul class="formulario-ul">
-                <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
-                <li class="li-formulario"><a href="/registro.html" class="activo">Registro</a></li>
-            </ul>
-        </nav>
+            <label>Teléfono</label><!--Etiqueta para el campo de teléfono-->
+            <input type="tel" name="telefono" placeholder="Ej: 3123456789" required><!--Campo tipo tel para número telefónico, requerido-->
 
-        <h2 class="h2-registro">REGISTRO</h2>
+            <label>Correo electrónico</label><!--Etiqueta para el campo de email-->
+            <input type="email" name="correo" placeholder="correo@ejemplo.com" required><!--Campo tipo email con validación HTML5, requerido-->
 
-        <section class="inputs">
-            <label>Nombre completo</label>
-            <input type="text" name="nombre" placeholder="Ingresa tu nombre completo" required>
+            <label>Apodo o alias</label><!--Etiqueta para el nombre de usuario-->
+            <input type="text" name="usuario" placeholder="Ej: Notero123" required><!--Campo de texto para username, requerido-->
 
-            <label>Apellido completo</label>
-            <input type="text" name="apellido" placeholder="Ingresa tu apellido completo" required>
+            <label>Contraseña</label><!--Etiqueta para el campo de contraseña-->
+            <input type="password" name="contraseña" placeholder="Crear una contraseña" required><!--Campo password que oculta caracteres, requerido-->
+        </section><!--Cierre de la sección inputs-->
 
-            <label>Teléfono</label>
-            <input type="tel" name="telefono" placeholder="Ej: 3123456789" required>
+        <button type="submit">Crear cuenta</button><!--Botón de envío del formulario-->
 
-            <label>Correo electrónico</label>
-            <input type="email" name="correo" placeholder="correo@ejemplo.com" required>
-
-            <label>Apodo o alias</label>
-            <input type="text" name="usuario" placeholder="Ej: Notero123" required>
-
-            <label>Contraseña</label>
-            <input type="password" name="contraseña" placeholder="Crear una contraseña" required>
-        </section>
-
-        <button type="submit">Crear cuenta</button>
-
-        <p>¿Ya tienes una cuenta? <a href="/iniciarsesion.html">Iniciar sesión</a></p>
-    </form>
-</body>
-</html>
+        <p>¿Ya tienes una cuenta? <a href="/iniciarsesion.html">Iniciar sesión</a></p><!--Enlace a página de login para usuarios existentes-->
+    </form><!--Cierre del formulario-->
+</body><!--Cierre del body-->
+</html><!--Cierre del documento HTML-->

@@ -1,0 +1,379 @@
+/* Estilos CSS para la página de perfil */
+:root {  /* Variables globales CSS */
+
+    /* Colores del Tema Claro */
+    --primary: #3498db; /* Color principal azul */
+    --bg-claro: #f5f6fa; /* Fondo claro */
+    --text-claro: #2c3e50; /* Texto oscuro para el modo claro */
+    --card-bg-claro: #ffffff; /* Fondo de tarjetas en modo claro */
+    --border-claro: #e1e4ea; /* Bordes suaves modo claro */
+    
+    /* Colores Tema Oscuro */
+    --bg-oscuro: #1a1a1a; /* Fondo oscuro */
+    --text-oscuro: #e0e0e0; /* Texto claro */
+    --card-bg-oscuro: #2d2d2d; /* Fondo tarjetas oscuro */
+    --border-oscuro: #404040; /* Bordes modo oscuro */
+    
+    /* Colores comunes */
+    --radius: 12px; /* Radio de borde para elementos */
+    --success: #2ecc71; /* Verde éxito */
+    --danger: #e74c3c; /* Rojo error */
+    --warning: #f39c12; /* Amarillo advertencia */
+}
+
+/* Reset básico y transición animada global */
+* {
+    box-sizing: border-box; /* Mantiene tamaños controlados */
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Animaciones suaves */
+}
+
+/* ========== TEMA CLARO (por defecto) ========== */
+
+/* Fuente general */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; /* Tipografía */
+    line-height: 1.6; /* Altura de línea */
+}
+
+/* Modo claro activado */
+body.tema-claro {
+    background: var(--bg-claro); /* Fondo */
+    color: var(--text-claro); /* Texto */
+}
+
+/* Tarjetas en modo claro */
+body.tema-claro .card {
+    background: var(--card-bg-claro); /* Fondo tarjeta */
+    color: var(--text-claro);
+    border: 1px solid var(--border-claro); /* Borde claro */
+}
+
+/* Inputs y selects en modo claro */
+body.tema-claro input,
+body.tema-claro select {
+    background: white;
+    color: var(--text-claro);
+    border-color: var(--border-claro);
+}
+
+/* Botón volver en modo claro */
+body.tema-claro .back-btn {
+    background: var(--primary);
+    color: white;
+}
+
+/* ========== TEMA OSCURO ========== */
+
+/* Modo oscuro activado */
+body.tema-oscuro {
+    background: var(--bg-oscuro);
+    color: var(--text-oscuro);
+}
+
+/* Tarjetas en modo oscuro */
+body.tema-oscuro .card {
+    background: var(--card-bg-oscuro);
+    color: var(--text-oscuro);
+    border: 1px solid var(--border-oscuro);
+}
+
+/* Inputs y selects en modo oscuro */
+body.tema-oscuro input,
+body.tema-oscuro select {
+    background: #333; /* Fondo input oscuro */
+    color: var(--text-oscuro);
+    border-color: var(--border-oscuro);
+}
+
+/* Placeholder en modo oscuro */
+body.tema-oscuro input::placeholder {
+    color: #888; /* Placeholder gris suave */
+}
+
+/* Botón volver en modo oscuro */
+body.tema-oscuro .back-btn {
+    background: var(--primary);
+    color: white;
+}
+
+/* Título destacado en modo oscuro */
+body.tema-oscuro .title {
+    color: var(--primary); /* Azul */
+}
+
+/* Requisitos de contraseña en modo oscuro */
+body.tema-oscuro .password-requirements {
+    color: #aaa; /* Gris claro */
+}
+
+/* ========== ESTILOS GENERALES ========== */
+
+/* Contenedor principal */
+.container {
+    max-width: 900px; /* Ancho máximo */
+    margin: 40px auto; /* Centrado */
+    padding: 20px;
+}
+
+/* Encabezado de sección */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+/* Botón volver */
+.back-btn {
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+/* Hover del botón volver */
+.back-btn:hover {
+    background: #2980b9 !important; /* Azul más oscuro */
+    transform: translateX(-3px); /* Movimiento */
+}
+
+/* Tarjetas */
+.card {
+    padding: 30px;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Sombra ligera */
+    margin-bottom: 25px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+/* Hover sobre tarjetas */
+.card:hover {
+    transform: translateY(-2px); /* Efecto levitación */
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+/* Títulos */
+.title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 25px;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Información de perfil */
+.perfil-info {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    flex-wrap: wrap; /* Se ajusta en pantallas pequeñas */
+}
+
+/* Contenedor del avatar */
+.perfil-info .avatar-container {
+    position: relative;
+}
+
+/* Imagen de perfil */
+.perfil-info img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover; /* Ajuste */
+    border-radius: 50%; /* Circular */
+    border: 4px solid var(--primary);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Contenedor de datos */
+.perfil-info .data {
+    flex: 1; /* Ocupa el máximo disponible */
+}
+
+/* Estilo de cada registro de información */
+.perfil-info .data p {
+    margin: 10px 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Iconos dentro de data */
+.perfil-info .data p i {
+    color: var(--primary);
+    width: 20px;
+}
+
+/* Espaciado entre campos */
+.form-group {
+    margin-bottom: 20px;
+}
+
+/* Etiquetas */
+label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* Inputs */
+input, select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: var(--radius);
+    border: 2px solid;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+/* Focus */
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Input archivos */
+input[type="file"] {
+    padding: 10px;
+    cursor: pointer;
+}
+
+/* Botones */
+button {
+    padding: 12px 24px;
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Hover en botones */
+button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+/* Botón presionado */
+button:active {
+    transform: translateY(0);
+}
+
+/* Botón cerrar sesión */
+.logout {
+    background: var(--danger);
+    width: 100%;
+}
+
+/* Hover cerrar sesión */
+.logout:hover {
+    background: #c0392b;
+}
+
+/* Alertas estilo base */
+.alert {
+    padding: 15px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Mostrar alerta */
+.alert.show {
+    display: flex;
+}
+
+/* Alerta éxito */
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Alerta error */
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Requisitos de contraseña */
+.password-requirements {
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+/* Vista previa de foto */
+.preview-foto {
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* Imagen de preview */
+.preview-foto img {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: var(--radius);
+    border: 2px solid;
+}
+
+/* Caja que muestra el tema actual */
+.tema-actual {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Caja del tema actual modo claro */
+body.tema-claro .tema-actual {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Caja del tema actual modo oscuro */
+body.tema-oscuro .tema-actual {
+    background: #1f3a52;
+    color: #64b5f6;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+
+    .perfil-info {
+        flex-direction: column; /* Apilado */
+        text-align: center;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+}
+
+

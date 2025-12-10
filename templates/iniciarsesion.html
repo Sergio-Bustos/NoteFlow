@@ -1,88 +1,84 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión | NoteFlow</title>
-    <link rel="stylesheet" href="/static/formulario.css">
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const formLogin = document.querySelector('form[action="/procesar-login"]');
+<!DOCTYPE html><!--Declaración del tipo de documento HTML5-->
+<html lang="es"><!--Elemento raíz HTML con idioma español-->
+<head><!--Inicio de la sección de metadatos-->
+    <meta charset="UTF-8"><!--Codificación de caracteres UTF-8-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Configuración responsive para móviles-->
+    <title>Iniciar Sesión | NoteFlow</title><!--Título de la pestaña del navegador-->
+    <link rel="stylesheet" href="/static/formulario.css"><!--Enlace a la hoja de estilos de formularios-->
+    <script><!--Inicio del bloque de JavaScript-->
+document.addEventListener('DOMContentLoaded', function() {//Evento que se ejecuta cuando el DOM está completamente cargado
+    const formLogin = document.querySelector('form[action="/procesar-login"]');//Selecciona el formulario de login mediante su atributo action
     
-    if (formLogin) {
-        formLogin.addEventListener('submit', async function(e) {
-            e.preventDefault();
+    if (formLogin) {//Verifica si el formulario existe en el DOM
+        formLogin.addEventListener('submit', async function(e) {//Agrega listener para el evento submit del formulario, función asíncrona
+            e.preventDefault();//Previene el comportamiento por defecto del formulario (recarga de página)
             
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const btnText = submitBtn.textContent;
+            const formData = new FormData(this);//Crea objeto FormData con los datos del formulario
+            const submitBtn = this.querySelector('button[type="submit"]');//Selecciona el botón de envío
+            const btnText = submitBtn.textContent;//Guarda el texto original del botón
             
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Iniciando sesión...';
+            submitBtn.disabled = true;//Deshabilita el botón para evitar múltiples envíos
+            submitBtn.textContent = 'Iniciando sesión...';//Cambia el texto del botón para feedback visual
             
-            try {
-                const response = await fetch('/procesar-login', {
-                    method: 'POST',
-                    body: formData
-                });
+            try {//Inicio del bloque try para manejo de errores
+                const response = await fetch('/procesar-login', {//Realiza petición fetch asíncrona al endpoint de login
+                    method: 'POST',//Método HTTP POST para enviar datos
+                    body: formData//Envía los datos del formulario en el cuerpo de la petición
+                });//Cierre de la configuración fetch
                 
-                const data = await response.json();
+                const data = await response.json();//Espera y parsea la respuesta JSON del servidor
                 
-                if (data.success) {
-                    alert('¡Bienvenido!');
-                    window.location.href = data.redirect;
-                } else {
-                    alert(data.error || 'Usuario o contraseña incorrectos');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = btnText;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error de conexión');
-                submitBtn.disabled = false;
-                submitBtn.textContent = btnText;
-            }
-        });
-    }
-});
-</script>
+                if (data.success) {//Verifica si la respuesta indica éxito
+                    alert('¡Bienvenido!');//Muestra alerta de bienvenida
+                    window.location.href = data.redirect;//Redirige a la URL proporcionada por el servidor
+                } else {//Si no fue exitoso
+                    alert(data.error || 'Usuario o contraseña incorrectos');//Muestra mensaje de error del servidor o genérico
+                    submitBtn.disabled = false;//Reactiva el botón
+                    submitBtn.textContent = btnText;//Restaura el texto original del botón
+                }//Cierre del condicional
+            } catch (error) {//Captura errores de red o parsing
+                console.error('Error:', error);//Registra el error en la consola del navegador
+                alert('Error de conexión');//Muestra alerta de error de conexión
+                submitBtn.disabled = false;//Reactiva el botón
+                submitBtn.textContent = btnText;//Restaura el texto del botón
+            }//Cierre del bloque catch
+        });//Cierre del event listener submit
+    }//-Cierre del condicional if
+});//Cierre del event listener DOMContentLoaded
+</script><!--Cierre del bloque script-->
+</head><!--Cierre de la sección head-->
+<body><!--Inicio del cuerpo del documento-->
+    <form class="formulario" action="/procesar-login" method="POST"><!--Formulario con clase CSS, acción a endpoint de procesamiento, método POST-->
+        <nav><!--Elemento de navegación-->
+            <ul class="formulario-ul"><!--Lista desordenada para navegación entre pestañas-->
+                <li class="li-formulario"><a href="/iniciarsesion.html" class="activo">Iniciar Sesión</a></li><!--Pestaña activa de inicio de sesión-->
+                <li class="li-formulario"><a href="/registro.html">Registro</a></li><!--Pestaña inactiva de registro-->
+            </ul><!--Cierre de la lista-->
+        </nav><!--Cierre del nav-->
 
+        <h2 class="h2-registro">INICIAR SESIÓN</h2><!--Título principal del formulario en mayúsculas-->
 
+        <section class="inputs"><!--Sección que agrupa los campos de entrada-->
+            <label>Apodo o alias</label><!--Etiqueta descriptiva para el campo de usuario-->
+            <input type="text" name="usuario" placeholder="Tu apodo o alias" required><!--Campo de texto para usuario, requerido-->
 
-
-
-</head>
-<body>
-    <form class="formulario" action="/procesar-login" method="POST">
-        <nav>
-            <ul class="formulario-ul">
-                <li class="li-formulario"><a href="/iniciarsesion.html" class="activo">Iniciar Sesión</a></li>
-                <li class="li-formulario"><a href="/registro.html">Registro</a></li>
-            </ul>
-        </nav>
-
-        <h2 class="h2-registro">INICIAR SESIÓN</h2>
-
-        <section class="inputs">
-            <label>Apodo o alias</label>
-            <input type="text" name="usuario" placeholder="Tu apodo o alias" required>
-
-            <label>Contraseña</label>
-            <input type="password" name="contraseña" placeholder="Tu contraseña" required>
+            <label>Contraseña</label><!--Etiqueta para el campo de contraseña-->
+            <input type="password" name="contraseña" placeholder="Tu contraseña" required><!--Campo de contraseña (oculta caracteres), requerido-->
             
-            <p class="forgot-password"><a href="/olvide-contrasena">¿Olvidaste tu contraseña?</a></p>
+            <p class="forgot-password"><a href="/olvide-contrasena">¿Olvidaste tu contraseña?</a></p><!--Enlace para recuperación de contraseña-->
             
-        </section> <button type="submit">Entrar</button>
+        </section><!--Cierre de la sección inputs-->
+        <button type="submit">Entrar</button><!--Botón de envío del formulario-->
 
-        <p>O inicia sesión con:</p>
+        <p>O inicia sesión con:</p><!--Texto separador para opciones alternativas de login-->
         
-        <button type="button" class="google-btn" onclick="window.location.href='/google/login'">
-            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
-            <span>Iniciar sesión con Google</span>
-        </button>
+        <button type="button" class="google-btn" onclick="window.location.href='/google/login'"><!--Botón que redirige a login de Google, type button para no enviar el formulario-->
+            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google"><!--Icono de Google desde CDN-->
+            <span>Iniciar sesión con Google</span><!--Texto del botón de Google-->
+        </button><!--Cierre del botón de Google-->
 
-        <p style="margin-top: 15px;">¿No tienes cuenta? <a href="/registro.html">Registrarse</a></p>
+        <p style="margin-top: 15px;">¿No tienes cuenta? <a href="/registro.html">Registrarse</a></p><!--Enlace a página de registro con margen superior-->
         
-        </form>
-</body>
-</html>
+    </form><!--Cierre del formulario-->
+</body><!--Cierre del body-->
+</html><!--Cierre del documento HTML-->

@@ -1,153 +1,352 @@
-/* ========== VARIABLES DE COLOR ========== */
+/* ============================================================================
+ * ESTRUCTURA:
+ * 1. Variables de color (paleta de colores para ambos temas)
+ * 2. Estilos para tema claro
+ * 3. Estilos para tema oscuro
+ * 4. Estilos del botón de cambio de tema
+ * ============================================================================
+ */
+
+
+
+/* ========================================================================== */
+/* SECCIÓN 1: VARIABLES DE COLOR                                             */
+/* ========================================================================== */
+
+/**
+ * :root - Selector que define variables CSS globales
+ * 
+ * Las variables CSS (custom properties) permiten definir valores reutilizables
+ * en toda la hoja de estilos. Se acceden mediante var(--nombre-variable).
+ * 
+ * Convención de nombres:
+ * - Prefijo descriptivo (bg, text, card, border, sidebar)
+ * - Sufijo del tema (-claro, -oscuro)
+ */
 :root {
-    --bg-claro: #ffffff;
-    --text-claro: #333333;
-    --card-claro: #f5f5f5;
-    --border-claro: #e0e0e0;
-    --sidebar-claro: #f8f9fa;
+    /* Variables para TEMA CLARO */
+    --bg-claro: #ffffff;         /* Color de fondo principal (blanco puro) */
+    --text-claro: #333333;       /* Color de texto principal (gris muy oscuro) */
+    --card-claro: #f5f5f5;       /* Color de fondo para tarjetas (gris muy claro) */
+    --border-claro: #e0e0e0;     /* Color de bordes (gris claro) */
+    --sidebar-claro: #f8f9fa;    /* Color de la barra lateral (gris claro azulado) */
     
-    --bg-oscuro: #1a1a1a;
-    --text-oscuro: #e0e0e0;
-    --card-oscuro: #2d2d2d;
-    --border-oscuro: #404040;
-    --sidebar-oscuro: #242424;
+    /* Variables para TEMA OSCURO */
+    --bg-oscuro: #1a1a1a;        /* Color de fondo principal (negro suave) */
+    --text-oscuro: #e0e0e0;      /* Color de texto principal (gris claro) */
+    --card-oscuro: #2d2d2d;      /* Color de fondo para tarjetas (gris oscuro) */
+    --border-oscuro: #404040;    /* Color de bordes (gris medio) */
+    --sidebar-oscuro: #242424;   /* Color de la barra lateral (gris muy oscuro) */
 }
 
-/* ========== TEMA CLARO ========== */
+/* ========================================================================== */
+/* SECCIÓN 2: ESTILOS PARA TEMA CLARO                                        */
+/* ========================================================================== */
+
+/**
+ * Clase: .tema-claro
+ * 
+ * Se aplica al elemento <body> cuando el usuario selecciona el tema claro.
+ * Define los colores de fondo y texto para el tema claro.
+ * 
+ * Uso: <body class="tema-claro">
+ */
 body.tema-claro {
-    background-color: var(--bg-claro);
-    color: var(--text-claro);
+    background-color: var(--bg-claro);  /* Fondo blanco */
+    color: var(--text-claro);           /* Texto gris oscuro */
 }
 
+/**
+ * Selectores de tarjetas en tema claro
+ * 
+ * Aplica estilos consistentes a todos los componentes tipo tarjeta:
+ * - .card: Tarjetas generales del sistema
+ * - .nota-card: Tarjetas específicas para notas
+ * - .perfil-card: Tarjetas del perfil de usuario
+ * 
+ * Características:
+ * - Fondo gris muy claro para contraste sutil
+ * - Borde visible para definir límites del componente
+ */
 .tema-claro .card,
 .tema-claro .nota-card,
 .tema-claro .perfil-card {
-    background-color: var(--card-claro);
-    color: var(--text-claro);
-    border: 1px solid var(--border-claro);
+    background-color: var(--card-claro);   /* Fondo gris claro */
+    color: var(--text-claro);              /* Texto gris oscuro */
+    border: 1px solid var(--border-claro); /* Borde gris claro */
 }
 
+/**
+ * Estilos para componentes de navegación en tema claro
+ * 
+ * Afecta a:
+ * - .sidebar: Barra lateral de navegación
+ * - .navbar: Barra de navegación superior
+ */
 .tema-claro .sidebar,
 .tema-claro .navbar {
-    background-color: var(--sidebar-claro);
-    color: var(--text-claro);
+    background-color: var(--sidebar-claro);  /* Fondo gris claro azulado */
+    color: var(--text-claro);                /* Texto gris oscuro */
 }
 
+/**
+ * Estilos para elementos de formulario en tema claro
+ * 
+ * Aplica a todos los campos de entrada de texto:
+ * - input: Campos de texto, email, password, etc.
+ * - textarea: Áreas de texto multilínea
+ * - select: Listas desplegables
+ * 
+ * Características:
+ * - Fondo blanco puro para máxima legibilidad
+ * - Borde sutil para delimitar el campo
+ */
 .tema-claro input,
 .tema-claro textarea,
 .tema-claro select {
-    background-color: white;
-    color: var(--text-claro);
-    border: 1px solid var(--border-claro);
+    background-color: white;               /* Fondo blanco puro */
+    color: var(--text-claro);              /* Texto gris oscuro */
+    border: 1px solid var(--border-claro); /* Borde gris claro */
 }
 
+/**
+ * Estilos para encabezados en tema claro
+ * 
+ * Aplica a todos los niveles de encabezado (h1 a h6)
+ * Asegura que los títulos mantengan el color de texto del tema
+ */
 .tema-claro h1, 
 .tema-claro h2, 
 .tema-claro h3, 
 .tema-claro h4, 
 .tema-claro h5, 
 .tema-claro h6 {
-    color: var(--text-claro);
+    color: var(--text-claro);  /* Color consistente para todos los encabezados */
 }
 
-/* ========== TEMA OSCURO ========== */
+/* ========================================================================== */
+/* SECCIÓN 3: ESTILOS PARA TEMA OSCURO                                       */
+/* ========================================================================== */
+
+/**
+ * Clase: .tema-oscuro
+ * 
+ * Se aplica al elemento <body> cuando el usuario selecciona el tema oscuro.
+ * Invierte la paleta de colores para reducir el brillo y facilitar
+ * la visualización en ambientes con poca luz.
+ * 
+ * Uso: <body class="tema-oscuro">
+ */
 body.tema-oscuro {
-    background-color: var(--bg-oscuro);
-    color: var(--text-oscuro);
+    background-color: var(--bg-oscuro);  /* Fondo negro suave */
+    color: var(--text-oscuro);           /* Texto gris claro */
 }
 
+/**
+ * Selectores de tarjetas en tema oscuro
+ * 
+ * Aplica colores oscuros a los componentes tipo tarjeta
+ * para mantener la consistencia del tema.
+ * 
+ * Características:
+ * - Fondo gris oscuro para reducir el contraste
+ * - Bordes más sutiles para no cansar la vista
+ */
 .tema-oscuro .card,
 .tema-oscuro .nota-card,
 .tema-oscuro .perfil-card {
-    background-color: var(--card-oscuro);
-    color: var(--text-oscuro);
-    border: 1px solid var(--border-oscuro);
+    background-color: var(--card-oscuro);   /* Fondo gris oscuro */
+    color: var(--text-oscuro);              /* Texto gris claro */
+    border: 1px solid var(--border-oscuro); /* Borde gris medio */
 }
 
+/**
+ * Estilos para componentes de navegación en tema oscuro
+ * 
+ * Mantiene la barra lateral y navegación con colores consistentes
+ * con el resto del tema oscuro.
+ */
 .tema-oscuro .sidebar,
 .tema-oscuro .navbar {
-    background-color: var(--sidebar-oscuro);
-    color: var(--text-oscuro);
+    background-color: var(--sidebar-oscuro);  /* Fondo gris muy oscuro */
+    color: var(--text-oscuro);                /* Texto gris claro */
 }
 
+/**
+ * Estilos para elementos de formulario en tema oscuro
+ * 
+ * Características:
+ * - Fondo gris oscuro (#333) para reducir brillo
+ * - Texto claro para mantener legibilidad
+ * - Bordes sutiles para definir límites sin ser intrusivos
+ */
 .tema-oscuro input,
 .tema-oscuro textarea,
 .tema-oscuro select {
-    background-color: #333;
-    color: var(--text-oscuro);
-    border: 1px solid var(--border-oscuro);
+    background-color: #333;                 /* Fondo gris oscuro */
+    color: var(--text-oscuro);              /* Texto gris claro */
+    border: 1px solid var(--border-oscuro); /* Borde gris medio */
 }
 
+/**
+ * Estilos para placeholders en tema oscuro
+ * 
+ * Los placeholders son el texto de ayuda que aparece en campos vacíos.
+ * Se utiliza un gris medio (#888) para que sea visible pero no distractor.
+ * 
+ * Pseudo-elemento: ::placeholder
+ */
 .tema-oscuro input::placeholder,
 .tema-oscuro textarea::placeholder {
-    color: #888;
+    color: #888;  /* Gris medio para placeholders */
 }
 
+/**
+ * Estilos para encabezados en tema oscuro
+ * 
+ * Mantiene todos los niveles de encabezado con el color de texto
+ * apropiado para el tema oscuro.
+ */
 .tema-oscuro h1, 
 .tema-oscuro h2, 
 .tema-oscuro h3, 
 .tema-oscuro h4, 
 .tema-oscuro h5, 
 .tema-oscuro h6 {
-    color: var(--text-oscuro);
+    color: var(--text-oscuro);  /* Color consistente para encabezados */
 }
 
+/**
+ * Estilos para botones secundarios en tema oscuro
+ * 
+ * Los botones secundarios tienen menor prominencia que los primarios.
+ * Se utiliza un esquema de colores más neutro.
+ * 
+ * Estados:
+ * - Normal: Fondo gris oscuro (#444)
+ * - Hover: Fondo gris más claro (#555)
+ */
 .tema-oscuro .btn-secondary {
-    background-color: #444;
-    color: #e0e0e0;
-    border-color: #555;
+    background-color: #444;     /* Fondo gris oscuro */
+    color: #e0e0e0;            /* Texto gris claro */
+    border-color: #555;        /* Borde gris medio */
 }
 
 .tema-oscuro .btn-secondary:hover {
-    background-color: #555;
+    background-color: #555;    /* Fondo más claro al pasar el mouse */
 }
 
+/**
+ * Estilos para tablas en tema oscuro
+ * 
+ * Aplica el esquema de colores oscuro a elementos de tabla
+ * para mantener consistencia visual.
+ */
 .tema-oscuro table {
-    background-color: var(--card-oscuro);
-    color: var(--text-oscuro);
+    background-color: var(--card-oscuro);  /* Fondo de tabla oscuro */
+    color: var(--text-oscuro);             /* Texto claro */
 }
 
+/**
+ * Estilos para celdas de tabla en tema oscuro
+ * 
+ * th: Table Header (encabezados de tabla)
+ * td: Table Data (celdas de datos)
+ */
 .tema-oscuro th,
 .tema-oscuro td {
-    border-color: var(--border-oscuro);
+    border-color: var(--border-oscuro);  /* Bordes sutiles */
 }
 
+/**
+ * Estilos para modales en tema oscuro
+ * 
+ * Los modales son ventanas emergentes que aparecen sobre el contenido.
+ * .modal-content contiene todo el contenido del modal.
+ */
 .tema-oscuro .modal-content {
-    background-color: var(--card-oscuro);
-    color: var(--text-oscuro);
+    background-color: var(--card-oscuro);  /* Fondo oscuro del modal */
+    color: var(--text-oscuro);             /* Texto claro */
 }
 
+/**
+ * Estilos para secciones del modal en tema oscuro
+ * 
+ * .modal-header: Encabezado del modal (título, botón cerrar)
+ * .modal-footer: Pie del modal (botones de acción)
+ */
 .tema-oscuro .modal-header,
 .tema-oscuro .modal-footer {
-    border-color: var(--border-oscuro);
+    border-color: var(--border-oscuro);  /* Bordes de sección del modal */
 }
 
-/* ========== BOTÓN DE CAMBIO DE TEMA ========== */
+/* ========================================================================== */
+/* SECCIÓN 4: BOTÓN DE CAMBIO DE TEMA                                        */
+/* ========================================================================== */
+
+/**
+ * Clase: .btn-cambiar-tema
+ * 
+ * Botón que permite al usuario alternar entre tema claro y oscuro.
+ * 
+ * Características del diseño:
+ * - Flexbox para alinear ícono y texto
+ * - Gap de 8px entre elementos
+ * - Padding simétrico para balance visual
+ * - Bordes redondeados (8px) para apariencia moderna
+ * - Sin borde para diseño minimalista
+ * - Cursor pointer para indicar interactividad
+ */
 .btn-cambiar-tema {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
+    display: inline-flex;       /* Disposición flexible en línea */
+    align-items: center;        /* Alineación vertical centrada */
+    gap: 8px;                   /* Espacio entre ícono y texto */
+    padding: 10px 20px;         /* Espaciado interno (vertical horizontal) */
+    border: none;               /* Sin borde */
+    border-radius: 8px;         /* Esquinas redondeadas */
+    cursor: pointer;            /* Cursor de mano al pasar sobre el botón */
+    font-size: 16px;            /* Tamaño de fuente legible */
 }
+
+/**
+ * Botón de tema en modo claro
+ * 
+ * Cuando el tema claro está activo, el botón tiene apariencia oscura
+ * para indicar que cambiará al tema oscuro.
+ * 
+ * Estados:
+ * - Normal: Fondo oscuro (#333)
+ * - Hover: Fondo gris (#555) para feedback visual
+ */
+
 
 .tema-claro .btn-cambiar-tema {
-    background-color: #333;
-    color: white;
+    background-color: #333;     /* Fondo oscuro (contraste con tema claro) */
+    color: white;               /* Texto blanco para legibilidad */
 }
 
 .tema-claro .btn-cambiar-tema:hover {
-    background-color: #555;
+    background-color: #555;     /* Fondo más claro al hover */
 }
 
+/**
+ * Botón de tema en modo oscuro
+ * 
+ * Cuando el tema oscuro está activo, el botón tiene apariencia clara
+ * para indicar que cambiará al tema claro.
+ * 
+ * Estados:
+ * - Normal: Fondo claro (#f0f0f0)
+ * - Hover: Fondo blanco puro para feedback visual
+ */
+
+
 .tema-oscuro .btn-cambiar-tema {
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: #f0f0f0;  /* Fondo claro (contraste con tema oscuro) */
+    color: #333;                /* Texto oscuro para legibilidad */
 }
 
 .tema-oscuro .btn-cambiar-tema:hover {
-    background-color: white;
+    background-color: white;    /* Fondo blanco al hover */
 }
+
