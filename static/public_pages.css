@@ -73,7 +73,8 @@ header {
 }
 
 .nav-links .btn-registro:hover {
-    background: #f5f7ff;                       /* Fondo claro al pasar el mouse */
+    background: #5568d3;   
+    color: #fff;                   /* Fondo claro al pasar el mouse */
 }
 
 /* ========== CONTENIDO PRINCIPAL ========== */

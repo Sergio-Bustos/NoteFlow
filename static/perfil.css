@@ -2,7 +2,7 @@
 :root {  /* Variables globales CSS */
 
     /* Colores del Tema Claro */
-    --primary: #3498db; /* Color principal azul */
+    --primary: #667eea;  /* Color principal azul */
     --bg-claro: #f5f6fa; /* Fondo claro */
     --text-claro: #2c3e50; /* Texto oscuro para el modo claro */
     --card-bg-claro: #ffffff; /* Fondo de tarjetas en modo claro */
@@ -138,7 +138,7 @@ body.tema-oscuro .password-requirements {
 
 /* Hover del botón volver */
 .back-btn:hover {
-    background: #2980b9 !important; /* Azul más oscuro */
+    background: #724dda !important; /* Azul más oscuro */
     transform: translateX(-3px); /* Movimiento */
 }
 
@@ -151,11 +151,7 @@ body.tema-oscuro .password-requirements {
     transition: transform 0.3s, box-shadow 0.3s;
 }
 
-/* Hover sobre tarjetas */
-.card:hover {
-    transform: translateY(-2px); /* Efecto levitación */
-    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-}
+
 
 /* Títulos */
 .title {
@@ -265,8 +261,7 @@ button {
 
 /* Hover en botones */
 button:hover {
-    background: #2980b9;
-    transform: translateY(-2px);
+    background: #724dda; 
     box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
 }
 
@@ -355,8 +350,8 @@ body.tema-claro .tema-actual {
 
 /* Caja del tema actual modo oscuro */
 body.tema-oscuro .tema-actual {
-    background: #1f3a52;
-    color: #64b5f6;
+    background: #7a7a7a;
+    color: #000000;
 }
 
 /* Responsividad */
