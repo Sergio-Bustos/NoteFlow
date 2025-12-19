@@ -949,5 +949,10 @@ def subir_foto(): # Funcion para subir la foto de perfil del usuario
 # ==============================================================================
 # RUN
 # ==============================================================================
-if __name__ == '__main__': # Si se ejecuta este archivo directamente
-    app.run(debug=True, host='0.0.0.0', port=5000) # Ejecutar la aplicación Flask en modo debug
+# Si se ejecuta este archivo directamente
+if __name__ == "__main__":
+    app.run(
+        debug=True,
+        host="127.0.0.1",
+        port=5000
+    ) # Ejecutar la aplicación Flask en modo debug
