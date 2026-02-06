@@ -516,7 +516,7 @@ Equipo NoteFlow
 
         return jsonify({
             'success': True,
-            'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
+            'mensaje': 'Si,tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
         }), 200
 
     except Exception as e:
