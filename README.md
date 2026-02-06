@@ -52,7 +52,7 @@ Fase actual: Desarrollo del módulo de Autenticación y Cuenta
 -----------------------------------------------------------------------------------------------
 | Área                       | Tecnologías                                                    |
 | -------------------------- | -------------------------------------------------------------- |
-| Frontend                   | HTML5, CSS3, Bootstrap                                         |
+| Frontend                   | HTML5, CSS3, Bootstrap + Fetch JavaScript                      |
 | Backend                    | Flask + Jinja2 en Python                                       |
 | Base de datos              | PostgreSQL                                                     |
 | Diseño y documentación     | Draw.io, Word                                                  |
