@@ -93,6 +93,19 @@ def verificar_sesion():
     return None
 
 
+# Decorador para proteger rutas
+from functools import wraps
+
+def login_required(f):
+    """Decorador que requiere inicio de sesión para acceder a la ruta."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'usuario_id' not in session:
+            return redirect(url_for('mostrar_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def limpiar_datos_formulario(datos, campos):
     """Limpia y retorna un diccionario con los campos del formulario."""
     return {campo: datos.get(campo, '').strip() for campo in campos}
@@ -619,6 +632,7 @@ def cerrar_sesion():
 
 
 @app.route("/perfil/cerrar-sesion")
+@login_required
 def cerrar_sesion_perfil():
     """Cierra la sesión del usuario y redirige al login"""
     session.clear()
@@ -629,6 +643,7 @@ def cerrar_sesion_perfil():
 # 7. DASHBOARD CON NOTAS RECIENTES
 # ==============================================================================
 @app.route('/dashboard')
+@login_required
 def dashboard():
     """
     Carga página de dashboard con:
@@ -636,10 +651,6 @@ def dashboard():
       - conteos: notas activas, carpetas, notas en papelera
       - listado de notas recientes (limit 6)
     """
-    redireccion = verificar_sesion()
-    if redireccion:
-        return redireccion
-
     user_id = session['usuario_id']
   
     conexion = None
@@ -735,12 +746,9 @@ def dashboard():
 # 8. SECCIÓN PERFIL COMPLETA
 # ==============================================================================
 @app.route('/perfil')
+@login_required
 def perfil():
     """Muestra la página de perfil del usuario con toda su información"""
-    redireccion = verificar_sesion()
-    if redireccion:
-        return redireccion
-
     user_id = session['usuario_id']
     conexion = None
     cursor = None
@@ -774,12 +782,9 @@ def perfil():
 
 # --- CAMBIAR TEMA ---
 @app.route('/perfil/cambiar-tema', methods=['POST'])
+@login_required
 def cambiar_tema():
     """Cambia el tema del usuario entre claro y oscuro"""
-    redireccion = verificar_sesion()
-    if redireccion:
-        return jsonify({"error": "Sesión expirada"}), 403
-
     tema = request.form.get("tema")
      
     if tema not in ["claro", "oscuro"]:
@@ -825,12 +830,9 @@ def cambiar_tema():
 
 # --- CAMBIAR CONTRASEÑA ---
 @app.route('/perfil/cambiar-password', methods=['POST'])
+@login_required
 def cambiar_password():
     """Cambia la contraseña del usuario"""
-    redireccion = verificar_sesion()
-    if redireccion:
-        return jsonify({"error": "Sesión expirada"}), 403
-
     user_id = session["usuario_id"]
 
     # Limpiar datos
@@ -925,12 +927,9 @@ def cambiar_password():
 
 # --- SUBIR FOTO DE PERFIL ---
 @app.route('/perfil/subir-foto', methods=["POST"])
+@login_required
 def subir_foto():
     """Sube y actualiza la foto de perfil del usuario"""
-    redireccion = verificar_sesion()
-    if redireccion:
-        return jsonify({"error": "Sesión expirada"}), 403
-
     archivo = request.files.get("foto")
 
     if not archivo or archivo.filename == '':
