@@ -1,3 +1,33 @@
+# Variables de entorno
 .env
 .ENV
 *.env
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Archivos subidos por usuarios
+uploads/
+static/uploads/
+
+# Base de datos local (sqlite no afecta en postgresql)
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema
+.DS_Store
+Thumbs.db
