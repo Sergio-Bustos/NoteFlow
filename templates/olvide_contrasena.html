@@ -5,8 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Configuración responsive-->
     <title>Olvidé Contraseña | NoteFlow</title><!--Título de la pestaña del navegador-->
     <link rel="stylesheet" href="/static/formulario.css"><!--Enlace a hoja de estilos de formularios-->
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .toast-header {
+            font-weight: 600;
+        }
+        
+        .toast-success .toast-header {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .toast-error .toast-header {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .toast-info .toast-header {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
 </head><!--Cierre del head-->
 <body><!--Inicio del cuerpo del documento-->
+    
+    <!-- Contenedor de Toasts -->
+    <div class="toast-container"></div>
+    
     <form class="formulario" action="/procesar-olvide-contrasena" method="POST" id="form-olvide"><!--Formulario con ID único, action al endpoint de procesamiento, método POST-->
         <nav><!--Navegación entre pestañas del formulario-->
             <ul class="formulario-ul"><!--Lista de navegación-->
@@ -22,46 +62,116 @@
             <label>Correo electrónico</label><!--Etiqueta descriptiva del campo-->
             <input type="email" name="correo" placeholder="correo@ejemplo.com" required><!--Campo de email con validación HTML5, requerido-->
         </section><!--Cierre de la sección inputs-->
-
+        <br>
         <button type="submit">Enviar Enlace de Recuperación</button><!--Botón de envío del formulario-->
-        
+        <br>
         <p><a href="/iniciarsesion.html">Volver a Iniciar Sesión</a></p><!--Enlace para regresar al login-->
     </form><!--Cierre del formulario-->
     
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script><!--Inicio del bloque JavaScript-->
-        document.addEventListener('DOMContentLoaded', function() {//Evento que espera a que el DOM esté listo
-            const form = document.getElementById('form-olvide');//Selecciona el formulario por su ID
+// ========== FUNCIÓN PARA MOSTRAR TOASTS ==========
+function mostrarToast(mensaje, tipo = 'info') {
+    const toastContainer = document.querySelector('.toast-container');
+    
+    const config = {
+        success: { 
+            icon: '✓', 
+            title: 'Enviado',
+            bgClass: 'toast-success'
+        },
+        error: { 
+            icon: '✕', 
+            title: 'Error',
+            bgClass: 'toast-error'
+        },
+        info: { 
+            icon: 'ℹ', 
+            title: 'Información',
+            bgClass: 'toast-info'
+        }
+    };
+    
+    const { icon, title, bgClass } = config[tipo] || config.info;
+    
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast ${bgClass}`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    
+    toastEl.innerHTML = `
+        <div class="toast-header">
+            <strong class="me-auto">${icon} ${title}</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            ${mensaje}
+        </div>
+    `;
+    
+    toastContainer.appendChild(toastEl);
+    
+    const toast = new bootstrap.Toast(toastEl, {
+        autohide: true,
+        delay: 5000
+    });
+    
+    toast.show();
+    
+    toastEl.addEventListener('hidden.bs.toast', () => {
+        toastEl.remove();
+    });
+}
+
+// ========== MANEJO DEL FORMULARIO DE RECUPERACIÓN ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-olvide');
+    
+    if (form) {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            if (form) {//Verifica que el formulario exista
-                form.addEventListener('submit', async function(e) {//Agrega listener al evento submit, función asíncrona
-                    e.preventDefault();//Previene el envío tradicional del formulario
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const btnText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+           
+            try {
+                const response = await fetch('/procesar-olvide-contrasena', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // Manejo correcto de mensajes de error y éxito
+                if (data.error) {
+                    mostrarToast(data.error, 'error');
+                } else if (data.mensaje) {
+                    mostrarToast(data.mensaje, 'success');
                     
-                    const formData = new FormData(this);//Crea objeto FormData con los datos del formulario
-                    const submitBtn = this.querySelector('button[type="submit"]');//Selecciona el botón de envío
-                    const btnText = submitBtn.textContent;//Guarda el texto original del botón
-                    
-                    submitBtn.disabled = true;//Deshabilita el botón para prevenir doble envío
-                    submitBtn.textContent = 'Enviando...';//Cambia texto a estado de carga
-                   
-                    try {//Inicio del bloque try para manejo de errores
-                        const response = await fetch('/procesar-olvide-contrasena', {//Petición fetch asíncrona al servidor
-                            method: 'POST',//Método HTTP POST
-                            body: formData//Envía los datos del formulario
-                        });//Cierre de configuración fetch
-                        
-                        const data = await response.json();//Parsea la respuesta JSON
-                        
-                        alert(data.mensaje);//Muestra mensaje del servidor (siempre genérico por seguridad)
-                        
-                    } catch (error) {//Captura errores de red
-                        alert('Error de conexión. Intenta más tarde.');//Mensaje de error al usuario
-                    } finally {//Bloque que siempre se ejecuta
-                        submitBtn.disabled = false;//Reactiva el botón
-                        submitBtn.textContent = btnText;//Restaura el texto original
-                    }//Cierre del finally
-                });//Cierre del event listener submit
-            }//Cierre del if
-        });//Cierre del DOMContentLoaded
-    </script><!--Cierre del script-->
+                    // Limpiar el formulario después del éxito
+                    setTimeout(() => {
+                        form.reset();
+                    }, 1000);
+                } else {
+                    mostrarToast('Respuesta inesperada del servidor', 'error');
+                }
+                
+            } catch (error) {
+                mostrarToast('Error de conexión. Intenta más tarde.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = btnText;
+            }
+        });
+    }
+});
+</script><!--Cierre del script-->
 </body><!--Cierre del body-->
 </html><!--Cierre del documento HTML-->

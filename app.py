@@ -286,49 +286,49 @@ def procesar_login():
 
         usuario_encontrado = cursor.fetchone()
 
-        if usuario_encontrado:
-            password_guardado = usuario_encontrado['Contraseña']
-            login_exitoso = False
-            
-            # Verificar si es hash o texto plano
-            if password_guardado.startswith('pbkdf2:sha256:') or password_guardado.startswith('scrypt:'):
-                # Ya es hash, verificar con check_password_hash
-                if check_password_hash(password_guardado, contraseña):
-                    login_exitoso = True
-            else:
-                # Es texto plano (usuario viejo), comparar directo
-                if password_guardado == contraseña:
-                    login_exitoso = True
-                    
-                    # MIGRAR a hash ahora
-                    try:
-                        nuevo_hash = generate_password_hash(contraseña)
-                        cursor_temp = conexion.cursor()
-                        cursor_temp.execute("""
-                            UPDATE public."Cuentas"
-                            SET "Contraseña" = %s
-                            WHERE "ID_Cuenta" = %s
-                        """, (nuevo_hash, usuario_encontrado['ID_Cuenta']))
-                        conexion.commit()
-                        cursor_temp.close()
-                        print(f"✅ Contraseña migrada a hash para usuario: {usuario}")
-                    except Exception as e:
-                        print(f"⚠️ Error al migrar contraseña: {e}")
-                        # No fallar el login por esto
-            
-            if login_exitoso:
-                session['usuario_id'] = usuario_encontrado['ID_Cuenta']
-                session['usuario_nombre'] = usuario_encontrado['Usuario']
-                
-                return jsonify({
-                    'success': True,
-                    'mensaje': 'Inicio de sesión exitoso',
-                    'redirect': '/dashboard'
-                }), 200
-            else:
-                return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
+        if not usuario_encontrado:
+            return jsonify({'error': 'Este usuario no está registrado en NoteFlow'}), 404
+
+        password_guardado = usuario_encontrado['Contraseña']
+        login_exitoso = False
+        
+        # Verificar si es hash o texto plano
+        if password_guardado.startswith('pbkdf2:sha256:') or password_guardado.startswith('scrypt:'):
+            # Ya es hash, verificar con check_password_hash
+            if check_password_hash(password_guardado, contraseña):
+                login_exitoso = True
         else:
-            return jsonify({'error': 'Usuario o contraseña incorrectos'}), 401
+            # Es texto plano (usuario viejo), comparar directo
+            if password_guardado == contraseña:
+                login_exitoso = True
+                
+                # MIGRAR a hash ahora
+                try:
+                    nuevo_hash = generate_password_hash(contraseña)
+                    cursor_temp = conexion.cursor()
+                    cursor_temp.execute("""
+                        UPDATE public."Cuentas"
+                        SET "Contraseña" = %s
+                        WHERE "ID_Cuenta" = %s
+                    """, (nuevo_hash, usuario_encontrado['ID_Cuenta']))
+                    conexion.commit()
+                    cursor_temp.close()
+                    print(f"✅ Contraseña migrada a hash para usuario: {usuario}")
+                except Exception as e:
+                    print(f"⚠️ Error al migrar contraseña: {e}")
+                    # No fallar el login por esto
+        
+        if login_exitoso:
+            session['usuario_id'] = usuario_encontrado['ID_Cuenta']
+            session['usuario_nombre'] = usuario_encontrado['Usuario']
+            
+            return jsonify({
+                'success': True,
+                'mensaje': 'Inicio de sesión exitoso',
+                'redirect': '/dashboard'
+            }), 200
+        else:
+            return jsonify({'error': 'Contraseña incorrecta'}), 401
 
     except Exception as e:
         print(f"Error al iniciar sesión: {e}")
@@ -425,6 +425,7 @@ def google_callback():
         row = cursor.fetchone()
 
         if not row:
+            # Renderizar la misma página pero con mensaje consistente
             return render_template("cuenta_no_registrada.html")
 
         user_id = int(row[0])
@@ -472,9 +473,8 @@ def procesar_olvide_contrasena():
 
         if not usuario_row:
             return jsonify({
-                'success': True,
-                'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
-            }), 200
+                'error': 'Este correo no está registrado en NoteFlow. Por favor verifica o regístrate primero.'
+            }), 404
 
         usuario_id = usuario_row[0]
         usuario_nombre = usuario_row[1]

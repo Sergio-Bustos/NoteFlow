@@ -5,9 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!--  Configuración para dispositivos móviles -->
     <title>Perfil | NoteFlow</title> <!-- Título de la pestaña del navegador -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Enlace a Font Awesome para iconos -->
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <link rel="stylesheet" href="/static/perfil.css"> <!-- Enlace a hoja de estilos general -->
+    
+    <style>
+        /* Estilos para los toasts */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            min-width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .toast-success {
+            border-left: 4px solid #28a745;
+        }
+        
+        .toast-error {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .toast-warning {
+            border-left: 4px solid #ffc107;
+        }
+    </style>
 </head> <!--Cierre del head-->
 <body> <!--Inicio del cuerpo del documento-->
+
+<!-- Contenedor de Toasts -->
+<div class="toast-container-custom"></div>
 
 <div class="container"> <!-- Contenedor principal -->
     <div class="header"> <!-- Encabezado con botón de regreso -->
@@ -15,9 +49,6 @@
             <i class="fas fa-arrow-left"></i> Volver al Dashboard  <!-- Icono de flecha y texto  -->
         </a>
     </div> <!-- Cierre del encabezado -->
-
-    <!-- Alertas --> 
-    <div id="alert-container"></div> 
 
     <!-- INFORMACIÓN DEL PERFIL -->
     <div class="card"> <!-- Tarjeta de información del perfil -->
@@ -119,224 +150,258 @@
 
     <!-- CERRAR SESIÓN -->
     <div class="card"> <!-- Tarjeta para cerrar sesión -->
-        <button class="logout" onclick="confirmarCerrarSesion()"> <!-- Botón para cerrar sesión -->
+        <button class="logout" data-bs-toggle="modal" data-bs-target="#logoutModal"> <!-- Botón para cerrar sesión -->
             <i class="fas fa-sign-out-alt"></i> Cerrar sesión <!-- Texto del botón -->
         </button> <!-- Cierre del botón -->
     </div> <!-- Cierre de la tarjeta para cerrar sesión -->
 
 </div> <!-- Cierre del contenedor principal -->
 
+<!-- Modal de Confirmación para Cerrar Sesión -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                <h5 class="modal-title" id="logoutModalLabel" style="color: #212529; font-weight: 600;">
+                    <i class="fas fa-sign-out-alt"></i> Confirmar Cierre de Sesión
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color: #495057; font-size: 16px; padding: 20px;">
+                ¿Estás seguro de que deseas cerrar sesión en NoteFlow?
+            </div>
+            <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="color: #fff; font-weight: 500;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <a href="/perfil/cerrar-sesion" class="btn btn-danger" style="color: #fff; font-weight: 500;">
+                    <i class="fas fa-sign-out-alt"></i> Sí, cerrar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script> 
+    // ========== FUNCIÓN PARA MOSTRAR TOASTS ==========
+    function mostrarToast(mensaje, tipo = 'info') {
+        const container = document.querySelector('.toast-container-custom');
+        
+        const iconos = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        
+        const titulos = {
+            success: 'Éxito',
+            error: 'Error',
+            warning: 'Advertencia',
+            info: 'Información'
+        };
+        
+        const colores = {
+            success: 'bg-success',
+            error: 'bg-danger',
+            warning: 'bg-warning',
+            info: 'bg-info'
+        };
+        
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast toast-${tipo} align-items-center text-white ${colores[tipo]} border-0`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+        
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong>${iconos[tipo]} ${titulos[tipo]}:</strong> ${mensaje}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        container.appendChild(toastEl);
+        
+        const toast = new bootstrap.Toast(toastEl, {
+            autohide: true,
+            delay: 4000
+        });
+        
+        toast.show();
+        
+        toastEl.addEventListener('hidden.bs.toast', () => {
+            toastEl.remove();
+        });
+    }
+
     // ========== APLICAR TEMA AL CARGAR LA PÁGINA ==========
-    document.addEventListener('DOMContentLoaded', function() { // Esperar a que el DOM esté completamente cargado
-        const colorPrincipal = "{{ usuario.Color_principal }}"; // Obtener el tema actual del usuario desde el backend
-        aplicarTemaVisual(colorPrincipal === "Negro" ? "oscuro" : "claro"); // Aplicar el tema visual correspondiente
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorPrincipal = "{{ usuario.Color_principal }}";
+        aplicarTemaVisual(colorPrincipal === "Negro" ? "oscuro" : "claro");
     }); 
  
-    function aplicarTemaVisual(tema) { // Función para aplicar el tema visual
-        const body = document.body; // Obtener el elemento body
-        const icon = document.getElementById('tema-icon'); // Obtener el icono del tema
-        const texto = document.getElementById('tema-texto'); // Obtener el texto del tema
+    function aplicarTemaVisual(tema) {
+        const body = document.body;
+        const icon = document.getElementById('tema-icon');
+        const texto = document.getElementById('tema-texto');
         
-        if (tema === "oscuro") { // Si el tema es oscuro
-            body.classList.add('tema-oscuro'); // Añadir clase de tema oscuro
-            body.classList.remove('tema-claro'); // Eliminar clase de tema claro
-            icon.className = 'fas fa-moon'; // Cambiar icono a luna
-            texto.textContent = 'Tema Oscuro Activo'; // Cambiar texto a tema oscuro activo
-        } else { // Si el tema es claro
-            body.classList.add('tema-claro'); // Añadir clase de tema claro
-            body.classList.remove('tema-oscuro'); // Eliminar clase de tema oscuro
-            icon.className = 'fas fa-sun'; // Cambiar icono a sol
-            texto.textContent = 'Tema Claro Activo'; // Cambiar texto a tema claro activo
+        if (tema === "oscuro") {
+            body.classList.add('tema-oscuro');
+            body.classList.remove('tema-claro');
+            icon.className = 'fas fa-moon';
+            texto.textContent = 'Tema Oscuro Activo';
+        } else {
+            body.classList.add('tema-claro');
+            body.classList.remove('tema-oscuro');
+            icon.className = 'fas fa-sun';
+            texto.textContent = 'Tema Claro Activo';
         }
     }
 
-    // ========== FUNCIONES DE ALERTA ==========
-    function mostrarAlerta(mensaje, tipo) { // Función para mostrar alertas
-        const container = document.getElementById('alert-container'); // Contenedor de alertas
-        const alert = document.createElement('div'); // Crear un nuevo div para la alerta
-        alert.className = `alert alert-${tipo} show`; // Asignar clases según el tipo de alerta
-        alert.innerHTML = ` 
-            <i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-            <span>${mensaje}</span>
-        `; // Contenido de la alerta
-        container.innerHTML = ''; // Limpiar alertas anteriores
-        container.appendChild(alert); // Añadir la nueva alerta al contenedor
+    // ========== VISTA PREVIA DE FOTO ==========
+    document.getElementById('input-foto').addEventListener('change', function(event) {
+        const file = event.target.files[0];
         
-        container.scrollIntoView({ behavior: 'smooth', block: 'start' }); // Desplazar la vista al contenedor de alertas
+        if (!file) return;
         
-        setTimeout(() => { // Desaparecer la alerta después de 5 segundos
-            alert.classList.remove('show'); // Iniciar la animación de desaparición
-            setTimeout(() => alert.remove(), 300); // Eliminar la alerta del DOM después de la animación
-        }, 5000); 
-    }
-
-// ========== PREVIEW DE FOTO ==========
-// Detecta cuando el usuario selecciona una imagen desde el input con id "input-foto"
-document.getElementById('input-foto').addEventListener('change', function(e) {  
-    const file = e.target.files[0]; // Obtiene el archivo seleccionado
-
-    if (file) { 
-        // Verifica que el archivo no supere los 5MB
+        // Validar tamaño (5MB máximo)
         if (file.size > 5 * 1024 * 1024) {
-            mostrarAlerta('El archivo es muy grande. Máximo 5MB', 'error');
-            this.value = ''; // Limpia el input
+            mostrarToast('La imagen no debe superar 5MB', 'warning');
+            this.value = '';
             return;
         }
-
-        // Usa FileReader para generar una vista previa de la imagen
+        
         const reader = new FileReader();
         reader.onload = function(event) {
             const previewContainer = document.getElementById('preview-foto');
             const previewImg = document.getElementById('preview-img');
-
-            previewImg.src = event.target.result; // Asigna la imagen al tag img
-            previewContainer.style.display = 'block'; // Muestra el contenedor
+            
+            previewImg.src = event.target.result;
+            previewContainer.style.display = 'block';
         };
-        reader.readAsDataURL(file); // Convierte el archivo a base64
-    }
-});
+        reader.readAsDataURL(file);
+    });
 
-// ========== SUBIR FOTO DE PERFIL ==========
-// Maneja el envío del formulario que sube la foto al servidor
-document.getElementById('form-foto').addEventListener('submit', async function(e) {
-    e.preventDefault(); // Evita recargar la página
-    
-    const formData = new FormData(this); // Prepara los datos del formulario
-    const btn = this.querySelector('button');
-    
-    // Cambia el estado del botón a "cargando"
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+    // ========== SUBIR FOTO DE PERFIL ==========
+    document.getElementById('form-foto').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const btn = this.querySelector('button');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
 
-    try {
-        // Envía la foto al servidor mediante fetch
-        const response = await fetch('/perfil/subir-foto', {
-            method: 'POST',
-            body: formData
-        });
+        try {
+            const response = await fetch('/perfil/subir-foto', {
+                method: 'POST',
+                body: formData
+            });
 
-        const data = await response.json(); // Procesa la respuesta JSON
+            const data = await response.json();
 
-        if (data.success) {
-            mostrarAlerta(data.mensaje, 'success'); // Muestra alerta de éxito
-
-            // Actualiza la foto actual del perfil
-            document.getElementById('foto-perfil').src = data.nueva_foto;
-
-            // Oculta la vista previa
-            document.getElementById('preview-foto').style.display = 'none';
-
-            this.reset(); // Limpia el formulario
-        } else {
-            mostrarAlerta(data.error || 'Error al subir la foto', 'error');
+            if (data.success) {
+                mostrarToast(data.mensaje, 'success');
+                document.getElementById('foto-perfil').src = data.nueva_foto;
+                document.getElementById('preview-foto').style.display = 'none';
+                this.reset();
+            } else {
+                mostrarToast(data.error || 'Error al subir la foto', 'error');
+            }
+        } catch (error) {
+            mostrarToast('Error de conexión al subir la foto', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload"></i> Cargar nueva imagen';
         }
-    } catch (error) {
-        // Error al hacer la petición
-        mostrarAlerta('Error de conexión al subir la foto', 'error');
-    } finally {
-        // Restablece el botón
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-upload"></i> Cargar nueva imagen';
-    }
-});
+    });
 
-// ========== CAMBIAR TEMA ==========
-// Maneja el envío del formulario que cambia el tema visual del usuario
-document.getElementById('form-tema').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const temaNuevo = formData.get('tema'); // Obtiene el tema seleccionado
+    // ========== CAMBIAR TEMA ==========
+    document.getElementById('form-tema').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const temaNuevo = formData.get('tema');
 
-    const btn = this.querySelector('button');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aplicando...';
+        const btn = this.querySelector('button');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aplicando...';
 
-    try {
-        // Envia el nuevo tema al servidor
-        const response = await fetch('/perfil/cambiar-tema', {
-            method: 'POST',
-            body: formData
-        });
+        try {
+            const response = await fetch('/perfil/cambiar-tema', {
+                method: 'POST',
+                body: formData
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (data.success) {
-            // Aplica el tema inmediatamente sin necesidad de recargar página
-            aplicarTemaVisual(temaNuevo);
-
-            mostrarAlerta(data.mensaje, 'success');
-        } else {
-            mostrarAlerta(data.error || 'Error al cambiar tema', 'error');
+            if (data.success) {
+                aplicarTemaVisual(temaNuevo);
+                mostrarToast(data.mensaje, 'success');
+            } else {
+                mostrarToast(data.error || 'Error al cambiar tema', 'error');
+            }
+        } catch (error) {
+            mostrarToast('Error de conexión', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Aplicar Tema';
         }
-    } catch (error) {
-        mostrarAlerta('Error de conexión', 'error');
-    } finally {
-        // Restablece el botón
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-save"></i> Aplicar Tema';
-    }
-});
+    });
 
-// ========== CAMBIAR CONTRASEÑA ==========
-// Maneja el envío del formulario de cambio de contraseña
-document.getElementById('form-password').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    // Obtiene los valores ingresados
-    const actual = document.getElementById('password_actual').value;
-    const nueva = document.getElementById('password_nueva').value;
-    const confirma = document.getElementById('password_confirmacion').value;
+    // ========== CAMBIAR CONTRASEÑA ==========
+    document.getElementById('form-password').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const actual = document.getElementById('password_actual').value;
+        const nueva = document.getElementById('password_nueva').value;
+        const confirma = document.getElementById('password_confirmacion').value;
 
-    // Validación: coinciden?
-    if (nueva !== confirma) {
-        mostrarAlerta('Las contraseñas nuevas no coinciden', 'error');
-        return;
-    }
-
-    // Validación: tamaño del password
-    if (nueva.length < 6 || nueva.length > 15) {
-        mostrarAlerta('La contraseña debe tener entre 6 y 15 caracteres', 'error');
-        return;
-    }
-
-    const formData = new FormData(this);
-    const btn = this.querySelector('button');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
-
-    try {
-        // Envia al servidor las contraseñas
-        const response = await fetch('/perfil/cambiar-password', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            mostrarAlerta(data.mensaje, 'success');
-            this.reset(); // Limpia el formulario
-        } else {
-            mostrarAlerta(data.error || 'Error al cambiar contraseña', 'error');
+        // Validación: ¿coinciden?
+        if (nueva !== confirma) {
+            mostrarToast('Las contraseñas nuevas no coinciden', 'warning');
+            return;
         }
-    } catch (error) {
-        mostrarAlerta('Error de conexión', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Contraseña';
-    }
-});
 
-// ========== CERRAR SESIÓN ==========
-// Confirma si el usuario realmente quiere cerrar sesión
-function confirmarCerrarSesion() {
-    if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-        window.location.href = '/perfil/cerrar-sesion'; // Redirige a logout
-    }
-}
+        // Validación: tamaño
+        if (nueva.length < 6 || nueva.length > 15) {
+            mostrarToast('La contraseña debe tener entre 6 y 15 caracteres', 'warning');
+            return;
+        }
+
+        const formData = new FormData(this);
+        const btn = this.querySelector('button');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+
+        try {
+            const response = await fetch('/perfil/cambiar-password', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                mostrarToast(data.mensaje, 'success');
+                this.reset();
+            } else {
+                mostrarToast(data.error || 'Error al cambiar contraseña', 'error');
+            }
+        } catch (error) {
+            mostrarToast('Error de conexión', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Contraseña';
+        }
+    });
 
 </script>
 
