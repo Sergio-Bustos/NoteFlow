@@ -313,9 +313,9 @@ def procesar_login():
                     """, (nuevo_hash, usuario_encontrado['ID_Cuenta']))
                     conexion.commit()
                     cursor_temp.close()
-                    print(f"✅ Contraseña migrada a hash para usuario: {usuario}")
+                    print(f"Contraseña migrada a hash para usuario: {usuario}")
                 except Exception as e:
-                    print(f"⚠️ Error al migrar contraseña: {e}")
+                    print(f"Error al migrar contraseña: {e}")
                     # No fallar el login por esto
         
         if login_exitoso:
@@ -1001,6 +1001,82 @@ def subir_foto():
         print(f"Error al subir archivo: {e}")
         return jsonify({"error": "Error al subir el archivo"}), 500
 
+# ==============================================================================
+# RUTA: MIS NOTAS  
+# ==============================================================================
+
+@app.route("/notas")
+@login_required
+def mostrar_notas():
+    """Muestra todas las notas activas y carpetas del usuario logueado."""
+    user_id = session['usuario_id']
+    conexion = None
+    cursor = None
+
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor = conexion.cursor()
+
+        # ── 1. Datos del usuario (para el header + tema) ──────────────────────
+        cursor.execute("""
+            SELECT "Nombres", "Foto", "Color_principal"
+            FROM public."Cuentas"
+            WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            session.clear()
+            return redirect(url_for('mostrar_login'))
+
+        # ── 2. Notas activas del usuario ──────────────────────────────────────
+        cursor.execute("""
+            SELECT
+                "ID_Nota",
+                "Titulo",
+                "Descripcion",
+                "Fecha_deedicion",
+                "Formato",
+                "Estado"
+            FROM public."Notas"
+            WHERE "ID_Cuenta" = %s
+              AND LOWER("Estado") = 'activa'
+            ORDER BY "Fecha_deedicion" DESC NULLS LAST
+        """, (user_id,))
+        notas = cursor.fetchall()
+
+        # ── 3. Carpetas activas del usuario (con fecha de última modificación) ─
+        cursor.execute("""
+            SELECT
+                c."ID_Carpeta",
+                c."Nombre_carpeta",
+                COUNT(n."ID_Nota")         AS "Total_notas",
+                MAX(n."Fecha_deedicion")   AS "Ultima_modificacion"
+            FROM public."Carpetas" c
+            LEFT JOIN public."Notas" n
+                   ON n."ID_Carpeta" = c."ID_Carpeta"
+                  AND LOWER(n."Estado") = 'activa'
+            WHERE c."ID_Cuenta" = %s
+              AND LOWER(c."Estado") = 'activa'
+            GROUP BY c."ID_Carpeta", c."Nombre_carpeta"
+            ORDER BY "Ultima_modificacion" DESC NULLS LAST
+        """, (user_id,))
+        carpetas = cursor.fetchall()
+
+        return render_template(
+            "notas.html",
+            notas=notas,
+            carpetas=carpetas,
+            usuario=usuario
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"Error al cargar las notas: {str(e)}", 500
+
+    finally:
+        cerrar_db(cursor, conexion)
 
 # ==============================================================================
 # RUN

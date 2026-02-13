@@ -450,3 +450,69 @@ p a:hover {
     }
 }
 
+/* ========================================================================== */
+/* SECCIÓN 10: CARRUSEL INICIAR SESION Y REGISTRO                             */
+/* ========================================================================== */
+.carrusel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+
+}
+
+.columna_izquierda,
+.columna_derecha {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 200%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* Para que no interfiera con el formulario */
+    flex-direction: column;
+
+}
+
+.columna_izquierda {
+    left: 0;
+    animation: scrollDown 7s linear infinite;
+}
+
+.columna_derecha {
+    right: 0;
+    animation: scrollUp 7s linear infinite;
+}
+
+.columna_izquierda img,
+.columna_derecha img {
+    width: 800px;
+    height: 800px;
+    opacity: 0.3; /* Transparencia suave de fondo */
+    margin: 10px 0;
+    
+
+}
+
+/* Animación izquierda (BAJA) */
+@keyframes scrollDown {
+    0% {
+        transform: translateY(-50%);
+    }
+    100% {
+        transform: translateY(0%);
+    }
+}
+
+/* Animación derecha (SUBE) */
+@keyframes scrollUp {
+       0% {
+        transform: translateY(0%);
+    }
+    100% {
+        transform: translateY(-50%);
+    }
+}

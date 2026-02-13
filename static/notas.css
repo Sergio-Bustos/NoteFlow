@@ -1,0 +1,398 @@
+/* ========== ESTILOS DE LA PÁGINA DE NOTAS ========== */
+
+/* ---- Barra de búsqueda ---- */
+.search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 220px;
+    border: 2px solid var(--border-claro);
+    border-radius: 50px;
+    padding: 10px 18px;
+    gap: 10px;
+    transition: border-color 0.2s;
+}
+
+body.tema-oscuro .search-input-group {
+    border-color: var(--border-oscuro);
+    background-color: var(--card-oscuro);
+}
+
+.search-input-group:focus-within {
+    border-color: var(--color-principal);
+}
+
+.search-input-group input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 1em;
+    background: transparent;
+    color: inherit;
+}
+
+.search-input-group i {
+    color: #95a5a6;
+    font-size: 1.1em;
+}
+
+/* ---- Botón elegir filtro ---- */
+.filter-btn {
+    border: 2px solid var(--color-principal);
+    background: transparent;
+    color: var(--color-principal);
+    border-radius: 50px;
+    padding: 10px 22px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+    position: relative;
+}
+
+.filter-btn:hover,
+.filter-btn.activo {
+    background: var(--color-principal);
+    color: white;
+}
+
+/* ---- Panel de filtros desplegable ---- */
+.filtros-panel {
+    display: none;
+    background: var(--card-claro);
+    border: 1px solid var(--border-claro);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+body.tema-oscuro .filtros-panel {
+    background: var(--card-oscuro);
+    border-color: var(--border-oscuro);
+}
+
+.filtros-panel.visible {
+    display: flex;
+}
+
+.filtro-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 160px;
+}
+
+.filtro-grupo label {
+    font-size: 0.82em;
+    font-weight: 600;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filtro-grupo select,
+.filtro-grupo input[type="date"] {
+    border: 1.5px solid var(--border-claro);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.92em;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+body.tema-oscuro .filtro-grupo select,
+body.tema-oscuro .filtro-grupo input[type="date"] {
+    border-color: var(--border-oscuro);
+    background: #1a1a1a;
+    color: var(--texto-oscuro);
+}
+
+.filtro-grupo select:focus,
+.filtro-grupo input[type="date"]:focus {
+    border-color: var(--color-principal);
+}
+
+.btn-limpiar-filtros {
+    background: transparent;
+    border: 1.5px solid #e74c3c;
+    color: #e74c3c;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    align-self: flex-end;
+}
+
+.btn-limpiar-filtros:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+/* ---- Secciones de resultados ---- */
+.seccion-titulo {
+    font-size: 1em;
+    font-weight: 700;
+    color: #95a5a6;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin: 24px 0 12px;
+}
+
+/* ---- Item de nota (fila) ---- */
+.nota-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 2px solid var(--border-claro);
+    background: var(--card-claro);
+    margin-bottom: 12px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    cursor: default;
+}
+
+body.tema-oscuro .nota-item {
+    background: var(--card-oscuro);
+    border-color: var(--border-oscuro);
+}
+
+.nota-item:hover {
+    box-shadow: 0 4px 14px rgba(84, 82, 211, 0.13);
+    border-color: var(--color-principal);
+}
+
+/* ---- Ícono de nota ---- */
+.nota-icono {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: rgba(84, 82, 211, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.nota-icono i {
+    color: var(--color-principal);
+    font-size: 1.3em;
+}
+
+/* ---- Ícono de carpeta ---- */
+.carpeta-icono {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: rgba(243, 156, 18, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.carpeta-icono i {
+    color: var(--color-secundario);
+    font-size: 1.4em;
+}
+
+/* ---- Texto del item ---- */
+.nota-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nota-info .nombre {
+    font-weight: 600;
+    font-size: 0.97em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.nota-info .meta {
+    font-size: 0.82em;
+    color: #95a5a6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.formato-badge {
+    background: rgba(84, 82, 211, 0.10);
+    color: var(--color-principal);
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 0.78em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ---- Botón "Ver nota" / "Entrar a la carpeta" ---- */
+.btn-accion {
+    background: transparent;
+    border: 2px solid var(--color-principal);
+    color: var(--color-principal);
+    border-radius: 50px;
+    padding: 7px 18px;
+    font-size: 0.88em;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-accion:hover {
+    background: var(--color-principal);
+    color: white;
+}
+
+.btn-accion-carpeta {
+    border-color: var(--color-secundario);
+    color: var(--color-secundario);
+}
+
+.btn-accion-carpeta:hover {
+    background: var(--color-secundario);
+    color: white;
+}
+
+/* ---- Mensaje sin resultados ---- */
+.vacio-msg {
+    text-align: center;
+    padding: 48px 20px;
+    color: #95a5a6;
+}
+
+.vacio-msg i {
+    font-size: 3em;
+    margin-bottom: 14px;
+    display: block;
+}
+
+.vacio-msg p {
+    font-size: 1.05em;
+}
+
+/* ---- Botón nueva nota ---- */
+.btn-nueva-nota {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-principal);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 22px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+    margin-bottom: 24px;
+}
+
+.btn-nueva-nota:hover {
+    background: #3f3db8;
+    color: white;
+}
+
+/* ---- Contadores ---- */
+.contadores {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.contador-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.88em;
+    font-weight: 600;
+    color: #7f8c8d;
+}
+
+.contador-chip span.num {
+    background: var(--color-principal);
+    color: white;
+    border-radius: 50px;
+    padding: 1px 10px;
+    font-size: 0.9em;
+}
+
+.contador-chip.carpetas span.num {
+    background: var(--color-secundario);
+}
+
+/* ---- Paginación simple ---- */
+.paginacion {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 28px;
+}
+
+.paginacion a,
+.paginacion span {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.92em;
+    font-weight: 600;
+    border: 1.5px solid var(--border-claro);
+    color: var(--color-principal);
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+body.tema-oscuro .paginacion a,
+body.tema-oscuro .paginacion span {
+    border-color: var(--border-oscuro);
+}
+
+.paginacion a:hover {
+    background: var(--color-principal);
+    color: white;
+    border-color: var(--color-principal);
+}
+
+.paginacion span.activa {
+    background: var(--color-principal);
+    color: white;
+    border-color: var(--color-principal);
+}
+
+/* ---- Tema oscuro ajustes extras ---- */
+body.tema-oscuro .nota-icono {
+    background: rgba(84, 82, 211, 0.18);
+}
+
+body.tema-oscuro .carpeta-icono {
+    background: rgba(243, 156, 18, 0.18);
+}
+
+body.tema-oscuro .formato-badge {
+    background: rgba(84, 82, 211, 0.20);
+}
