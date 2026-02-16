@@ -1,518 +1,588 @@
-/*** ============================================================================
+/* ============================================================================
+ * formulario.css — NoteFlow
  * ESTRUCTURA:
- * 1. Reset y estilos globales
- * 2. Estilos del formulario principal
- * 3. Navegación entre formularios
- * 4. Títulos y encabezados
- * 5. Campos de entrada (inputs)
- * 6. Botones
- * 7. Texto y enlaces
- * 8. Botón de inicio de sesión con Google
- * 9. Responsive design (adaptabilidad móvil)
- * ============================================================================
- */
+ *  1.  Reset y variables globales
+ *  2.  Body base
+ *  3.  Fondo y carrusel de imágenes
+ *  4.  Overlay de legibilidad
+ *  5.  Formulario principal (glassmorphism)
+ *  6.  Logo dentro del formulario
+ *  7.  Navegación de pestañas
+ *  8.  Títulos
+ *  9.  Campos de entrada (label, input, hint)
+ * 10.  Fila de dos columnas (registro)
+ * 11.  Botones (submit + Google)
+ * 12.  Separador "O inicia sesión con"
+ * 13.  Texto, enlaces y pie
+ * 14.  Toasts personalizados
+ * 15.  Responsive
+ * ============================================================================ */
 
 
-/* ========================================================================== */
-/* SECCIÓN 1: RESET Y ESTILOS GLOBALES                                       */
-/* ========================================================================== */
-
-/**
- * Selector universal (*)
- * 
- * Reinicia los estilos por defecto del navegador para asegurar
- * consistencia visual en todos los navegadores.
- * 
- * Propiedades:
- * - margin: 0 → Elimina todos los márgenes externos
- * - padding: 0 → Elimina todos los espacios internos
- * - box-sizing: border-box → Incluye padding y border en el ancho/alto total
- */
-* {
+/* ============================================================================
+   1. RESET Y VARIABLES GLOBALES
+   ============================================================================ */
+*, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/**
- * Estilos del elemento body
- * 
- * Configura la página completa como un contenedor centrado con:
- * - 100vh: Altura completa de la ventana del navegador
- * - Flexbox: Para centrar el formulario vertical y horizontalmente
- * - Fondo degradado: De gris a morado a blanco (marca visual de NoteFlow)
- * - overflow: hidden → Oculta barras de desplazamiento
- */
+:root {
+    --purple:       #5452d3;
+    --purple-dark:  #3f3db8;
+    --purple-soft:  #faedfd;
+    --gold:         #f39c12;
+    --text-dark:    #1e1d3f;
+    --text-mid:     #555;
+    --text-light:   #666;
+    --border:       #e0e0e0;
+    --input-bg:     #f7f7fc;
+    --white:        #ffffff;
+}
+
+
+/* ============================================================================
+   2. BODY BASE
+   ============================================================================ */
 body {
-    height: 100vh;                                                      /* Altura completa de la ventana */
-    display: flex;                                                      /* Activar flexbox */
-    justify-content: center;                                            /* Centrado horizontal */
-    align-items: center;                                                /* Centrado vertical */
-    overflow: hidden;                                                   /* Sin scroll */
-    background: linear-gradient(135deg, #727272, #51368f, #ffffff);    /* Degradado diagonal */
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #2d2b7a 0%, #51368f 50%, #8b5cf6 100%);
 }
 
 
-
-
-
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 2: ESTILOS DEL FORMULARIO PRINCIPAL                               */
-/* ========================================================================== */
-
-/**
- * Elemento form
- * 
- * Contenedor principal del formulario de autenticación.
- * 
- * Características:
- * - Fondo blanco para destacar sobre el degradado
- * - Ancho fijo de 380px para diseño consistente
- * - Bordes redondeados (12px) para apariencia moderna
- * - Padding interno para espaciar el contenido
- * - box-shadow: Sombra sutil para efecto de elevación
- */
-form {
-    background: #ffffff;                             /* Fondo blanco */
-    width: 380px;                                    /* Ancho fijo */
-    border-radius: 12px;                             /* Esquinas redondeadas */
-    padding: 30px 35px;                              /* Espaciado interno (vertical horizontal) */
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);      /* Sombra suave para profundidad */
-}
-
-
-
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 3: NAVEGACIÓN ENTRE FORMULARIOS                                   */
-/* ========================================================================== */
-
-/**
- * Elemento nav
- * 
- * Barra de navegación superior del formulario que permite alternar
- * entre "Iniciar Sesión" y "Registro".
- * 
- * Layout:
- * - Flexbox para distribuir elementos horizontalmente
- * - space-between: Máxima separación entre elementos
- * - Borde inferior para separación visual del contenido
- */
-nav {
-    display: flex;                                   /* Activar flexbox */
-    justify-content: space-between;                  /* Separar elementos al máximo */
-    align-items: center;                             /* Alineación vertical centrada */
-    border-bottom: 2px solid #f0f0f0;               /* Línea separadora inferior */
-    margin-bottom: 15px;                             /* Espacio inferior */
-    padding-bottom: 10px;                            /* Espacio interno inferior */
-}
-
-/**
- * Clase: .formulario-ul
- * 
- * Lista de enlaces de navegación (Iniciar Sesión / Registro)
- * 
- * Características:
- * - Flexbox para disposición horizontal
- * - Gap de 10px entre elementos
- * - Sin viñetas (list-style: none)
- */
-.formulario-ul {
-    display: flex;                                   /* Disposición horizontal */
-    gap: 10px;                                       /* Espacio entre elementos */
-    list-style: none;                                /* Sin puntos de lista */
-}
-
-/**
- * Clase: .li-formulario a
- * 
- * Enlaces individuales de navegación entre formularios.
- * 
- * Estados:
- * - Normal: Color gris (#666)
- * - Hover: Color morado con fondo claro
- * - Activo (.activo): Color morado con fondo claro (persiste)
- */
-.li-formulario a {
-    color: #666;                                     /* Color gris por defecto */
-    font-weight: 600;                                /* Texto semi-negrita */
-    text-decoration: none;                           /* Sin subrayado */
-    padding: 5px 10px;                               /* Espaciado interno */
-    border-radius: 5px;                              /* Esquinas redondeadas */
-}
-
-.li-formulario a:hover {
-    color: #5e12a5;                                  /* Color morado al hover */
-    background: #faedfd;                             /* Fondo lila claro al hover */
-}
-
-.li-formulario a.activo {
-    color: #5e12a5;                                  /* Color morado cuando está activo */
-    background: #faedfd;                             /* Fondo lila claro cuando está activo */
-}
-
-
-
-
-
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 4: TÍTULOS Y ENCABEZADOS                                          */
-/* ========================================================================== */
-
-/**
- * Clase: .h2-registro
- * 
- * Título principal del formulario (ej: "INICIAR SESIÓN", "REGISTRO").
- * 
- * Características:
- * - Centrado horizontalmente
- * - Tamaño de fuente grande (26px) para jerarquía visual
- * - Color gris oscuro (#333) para contraste
- * - Márgenes verticales para espaciado
- */
-.h2-registro {
-    text-align: center;                              /* Centrado horizontal */
-    font-size: 26px;                                 /* Tamaño grande */
-    color: #333;                                     /* Gris oscuro */
-    margin: 20px 0;                                  /* Márgenes superior e inferior */
-}
-
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 5: CAMPOS DE ENTRADA (INPUTS)                                     */
-/* ========================================================================== */
-
-/**
- * Elemento label
- * 
- * Etiquetas descriptivas para los campos de entrada.
- * 
- * Características:
- * - display: block → Ocupa toda la línea
- * - Color gris medio (#555) para jerarquía visual
- * - Margen superior para separación de elementos anteriores
- * - font-weight: 500 → Peso medio (semi-negrita)
- */
-label {
-    display: block;                                  /* Bloque completo */
-    color: #555;                                     /* Gris medio */
-    margin-top: 15px;                                /* Espacio superior */
-    font-size: 14px;                                 /* Tamaño de fuente */
-    font-weight: 500;                                /* Peso medio */
-}
-
-/**
- * Elemento input
- * 
- * Campos de entrada de texto para el formulario.
- * 
- * Características:
- * - Ancho completo (100%) para uniformidad
- * - Altura fija (38px) para consistencia
- * - Borde sutil (2px solid #e0e0e0)
- * - Fondo gris muy claro (#fafafa) por defecto
- * - Padding interno para espaciar el texto
- * 
- * Estado focus:
- * - Borde azul (#667eea) para indicar campo activo
- * - Fondo blanco para máximo contraste
- * - Sin outline por defecto del navegador
- */
-input {
-    width: 100%;                                     /* Ancho completo del contenedor */
-    height: 38px;                                    /* Altura fija */
-    border: 2px solid #e0e0e0;                      /* Borde gris claro */
-    border-radius: 6px;                              /* Esquinas redondeadas */
-    background: #fafafa;                             /* Fondo gris muy claro */
-    color: #333;                                     /* Texto gris oscuro */
-    padding: 0 12px;                                 /* Espaciado interno horizontal */
-    font-size: 15px;                                 /* Tamaño de fuente */
-}
-
-input:focus {
-    border-color: #667eea;                           /* Borde azul al enfocar */
-    outline: none;                                   /* Eliminar outline por defecto */
-    background: #fff;                                /* Fondo blanco al enfocar */
-}
-
-
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 6: BOTONES                                                         */
-/* ========================================================================== */
-
-/**
- * Elemento button
- * 
- * Botón principal de envío del formulario (submit).
- * 
- * Características:
- * - display: block → Ocupa toda la línea
- * - Ancho completo (100%)
- * - Altura fija (45px)
- * - Color de fondo morado (#5e12a5) - color corporativo de NoteFlow
- * - Texto blanco para máximo contraste
- * - Sin borde para diseño limpio
- * - Bordes redondeados (8px)
- * - cursor: pointer → Indica interactividad
- * 
- * Estado hover:
- * - Color más oscuro (#5931b8) para feedback visual
- */
-button {
-    display: block;                                  /* Elemento de bloque */
-    width: 100%;                                     /* Ancho completo */
-    height: 45px;                                    /* Altura fija */
-    background: #5e12a5;                            /* Morado corporativo */
-    color: #fff;                                     /* Texto blanco */
-    border: none;                                    /* Sin borde */
-    border-radius: 8px;                              /* Esquinas redondeadas */
-    font-size: 15px;                                 /* Tamaño de fuente */
-    font-weight: 600;                                /* Texto semi-negrita */
-    margin-top: 25px;                                /* Espacio superior */
-    cursor: pointer;                                 /* Cursor de mano */
-}
-
-button:hover {
-    background: #5931b8;                            /* Morado más oscuro al hover */
-}
-
-
-
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 7: TEXTO Y ENLACES                                                */
-/* ========================================================================== */
-
-/**
- * Elemento p
- * 
- * Párrafos de texto informativo (ej: "¿Ya tienes cuenta?").
- * 
- * Características:
- * - Centrado horizontalmente
- * - Margen superior para separación
- * - Color gris (#666) para jerarquía secundaria
- */
-p {
-    text-align: center;                              /* Centrado horizontal */
-    margin-top: 15px;                                /* Espacio superior */
-    color: #666;                                     /* Gris medio */
-}
-
-/**
- * Enlaces dentro de párrafos (p a)
- * 
- * Enlaces de navegación (ej: "Registrarse", "Iniciar sesión").
- * 
- * Estados:
- * - Normal: Color azul (#667eea)
- * - Hover: Subrayado para indicar interactividad
- */
-p a {
-    color: #667eea;                                  /* Azul para enlaces */
-    text-decoration: none;                           /* Sin subrayado por defecto */
-    font-weight: 600;                                /* Texto semi-negrita */
-}
-
-p a:hover {
-    text-decoration: underline;                      /* Subrayado al hover */
-}
-
-/**
- * Clase: .forgot-password
- * 
- * Enlace de "¿Olvidaste tu contraseña?" alineado a la derecha.
- */
-.forgot-password {
-    text-align: right;                               /* Alineado a la derecha */
-    margin-top: 10px;                                /* Espacio superior */
-}
-
-/**
- * Clase: .instruccion
- * 
- * Texto de instrucciones para el usuario (ej: "Ingresa tu correo...").
- * 
- * Características:
- * - Tamaño de fuente más pequeño (14px)
- * - Color gris (#666) para menor prominencia
- * - Margen inferior para separación del siguiente elemento
- */
-.instruccion {
-    font-size: 14px;                                 /* Tamaño pequeño */
-    color: #666;                                     /* Gris medio */
-    margin-bottom: 15px;                             /* Espacio inferior */
-}
-
-
-
-
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 8: BOTÓN DE GOOGLE                                                */
-/* ========================================================================== */
-
-/**
- * Clase: .google-btn
- * 
- * Botón de inicio de sesión con Google.
- * 
- * Características:
- * - Flexbox para alinear ícono y texto
- * - Gap de 8px entre ícono y texto
- * - Fondo blanco con borde gris
- * - Texto oscuro (#333)
- * - Altura consistente con otros botones (45px)
- * 
- * Estado hover:
- * - Fondo gris muy claro (#fafafa)
- * - Borde azul (#667eea) para feedback visual
- */
-.google-btn {
-    display: flex;                                   /* Activar flexbox */
-    align-items: center;                             /* Alineación vertical centrada */
-    justify-content: center;                         /* Centrado horizontal */
-    gap: 8px;                                        /* Espacio entre ícono y texto */
-    background: #fff;                                /* Fondo blanco */
-    color: #333;                                     /* Texto gris oscuro */
-    border: 2px solid #e0e0e0;                      /* Borde gris claro */
-    width: 100%;                                     /* Ancho completo */
-    height: 45px;                                    /* Altura fija */
-    border-radius: 8px;                              /* Esquinas redondeadas */
-    margin-top: 10px;                                /* Espacio superior */
-    cursor: pointer;                                 /* Cursor de mano */
-    font-weight: 500;                                /* Peso medio */
-}
-
-/**
- * Ícono de Google dentro del botón
- * 
- * Tamaño fijo de 20x20px para el logotipo de Google.
- */
-.google-btn img {
-    width: 20px;                                     /* Ancho del ícono */
-}
-
-.google-btn:hover {
-    background: #fafafa;                             /* Fondo gris claro al hover */
-    border-color: #667eea;                           /* Borde azul al hover */
-}
-
-
-
-
-/* ========================================================================== */
-/* SECCIÓN 9: RESPONSIVE DESIGN                                              */
-/* ========================================================================== */
-
-/**
- * Media Query para pantallas pequeñas (móviles)
- * 
- * Se activa cuando el ancho de la pantalla es menor o igual a 480px.
- * 
- * Ajustes:
- * - Formulario ocupa 90% del ancho disponible (en lugar de 380px fijo)
- * - Padding reducido (25px) para aprovechar mejor el espacio
- * 
- * Propósito:
- * Garantizar que el formulario sea completamente funcional y legible
- * en dispositivos móviles sin necesidad de hacer zoom o scroll horizontal.
- */
-@media screen and (max-width: 480px) {
-    form {
-        width: 90%;                                  /* Ancho relativo en móviles */
-        padding: 25px;                               /* Padding reducido */
-    }
-}
-
-/* ========================================================================== */
-/* SECCIÓN 10: CARRUSEL INICIAR SESION Y REGISTRO                             */
-/* ========================================================================== */
-.carrusel {
+/* ============================================================================
+   3. FONDO Y CARRUSEL DE IMÁGENES
+   ============================================================================ */
+.fondo {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
 
+.contenido {
+    position: absolute;
+    inset: 0;
+}
 
+.carrusel {
+    position: absolute;
+    inset: 0;
+    display: flex;
 }
 
 .columna_izquierda,
 .columna_derecha {
-    position: absolute;
-    top: 0;
     width: 50%;
-    height: 200%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    gap: 0;
+}
+
+/* ---- Imágenes: opacity subida a 0.35 para que se vean bien ---- */
+.columna_izquierda img,
+.columna_derecha img {
+    width: 100%;
+    max-width: 520px;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    opacity: 0.35;          /* era 0.18 → ahora mucho más visible */
+    flex-shrink: 0;
+    display: block;
+    filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.15));
+}
+
+/* Columna izquierda: baja */
+.columna_izquierda {
+    animation: scrollDown 14s linear infinite;
+}
+
+/* Columna derecha: sube */
+.columna_derecha {
+    animation: scrollUp 14s linear infinite;
+}
+
+@keyframes scrollDown {
+    0%   { transform: translateY(-50%); }
+    100% { transform: translateY(0%);   }
+}
+
+@keyframes scrollUp {
+    0%   { transform: translateY(0%);   }
+    100% { transform: translateY(-50%); }
+}
+
+
+/* ============================================================================
+   4. OVERLAY DE LEGIBILIDAD
+   Menos opaco que antes para que las imágenes se vean más.
+   ============================================================================ */
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        135deg,
+        rgba(45, 43, 122, 0.45) 0%,
+        rgba(81, 54, 143, 0.38) 50%,
+        rgba(139, 92, 246, 0.35) 100%
+    );
+    backdrop-filter: blur(1px);     /* mínimo blur: no borrona las imágenes */
+}
+
+
+/* ============================================================================
+   5. FORMULARIO PRINCIPAL (glassmorphism)
+   ============================================================================ */
+.formulario {
+    position: relative;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.90);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    width: 420px;
+    border-radius: 22px;
+    padding: 36px 40px;
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.20),
+        0 2px 8px  rgba(84, 82, 211, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.50);
+    animation: formEntrance 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes formEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* ============================================================================
+   6. LOGO DENTRO DEL FORMULARIO
+   ============================================================================ */
+.formulario-logo {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.logo-text {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--purple);
+    letter-spacing: -0.02em;
+}
+
+.logo-accent {
+    color: var(--gold);
+}
+
+
+/* ============================================================================
+   7. NAVEGACIÓN DE PESTAÑAS
+   ============================================================================ */
+nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 2px solid #ebebf5;
+    margin-bottom: 16px;
+    padding-bottom: 0;
+}
+
+.formulario-ul {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+}
+
+.li-formulario a {
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    padding: 8px 18px 12px;
+    border-radius: 6px 6px 0 0;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: inline-block;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    letter-spacing: 0.02em;
+}
+
+.li-formulario a:hover {
+    color: var(--purple);
+    background: rgba(84, 82, 211, 0.06);
+}
+
+.li-formulario a.activo {
+    color: var(--purple);
+    border-bottom-color: var(--purple);
+    background: transparent;
+}
+
+
+/* ============================================================================
+   8. TÍTULOS
+   ============================================================================ */
+.h2-registro {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 14px 0 18px;
+    letter-spacing: 0.07em;
+}
+
+
+/* ============================================================================
+   9. CAMPOS DE ENTRADA
+   ============================================================================ */
+.inputs {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    display: block;
+    color: var(--text-mid);
+    margin-top: 13px;
+    margin-bottom: 5px;
+    font-size: 0.80rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+input {
+    width: 100%;
+    height: 42px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--input-bg);
+    color: var(--text-dark);
+    padding: 0 14px;
+    font-size: 0.93rem;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+input::placeholder {
+    color: #bbb;
+}
+
+input:focus {
+    border-color: var(--purple);
+    background: var(--white);
+    box-shadow: 0 0 0 4px rgba(84, 82, 211, 0.10);
+}
+
+/* Hint pequeño bajo el input */
+.campo-hint {
+    font-size: 0.76rem;
+    color: #aaa;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Enlace "¿Olvidaste tu contraseña?" */
+.forgot-password {
+    text-align: right;
+    margin-top: 7px;
+    margin-bottom: 0;
+}
+
+.forgot-password a {
+    font-size: 0.82rem;
+    color: var(--purple);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.forgot-password a:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+}
+
+
+/* ============================================================================
+   10. FILA DE DOS COLUMNAS (para registro: nombre + apellido juntos)
+   ============================================================================ */
+.input-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 0;
+}
+
+.input-col {
+    flex: 1;
+    min-width: 0;           /* evita desbordamiento */
+    display: flex;
+    flex-direction: column;
+}
+
+.input-col label {
+    margin-top: 13px;
+}
+
+
+/* ============================================================================
+   11. BOTONES
+   ============================================================================ */
+
+/* Submit principal */
+button[type="submit"] {
+    display: block;
+    width: 100%;
+    height: 46px;
+    background: var(--purple);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-size: 0.97rem;
+    font-weight: 700;
+    margin-top: 22px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 14px rgba(84, 82, 211, 0.28);
+    transition: background 0.2s, transform 0.12s, box-shadow 0.2s;
+}
+
+button[type="submit"]:hover {
+    background: var(--purple-dark);
+    box-shadow: 0 6px 18px rgba(84, 82, 211, 0.38);
+}
+
+button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Google */
+.google-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none; /* Para que no interfiera con el formulario */
+    gap: 10px;
+    background: var(--white);
+    color: var(--text-dark);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    width: 100%;
+    height: 46px;
+    font-size: 0.93rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.google-btn img {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.google-btn:hover {
+    border-color: var(--purple);
+    box-shadow: 0 2px 10px rgba(84, 82, 211, 0.13);
+    background: rgba(84, 82, 211, 0.03);
+}
+
+
+/* ============================================================================
+   12. SEPARADOR "O INICIA SESIÓN CON"
+   ============================================================================ */
+.separador {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 14px;
+    color: #aaa;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.separador::before,
+.separador::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e5e5ef;
+}
+
+
+/* ============================================================================
+   13. TEXTO, ENLACES Y PIE
+   ============================================================================ */
+p {
+    text-align: center;
+    margin-top: 14px;
+    color: var(--text-light);
+    font-size: 0.88rem;
+}
+
+p a {
+    color: var(--purple);
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+p a:hover {
+    opacity: 0.75;
+    text-decoration: underline;
+}
+
+.registro-link {
+    margin-top: 18px;
+}
+
+.instruccion {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+
+/* ============================================================================
+   14. TOASTS PERSONALIZADOS
+   ============================================================================ */
+.toast-container-custom {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
     flex-direction: column;
-
+    gap: 10px;
+    max-width: 340px;
 }
 
-.columna_izquierda {
-    left: 0;
-    animation: scrollDown 7s linear infinite;
+.toast {
+    min-width: 280px;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+    border: none !important;
+    overflow: hidden;
 }
 
-.columna_derecha {
-    right: 0;
-    animation: scrollUp 7s linear infinite;
+.toast-success .toast-header {
+    background-color: #eafaf1;
+    color: #1a7a45;
+    border-bottom: 1px solid #c3f0d4;
+    font-weight: 600;
 }
 
-.columna_izquierda img,
-.columna_derecha img {
-    width: 800px;
-    height: 800px;
-    opacity: 0.3; /* Transparencia suave de fondo */
-    margin: 10px 0;
-    
-
+.toast-error .toast-header {
+    background-color: #fdf0f0;
+    color: #a93226;
+    border-bottom: 1px solid #f5c0bb;
+    font-weight: 600;
 }
 
-/* Animación izquierda (BAJA) */
-@keyframes scrollDown {
-    0% {
-        transform: translateY(-50%);
+.toast-info .toast-header {
+    background-color: #eef0ff;
+    color: #3d3ab8;
+    border-bottom: 1px solid #c8c7f0;
+    font-weight: 600;
+}
+
+.toast-body {
+    font-size: 0.88rem;
+    color: var(--text-dark);
+    padding: 10px 14px;
+}
+
+
+/* ============================================================================
+   15. RESPONSIVE
+   ============================================================================ */
+
+/* Tablet / móvil (≤ 600px) */
+@media screen and (max-width: 600px) {
+    body {
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 24px 16px 48px;
     }
-    100% {
-        transform: translateY(0%);
+
+    .formulario {
+        width: 100%;
+        max-width: 440px;
+        padding: 28px 22px;
+        border-radius: 18px;
+        margin: auto;
+    }
+
+    /* La fila de dos columnas pasa a una sola columna */
+    .input-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .columna_izquierda img,
+    .columna_derecha img {
+        max-width: 300px;
+        opacity: 0.30;      /* un poco menos en móvil para no distraer */
     }
 }
 
-/* Animación derecha (SUBE) */
-@keyframes scrollUp {
-       0% {
-        transform: translateY(0%);
+/* Móvil pequeño (≤ 380px) */
+@media screen and (max-width: 380px) {
+    .formulario {
+        padding: 22px 16px;
     }
-    100% {
-        transform: translateY(-50%);
+
+    .h2-registro {
+        font-size: 1.05rem;
+    }
+
+    .li-formulario a {
+        padding: 8px 12px 12px;
+        font-size: 0.84rem;
+    }
+
+    .columna_derecha {
+        display: none;
+    }
+
+    .columna_izquierda {
+        width: 100%;
+    }
+}
+
+/* Landscape móvil */
+@media screen and (max-height: 640px) and (orientation: landscape) {
+    body {
+        align-items: flex-start;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    .formulario {
+        padding: 20px 30px;
+    }
+
+    label {
+        margin-top: 9px;
     }
 }
