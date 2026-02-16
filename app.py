@@ -1077,6 +1077,86 @@ def mostrar_notas():
 
     finally:
         cerrar_db(cursor, conexion)
+# ==============================================================================
+# RUTAS NUEVAS — pegar justo ANTES del bloque "if __name__ == '__main__':"
+# ==============================================================================
+
+
+# ==============================================================================
+# PAPELERA
+# ==============================================================================
+@app.route('/papelera')
+@login_required
+def papelera():
+    """
+    Muestra las notas en papelera del usuario con sesión activa.
+    Solo accesible si hay sesión; de lo contrario redirige al login.
+    """
+    user_id = session['usuario_id']
+    conexion = None
+    cursor = None
+
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor = conexion.cursor()
+
+        # Datos del usuario (header + tema)
+        cursor.execute("""
+            SELECT "Nombres", "Foto", "Color_principal"
+            FROM public."Cuentas"
+            WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            session.clear()
+            return redirect(url_for('mostrar_login'))
+
+        # Notas en papelera del usuario
+        cursor.execute("""
+            SELECT
+                "ID_Nota",
+                "Titulo",
+                "Descripcion",
+                "Fecha_deedicion",
+                "Fecha_decreacion",
+                "Formato"
+            FROM public."Notas"
+            WHERE "ID_Cuenta" = %s
+              AND LOWER("Estado") = 'papelera'
+            ORDER BY "Fecha_deedicion" DESC NULLS LAST
+        """, (user_id,))
+        notas_papelera = cursor.fetchall()
+
+        return render_template(
+            "fasededesarrollo.html",
+            notas_papelera=notas_papelera,
+            usuario=usuario
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"Error al cargar la papelera: {str(e)}", 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+# ==============================================================================
+# CREAR NOTA
+# ==============================================================================
+@app.route('/crear-nota')
+@login_required
+def crear_nota():
+    """
+    Página de creación de nota.
+    Protegida por sesión — redirige al login si no hay sesión activa.
+    Por ahora muestra la página de fase de desarrollo.
+    """
+    return render_template("fasededesarrollo.html")
+
+
 
 # ==============================================================================
 # RUN
