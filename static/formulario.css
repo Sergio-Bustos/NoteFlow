@@ -1,21 +1,6 @@
 /* ============================================================================
- * formulario.css — NoteFlow
- * ESTRUCTURA:
- *  1.  Reset y variables globales
- *  2.  Body base
- *  3.  Fondo y carrusel de imágenes
- *  4.  Overlay de legibilidad
- *  5.  Formulario principal (glassmorphism)
- *  6.  Logo dentro del formulario
- *  7.  Navegación de pestañas
- *  8.  Títulos
- *  9.  Campos de entrada (label, input, hint)
- * 10.  Fila de dos columnas (registro)
- * 11.  Botones (submit + Google)
- * 12.  Separador "O inicia sesión con"
- * 13.  Texto, enlaces y pie
- * 14.  Toasts personalizados
- * 15.  Responsive
+ * formulario.css – NoteFlow
+ * Layout de dos columnas: panel izquierdo decorativo + panel derecho formulario
  * ============================================================================ */
 
 
@@ -51,22 +36,29 @@ body {
     justify-content: center;
     align-items: center;
     background: linear-gradient(135deg, #2d2b7a 0%, #51368f 50%, #8b5cf6 100%);
+    overflow: hidden;
 }
 
 
 /* ============================================================================
-   3. FONDO Y CARRUSEL DE IMÁGENES
+   3. CARRUSEL — ahora vive DENTRO de .panel-deco
    ============================================================================ */
 .fondo {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
+    /* Oculto como fondo global; el carrusel va dentro del panel */
+    display: none;
 }
 
-.contenido {
+.overlay {
+    display: none;
+}
+
+/* Contenedor del carrusel dentro del panel izquierdo */
+.panel-deco-carousel {
     position: absolute;
     inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    border-radius: inherit;
 }
 
 .carrusel {
@@ -85,27 +77,24 @@ body {
     gap: 0;
 }
 
-/* ---- Imágenes: opacity subida a 0.35 para que se vean bien ---- */
 .columna_izquierda img,
 .columna_derecha img {
     width: 100%;
-    max-width: 520px;
+    max-width: 260px;
     aspect-ratio: 1 / 1;
     object-fit: contain;
-    opacity: 0.7;          /* era 0.18 → ahora mucho más visible */
+    opacity: 0.18;
     flex-shrink: 0;
     display: block;
-    filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.15));
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.20));
 }
 
-/* Columna izquierda: baja */
 .columna_izquierda {
-    animation: scrollDown 14s linear infinite;
+    animation: scrollDown 12s linear infinite;
 }
 
-/* Columna derecha: sube */
 .columna_derecha {
-    animation: scrollUp 14s linear infinite;
+    animation: scrollUp 12s linear infinite;
 }
 
 @keyframes scrollDown {
@@ -120,57 +109,149 @@ body {
 
 
 /* ============================================================================
-   4. OVERLAY DE LEGIBILIDAD
-   Menos opaco que antes para que las imágenes se vean más.
+   5. WRAPPER: LAYOUT DE DOS COLUMNAS
    ============================================================================ */
-.overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    background: linear-gradient(
-        135deg,
-        rgba(45, 43, 122, 0.45) 0%,
-        rgba(81, 54, 143, 0.38) 50%,
-        rgba(139, 92, 246, 0.35) 100%
-    );
-    backdrop-filter: blur(1px);     /* mínimo blur: no borrona las imágenes */
-}
-
-
-/* ============================================================================
-   5. FORMULARIO PRINCIPAL (glassmorphism)
-   ============================================================================ */
-.formulario {
+.page-wrapper {
     position: relative;
     z-index: 10;
-    background: rgba(255, 255, 255, 0.90);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    width: 420px;
-    border-radius: 22px;
-    padding: 36px 40px;
+    display: flex;
+    width: min(920px, 96vw);
+    min-height: 560px;
+    border-radius: 26px;
+    overflow: hidden;
     box-shadow:
-        0 10px 40px rgba(0, 0, 0, 0.20),
-        0 2px 8px  rgba(84, 82, 211, 0.10),
-        inset 0 1px 0 rgba(255, 255, 255, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.50);
+        0 20px 60px rgba(0, 0, 0, 0.30),
+        0 4px 16px rgba(84, 82, 211, 0.15);
     animation: formEntrance 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 @keyframes formEntrance {
-    from {
-        opacity: 0;
-        transform: translateY(24px) scale(0.97);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ── Panel izquierdo (decorativo) ── */
+.panel-deco {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(150deg, rgba(45,43,122,0.95) 0%, rgba(84,82,211,0.90) 100%);
+    border-right: 1px solid rgba(255,255,255,0.12);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 40px;
+    color: #fff;
+    gap: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.panel-deco .deco-logo {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    line-height: 1;
+}
+
+.panel-deco .deco-logo span {
+    opacity: 0.55;
+}
+
+.panel-deco h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+}
+
+.panel-deco p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    opacity: 0.80;
+    max-width: 300px;
+    text-align: left;
+    color: #fff;
+    margin: 0;
+}
+
+.panel-deco .feature-list {
+    list-style: none;
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.panel-deco .feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    opacity: 0.85;
+}
+
+.panel-deco .feature-list li::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.70);
+    flex-shrink: 0;
+}
+
+/* Texto del panel por encima del carrusel */
+.panel-deco-content {
+    position: relative;
+    z-index: 2;
+}
+.panel-form {
+    width: 400px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 95vh;
 }
 
 
 /* ============================================================================
-   6. LOGO DENTRO DEL FORMULARIO
+   6. FORMULARIO PRINCIPAL
+      Ahora vive dentro de .panel-form, sin sombra/border propios.
+   ============================================================================ */
+.formulario {
+    flex: 1;
+    padding: 36px 36px 40px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cuando el body necesita scroll (registro largo) */
+body.scroll-body {
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 24px 16px;
+}
+
+body.scroll-body .panel-form {
+    max-height: none;
+    overflow-y: visible;
+}
+
+body.scroll-body .page-wrapper {
+    margin: auto;
+    align-self: flex-start;
+}
+
+
+/* ============================================================================
+   7. LOGO DENTRO DEL FORMULARIO
    ============================================================================ */
 .formulario-logo {
     text-align: center;
@@ -178,7 +259,7 @@ body {
 }
 
 .logo-text {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
     font-weight: 800;
     color: var(--purple);
     letter-spacing: -0.02em;
@@ -190,7 +271,7 @@ body {
 
 
 /* ============================================================================
-   7. NAVEGACIÓN DE PESTAÑAS
+   8. NAVEGACIÓN DE PESTAÑAS
    ============================================================================ */
 nav {
     display: flex;
@@ -210,7 +291,7 @@ nav {
 .li-formulario a {
     color: var(--text-light);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     text-decoration: none;
     padding: 8px 18px 12px;
     border-radius: 6px 6px 0 0;
@@ -234,11 +315,11 @@ nav {
 
 
 /* ============================================================================
-   8. TÍTULOS
+   9. TÍTULOS
    ============================================================================ */
 .h2-registro {
     text-align: center;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text-dark);
     margin: 14px 0 18px;
@@ -247,7 +328,7 @@ nav {
 
 
 /* ============================================================================
-   9. CAMPOS DE ENTRADA
+   10. CAMPOS DE ENTRADA
    ============================================================================ */
 .inputs {
     display: flex;
@@ -257,9 +338,9 @@ nav {
 label {
     display: block;
     color: var(--text-mid);
-    margin-top: 13px;
+    margin-top: 12px;
     margin-bottom: 5px;
-    font-size: 0.80rem;
+    font-size: 0.78rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -278,9 +359,7 @@ input {
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
-input::placeholder {
-    color: #bbb;
-}
+input::placeholder { color: #bbb; }
 
 input:focus {
     border-color: var(--purple);
@@ -288,7 +367,6 @@ input:focus {
     box-shadow: 0 0 0 4px rgba(84, 82, 211, 0.10);
 }
 
-/* Hint pequeño bajo el input */
 .campo-hint {
     font-size: 0.76rem;
     color: #aaa;
@@ -296,7 +374,6 @@ input:focus {
     display: block;
 }
 
-/* Enlace "¿Olvidaste tu contraseña?" */
 .forgot-password {
     text-align: right;
     margin-top: 7px;
@@ -318,7 +395,7 @@ input:focus {
 
 
 /* ============================================================================
-   10. FILA DE DOS COLUMNAS (para registro: nombre + apellido juntos)
+   11. FILA DE DOS COLUMNAS (nombre + apellido)
    ============================================================================ */
 .input-row {
     display: flex;
@@ -328,21 +405,17 @@ input:focus {
 
 .input-col {
     flex: 1;
-    min-width: 0;           /* evita desbordamiento */
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
-.input-col label {
-    margin-top: 13px;
-}
+.input-col label { margin-top: 12px; }
 
 
 /* ============================================================================
-   11. BOTONES
+   12. BOTONES
    ============================================================================ */
-
-/* Submit principal */
 button[type="submit"] {
     display: block;
     width: 100%;
@@ -365,9 +438,7 @@ button[type="submit"]:hover {
     box-shadow: 0 6px 18px rgba(84, 82, 211, 0.38);
 }
 
-button[type="submit"]:active {
-    transform: scale(0.98);
-}
+button[type="submit"]:active  { transform: scale(0.98); }
 
 button[type="submit"]:disabled {
     opacity: 0.65;
@@ -375,7 +446,6 @@ button[type="submit"]:disabled {
     transform: none;
 }
 
-/* Google */
 .google-btn {
     display: flex;
     align-items: center;
@@ -407,7 +477,7 @@ button[type="submit"]:disabled {
 
 
 /* ============================================================================
-   12. SEPARADOR "O INICIA SESIÓN CON"
+   13. SEPARADOR "O INICIA SESIÓN CON"
    ============================================================================ */
 .separador {
     display: flex;
@@ -429,7 +499,7 @@ button[type="submit"]:disabled {
 
 
 /* ============================================================================
-   13. TEXTO, ENLACES Y PIE
+   14. TEXTO, ENLACES Y PIE
    ============================================================================ */
 p {
     text-align: center;
@@ -450,9 +520,7 @@ p a:hover {
     text-decoration: underline;
 }
 
-.registro-link {
-    margin-top: 18px;
-}
+.registro-link { margin-top: 18px; }
 
 .instruccion {
     font-size: 0.85rem;
@@ -463,7 +531,7 @@ p a:hover {
 
 
 /* ============================================================================
-   14. TOASTS PERSONALIZADOS
+   15. TOASTS PERSONALIZADOS
    ============================================================================ */
 .toast-container-custom {
     position: fixed;
@@ -513,59 +581,36 @@ p a:hover {
 
 
 /* ============================================================================
-   15. RESPONSIVE
+   16. RESPONSIVE
    ============================================================================ */
 
-/* Tablet / móvil (≤ 600px) */
-@media screen and (max-width: 600px) {
-    body {
-        align-items: flex-start;
-        overflow-y: auto;
-        padding: 24px 16px 48px;
-    }
+/* Tablet: ocultar panel decorativo, full-width formulario */
+@media screen and (max-width: 720px) {
+    .panel-deco { display: none; }
 
-    .formulario {
+    .page-wrapper {
         width: 100%;
         max-width: 440px;
-        padding: 28px 22px;
-        border-radius: 18px;
-        margin: auto;
+        border-radius: 22px;
     }
 
-    /* La fila de dos columnas pasa a una sola columna */
-    .input-row {
-        flex-direction: column;
-        gap: 0;
+    .panel-form {
+        width: 100%;
+        max-height: 100vh;
     }
 
-    .columna_izquierda img,
-    .columna_derecha img {
-        max-width: 300px;
-        opacity: 0.30;      /* un poco menos en móvil para no distraer */
-    }
+    .formulario { padding: 28px 22px 36px; }
 }
 
-/* Móvil pequeño (≤ 380px) */
+/* Móvil pequeño */
 @media screen and (max-width: 380px) {
-    .formulario {
-        padding: 22px 16px;
-    }
+    .formulario { padding: 22px 16px 32px; }
 
-    .h2-registro {
-        font-size: 1.05rem;
-    }
+    .h2-registro { font-size: 1.05rem; }
 
     .li-formulario a {
         padding: 8px 12px 12px;
         font-size: 0.84rem;
-    }
-
-    .columna_derecha {
-        display: none;
-    }
-
-    .columna_izquierda {
-        width: 100%;
     }
 }
 
@@ -577,11 +622,11 @@ p a:hover {
         padding: 16px;
     }
 
-    .formulario {
-        padding: 20px 30px;
-    }
+    .page-wrapper { margin: auto; }
 
-    label {
-        margin-top: 9px;
-    }
+    .panel-form { max-height: none; overflow-y: visible; }
+
+    .formulario { padding: 20px 28px; }
+
+    label { margin-top: 9px; }
 }

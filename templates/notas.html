@@ -5,241 +5,707 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Notas | NoteFlow</title>
 
-    <!-- Estilos -->
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='notas.css') }}">
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-    <!-- Bootstrap (para el modal de logout) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+
+    <style>
+        /* ==========================================================
+           BÚSQUEDA INTELIGENTE — NoteFlow
+           ========================================================== */
+
+        /* Botón del header */
+        .btn-busqueda-inteligente {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--color-principal, #5452d3);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 18px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.02em;
+            box-shadow: 0 3px 10px rgba(84,82,211,0.25);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.12s;
+        }
+        .btn-busqueda-inteligente:hover {
+            background: #3f3db8;
+            box-shadow: 0 5px 16px rgba(84,82,211,0.35);
+            transform: translateY(-1px);
+        }
+
+        /* Backdrop */
+        .modal-backdrop-busqueda {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,14,40,0.60);
+            backdrop-filter: blur(4px);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-backdrop-busqueda.activo { display: flex; }
+
+        /* Contenedor modal */
+        .modal-busqueda {
+            background: #fff;
+            border-radius: 20px;
+            width: min(760px, 95vw);
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+            animation: slideUpModal 0.26s cubic-bezier(0.34,1.26,0.64,1) both;
+        }
+        @keyframes slideUpModal {
+            from { opacity:0; transform:translateY(24px) scale(0.97); }
+            to   { opacity:1; transform:translateY(0)    scale(1);    }
+        }
+
+        /* Header del modal */
+        .modal-header-busqueda {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 22px 28px 16px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-header-busqueda h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e1d3f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-header-busqueda h3 i { color: var(--color-principal, #5452d3); }
+        .btn-cerrar-modal {
+            background: none;
+            border: none;
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #aaa;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+        .btn-cerrar-modal:hover { background: #f0f0f5; color: #444; }
+
+        /* PASO 1 — Selección de tipo */
+        .paso-seleccion { padding: 28px 28px 32px; }
+        .paso-seleccion .subtitulo {
+            text-align: center;
+            color: #999;
+            font-size: 0.90rem;
+            margin-bottom: 24px;
+        }
+        .tipo-opciones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .tipo-opcion {
+            border: 2px solid #e8e8f0;
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafafa;
+            transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+        .tipo-opcion:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(84,82,211,0.12);
+        }
+        .tipo-opcion.notas:hover    { border-color: #5452d3; background: rgba(84,82,211,0.04); }
+        .tipo-opcion.carpetas:hover { border-color: #f39c12; background: rgba(243,156,18,0.04); box-shadow: 0 8px 24px rgba(243,156,18,0.12); }
+        .tipo-opcion .tipo-icono    { font-size: 2.4rem; display: block; margin-bottom: 14px; }
+        .tipo-opcion.notas    .tipo-icono { color: #5452d3; }
+        .tipo-opcion.carpetas .tipo-icono { color: #f39c12; }
+        .tipo-opcion h4  { font-size: 1.05rem; font-weight: 700; color: #1e1d3f; margin-bottom: 6px; }
+        .tipo-opcion p   { font-size: 0.82rem; color: #999; margin: 0; line-height: 1.5; }
+
+        /* PASO 2 — Panel de búsqueda */
+        .panel-busqueda { display: none; }
+        .panel-busqueda.activo {
+            display: block;
+            animation: fadeIn 0.22s ease both;
+        }
+        @keyframes fadeIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+
+        .panel-subheader {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 28px 16px;
+            border-bottom: 1px solid #eee;
+        }
+        .btn-volver {
+            background: none;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: #777;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            transition: border-color 0.15s, color 0.15s;
+        }
+        .btn-volver:hover { border-color: #5452d3; color: #5452d3; }
+        .tipo-badge {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 0.82rem; font-weight: 700; flex-shrink: 0;
+        }
+        .tipo-badge.notas    { background: rgba(84,82,211,0.10); color: #5452d3; }
+        .tipo-badge.carpetas { background: rgba(243,156,18,0.12); color: #e67e22; }
+        .panel-hint { font-size: 0.82rem; color: #bbb; }
+
+        /* Input de búsqueda */
+        .input-wrapper {
+            position: relative;
+            padding: 18px 28px 0;
+        }
+        .input-wrapper i {
+            position: absolute;
+            left: 44px; top: 50%;
+            transform: translateY(-50%);
+            color: #ccc; font-size: 0.92rem;
+            pointer-events: none;
+        }
+        .input-busqueda {
+            width: 100%; height: 48px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: #f7f7fc;
+            color: #1e1d3f;
+            padding: 0 16px 0 44px;
+            font-size: 0.97rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-busqueda:focus {
+            border-color: #5452d3;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(84,82,211,0.10);
+        }
+        .input-busqueda::placeholder { color: #ccc; }
+
+        /* Filtros */
+        .filtros-seccion { padding: 16px 28px 0; }
+        .filtros-label {
+            font-size: 0.76rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            color: #ccc; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .filtros-grid { display: grid; gap: 12px; }
+        .filtros-grid.col2 { grid-template-columns: 1fr 1fr; }
+
+        .filtro-item label {
+            display: block;
+            font-size: 0.75rem; font-weight: 600;
+            color: #aaa; text-transform: uppercase;
+            letter-spacing: 0.04em; margin-bottom: 6px;
+        }
+        .filtro-item select,
+        .filtro-item input[type="date"] {
+            width: 100%; height: 38px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 9px;
+            background: #f7f7fc;
+            color: #1e1d3f;
+            padding: 0 30px 0 12px;
+            font-size: 0.87rem;
+            outline: none;
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23ccc' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .filtro-item input[type="date"] { background-image: none; padding-right: 12px; }
+        .filtro-item select:focus,
+        .filtro-item input:focus {
+            border-color: #5452d3;
+            box-shadow: 0 0 0 3px rgba(84,82,211,0.09);
+            background-color: #fff;
+        }
+
+        /* ---- FIX 1: Opciones de select en tema oscuro ---- */
+        body.tema-oscuro .filtro-item select option,
+        body.tema-oscuro .filtro-grupo select option {
+            background: #1e1d3f;
+            color: #e8e7ff;
+        }
+
+        /* Chips de etiquetas */
+        .etiquetas-wrap { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 0 2px; }
+        .etiqueta-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px;
+            border: 1.5px solid #e0e0e0; background: #f7f7fc;
+            color: #888; font-size: 0.78rem; font-weight: 600;
+            cursor: pointer; user-select: none;
+            transition: all 0.15s;
+        }
+        .etiqueta-chip i { display: none; font-size: 0.7rem; }
+        .etiqueta-chip:hover  { border-color: #5452d3; color: #5452d3; }
+        .etiqueta-chip.activa { background: #5452d3; border-color: #5452d3; color: #fff; }
+        .etiqueta-chip.activa i { display: inline; }
+
+        /* ---- FIX 3: Input de búsqueda de etiquetas y etiqueta personalizada ---- */
+        .etiquetas-buscador {
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .etiquetas-buscador input {
+            width: 100%;
+            height: 34px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 9px;
+            background: #f7f7fc;
+            color: #1e1d3f;
+            padding: 0 36px 0 12px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .etiquetas-buscador input:focus {
+            border-color: #5452d3;
+            box-shadow: 0 0 0 3px rgba(84,82,211,0.09);
+            background: #fff;
+        }
+        .etiquetas-buscador input::placeholder { color: #ccc; }
+        .etiquetas-buscador .icono-busq {
+            position: absolute;
+            right: 10px; top: 50%;
+            transform: translateY(-50%);
+            color: #ccc; font-size: 0.8rem;
+            pointer-events: none;
+        }
+        .etiquetas-nueva-hint {
+            display: none;
+            align-items: center; gap: 6px;
+            font-size: 0.78rem; color: #5452d3;
+            margin-top: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .etiquetas-nueva-hint:hover { text-decoration: underline; }
+        .etiquetas-nueva-hint i { font-size: 0.72rem; }
+
+        /* Barra filtros activos */
+        .filtros-activos {
+            display: none;
+            flex-wrap: wrap; align-items: center; gap: 6px;
+            padding: 12px 28px 0;
+        }
+        .filtros-activos.visible { display: flex; }
+        .filtros-activos .fa-label {
+            font-size: 0.74rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em; color: #ccc;
+        }
+        .chip-activo {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 16px;
+            background: rgba(84,82,211,0.09); color: #5452d3;
+            font-size: 0.78rem; font-weight: 600;
+        }
+        .chip-activo button {
+            background: none; border: none; cursor: pointer;
+            color: #5452d3; font-size: 0.72rem; padding: 0; line-height: 1;
+        }
+        .btn-limpiar-all {
+            background: none; border: 1.5px solid #e0e0e0;
+            border-radius: 16px; padding: 3px 12px;
+            font-size: 0.76rem; font-weight: 600; color: #aaa;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .btn-limpiar-all:hover { border-color: #e74c3c; color: #e74c3c; }
+
+        /* Footer del panel */
+        .panel-footer {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 18px 28px 24px;
+        }
+        .btn-buscar {
+            display: flex; align-items: center; gap: 8px;
+            background: #5452d3; color: #fff; border: none;
+            border-radius: 10px; padding: 10px 24px;
+            font-size: 0.92rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(84,82,211,0.25);
+            transition: background 0.2s, transform 0.12s;
+        }
+        .btn-buscar:hover      { background: #3f3db8; transform: translateY(-1px); }
+        .btn-buscar.carpetas   { background: #e67e22; box-shadow: 0 4px 12px rgba(243,156,18,0.25); }
+        .btn-buscar.carpetas:hover { background: #d35400; }
+        .btn-limpiar {
+            background: none;
+            border: 1.5px solid #e0e0e0; border-radius: 10px;
+            padding: 10px 20px; font-size: 0.88rem; font-weight: 600;
+            color: #999; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-limpiar:hover { border-color: #aaa; color: #555; }
+
+        /* Área de resultados */
+        #area-resultados { margin-top: 28px; display: none; }
+        #area-resultados.visible { display: block; }
+
+        .resultados-cabecera {
+            display: flex; align-items: center;
+            justify-content: space-between; margin-bottom: 16px;
+        }
+        .resultados-titulo {
+            font-size: 1rem; font-weight: 700; color: #1e1d3f;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .badge-count {
+            background: #5452d3; color: #fff;
+            font-size: 0.75rem; padding: 2px 9px;
+            border-radius: 20px; font-weight: 700;
+        }
+        .btn-nueva-busqueda {
+            display: flex; align-items: center; gap: 6px;
+            background: none; border: 1.5px solid #5452d3;
+            color: #5452d3; border-radius: 8px;
+            padding: 6px 14px; font-size: 0.83rem;
+            font-weight: 600; cursor: pointer; transition: all 0.15s;
+        }
+        .btn-nueva-busqueda:hover { background: #5452d3; color: #fff; }
+
+        /* Sin resultados */
+        .sin-resultados {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 48px 20px; color: #ccc; text-align: center; gap: 14px;
+        }
+        .sin-resultados i  { font-size: 3rem; opacity: 0.28; }
+        .sin-resultados p  { font-size: 0.93rem; color: #aaa; max-width: 300px; line-height: 1.6; margin: 0; }
+
+        /* ============================================================
+           FIX 1 — TEMA OSCURO: textos visibles en todos los inputs/selects
+           ============================================================ */
+        body.tema-oscuro .modal-busqueda    { background: #1a1940; border: 1px solid rgba(255,255,255,0.08); }
+        body.tema-oscuro .modal-header-busqueda,
+        body.tema-oscuro .panel-subheader   { border-color: rgba(255,255,255,0.08); }
+        body.tema-oscuro .tipo-opcion       { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+        body.tema-oscuro .tipo-opcion h4,
+        body.tema-oscuro .modal-header-busqueda h3,
+        body.tema-oscuro .resultados-titulo { color: #e8e7ff; }
+        body.tema-oscuro .tipo-opcion p,
+        body.tema-oscuro .paso-seleccion .subtitulo { color: rgba(255,255,255,0.38); }
+
+        /* inputs y selects en tema oscuro — fondo y texto visibles */
+        body.tema-oscuro .input-busqueda,
+        body.tema-oscuro .filtro-item select,
+        body.tema-oscuro .filtro-item input[type="date"],
+        body.tema-oscuro .etiquetas-buscador input {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.15);
+            color: #e8e7ff;
+        }
+        body.tema-oscuro .input-busqueda::placeholder,
+        body.tema-oscuro .etiquetas-buscador input::placeholder { color: rgba(255,255,255,0.30); }
+        body.tema-oscuro .input-busqueda:focus,
+        body.tema-oscuro .filtro-item select:focus,
+        body.tema-oscuro .filtro-item input:focus,
+        body.tema-oscuro .etiquetas-buscador input:focus {
+            background: rgba(255,255,255,0.12);
+            border-color: #7b79e8;
+            box-shadow: 0 0 0 3px rgba(123,121,232,0.18);
+        }
+
+        body.tema-oscuro .etiqueta-chip     { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #bbb; }
+        body.tema-oscuro .filtros-label,
+        body.tema-oscuro .filtro-item label { color: rgba(255,255,255,0.28); }
+        body.tema-oscuro .btn-volver,
+        body.tema-oscuro .btn-limpiar       { border-color: rgba(255,255,255,0.14); color: #aaa; }
+        body.tema-oscuro .sin-resultados p  { color: rgba(255,255,255,0.35); }
+        body.tema-oscuro .etiquetas-nueva-hint { color: #9b99f5; }
+        body.tema-oscuro .etiquetas-buscador .icono-busq { color: rgba(255,255,255,0.25); }
+        body.tema-oscuro .btn-limpiar-all   { border-color: rgba(255,255,255,0.14); color: rgba(255,255,255,0.35); }
+        body.tema-oscuro .chip-activo       { background: rgba(84,82,211,0.22); }
+        body.tema-oscuro .modal-header-busqueda h3 { color: #e8e7ff; }
+        body.tema-oscuro .btn-cerrar-modal  { color: rgba(255,255,255,0.35); }
+        body.tema-oscuro .btn-cerrar-modal:hover { background: rgba(255,255,255,0.08); color: #e8e7ff; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .tipo-opciones, .filtros-grid.col2 { grid-template-columns: 1fr; }
+            .paso-seleccion, .panel-subheader,
+            .input-wrapper, .filtros-seccion,
+            .filtros-activos, .panel-footer { padding-left: 16px; padding-right: 16px; }
+        }
+    </style>
 </head>
 <body>
 
-<div class="sidebar"> <!-- Barra lateral -->
-    <div class="logo">NoteFlow</div> <!-- Logo -->
-
-    <ul class="menu"> <!-- Lista del menú lateral -->
-        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li> <!-- Inicio -->
-        <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li> <!-- Mis notas -->
-        
-        <li class="separator"></li> <!-- Línea separadora -->
-        <li><a href="/crear-nota"><i class="fas fa-plus-circle"></i> Crear nota</a></li> <!-- Crear nota -->
-        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li> <!-- Papelera -->
-        <li class="separator"></li> <!-- Línea separadora -->
-        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li> <!-- Perfil -->
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="logo">NoteFlow</div>
+    <ul class="menu">
+        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+        <li class="separator"></li>
+        <li><a href="/crear-nota"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
+        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li class="separator"></li>
+        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
     </ul>
-
-    <!-- Botón de cerrar sesión -->
     <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
         <i class="fas fa-sign-out-alt"></i> Cerrar sesión
     </a>
 </div>
 
-<!-- ========== CONTENIDO PRINCIPAL ========== -->
+<!-- MAIN -->
 <div class="main">
-
-    <!-- Header -->
     <header>
         <div class="bienvenida">
-            <h2>
-                <i class="fas fa-sticky-note" style="color: var(--color-principal);"></i>
-                Mis Notas
-            </h2>
+            <h2><i class="fas fa-sticky-note" style="color:var(--color-principal);"></i> Mis Notas</h2>
         </div>
-        <a href="{{ url_for('perfil') }}" class="usuario-info">
-            <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}"
-                 alt="Foto de perfil">
-            <span>{{ usuario.Nombres }}</span>
-            <i class="fas fa-chevron-down profile-dropdown-icon"></i>
-        </a>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <button class="btn-busqueda-inteligente" onclick="abrirModal()">
+                <i class="fas fa-search"></i> Realiza la busqueda
+            </button>
+            <a href="{{ url_for('perfil') }}" class="usuario-info">
+                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}" alt="Foto">
+                <span>{{ usuario.Nombres }}</span>
+                <i class="fas fa-chevron-down profile-dropdown-icon"></i>
+            </a>
+        </div>
     </header>
 
-    <!-- Botón nueva nota -->
-    <a href="/crear-nota" class="btn-nueva-nota">
-        <i class="fas fa-plus"></i> Nueva Nota
-    </a>
+    <a href="/crear-nota" class="btn-nueva-nota"><i class="fas fa-plus"></i> Nueva Nota</a>
 
-    <!-- Contadores -->
-    <div class="contadores">
-        <div class="contador-chip">
-            <i class="fas fa-file-alt"></i>
-            Notas <span class="num">{{ notas | length }}</span>
+    <!-- ÁREA DE RESULTADOS -->
+    <div id="area-resultados">
+        <div class="resultados-cabecera">
+            <div class="resultados-titulo">
+                <i id="icono-res" class="fas fa-file-alt"></i>
+                <span id="label-res">Resultados</span>
+                <span class="badge-count" id="badge-res">0</span>
+            </div>
+            <button class="btn-nueva-busqueda" onclick="abrirModal()">
+                <i class="fas fa-search"></i> Nueva búsqueda
+            </button>
         </div>
-        <div class="contador-chip carpetas">
-            <i class="fas fa-folder"></i>
-            Carpetas <span class="num">{{ carpetas | length }}</span>
+        <div class="sin-resultados" id="sin-resultados">
+            <i class="fas fa-search-minus"></i>
+            <p>No se encontraron resultados para la búsqueda.</p>
+        </div>
+        <div id="resultados-notas"></div>
+        <div id="resultados-carpetas"></div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     MODAL: BÚSQUEDA INTELIGENTE
+     ============================================================ -->
+<div class="modal-backdrop-busqueda" id="backdrop" onclick="clickBackdrop(event)">
+<div class="modal-busqueda">
+
+    <!-- Header -->
+    <div class="modal-header-busqueda">
+        <h3><i class="fas fa-search"></i> Búsqueda inteligente</h3>
+        <button class="btn-cerrar-modal" onclick="cerrarModal()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- PASO 1: ¿Qué deseas buscar? -->
+    <div class="paso-seleccion" id="paso-seleccion">
+        <p class="subtitulo">¿Qué deseas buscar hoy?</p>
+        <div class="tipo-opciones">
+            <div class="tipo-opcion notas" onclick="elegirTipo('notas')">
+                <span class="tipo-icono"><i class="fas fa-file-alt"></i></span>
+                <h4>Buscar Notas</h4>
+                <p>Busca por título, contenido, etiquetas, formato o fechas.</p>
+            </div>
+            <div class="tipo-opcion carpetas" onclick="elegirTipo('carpetas')">
+                <span class="tipo-icono"><i class="fas fa-folder-open"></i></span>
+                <h4>Buscar Carpetas</h4>
+                <p>Encuentra carpetas por nombre con coincidencias parciales.</p>
+            </div>
         </div>
     </div>
 
-    <!-- ========== BARRA DE BÚSQUEDA ========== -->
-    <div class="search-bar-wrapper">
-        <div class="search-input-group">
+    <!-- PASO 2A: NOTAS -->
+    <div class="panel-busqueda" id="panel-notas">
+        <div class="panel-subheader">
+            <button class="btn-volver" onclick="volver()"><i class="fas fa-arrow-left"></i></button>
+            <span class="tipo-badge notas"><i class="fas fa-file-alt"></i> Notas</span>
+            <span class="panel-hint">Completa uno o más filtros</span>
+        </div>
+
+        <div class="input-wrapper" style="padding-top:18px;">
             <i class="fas fa-search"></i>
-            <input type="text"
-                   id="input-busqueda"
-                   placeholder="Busca tus notas o carpetas..."
-                   autocomplete="off">
+            <input class="input-busqueda" id="nota-texto" type="text"
+                   placeholder="Buscar por título o contenido..." autocomplete="off">
         </div>
-        <button class="filter-btn" id="btn-filtro" onclick="toggleFiltros()">
-            <i class="fas fa-sliders-h"></i> Elegir filtro
-        </button>
-    </div>
 
-    <!-- Panel de filtros -->
-    <div class="filtros-panel" id="filtros-panel">
-        <div class="filtro-grupo">
-            <label><i class="fas fa-layer-group"></i> Tipo</label>
-            <select id="filtro-tipo" onchange="aplicarFiltros()">
-                <option value="todo">Todo</option>
-                <option value="nota">Solo notas</option>
-                <option value="carpeta">Solo carpetas</option>
-            </select>
-        </div>
-        <div class="filtro-grupo">
-            <label><i class="fas fa-file-code"></i> Formato</label>
-            <select id="filtro-formato" onchange="aplicarFiltros()">
-                <option value="">Todos</option>
-                <option value="texto">Texto</option>
-                <option value="dibujo">Dibujo</option>
-                <option value="mixta">Mixta</option>
-            </select>
-        </div>
-        <div class="filtro-grupo">
-            <label><i class="fas fa-sort-amount-down"></i> Ordenar por</label>
-            <select id="filtro-orden" onchange="aplicarFiltros()">
-                <option value="reciente">Más reciente</option>
-                <option value="antiguo">Más antiguo</option>
-                <option value="nombre">Nombre A-Z</option>
-                <option value="nombre_desc">Nombre Z-A</option>
-            </select>
-        </div>
-        <button class="btn-limpiar-filtros" onclick="limpiarFiltros()">
-            <i class="fas fa-times"></i> Limpiar
-        </button>
-    </div>
+        <div class="filtros-seccion" style="padding-top:18px;">
+            <div class="filtros-label"><i class="fas fa-sliders-h"></i> Filtros avanzados</div>
 
-    <!-- ========== LISTA DE RESULTADOS ========== -->
-    <div id="lista-resultados">
-
-        <!-- Sección notas -->
-        <div id="seccion-notas">
-            <p class="seccion-titulo">
-                <i class="fas fa-file-alt"></i> Notas
-            </p>
-            <div id="contenedor-notas">
-                {% for nota in notas %}
-                <div class="nota-item"
-                     data-tipo="nota"
-                     data-nombre="{{ nota.Titulo | lower }}"
-                     data-fecha="{{ nota.Fecha_deedicion }}"
-                     data-formato="{{ nota.Formato | lower }}">
-
-                    <div class="nota-icono">
-                        {% if nota.Formato | lower == 'dibujo' %}
-                            <i class="fas fa-paint-brush"></i>
-                        {% elif nota.Formato | lower == 'mixta' %}
-                            <i class="fas fa-layer-group"></i>
-                        {% else %}
-                            <i class="fas fa-align-left"></i>
-                        {% endif %}
-                    </div>
-
-                    <div class="nota-info">
-                        <div class="nombre">{{ nota.Titulo }}</div>
-                        <div class="meta">
-                            <i class="fas fa-calendar-alt"></i>
-                            {{ nota.Fecha_deedicion.strftime('%d/%m/%Y') if nota.Fecha_deedicion else '—' }}
-                            <span class="formato-badge">{{ nota.Formato }}</span>
-                        </div>
-                    </div>
-
-                    <a href="/notas/{{ nota.ID_Nota }}" class="btn-accion">
-                        Ver nota
-                    </a>
+            <div class="filtros-grid col2" style="margin-bottom:12px;">
+                <div class="filtro-item">
+                    <label><i class="fas fa-folder"></i> Carpeta</label>
+                    <select id="nota-carpeta">
+                        <option value="">Todas las carpetas</option>
+                    </select>
                 </div>
-                {% else %}
-                <div class="vacio-msg">
-                    <i class="fas fa-sticky-note"></i>
-                    <p>Aún no tienes notas. ¡Crea tu primera nota!</p>
+                <div class="filtro-item">
+                    <label><i class="fas fa-file-code"></i> Formato</label>
+                    <select id="nota-formato">
+                        <option value="">Todos los formatos</option>
+                        <option value="texto">Texto</option>
+                        <option value="imagen">Imagen</option>
+                        <option value="audio">Audio</option>
+                        <option value="video">Video</option>
+                        <option value="mixta">Mixta</option>
+                    </select>
                 </div>
-                {% endfor %}
+            </div>
+
+            <div class="filtros-grid col2" style="margin-bottom:14px;">
+                <div class="filtro-item">
+                    <label><i class="fas fa-calendar-plus"></i> Creación (desde)</label>
+                    <input type="date" id="nota-fecha-desde">
+                </div>
+                <div class="filtro-item">
+                    <label><i class="fas fa-calendar-check"></i> Edición (hasta)</label>
+                    <input type="date" id="nota-fecha-hasta">
+                </div>
+            </div>
+
+            <!-- ---- FIX 3: Etiquetas con buscador + personalizadas ---- -->
+            <div class="filtro-item" style="margin-bottom:12px;">
+                <label><i class="fas fa-tags"></i> Etiquetas</label>
+
+                <!-- Buscador de etiquetas -->
+                <div class="etiquetas-buscador">
+                    <input type="text" id="etiqueta-buscar"
+                           placeholder="Buscar o crear etiqueta..." autocomplete="off"
+                           oninput="filtrarEtiquetas(this.value)">
+                    <i class="fas fa-search icono-busq"></i>
+                </div>
+
+                <!-- Hint para crear etiqueta personalizada -->
+                <div class="etiquetas-nueva-hint" id="hint-nueva-etiqueta"
+                     onclick="agregarEtiquetaPersonalizada()">
+                    <i class="fas fa-plus-circle"></i>
+                    <span id="hint-nueva-texto">Agregar como etiqueta personalizada</span>
+                </div>
+
+                <!-- Chips de etiquetas -->
+                <div class="etiquetas-wrap" id="chips-etiquetas">
+                    <span class="etiqueta-chip" data-valor="trabajo"  onclick="toggleTag(this)"><i class="fas fa-check"></i> Trabajo</span>
+                    <span class="etiqueta-chip" data-valor="personal" onclick="toggleTag(this)"><i class="fas fa-check"></i> Personal</span>
+                    <span class="etiqueta-chip" data-valor="urgente"  onclick="toggleTag(this)"><i class="fas fa-check"></i> Urgente</span>
+                    <span class="etiqueta-chip" data-valor="ideas"    onclick="toggleTag(this)"><i class="fas fa-check"></i> Ideas</span>
+                    <span class="etiqueta-chip" data-valor="estudio"  onclick="toggleTag(this)"><i class="fas fa-check"></i> Estudio</span>
+                    <span class="etiqueta-chip" data-valor="proyecto" onclick="toggleTag(this)"><i class="fas fa-check"></i> Proyecto</span>
+                </div>
+            </div>
+
+            <div class="filtro-item">
+                <label><i class="fas fa-sort-amount-down"></i> Ordenar por</label>
+                <select id="nota-orden">
+                    <option value="reciente">Modificación más reciente</option>
+                    <option value="antiguo">Modificación más antigua</option>
+                    <option value="az">Nombre A → Z</option>
+                    <option value="za">Nombre Z → A</option>
+                </select>
             </div>
         </div>
 
-        <!-- Sección carpetas -->
-        <div id="seccion-carpetas">
-            <p class="seccion-titulo">
-                <i class="fas fa-folder-open"></i> Carpetas
-            </p>
-            <div id="contenedor-carpetas">
-                {% for carpeta in carpetas %}
-                <div class="nota-item"
-                     data-tipo="carpeta"
-                     data-nombre="{{ carpeta.Nombre_carpeta | lower }}"
-                     data-fecha="{{ carpeta.Ultima_modificacion if carpeta.Ultima_modificacion else '' }}">
+        <div class="filtros-activos" id="filtros-activos-notas">
+            <span class="fa-label">Activos:</span>
+            <div id="chips-activos"></div>
+            <button class="btn-limpiar-all" onclick="limpiarNotas()"><i class="fas fa-times"></i> Limpiar filtros</button>
+        </div>
 
-                    <div class="carpeta-icono">
-                        <i class="fas fa-folder"></i>
-                    </div>
+        <div class="panel-footer">
+            <button class="btn-limpiar" onclick="limpiarNotas()"><i class="fas fa-undo"></i> Limpiar</button>
+            <button class="btn-buscar"  onclick="buscarNotas()"><i class="fas fa-search"></i> Buscar notas</button>
+        </div>
+    </div>
 
-                    <div class="nota-info">
-                        <div class="nombre">{{ carpeta.Nombre_carpeta }}</div>
-                        <div class="meta">
-                            {% if carpeta.Ultima_modificacion %}
-                                <i class="fas fa-calendar-alt"></i>
-                                {{ carpeta.Ultima_modificacion.strftime('%d/%m/%Y') }}
-                            {% endif %}
-                            <span class="formato-badge"
-                                  style="background: rgba(243,156,18,0.12); color: var(--color-secundario);">
-                                {{ carpeta.Total_notas }} nota{{ 's' if carpeta.Total_notas != 1 else '' }}
-                            </span>
-                        </div>
-                    </div>
+    <!-- PASO 2B: CARPETAS -->
+    <div class="panel-busqueda" id="panel-carpetas">
+        <div class="panel-subheader">
+            <button class="btn-volver" onclick="volver()"><i class="fas fa-arrow-left"></i></button>
+            <span class="tipo-badge carpetas"><i class="fas fa-folder"></i> Carpetas</span>
+            <span class="panel-hint">Coincidencias parciales</span>
+        </div>
 
-                    <a href="/carpetas/{{ carpeta.ID_Carpeta }}" class="btn-accion btn-accion-carpeta">
-                        Entrar a la carpeta
-                    </a>
+        <div class="input-wrapper" style="padding-top:18px;padding-bottom:4px;">
+            <i class="fas fa-search"></i>
+            <input class="input-busqueda" id="carpeta-texto" type="text"
+                   placeholder="Ej: Tr → Trabajo, Transcripciones..." autocomplete="off">
+        </div>
+
+        <div class="filtros-seccion" style="padding-top:16px;">
+            <div class="filtros-label"><i class="fas fa-sliders-h"></i> Ordenar resultados</div>
+            <div class="filtros-grid col2">
+                <div class="filtro-item">
+                    <label><i class="fas fa-sort-amount-down"></i> Ordenar por</label>
+                    <select id="carpeta-orden">
+                        <option value="reciente">Edición más reciente</option>
+                        <option value="antiguo">Edición más antigua</option>
+                        <option value="creacion_desc">Creación más reciente</option>
+                        <option value="creacion_asc">Creación más antigua</option>
+                        <option value="az">Nombre A → Z</option>
+                        <option value="za">Nombre Z → A</option>
+                    </select>
                 </div>
-                {% else %}
-                <div class="vacio-msg">
-                    <i class="fas fa-folder-open"></i>
-                    <p>No tienes carpetas creadas todavía.</p>
+                <div class="filtro-item">
+                    <label><i class="fas fa-sticky-note"></i> Notas mínimas</label>
+                    <select id="carpeta-min-notas">
+                        <option value="">Sin restricción</option>
+                        <option value="1">Al menos 1 nota</option>
+                        <option value="5">Al menos 5 notas</option>
+                        <option value="10">Al menos 10 notas</option>
+                    </select>
                 </div>
-                {% endfor %}
             </div>
         </div>
 
-        <!-- Mensaje sin resultados de búsqueda -->
-        <div class="vacio-msg" id="sin-resultados" style="display: none;">
-            <i class="fas fa-search"></i>
-            <p>No se encontraron resultados para tu búsqueda.</p>
+        <div class="panel-footer">
+            <button class="btn-limpiar" onclick="limpiarCarpetas()"><i class="fas fa-undo"></i> Limpiar</button>
+            <button class="btn-buscar carpetas" onclick="buscarCarpetas()"><i class="fas fa-search"></i> Buscar carpetas</button>
         </div>
+    </div>
 
-    </div><!-- /lista-resultados -->
+</div><!-- /modal-busqueda -->
+</div><!-- /backdrop -->
 
-</div><!-- /main -->
 
-<!-- ========== MODAL CERRAR SESIÓN ========== -->
-<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+<!-- ============================================================
+     FIX 2: Modal cerrar sesión — botones con colores correctos
+     ============================================================ -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="logoutModalLabel">
-                    <i class="fas fa-sign-out-alt"></i> Confirmar cierre de sesión
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <h5 class="modal-title"><i class="fas fa-sign-out-alt"></i> Confirmar cierre de sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                ¿Estás seguro de que quieres cerrar sesión?
-            </div>
+            <div class="modal-body">¿Estás seguro de que quieres cerrar sesión?</div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger">
+                <!-- Cancelar: fondo gris, letra blanca (Bootstrap .btn-secondary) -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <!-- Cerrar sesión: fondo rojo, letra blanca -->
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger"
+                   style="color:#fff !important;">
                     <i class="fas fa-sign-out-alt"></i> Cerrar sesión
                 </a>
             </div>
@@ -247,112 +713,246 @@
     </div>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- ========== SCRIPTS ========== -->
 <script>
-    // ---- Aplicar tema al cargar ----
-    document.addEventListener('DOMContentLoaded', function () {
-        const colorPrincipal = "{{ usuario.Color_principal }}";
-        aplicarTema(colorPrincipal === "Negro" ? "oscuro" : "claro");
-        aplicarFiltros();
+    /* ===========================================================
+       ESTADO
+       =========================================================== */
+    var tagsActivos = new Set();
+
+    /* ===========================================================
+       MODAL
+       =========================================================== */
+    function abrirModal() {
+        volver();
+        document.getElementById('backdrop').classList.add('activo');
+        document.body.style.overflow = 'hidden';
+    }
+    function cerrarModal() {
+        document.getElementById('backdrop').classList.remove('activo');
+        document.body.style.overflow = '';
+    }
+    function clickBackdrop(e) {
+        if (e.target === document.getElementById('backdrop')) cerrarModal();
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') cerrarModal();
     });
 
-    function aplicarTema(tema) {
-        document.body.classList.remove('tema-claro', 'tema-oscuro');
-        document.body.classList.add('tema-' + tema);
+    /* ===========================================================
+       FLUJO DE PASOS
+       =========================================================== */
+    function elegirTipo(tipo) {
+        document.getElementById('paso-seleccion').style.display = 'none';
+        document.getElementById('panel-notas').classList.toggle('activo',    tipo === 'notas');
+        document.getElementById('panel-carpetas').classList.toggle('activo', tipo === 'carpetas');
+        setTimeout(function() {
+            var inp = document.getElementById(tipo === 'notas' ? 'nota-texto' : 'carpeta-texto');
+            if (inp) inp.focus();
+        }, 80);
+    }
+    function volver() {
+        document.getElementById('paso-seleccion').style.display = 'block';
+        document.getElementById('panel-notas').classList.remove('activo');
+        document.getElementById('panel-carpetas').classList.remove('activo');
     }
 
-    // ---- Toggle panel de filtros ----
-    function toggleFiltros() {
-        const panel = document.getElementById('filtros-panel');
-        const btn   = document.getElementById('btn-filtro');
-        panel.classList.toggle('visible');
-        btn.classList.toggle('activo');
-    }
+    /* ===========================================================
+       FIX 3 — ETIQUETAS: buscador + etiquetas personalizadas
+       =========================================================== */
+    function filtrarEtiquetas(query) {
+        var q = query.trim().toLowerCase();
+        var chips = document.querySelectorAll('#chips-etiquetas .etiqueta-chip');
+        var hayVisible = false;
 
-    // ---- Limpiar filtros ----
-    function limpiarFiltros() {
-        document.getElementById('filtro-tipo').value    = 'todo';
-        document.getElementById('filtro-formato').value = '';
-        document.getElementById('filtro-orden').value   = 'reciente';
-        document.getElementById('input-busqueda').value = '';
-        aplicarFiltros();
-    }
-
-    // ---- Búsqueda en tiempo real ----
-    document.getElementById('input-busqueda').addEventListener('input', function () {
-        aplicarFiltros();
-    });
-
-    // ---- Aplicar filtros y búsqueda ----
-    function aplicarFiltros() {
-        const query   = document.getElementById('input-busqueda').value.toLowerCase().trim();
-        const tipo    = document.getElementById('filtro-tipo').value;
-        const formato = document.getElementById('filtro-formato').value.toLowerCase();
-        const orden   = document.getElementById('filtro-orden').value;
-
-        const items = Array.from(document.querySelectorAll('.nota-item'));
-
-        items.forEach(function (item) {
-            const itemTipo    = item.dataset.tipo;
-            const itemNombre  = item.dataset.nombre || '';
-            const itemFormato = (item.dataset.formato || '').toLowerCase();
-            let visible = true;
-
-            if (tipo === 'nota'    && itemTipo !== 'nota')    visible = false;
-            if (tipo === 'carpeta' && itemTipo !== 'carpeta') visible = false;
-            if (formato && itemTipo === 'nota' && itemFormato !== formato) visible = false;
-            if (query && !itemNombre.includes(query)) visible = false;
-
-            item.style.display = visible ? 'flex' : 'none';
+        chips.forEach(function(chip) {
+            var val = chip.dataset.valor.toLowerCase();
+            var texto = chip.textContent.trim().toLowerCase();
+            var visible = !q || val.includes(q) || texto.includes(q);
+            chip.style.display = visible ? '' : 'none';
+            if (visible) hayVisible = true;
         });
 
-        actualizarSecciones(tipo);
-        ordenarItems(orden, tipo);
+        // Mostrar hint para agregar etiqueta personalizada si no existe ya
+        var hint = document.getElementById('hint-nueva-etiqueta');
+        var hintTexto = document.getElementById('hint-nueva-texto');
+        if (q && !existeEtiqueta(q)) {
+            hint.style.display = 'flex';
+            hintTexto.textContent = 'Agregar "' + query.trim() + '" como etiqueta';
+        } else {
+            hint.style.display = 'none';
+        }
     }
 
-    function actualizarSecciones(tipo) {
-        const secNotas    = document.getElementById('seccion-notas');
-        const secCarpetas = document.getElementById('seccion-carpetas');
-        const sinRes      = document.getElementById('sin-resultados');
-
-        secNotas.style.display    = (tipo === 'carpeta') ? 'none' : 'block';
-        secCarpetas.style.display = (tipo === 'nota')    ? 'none' : 'block';
-
-        const visNotas = Array.from(secNotas.querySelectorAll('.nota-item'))
-            .filter(function (i) { return i.style.display !== 'none'; }).length;
-        const visCarp  = Array.from(secCarpetas.querySelectorAll('.nota-item'))
-            .filter(function (i) { return i.style.display !== 'none'; }).length;
-
-        sinRes.style.display = (visNotas === 0 && visCarp === 0) ? 'block' : 'none';
+    function existeEtiqueta(valor) {
+        var chips = document.querySelectorAll('#chips-etiquetas .etiqueta-chip');
+        for (var i = 0; i < chips.length; i++) {
+            if (chips[i].dataset.valor.toLowerCase() === valor.toLowerCase()) return true;
+        }
+        return false;
     }
 
-    function ordenarItems(orden, tipo) {
-        const pares = [
-            { id: 'contenedor-notas',    skip: tipo === 'carpeta' },
-            { id: 'contenedor-carpetas', skip: tipo === 'nota'    }
+    function agregarEtiquetaPersonalizada() {
+        var input = document.getElementById('etiqueta-buscar');
+        var valor = input.value.trim();
+        if (!valor || existeEtiqueta(valor)) return;
+
+        // Crear chip
+        var chip = document.createElement('span');
+        chip.className = 'etiqueta-chip activa';
+        chip.dataset.valor = valor.toLowerCase();
+        chip.onclick = function() { toggleTag(this); };
+
+        var icono = document.createElement('i');
+        icono.className = 'fas fa-check';
+        chip.appendChild(icono);
+        chip.appendChild(document.createTextNode(' ' + valor));
+
+        document.getElementById('chips-etiquetas').appendChild(chip);
+        tagsActivos.add(valor.toLowerCase());
+
+        // Limpiar buscador y ocultar hint
+        input.value = '';
+        document.getElementById('hint-nueva-etiqueta').style.display = 'none';
+        filtrarEtiquetas('');
+        actualizarChipsActivos();
+    }
+
+    // Permitir Enter para agregar etiqueta personalizada
+    document.getElementById('etiqueta-buscar').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            var hint = document.getElementById('hint-nueva-etiqueta');
+            if (hint.style.display === 'flex') {
+                agregarEtiquetaPersonalizada();
+            }
+        }
+    });
+
+    /* ===========================================================
+       ETIQUETAS PREDEFINIDAS
+       =========================================================== */
+    function toggleTag(el) {
+        var val = el.dataset.valor;
+        if (el.classList.contains('activa')) {
+            el.classList.remove('activa');
+            tagsActivos.delete(val);
+        } else {
+            el.classList.add('activa');
+            tagsActivos.add(val);
+        }
+        actualizarChipsActivos();
+    }
+
+    /* ===========================================================
+       CHIPS FILTROS ACTIVOS
+       =========================================================== */
+    function actualizarChipsActivos() {
+        var bar       = document.getElementById('filtros-activos-notas');
+        var container = document.getElementById('chips-activos');
+        container.innerHTML = '';
+        var hay = false;
+
+        var campos = [
+            { id: 'nota-carpeta',     label: 'Carpeta' },
+            { id: 'nota-formato',     label: 'Formato' },
+            { id: 'nota-fecha-desde', label: 'Desde'   },
+            { id: 'nota-fecha-hasta', label: 'Hasta'   },
         ];
-
-        pares.forEach(function (par) {
-            if (par.skip) return;
-            const cont = document.getElementById(par.id);
-            if (!cont) return;
-
-            const items = Array.from(cont.querySelectorAll('.nota-item'));
-            items.sort(function (a, b) {
-                if (orden === 'nombre')      return a.dataset.nombre.localeCompare(b.dataset.nombre);
-                if (orden === 'nombre_desc') return b.dataset.nombre.localeCompare(a.dataset.nombre);
-                const fa = a.dataset.fecha || '';
-                const fb = b.dataset.fecha || '';
-                if (orden === 'reciente') return fb.localeCompare(fa);
-                if (orden === 'antiguo')  return fa.localeCompare(fb);
-                return 0;
-            });
-            items.forEach(function (i) { cont.appendChild(i); });
+        campos.forEach(function(c) {
+            var el = document.getElementById(c.id);
+            if (el && el.value) {
+                hay = true;
+                container.appendChild(chipActivo(c.label + ': ' + el.value, (function(elem) {
+                    return function() { elem.value = ''; actualizarChipsActivos(); };
+                })(el)));
+            }
         });
+        tagsActivos.forEach(function(tag) {
+            hay = true;
+            container.appendChild(chipActivo('#' + tag, (function(t) {
+                return function() {
+                    tagsActivos.delete(t);
+                    document.querySelectorAll('.etiqueta-chip[data-valor="' + t + '"]')
+                        .forEach(function(ch) { ch.classList.remove('activa'); });
+                    actualizarChipsActivos();
+                };
+            })(tag)));
+        });
+        bar.classList.toggle('visible', hay);
     }
+
+    function chipActivo(texto, onRemove) {
+        var div = document.createElement('div');
+        div.className = 'chip-activo';
+        div.innerHTML = texto + '<button>&times;</button>';
+        div.querySelector('button').addEventListener('click', onRemove);
+        return div;
+    }
+
+    ['nota-carpeta','nota-formato','nota-fecha-desde','nota-fecha-hasta'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', actualizarChipsActivos);
+    });
+
+    /* ===========================================================
+       LIMPIAR
+       =========================================================== */
+    function limpiarNotas() {
+        ['nota-texto','nota-carpeta','nota-formato','nota-fecha-desde','nota-fecha-hasta']
+            .forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('nota-orden').value = 'reciente';
+        document.getElementById('etiqueta-buscar').value = '';
+        document.getElementById('hint-nueva-etiqueta').style.display = 'none';
+        tagsActivos.clear();
+        document.querySelectorAll('.etiqueta-chip').forEach(function(ch) {
+            ch.classList.remove('activa');
+            ch.style.display = '';
+        });
+        actualizarChipsActivos();
+    }
+    function limpiarCarpetas() {
+        document.getElementById('carpeta-texto').value     = '';
+        document.getElementById('carpeta-orden').value     = 'reciente';
+        document.getElementById('carpeta-min-notas').value = '';
+    }
+
+    /* ===========================================================
+       MOSTRAR RESULTADOS
+       =========================================================== */
+    function mostrarSinResultados(tipo) {
+        var area = document.getElementById('area-resultados');
+        area.classList.add('visible');
+        document.getElementById('resultados-notas').innerHTML    = '';
+        document.getElementById('resultados-carpetas').innerHTML = '';
+        document.getElementById('sin-resultados').style.display  = 'flex';
+        document.getElementById('icono-res').className  = tipo === 'notas' ? 'fas fa-file-alt' : 'fas fa-folder';
+        document.getElementById('label-res').textContent = tipo === 'notas' ? 'Notas encontradas' : 'Carpetas encontradas';
+        document.getElementById('badge-res').textContent = '0';
+        area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /* ===========================================================
+       BUSCAR NOTAS / CARPETAS
+       =========================================================== */
+    function buscarNotas() {
+        cerrarModal();
+        // TODO: fetch('/api/buscar-notas', { method:'POST', ... })
+        mostrarSinResultados('notas');
+    }
+    function buscarCarpetas() {
+        cerrarModal();
+        // TODO: fetch('/api/buscar-carpetas', { method:'POST', ... })
+        mostrarSinResultados('carpetas');
+    }
+
+    /* ===========================================================
+       TEMA
+       =========================================================== */
+    document.addEventListener('DOMContentLoaded', function() {
+        var color = "{{ usuario.Color_principal }}";
+        document.body.classList.add(color === 'Negro' ? 'tema-oscuro' : 'tema-claro');
+    });
 </script>
 
 </body>

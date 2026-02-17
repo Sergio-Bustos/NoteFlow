@@ -1,20 +1,67 @@
 <!DOCTYPE html>
+<!-- 
+    Página: En desarrollo / Funcionalidad no disponible
+    Proyecto: NoteFlow
+    Propósito: Página de marcador de posición que se muestra cuando el usuario
+               intenta acceder a una ruta o funcionalidad que aún no ha sido
+               implementada. Muestra un aviso amigable con el estilo de Bootstrap.
+    Uso: Redirigir aquí cualquier ruta pendiente de desarrollo.
+-->
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset="UTF-8"> <!-- Codificación de caracteres UTF-8 para soporte de tildes y caracteres especiales -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Hace la página responsiva en dispositivos móviles -->
+    <title>Document</title> <!-- TODO: Cambiar por un título descriptivo, ej: "Próximamente | NoteFlow" -->
+
+    <!-- Hoja de estilos personalizada del proyecto (formularios y componentes propios) -->
     <link rel="stylesheet" href="/static/formulario.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link rel="icon" type="image/icon" href="../static/logocircular.png"> <!-- Imagen-->
+
+    <!-- Bootstrap 5.3.8 — Framework CSS para componentes UI (alertas, grid, utilidades) -->
+    <!-- Integridad verificada con hash SHA-384 para seguridad (Subresource Integrity) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+          crossorigin="anonymous">
+
+    <!-- Favicon del sitio — ícono circular del logo de NoteFlow -->
+    <link rel="icon" type="image/icon" href="../static/logocircular.png">
 </head>
 <body>
+
+    <!--
+        Alerta de aviso — Funcionalidad en desarrollo
+        Componente: Bootstrap Alert (alert-success)
+        Rol ARIA: "alert" notifica a lectores de pantalla que es un mensaje importante
+        Nota: El color "success" (verde) es intencional para que el mensaje sea amigable
+              y no genere alarma en el usuario. Puede cambiarse a "alert-info" o "alert-warning"
+              si se prefiere otro estilo visual.
+    -->
     <div class="alert alert-success" role="alert">
-    <h4 class="alert-heading">Oops!</h4>
-    <p>Fase o funcionalidad aún no desarrollada.</p>
-    <hr>
-    <p class="mb-0">Ten paciencia,equipo NoteFlow.</p>
+
+        <!-- Título principal de la alerta -->
+        <h4 class="alert-heading">Oops!</h4>
+
+        <!-- Mensaje principal: informa al usuario que la función no está lista -->
+        <p>Fase o funcionalidad aún no desarrollada.</p>
+
+        <!-- Separador horizontal visual entre el mensaje y la nota secundaria -->
+        <hr>
+
+        <!-- Mensaje de cierre: tono cercano y de marca, invita a tener paciencia -->
+        <!-- mb-0 elimina el margen inferior del párrafo para que quede pegado al borde de la alerta -->
+        <p class="mb-0">Ten paciencia, equipo NoteFlow.</p>
+
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+    <!--
+        Bootstrap 5.3.8 — Bundle JS (incluye Popper.js integrado)
+        Requerido para componentes interactivos de Bootstrap (modales, tooltips, dropdowns, etc.)
+        Se carga al final del body para no bloquear el renderizado de la página.
+        Integridad verificada con hash SHA-384 (Subresource Integrity).
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"></script>
+
 </body>
 </html>

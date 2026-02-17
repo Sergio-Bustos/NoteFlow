@@ -294,14 +294,11 @@ def procesar_login():
         
         # Verificar si es hash o texto plano
         if password_guardado.startswith('pbkdf2:sha256:') or password_guardado.startswith('scrypt:'):
-            # Ya es hash, verificar con check_password_hash
             if check_password_hash(password_guardado, contraseña):
                 login_exitoso = True
         else:
-            # Es texto plano (usuario viejo), comparar directo
             if password_guardado == contraseña:
                 login_exitoso = True
-                
                 # MIGRAR a hash ahora
                 try:
                     nuevo_hash = generate_password_hash(contraseña)
@@ -316,7 +313,6 @@ def procesar_login():
                     print(f"Contraseña migrada a hash para usuario: {usuario}")
                 except Exception as e:
                     print(f"Error al migrar contraseña: {e}")
-                    # No fallar el login por esto
         
         if login_exitoso:
             session['usuario_id'] = usuario_encontrado['ID_Cuenta']
@@ -425,7 +421,6 @@ def google_callback():
         row = cursor.fetchone()
 
         if not row:
-            # Renderizar la misma página pero con mensaje consistente
             return render_template("cuenta_no_registrada.html")
 
         user_id = int(row[0])
@@ -447,13 +442,11 @@ def google_callback():
 # ==============================================================================
 @app.route('/olvide-contrasena')
 def mostrar_olvide_contrasena():
-    """Muestra el formulario para ingresar el correo electrónico."""
     return render_template('olvide_contrasena.html')
 
 
 @app.route('/procesar-olvide-contrasena', methods=['POST'])
 def procesar_olvide_contrasena():
-    """Genera token, lo guarda y envía el correo."""
     conexion = None
     cursor = None
     correo = request.form.get('correo', '').strip()
@@ -516,7 +509,7 @@ Equipo NoteFlow
 
         return jsonify({
             'success': True,
-            'mensaje': 'Si,tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
+            'mensaje': 'Si tu correo está registrado, recibirás un enlace de restablecimiento en breve.'
         }), 200
 
     except Exception as e:
@@ -531,7 +524,6 @@ Equipo NoteFlow
 
 @app.route('/restablecer-contrasena/<token>')
 def mostrar_restablecer_contrasena(token):
-    """Muestra el formulario de restablecimiento con validación de token"""
     conexion = None
     cursor = None
     try:
@@ -552,7 +544,7 @@ def mostrar_restablecer_contrasena(token):
         if usuario_row:
             return render_template("restablecer_contrasena.html", token=token, error=None)
         else:
-            return render_template("restablecer_contrasena.html", token=None, error="El enlace de restablecimiento no es válido o ha expirado. Vuelve a solicitar uno.")
+            return render_template("restablecer_contrasena.html", token=None, error="El enlace de restablecimiento no es válido o ha expirado.")
 
     except Exception as e:
         print(f"Error al verificar token: {e}")
@@ -564,7 +556,6 @@ def mostrar_restablecer_contrasena(token):
 
 @app.route('/procesar-restablecer-contrasena', methods=['POST'])
 def procesar_restablecer_contrasena():
-    """Procesa el cambio de contraseña"""
     conexion = None
     cursor = None
     
@@ -590,11 +581,9 @@ def procesar_restablecer_contrasena():
         usuario_id_row = cursor.fetchone()
 
         if not usuario_id_row:
-            return jsonify({'error': 'El enlace ha expirado o es inválido. Intenta de nuevo.'}), 401
+            return jsonify({'error': 'El enlace ha expirado o es inválido.'}), 401
 
         usuario_id = usuario_id_row[0]
-
-        # Hashear la nueva contraseña
         password_hash = generate_password_hash(nueva_contrasena)
 
         cursor.execute("""
@@ -626,7 +615,6 @@ def procesar_restablecer_contrasena():
 # ==============================================================================
 @app.route('/logout')
 def cerrar_sesion():
-    """Limpia la sesión activa y redirige a la página de inicio."""
     session.clear()
     return redirect(url_for('inicio'))
 
@@ -634,32 +622,23 @@ def cerrar_sesion():
 @app.route("/perfil/cerrar-sesion")
 @login_required
 def cerrar_sesion_perfil():
-    """Cierra la sesión del usuario y redirige al login"""
     session.clear()
     return redirect(url_for('mostrar_login'))
 
 
 # ==============================================================================
-# 7. DASHBOARD CON NOTAS RECIENTES
+# 7. DASHBOARD
 # ==============================================================================
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    """
-    Carga página de dashboard con:
-      - datos del usuario (Nombres, color_principal, Foto)
-      - conteos: notas activas, carpetas, notas en papelera
-      - listado de notas recientes (limit 6)
-    """
     user_id = session['usuario_id']
-  
     conexion = None
     cursor = None
     try:
         conexion = conectar_db()
         cursor = conexion.cursor(cursor_factory=RealDictCursor)
 
-        # Datos del usuario
         cursor.execute("""
             SELECT "Nombres", "Color_principal", "Foto"
             FROM public."Cuentas"
@@ -677,7 +656,6 @@ def dashboard():
             'foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'img/default_profile.png'
         }
 
-        # Conteos
         cursor.execute("""
             SELECT COUNT(*) AS total_notas FROM public."Notas"
             WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'activa'
@@ -696,7 +674,6 @@ def dashboard():
         """, (user_id,))
         notas_papelera = cursor.fetchone()['notas_papelera']
 
-        # Notas recientes (limit 6)
         cursor.execute("""
             SELECT
                 n."ID_Nota",
@@ -743,12 +720,11 @@ def dashboard():
 
 
 # ==============================================================================
-# 8. SECCIÓN PERFIL COMPLETA
+# 8. PERFIL
 # ==============================================================================
 @app.route('/perfil')
 @login_required
 def perfil():
-    """Muestra la página de perfil del usuario con toda su información"""
     user_id = session['usuario_id']
     conexion = None
     cursor = None
@@ -780,22 +756,16 @@ def perfil():
         cerrar_db(cursor, conexion)
 
 
-# --- CAMBIAR TEMA ---
 @app.route('/perfil/cambiar-tema', methods=['POST'])
 @login_required
 def cambiar_tema():
-    """Cambia el tema del usuario entre claro y oscuro"""
     tema = request.form.get("tema")
      
     if tema not in ["claro", "oscuro"]:
         return jsonify({"error": "Tema inválido"}), 400
 
-    color_map = {
-        "claro": "Blanco",
-        "oscuro": "Negro"
-    }
+    color_map = {"claro": "Blanco", "oscuro": "Negro"}
     color_db = color_map.get(tema)
-
     user_id = session['usuario_id']
     conexion = None
     cursor = None
@@ -813,10 +783,7 @@ def cambiar_tema():
         conexion.commit()
         session["color_principal"] = color_db
 
-        return jsonify({
-            "success": True,
-            "mensaje": f"Tema cambiado a {tema}"
-        }), 200
+        return jsonify({"success": True, "mensaje": f"Tema cambiado a {tema}"}), 200
 
     except Exception as e:
         if conexion:
@@ -828,14 +795,11 @@ def cambiar_tema():
         cerrar_db(cursor, conexion)
 
 
-# --- CAMBIAR CONTRASEÑA ---
 @app.route('/perfil/cambiar-password', methods=['POST'])
 @login_required
 def cambiar_password():
-    """Cambia la contraseña del usuario"""
     user_id = session["usuario_id"]
 
-    # Limpiar datos
     campos = ['password_actual', 'password_nueva', 'password_confirmacion']
     datos_limpios = limpiar_datos_formulario(request.form, campos)
     
@@ -875,31 +839,24 @@ def cambiar_password():
 
         password_guardado = user["Contraseña"]
         
-        # Verificar contraseña actual (puede ser hash o texto plano)
         password_actual_correcta = False
         if password_guardado.startswith('pbkdf2:sha256:') or password_guardado.startswith('scrypt:'):
-            # Es hash
             if check_password_hash(password_guardado, actual):
                 password_actual_correcta = True
         else:
-            # Es texto plano
             if password_guardado == actual:
                 password_actual_correcta = True
         
         if not password_actual_correcta:
             return jsonify({"error": "La contraseña actual es incorrecta"}), 401
 
-        # Verificar que la nueva sea diferente
-        # Si la guardada es hash, comparar con check_password_hash
         if password_guardado.startswith('pbkdf2:sha256:') or password_guardado.startswith('scrypt:'):
             if check_password_hash(password_guardado, nueva):
                 return jsonify({"error": "La nueva contraseña debe ser diferente"}), 400
         else:
-            # Si es texto plano, comparar directo
             if password_guardado == nueva:
                 return jsonify({"error": "La nueva contraseña debe ser diferente"}), 400
  
-        # Hashear la nueva contraseña
         nuevo_hash = generate_password_hash(nueva)
         
         cursor.execute("""
@@ -910,10 +867,7 @@ def cambiar_password():
 
         conexion.commit()
 
-        return jsonify({
-            "success": True,
-            "mensaje": "Contraseña actualizada exitosamente"
-        }), 200
+        return jsonify({"success": True, "mensaje": "Contraseña actualizada exitosamente"}), 200
 
     except Exception as e:
         if conexion:
@@ -925,30 +879,24 @@ def cambiar_password():
         cerrar_db(cursor, conexion)
 
 
-# --- SUBIR FOTO DE PERFIL ---
 @app.route('/perfil/subir-foto', methods=["POST"])
 @login_required
 def subir_foto():
-    """Sube y actualiza la foto de perfil del usuario"""
     archivo = request.files.get("foto")
 
     if not archivo or archivo.filename == '':
         return jsonify({"error": "No se seleccionó ninguna imagen"}), 400
 
     if not allowed_file(archivo.filename):
-        return jsonify({
-            "error": "Formato no permitido. Usa: PNG, JPG, JPEG, GIF o WEBP"
-        }), 400
+        return jsonify({"error": "Formato no permitido. Usa: PNG, JPG, JPEG, GIF o WEBP"}), 400
 
     user_id = session["usuario_id"]
 
     try:
         ext = os.path.splitext(archivo.filename)[1].lower()
         filename_unique = f"user_{user_id}_{uuid.uuid4().hex}{ext}"
-         
         ruta_completa = os.path.join(PROFILE_UPLOAD_FOLDER, filename_unique)
         archivo.save(ruta_completa)
-
         ruta_db = f"uploads/profile/{filename_unique}"
 
         conexion = None
@@ -1001,14 +949,18 @@ def subir_foto():
         print(f"Error al subir archivo: {e}")
         return jsonify({"error": "Error al subir el archivo"}), 500
 
-# ==============================================================================
-# RUTA: MIS NOTAS  
-# ==============================================================================
 
+# ==============================================================================
+# 9. MIS NOTAS — solo visual, sin consultas de notas/carpetas
+# ==============================================================================
 @app.route("/notas")
 @login_required
 def mostrar_notas():
-    """Muestra todas las notas activas y carpetas del usuario logueado."""
+    """
+    Página de Mis Notas.
+    Solo carga los datos del usuario (para header y tema).
+    Las notas y carpetas se cargarán más adelante vía AJAX o consulta real.
+    """
     user_id = session['usuario_id']
     conexion = None
     cursor = None
@@ -1017,7 +969,7 @@ def mostrar_notas():
         conexion = conectar_db(dict_cursor=True)
         cursor = conexion.cursor()
 
-        # ── 1. Datos del usuario (para el header + tema) ──────────────────────
+        # Solo se consultan los datos básicos del usuario para el header
         cursor.execute("""
             SELECT "Nombres", "Foto", "Color_principal"
             FROM public."Cuentas"
@@ -1029,69 +981,29 @@ def mostrar_notas():
             session.clear()
             return redirect(url_for('mostrar_login'))
 
-        # ── 2. Notas activas del usuario ──────────────────────────────────────
-        cursor.execute("""
-            SELECT
-                "ID_Nota",
-                "Titulo",
-                "Descripcion",
-                "Fecha_deedicion",
-                "Formato",
-                "Estado"
-            FROM public."Notas"
-            WHERE "ID_Cuenta" = %s
-              AND LOWER("Estado") = 'activa'
-            ORDER BY "Fecha_deedicion" DESC NULLS LAST
-        """, (user_id,))
-        notas = cursor.fetchall()
-
-        # ── 3. Carpetas activas del usuario (con fecha de última modificación) ─
-        cursor.execute("""
-            SELECT
-                c."ID_Carpeta",
-                c."Nombre_carpeta",
-                COUNT(n."ID_Nota")         AS "Total_notas",
-                MAX(n."Fecha_deedicion")   AS "Ultima_modificacion"
-            FROM public."Carpetas" c
-            LEFT JOIN public."Notas" n
-                   ON n."ID_Carpeta" = c."ID_Carpeta"
-                  AND LOWER(n."Estado") = 'activa'
-            WHERE c."ID_Cuenta" = %s
-              AND LOWER(c."Estado") = 'activa'
-            GROUP BY c."ID_Carpeta", c."Nombre_carpeta"
-            ORDER BY "Ultima_modificacion" DESC NULLS LAST
-        """, (user_id,))
-        carpetas = cursor.fetchall()
-
+        # Se pasan listas vacías — el HTML es puramente visual por ahora
         return render_template(
             "notas.html",
-            notas=notas,
-            carpetas=carpetas,
+            notas=[],
+            carpetas=[],
             usuario=usuario
         )
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return f"Error al cargar las notas: {str(e)}", 500
+        return f"Error al cargar la página de notas: {str(e)}", 500
 
     finally:
         cerrar_db(cursor, conexion)
-# ==============================================================================
-# RUTAS NUEVAS — pegar justo ANTES del bloque "if __name__ == '__main__':"
-# ==============================================================================
 
 
 # ==============================================================================
-# PAPELERA
+# 10. PAPELERA
 # ==============================================================================
 @app.route('/papelera')
 @login_required
 def papelera():
-    """
-    Muestra las notas en papelera del usuario con sesión activa.
-    Solo accesible si hay sesión; de lo contrario redirige al login.
-    """
     user_id = session['usuario_id']
     conexion = None
     cursor = None
@@ -1100,7 +1012,6 @@ def papelera():
         conexion = conectar_db(dict_cursor=True)
         cursor = conexion.cursor()
 
-        # Datos del usuario (header + tema)
         cursor.execute("""
             SELECT "Nombres", "Foto", "Color_principal"
             FROM public."Cuentas"
@@ -1112,7 +1023,6 @@ def papelera():
             session.clear()
             return redirect(url_for('mostrar_login'))
 
-        # Notas en papelera del usuario
         cursor.execute("""
             SELECT
                 "ID_Nota",
@@ -1144,18 +1054,12 @@ def papelera():
 
 
 # ==============================================================================
-# CREAR NOTA
+# 11. CREAR NOTA
 # ==============================================================================
 @app.route('/crear-nota')
 @login_required
 def crear_nota():
-    """
-    Página de creación de nota.
-    Protegida por sesión — redirige al login si no hay sesión activa.
-    Por ahora muestra la página de fase de desarrollo.
-    """
     return render_template("fasededesarrollo.html")
-
 
 
 # ==============================================================================

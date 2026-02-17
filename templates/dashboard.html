@@ -49,7 +49,7 @@
             {% else %} <!-- Foto por defecto -->
                 <img src="{{ url_for('static', filename='img/default_profile.png') }}" alt="Foto de perfil">
             {% endif %}
-            <span>Hola, <strong>{{ usuario.nombre }}</strong></span> <!-- Nombre del usuario -->
+            <span><strong>{{ usuario.nombre }}</strong></span> <!-- Nombre del usuario -->
             <i class="fas fa-chevron-down profile-dropdown-icon"></i> <!-- Icono adicional -->
         </a>
     </header>
@@ -74,7 +74,7 @@
         </div>
 
         <div class="card warning-card"> <!-- Tarjeta especial -->
-            <a href="/papelera" style="text-decoration: none; color: inherit;">
+            <a  style="text-decoration: none; color: inherit;">
                 <i class="fas fa-recycle stat-icon"></i> <!-- Icono -->
                 <h3>{{ notas_papelera }}</h3> <!-- Cantidad -->
                 <p>En papelera</p>
@@ -182,35 +182,6 @@
         }
     });
     
-    // ========== PLACEHOLDER BÚSQUEDA INTELIGENTE ==========
-    document.getElementById('open-search-modal').addEventListener('click', function() { // Botón búsqueda inteligente
-        // Crear un toast de información para el placeholder
-        const toastHTML = `
-            <div class="toast align-items-center text-white bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="fas fa-info-circle"></i> Función de Búsqueda Inteligente en desarrollo. 
-                        Aquí podrás buscar notas y carpetas con filtros avanzados.
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-        
-        const toastContainer = document.createElement('div');
-        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-        toastContainer.style.zIndex = '9999';
-        toastContainer.innerHTML = toastHTML;
-        document.body.appendChild(toastContainer);
-        
-        const toastElement = toastContainer.querySelector('.toast');
-        const toast = new bootstrap.Toast(toastElement);
-        toast.show();
-        
-        toastElement.addEventListener('hidden.bs.toast', () => {
-            toastContainer.remove();
-        });
-    });
 </script>
 
 </body>

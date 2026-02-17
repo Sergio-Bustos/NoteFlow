@@ -1,172 +1,245 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro | NoteFlow</title>
+<!DOCTYPE html> <!-- Declara que el documento usa HTML5 -->
+
+<html lang="es"> <!-- Inicia el documento HTML y define idioma español -->
+
+<head> <!-- Inicio de la cabecera (configuración del documento) -->
+
+    <meta charset="UTF-8"> <!-- Permite caracteres especiales como ñ y tildes -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <!-- Hace que el diseño sea responsive en móviles -->
+
+    <title>Registro | NoteFlow</title> 
+    <!-- Título que aparece en la pestaña del navegador -->
 
     <link rel="stylesheet" href="/static/formulario.css">
+    <!-- Conecta el archivo CSS principal del proyecto -->
+
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <!-- Define el favicon usando Flask para generar la ruta -->
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Importa los estilos del framework Bootstrap desde CDN -->
 
-    <style>
-        /* ---- Ajuste de scroll para formulario largo de registro ---- */
-        body {
-            align-items: flex-start;
-            overflow-y: auto;
-            padding: 32px 16px 48px;
+    <style> 
+
+        /* Ajuste del body para permitir scroll en registro */
+
+        body { /* Selecciona el body */
+            align-items: flex-start; /* Alinea el contenido arriba */
+            overflow-y: auto; /* Activa scroll vertical */
+            padding: 32px 16px 48px; /* Espaciado interno */
         }
 
-        /* El formulario de registro es más largo, necesita más espacio */
-        .formulario {
-            margin: auto;
+        .fondo, .overlay { position: fixed; }
+        /* Hace que el fondo y overlay queden fijos */
+
+        .page-wrapper {
+            margin: auto; /* Centra horizontalmente */
+            align-self: center; /* Centra verticalmente */
         }
 
-        /* Scroll suave del carrusel cuando el body hace scroll */
-        .fondo {
-            position: fixed;
+        .panel-form {
+            max-height: none; /* Sin límite de altura */
+            overflow-y: visible; /* Permite crecimiento natural */
         }
-        .overlay {
-            position: fixed;
-        }
-    </style>
-</head>
-<body>
 
-    <!-- ===== FONDO: CARRUSEL DE IMÁGENES ===== -->
-    <div class="fondo">
-        <div class="contenido">
-            <div class="carrusel">
-                <!-- Columna izquierda: baja -->
-                <div class="columna_izquierda">
-                    <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
-                    <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
-                    <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
-                    <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+    </style> <!-- Fin de estilos internos -->
+
+</head> <!-- Fin del head -->
+
+<body> <!-- Inicio del contenido visible -->
+
+    <div class="fondo"></div> 
+    <!-- Capa visual de fondo -->
+
+    <div class="overlay"></div> 
+    <!-- Capa oscura encima del fondo -->
+
+    <div class="toast-container-custom"></div> 
+    <!-- Contenedor donde se insertarán los Toast dinámicamente -->
+
+    <div class="page-wrapper"> 
+    <!-- Contenedor principal de dos columnas -->
+
+        <div class="panel-deco"> 
+        <!-- Panel izquierdo decorativo -->
+
+            <div class="panel-deco-carousel"> 
+            <!-- Contenedor del carrusel -->
+
+                <div class="carrusel"> 
+                <!-- Contenedor animado principal -->
+
+                    <div class="columna_izquierda"> 
+                    <!-- Columna izquierda de imágenes -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen 1 -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen 2 -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen repetida -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen repetida -->
+
+                    </div>
+
+                    <div class="columna_derecha"> 
+                    <!-- Columna derecha -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen -->
+
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <!-- Imagen -->
+
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <!-- Imagen -->
+
+                    </div>
+
                 </div>
-                <!-- Columna derecha: sube -->
-                <div class="columna_derecha">
-                    <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
-                    <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
-                    <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
-                    <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
-                </div>
+
             </div>
+
+            <div class="panel-deco-content"> 
+            <!-- Contenido encima del carrusel -->
+
+                <div class="deco-logo">Note<span>Flow</span></div>
+                <!-- Logo decorativo -->
+
+                <h1>Empieza<br>gratis hoy</h1>
+                <!-- Título principal -->
+
+                <p>Crea tu cuenta en segundos y lleva el control de tus notas, ideas y tareas en un solo lugar.</p>
+                <!-- Texto descriptivo -->
+
+                <ul class="feature-list">
+                <!-- Lista de beneficios -->
+
+                    <li>Sin tarjeta de crédito</li>
+                    <li>Configuración en menos de 1 minuto</li>
+                    <li>Acceso inmediato a todas las funciones</li>
+                    <li>Soporte en español</li>
+
+                </ul>
+
+            </div>
+
         </div>
+
+        <div class="panel-form"> 
+        <!-- Panel derecho -->
+
+            <form class="formulario" action="/procesar-registro" method="POST">
+            <!-- Formulario que envía datos al backend -->
+
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <nav>
+                <!-- Navegación entre login y registro -->
+
+                    <ul class="formulario-ul">
+
+                        <li class="li-formulario">
+                            <a href="/iniciarsesion.html">Iniciar Sesión</a>
+                        </li>
+
+                        <li class="li-formulario">
+                            <a href="/registro.html" class="activo">Registro</a>
+                        </li>
+
+                    </ul>
+
+                </nav>
+
+                <h2 class="h2-registro">CREAR CUENTA</h2>
+
+                <section class="inputs">
+
+                    <div class="input-row">
+
+                        <div class="input-col">
+                            <label>Nombre</label>
+                            <input type="text" name="nombre" placeholder="Tu nombre" autocomplete="given-name" required>
+                        </div>
+
+                        <div class="input-col">
+                            <label>Apellido</label>
+                            <input type="text" name="apellido" placeholder="Tu apellido" autocomplete="family-name" required>
+                        </div>
+
+                    </div>
+
+                    <label>Teléfono</label>
+                    <input type="tel" name="telefono" placeholder="Ej: 3123456789" autocomplete="tel" required>
+
+                    <label>Correo electrónico</label>
+                    <input type="email" name="correo" placeholder="correo@ejemplo.com" autocomplete="email" required>
+
+                    <label>Apodo o alias</label>
+                    <input type="text" name="usuario" placeholder="Ej: Notero123" autocomplete="username" required>
+
+                    <label>Contraseña</label>
+                    <input type="password" name="contraseña" placeholder="Mínimo 6 caracteres"
+                           autocomplete="new-password" minlength="6" maxlength="15" required>
+
+                    <small class="campo-hint">Entre 6 y 15 caracteres</small>
+
+                </section>
+
+                <button type="submit">Crear cuenta</button>
+
+                <p class="registro-link">
+                    ¿Ya tienes cuenta? <a href="/iniciarsesion.html">Iniciar sesión</a>
+                </p>
+
+            </form>
+
+        </div>
+
     </div>
 
-    <!-- ===== OVERLAY ===== -->
-    <div class="overlay"></div>
-
-    <!-- ===== CONTENEDOR DE TOASTS ===== -->
-    <div class="toast-container-custom"></div>
-
-    <!-- ===== FORMULARIO ===== -->
-    <form class="formulario" action="/procesar-registro" method="POST">
-
-        <div class="formulario-logo">
-            <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
-        </div>
-
-        <nav>
-            <ul class="formulario-ul">
-                <li class="li-formulario">
-                    <a href="/iniciarsesion.html">Iniciar Sesión</a>
-                </li>
-                <li class="li-formulario">
-                    <a href="/registro.html" class="activo">Registro</a>
-                </li>
-            </ul>
-        </nav>
-
-        <h2 class="h2-registro">CREAR CUENTA</h2>
-
-        <section class="inputs">
-
-            <!-- Fila: nombre + apellido -->
-            <div class="input-row">
-                <div class="input-col">
-                    <label>Nombre</label>
-                    <input type="text"
-                           name="nombre"
-                           placeholder="Tu nombre"
-                           autocomplete="given-name"
-                           required>
-                </div>
-                <div class="input-col">
-                    <label>Apellido</label>
-                    <input type="text"
-                           name="apellido"
-                           placeholder="Tu apellido"
-                           autocomplete="family-name"
-                           required>
-                </div>
-            </div>
-
-            <label>Teléfono</label>
-            <input type="tel"
-                   name="telefono"
-                   placeholder="Ej: 3123456789"
-                   autocomplete="tel"
-                   required>
-
-            <label>Correo electrónico</label>
-            <input type="email"
-                   name="correo"
-                   placeholder="correo@ejemplo.com"
-                   autocomplete="email"
-                   required>
-
-            <label>Apodo o alias</label>
-            <input type="text"
-                   name="usuario"
-                   placeholder="Ej: Notero123"
-                   autocomplete="username"
-                   required>
-
-            <label>Contraseña</label>
-            <input type="password"
-                   name="contraseña"
-                   placeholder="Mínimo 6 caracteres"
-                   autocomplete="new-password"
-                   minlength="6"
-                   maxlength="15"
-                   required>
-            <small class="campo-hint">Entre 6 y 15 caracteres</small>
-
-        </section>
-
-        <button type="submit">Crear cuenta</button>
-
-        <p class="registro-link">
-            ¿Ya tienes cuenta? <a href="/iniciarsesion.html">Iniciar sesión</a>
-        </p>
-
-    </form>
-
-    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Importa el JS de Bootstrap -->
 
-    <script>
-        /* ========== TOASTS ========== */
+    <script> <!-- Script personalizado -->
+
         function mostrarToast(mensaje, tipo = 'info') {
+        // Función para mostrar notificaciones
+
             const toastContainer = document.querySelector('.toast-container-custom');
+            // Selecciona contenedor
 
             const config = {
-                success: { icon: '✓', title: 'Éxito',  bgClass: 'toast-success' },
+                success: { icon: '✔', title: 'Éxito',  bgClass: 'toast-success' },
                 error:   { icon: '✕', title: 'Error',   bgClass: 'toast-error'   },
                 info:    { icon: 'ℹ', title: 'Info',    bgClass: 'toast-info'    }
             };
 
             const { icon, title, bgClass } = config[tipo] || config.info;
+            // Extrae valores
 
             const toastEl = document.createElement('div');
+            // Crea div
+
             toastEl.className = `toast ${bgClass}`;
+            // Asigna clases
+
             toastEl.setAttribute('role', 'alert');
             toastEl.setAttribute('aria-live', 'assertive');
             toastEl.setAttribute('aria-atomic', 'true');
+            // Accesibilidad
 
             toastEl.innerHTML = `
                 <div class="toast-header">
@@ -175,56 +248,99 @@
                 </div>
                 <div class="toast-body">${mensaje}</div>
             `;
+            // Inserta estructura interna
 
             toastContainer.appendChild(toastEl);
+            // Lo agrega al DOM
 
             const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
+            // Inicializa Toast de Bootstrap
+
             toast.show();
+            // Muestra el Toast
+
             toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+            // Elimina del DOM cuando desaparece
         }
 
-        /* ========== REGISTRO (FETCH) ========== */
         document.addEventListener('DOMContentLoaded', function () {
+        // Se ejecuta cuando el DOM está listo
+
             const formRegistro = document.querySelector('form[action="/procesar-registro"]');
+            // Busca el formulario específico
 
             if (formRegistro) {
+            // Verifica que exista
+
                 formRegistro.addEventListener('submit', async function (e) {
+                // Escucha evento submit
+
                     e.preventDefault();
+                    // Evita recarga tradicional
 
                     const formData  = new FormData(this);
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    const btnText   = submitBtn.textContent;
+                    // Captura datos del formulario
 
-                    submitBtn.disabled    = true;
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    // Selecciona botón
+
+                    const btnText   = submitBtn.textContent;
+                    // Guarda texto original
+
+                    submitBtn.disabled = true;
+                    // Desactiva botón
+
                     submitBtn.textContent = 'Registrando...';
+                    // Cambia texto
 
                     try {
+
                         const response = await fetch('/procesar-registro', {
                             method: 'POST',
                             body: formData
                         });
+                        // Envía datos al backend usando fetch con método POST
 
                         const data = await response.json();
+                        // Convierte respuesta a JSON
 
                         if (data.success) {
+                        // Si el backend responde éxito
+
                             mostrarToast('¡Cuenta creada exitosamente! Redirigiendo...', 'success');
+
                             setTimeout(() => {
                                 window.location.href = data.redirect;
                             }, 1500);
+                            // Redirige después de 1.5 segundos
+
                         } else {
+
                             mostrarToast(data.error || 'Error al registrar usuario', 'error');
-                            submitBtn.disabled    = false;
+
+                            submitBtn.disabled = false;
                             submitBtn.textContent = btnText;
+                            // Restaura botón
+
                         }
+
                     } catch (error) {
+                    // Si ocurre error de red
+
                         console.error('Error:', error);
+                        // Muestra error en consola
+
                         mostrarToast('Error de conexión. Por favor, intenta de nuevo.', 'error');
-                        submitBtn.disabled    = false;
+
+                        submitBtn.disabled = false;
                         submitBtn.textContent = btnText;
+                        // Restaura botón
+
                     }
                 });
             }
         });
+
     </script>
 
 </body>
