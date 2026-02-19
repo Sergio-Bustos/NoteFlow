@@ -29,100 +29,339 @@
 
     <style>
         /*
-         * Estilos para el sistema de Toasts (notificaciones flotantes)
-         * Se definen aquí porque son específicos de esta página y no están en formulario.css
+         * Estilos adicionales para la página de recuperación de contraseña.
+         * Extienden formulario.css con estilos específicos de esta vista.
          */
 
-        /* Contenedor fijo en esquina superior derecha — los toasts se apilan verticalmente aquí */
-        .toast-container {
+        /* ── Ícono decorativo de sobre/candado encima del título ── */
+        .recovery-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--purple) 0%, #8b5cf6 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            box-shadow: 0 6px 20px rgba(84, 82, 211, 0.30);
+        }
+
+        .recovery-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: #fff;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── Pasos visuales que explican el proceso ── */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            opacity: 0.88;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.18);
+            border: 1.5px solid rgba(255,255,255,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            color: #fff;
+            margin-top: 1px;
+        }
+
+        .step-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .step-text strong {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .step-text span {
+            font-size: 0.80rem;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.45;
+        }
+
+        /* ── Aviso de seguridad debajo del botón ── */
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 14px;
+            font-size: 0.78rem;
+            color: #aaa;
+        }
+
+        .security-note svg {
+            width: 13px;
+            height: 13px;
+            stroke: #bbb;
+            fill: none;
+            stroke-width: 2;
+            flex-shrink: 0;
+        }
+
+        /* ── Enlace "Volver" con flecha ── */
+        .back-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 18px;
+            font-size: 0.85rem;
+            color: var(--purple);
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover { opacity: 0.70; text-decoration: underline; }
+
+        .back-link svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── Toasts (igual estructura que iniciar-sesión usa formulario.css) ── */
+        .toast-container-custom {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 9999; /* Encima de cualquier otro elemento de la página */
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 340px;
         }
 
-        /* Tamaño mínimo y sombra base para todos los toasts */
         .toast {
-            min-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 280px;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.14) !important;
+            border: none !important;
+            overflow: hidden;
         }
 
-        /* Encabezado del toast en negrita para mejor legibilidad */
-        .toast-header {
+        .toast-success .toast-header {
+            background-color: #eafaf1;
+            color: #1a7a45;
+            border-bottom: 1px solid #c3f0d4;
             font-weight: 600;
         }
 
-        /* Toast de éxito — fondo verde suave, texto verde oscuro */
-        .toast-success .toast-header {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        /* Toast de error — fondo rojo suave, texto rojo oscuro */
         .toast-error .toast-header {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: #fdf0f0;
+            color: #a93226;
+            border-bottom: 1px solid #f5c0bb;
+            font-weight: 600;
         }
 
-        /* Toast informativo — fondo azul suave, texto azul oscuro */
         .toast-info .toast-header {
-            background-color: #d1ecf1;
-            color: #0c5460;
+            background-color: #eef0ff;
+            color: #3d3ab8;
+            border-bottom: 1px solid #c8c7f0;
+            font-weight: 600;
+        }
+
+        .toast-body {
+            font-size: 0.88rem;
+            color: var(--text-dark);
+            padding: 10px 14px;
         }
     </style>
 </head>
 <body>
 
+    <!-- Fondo de color sólido detrás de toda la página (definido en formulario.css) -->
+    <div class="fondo"></div>
+
+    <!-- Capa semi-transparente encima del fondo para mejorar contraste con el contenido -->
+    <div class="overlay"></div>
+
     <!-- Contenedor donde se insertan dinámicamente los toasts desde JavaScript -->
-    <div class="toast-container"></div>
+    <div class="toast-container-custom"></div>
 
-    <!--
-        Formulario de recuperación de contraseña.
-        - id="form-olvide": permite seleccionarlo fácilmente desde JavaScript.
-        - action="/procesar-olvide-contrasena": destino nativo del form (fallback sin JS).
-        - method="POST": el correo nunca viaja en la URL por seguridad.
-        El envío real se intercepta con JavaScript (fetch) para manejar
-        la respuesta sin recargar la página.
+    <!-- ===== WRAPPER DE DOS COLUMNAS =====
+         Divide la pantalla en:
+           - Panel izquierdo (.panel-deco): decorativo con carrusel y copy de marca
+           - Panel derecho  (.panel-form): formulario de recuperación de contraseña
+         En móvil, la columna izquierda se oculta y solo se muestra el formulario.
     -->
-    <form class="formulario" action="/procesar-olvide-contrasena" method="POST" id="form-olvide">
+    <div class="page-wrapper">
 
-        <!-- Navegación entre las secciones del formulario (login / registro) -->
-        <nav>
-            <ul class="formulario-ul">
-                <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
-                <li class="li-formulario"><a href="/registro.html">Registro</a></li>
-            </ul>
-        </nav>
+        <!-- ────────────────────────────────────────────────
+             PANEL IZQUIERDO — Decorativo / Branding
+             Contiene un carrusel de fondo animado con imágenes
+             del logo de NoteFlow, y encima el copy explicativo
+             del proceso de recuperación de contraseña.
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-deco">
 
-        <h2 class="h2-registro">RECUPERAR CONTRASEÑA</h2>
+            <!-- Carrusel animado de imágenes de fondo (efecto visual, sin interacción) -->
+            <div class="panel-deco-carousel">
+                <div class="carrusel">
 
-        <!-- Instrucción amigable que explica qué hará el formulario -->
-        <p class="instruccion">Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+                    <!-- Columna izquierda del carrusel: se desplaza hacia abajo con CSS/JS -->
+                    <div class="columna_izquierda">
+                        <!-- Las imágenes se repiten para crear efecto de scroll infinito -->
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                    </div>
 
-        <!-- Sección de campos del formulario -->
-        <section class="inputs">
-            <label>Correo electrónico</label>
+                    <!-- Columna derecha del carrusel: se desplaza hacia arriba (dirección opuesta) -->
+                    <div class="columna_derecha">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido de marca que se muestra encima del carrusel (z-index superior) -->
+            <div class="panel-deco-content">
+
+                <!-- Logo de texto: "Note" en color normal + "Flow" en color de acento -->
+                <div class="deco-logo">Note<span>Flow</span></div>
+
+                <h1>¿Olvidaste<br>tu contraseña?</h1>
+                <p>No te preocupes, te ayudamos a recuperar el acceso a tu cuenta en tres simples pasos.</p>
+
+                <!-- Lista visual de pasos del proceso de recuperación -->
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">
+                            <strong>Ingresa tu correo</strong>
+                            <span>El correo con el que te registraste en NoteFlow.</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">
+                            <strong>Revisa tu bandeja</strong>
+                            <span>Te enviaremos un enlace seguro en segundos.</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">
+                            <strong>Crea una nueva contraseña</strong>
+                            <span>Sigue el enlace y elige una contraseña nueva.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ────────────────────────────────────────────────
+             PANEL DERECHO — Formulario de recuperación
+             Contiene: logo, nav de pestañas, campo de correo
+             y enlace para volver al login.
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-form">
+
             <!--
-                type="email": valida formato de correo en el navegador antes de enviar.
-                required: impide el envío si el campo está vacío (validación HTML5 nativa).
+                Formulario de recuperación de contraseña.
+                - id="form-olvide": permite seleccionarlo fácilmente desde JavaScript.
+                - action="/procesar-olvide-contrasena": destino nativo del form (fallback sin JS).
+                - method="POST": el correo nunca viaja en la URL por seguridad.
+                El envío real se intercepta con JavaScript (fetch) para manejar
+                la respuesta sin recargar la página.
             -->
-            <input type="email"
-                   name="correo"
-                   placeholder="correo@ejemplo.com"
-                   required>
-        </section>
+            <form class="formulario" action="/procesar-olvide-contrasena" method="POST" id="form-olvide">
 
-        <br>
+                <!-- Logo de NoteFlow dentro del formulario (versión compacta para móviles) -->
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
 
-        <!-- Botón de envío — se deshabilita mientras se procesa la petición para evitar doble envío -->
-        <button type="submit">Enviar Enlace de Recuperación</button>
+                <!-- Navegación entre las secciones del formulario (login / registro) -->
+                <nav>
+                    <ul class="formulario-ul">
+                        <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
+                        <li class="li-formulario"><a href="/registro.html">Registro</a></li>
+                    </ul>
+                </nav>
 
-        <br>
+                <!-- Ícono decorativo de sobre con candado -->
+                <div class="recovery-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="2" y="9" width="20" height="13" rx="2"/>
+                        <path d="M16 8V6a4 4 0 0 0-8 0v2"/>
+                        <circle cx="12" cy="15" r="1.5" fill="white" stroke="none"/>
+                    </svg>
+                </div>
 
-        <!-- Enlace para volver al login sin completar el proceso -->
-        <p><a href="/iniciarsesion.html">Volver a Iniciar Sesión</a></p>
+                <h2 class="h2-registro">RECUPERAR CONTRASEÑA</h2>
 
-    </form>
+                <!-- Instrucción amigable que explica qué hará el formulario -->
+                <p class="instruccion">Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+
+                <!-- Sección de campos del formulario -->
+                <section class="inputs">
+                    <label>Correo electrónico</label>
+                    <!--
+                        type="email": valida formato de correo en el navegador antes de enviar.
+                        required: impide el envío si el campo está vacío (validación HTML5 nativa).
+                        autocomplete="email": activa el autocompletado del navegador para correos.
+                    -->
+                    <input type="email"
+                           name="correo"
+                           placeholder="correo@ejemplo.com"
+                           autocomplete="email"
+                           required>
+                </section>
+
+                <!-- Botón de envío — se deshabilita mientras se procesa la petición para evitar doble envío -->
+                <button type="submit">Enviar Enlace de Recuperación</button>
+
+                <!-- Aviso de seguridad debajo del botón -->
+                <p class="security-note">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Enlace válido por tiempo corto · Solo para uso único
+                </p>
+
+                <!-- Enlace para volver al login sin completar el proceso -->
+                <a href="/iniciarsesion.html" class="back-link">
+                    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                    Volver a Iniciar Sesión
+                </a>
+
+            </form>
+        </div>
+    </div>
 
     <!-- Bootstrap 5 JS Bundle (incluye Popper.js) — necesario para inicializar los Toasts -->
     <!-- Se carga al final del body para no bloquear el renderizado del HTML -->
@@ -133,7 +372,7 @@
          * mostrarToast
          * ─────────────────────────────────────────────────────────────
          * Crea e inserta dinámicamente una notificación flotante (Toast
-         * de Bootstrap) en el contenedor .toast-container.
+         * de Bootstrap) en el contenedor .toast-container-custom.
          *
          * @param {string} mensaje  - Texto a mostrar en el cuerpo del toast.
          * @param {string} tipo     - Tipo de toast: 'success' | 'error' | 'info'
@@ -145,7 +384,7 @@
          *  - Usa roles ARIA (role="alert", aria-live="assertive") para accesibilidad.
          */
         function mostrarToast(mensaje, tipo = 'info') {
-            const toastContainer = document.querySelector('.toast-container');
+            const toastContainer = document.querySelector('.toast-container-custom');
 
             // Mapa de configuración según el tipo de mensaje
             const config = {

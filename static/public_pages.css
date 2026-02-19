@@ -48,6 +48,10 @@ header {
 }
 
 /* ========== NAVEGACIÓN ========== */
+
+.enlace-navbar {
+    text-decoration: none;
+}
 .nav-links {
     display: flex;                             /* Menú de navegación en fila */
     gap: 15px;                                 /* Espaciado entre links */

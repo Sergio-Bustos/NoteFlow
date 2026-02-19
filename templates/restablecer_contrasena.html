@@ -8,122 +8,582 @@
     <link rel="icon" type="image/icon" href="../static/logocircular.png"> <!-- Imagen-->
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <style>
-        .toast-container {
+        /*
+         * Estilos adicionales para la página de restablecer contraseña.
+         * Extienden formulario.css con estilos específicos de esta vista.
+         */
+
+        /* ── Ícono decorativo de escudo/llave encima del título ── */
+        .recovery-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--purple) 0%, #8b5cf6 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            box-shadow: 0 6px 20px rgba(84, 82, 211, 0.30);
+        }
+
+        .recovery-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: #fff;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── Indicador de fortaleza de contraseña ── */
+        .strength-bar-wrapper {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .strength-bars {
+            display: flex;
+            gap: 4px;
+        }
+
+        .strength-bar {
+            flex: 1;
+            height: 4px;
+            border-radius: 4px;
+            background: #e5e5ef;
+            transition: background 0.3s;
+        }
+
+        .strength-bar.weak   { background: #e74c3c; }
+        .strength-bar.medium { background: #f39c12; }
+        .strength-bar.strong { background: #27ae60; }
+
+        .strength-label {
+            font-size: 0.74rem;
+            color: #aaa;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            transition: color 0.3s;
+        }
+
+        .strength-label.weak   { color: #e74c3c; }
+        .strength-label.medium { color: #f39c12; }
+        .strength-label.strong { color: #27ae60; }
+
+        /* ── Icono de ojo para mostrar/ocultar contraseña ── */
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            padding-right: 42px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 13px;
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: #bbb;
+            transition: color 0.2s;
+            width: auto;
+            height: auto;
+            box-shadow: none;
+        }
+
+        .toggle-password:hover {
+            color: var(--purple);
+            background: none;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .toggle-password svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── Pasos visuales en el panel decorativo ── */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            opacity: 0.88;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.18);
+            border: 1.5px solid rgba(255,255,255,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            color: #fff;
+            margin-top: 1px;
+        }
+
+        /* Paso completado: check verde ── */
+        .step-number.done {
+            background: rgba(39, 174, 96, 0.35);
+            border-color: rgba(39, 174, 96, 0.70);
+        }
+
+        /* Paso activo: resaltado ── */
+        .step-number.active {
+            background: rgba(255,255,255,0.30);
+            border-color: rgba(255,255,255,0.80);
+        }
+
+        .step-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .step-text strong {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .step-text span {
+            font-size: 0.80rem;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.45;
+        }
+
+        /* ── Bloque de error (cuando token inválido/expirado) ── */
+        .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 8px 0 16px;
+            gap: 14px;
+        }
+
+        .error-state-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.28);
+        }
+
+        .error-state-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: #fff;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .error-msg {
+            font-size: 0.90rem;
+            color: #c0392b;
+            background: #fdf0f0;
+            border: 1px solid #f5c0bb;
+            border-radius: 10px;
+            padding: 10px 16px;
+            width: 100%;
+        }
+
+        /* ── Aviso de seguridad debajo del botón ── */
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 14px;
+            font-size: 0.78rem;
+            color: #aaa;
+        }
+
+        .security-note svg {
+            width: 13px;
+            height: 13px;
+            stroke: #bbb;
+            fill: none;
+            stroke-width: 2;
+            flex-shrink: 0;
+        }
+
+        /* ── Toasts ── */
+        .toast-container-custom {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 340px;
         }
-        
+
         .toast {
-            min-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 280px;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.14) !important;
+            border: none !important;
+            overflow: hidden;
         }
-        
-        .toast-header {
+
+        .toast-success .toast-header {
+            background-color: #eafaf1;
+            color: #1a7a45;
+            border-bottom: 1px solid #c3f0d4;
             font-weight: 600;
         }
-        
-        .toast-success .toast-header {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
+
         .toast-error .toast-header {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: #fdf0f0;
+            color: #a93226;
+            border-bottom: 1px solid #f5c0bb;
+            font-weight: 600;
         }
-        
+
         .toast-warning .toast-header {
-            background-color: #fff3cd;
+            background-color: #fffbea;
             color: #856404;
+            border-bottom: 1px solid #ffe58a;
+            font-weight: 600;
+        }
+
+        .toast-info .toast-header {
+            background-color: #eef0ff;
+            color: #3d3ab8;
+            border-bottom: 1px solid #c8c7f0;
+            font-weight: 600;
+        }
+
+        .toast-body {
+            font-size: 0.88rem;
+            color: var(--text-dark);
+            padding: 10px 14px;
         }
     </style>
 </head><!--Cierre del head-->
 <body><!--Inicio del cuerpo del documento-->
-    
-    <!-- Contenedor de Toasts -->
-    <div class="toast-container"></div>
-    
-    {% if error %}<!--Inicio de bloque condicional Jinja2: verifica si hay un error-->
-    <div class="formulario"><!--Contenedor con clase formulario para mostrar error-->
-        <h2 class="h2-registro">ERROR</h2><!--Título indicando error-->
-        <p class="error-msg" style="color: red; text-align: center;">{{ error }}</p><!--Párrafo mostrando mensaje de error en rojo y centrado-->
-        <p><a href="/olvide-contrasena">Solicitar un nuevo enlace</a></p><!--Enlace para solicitar nuevo token de recuperación-->
-    </div><!--Cierre del contenedor de error-->
-    {% elif token %}<!--Else-if: si no hay error pero sí existe token válido-->
-    <form class="formulario" action="/procesar-restablecer-contrasena" method="POST" id="form-restablecer"><!--Formulario con ID único, action al endpoint de procesamiento, método POST-->
-        <h2 class="h2-registro">NUEVA CONTRASEÑA</h2><!--Título del formulario en mayúsculas-->
-        <p class="instruccion">Ingresa tu nueva contraseña (mínimo 6 caracteres).</p><!--Instrucciones sobre requisitos de contraseña-->
 
-        <input type="hidden" name="token" value="{{ token }}"><!--Campo oculto que contiene el token de recuperación desde el servidor-->
+    <!-- Fondo de color sólido detrás de toda la página (definido en formulario.css) -->
+    <div class="fondo"></div>
 
-        <section class="inputs"><!--Sección para agrupar campos de entrada-->
-            <label>Nueva Contraseña</label><!--Etiqueta para primer campo de contraseña-->
-            <input type="password" name="nueva_contrasena" id="nueva_contrasena" required minlength="6"><!--Campo password con validación mínima de 6 caracteres, requerido-->
-            
-            <label>Confirmar Contraseña</label><!--Etiqueta para campo de confirmación-->
-            <input type="password" name="confirmar_contrasena" id="confirmar_contrasena" required minlength="6"><!--Campo password para confirmar, misma validación-->
-        </section><!--Cierre de la sección inputs-->
-        <br>
-        <button type="submit">Restablecer Contraseña</button><!--Botón de envío del formulario-->
-    </form><!--Cierre del formulario-->
-    
-    <!-- Bootstrap 5 JS Bundle -->
+    <!-- Capa semi-transparente encima del fondo para mejorar contraste con el contenido -->
+    <div class="overlay"></div>
+
+    <!-- Contenedor donde se insertan dinámicamente los toasts desde JavaScript -->
+    <div class="toast-container-custom"></div>
+
+    <!-- ===== WRAPPER DE DOS COLUMNAS =====
+         Divide la pantalla en:
+           - Panel izquierdo (.panel-deco): decorativo con carrusel y copy del proceso
+           - Panel derecho  (.panel-form): formulario de nueva contraseña o estado de error
+         En móvil, la columna izquierda se oculta y solo se muestra el panel derecho.
+    -->
+    <div class="page-wrapper">
+
+        <!-- ────────────────────────────────────────────────
+             PANEL IZQUIERDO — Decorativo / Branding
+             Muestra el progreso del proceso de recuperación,
+             resaltando el paso 3 como el actual (activo).
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-deco">
+
+            <!-- Carrusel animado de imágenes de fondo (efecto visual, sin interacción) -->
+            <div class="panel-deco-carousel">
+                <div class="carrusel">
+                    <div class="columna_izquierda">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                    </div>
+                    <div class="columna_derecha">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contenido de marca que se muestra encima del carrusel (z-index superior) -->
+            <div class="panel-deco-content">
+
+                <div class="deco-logo">Note<span>Flow</span></div>
+
+                <h1>Casi listo,<br>elige tu nueva<br>contraseña</h1>
+                <p>Estás en el último paso. Crea una contraseña segura para proteger tu cuenta.</p>
+
+                <!-- Pasos del proceso — paso 1 y 2 marcados como completados, paso 3 activo -->
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number done">✓</div>
+                        <div class="step-text">
+                            <strong>Correo ingresado</strong>
+                            <span>Solicitaste el enlace de recuperación.</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number done">✓</div>
+                        <div class="step-text">
+                            <strong>Enlace verificado</strong>
+                            <span>El enlace es válido y seguro.</span>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number active">3</div>
+                        <div class="step-text">
+                            <strong>Nueva contraseña</strong>
+                            <span>Crea una contraseña de al menos 6 caracteres.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ────────────────────────────────────────────────
+             PANEL DERECHO — Formulario o estado de error
+             Muestra el formulario si el token es válido,
+             o un mensaje de error con enlace de reintento.
+        ──────────────────────────────────────────────────── -->
+        <div class="panel-form">
+
+            {% if error %}<!--Inicio de bloque condicional Jinja2: verifica si hay un error-->
+
+            <!--
+                Estado de error: token inválido o expirado.
+                Se presenta dentro del layout igual que el formulario,
+                manteniendo coherencia visual con el resto de la app.
+            -->
+            <div class="formulario">
+
+                <!-- Logo de NoteFlow -->
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <!-- Navegación de pestañas (mismo nav que en otras páginas) -->
+                <nav>
+                    <ul class="formulario-ul">
+                        <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
+                        <li class="li-formulario"><a href="/registro.html">Registro</a></li>
+                    </ul>
+                </nav>
+
+                <!-- Bloque de error visual -->
+                <div class="error-state">
+                    <div class="error-state-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+
+                    <h2 class="h2-registro">ENLACE INVÁLIDO</h2>
+
+                    <!--Párrafo mostrando mensaje de error-->
+                    <p class="error-msg">{{ error }}</p><!--Mensaje de error desde el servidor-->
+
+                    <p>El enlace puede haber expirado o ya fue utilizado.</p>
+
+                    <!--Enlace para solicitar nuevo token de recuperación-->
+                    <a href="/olvide-contrasena" class="back-link" style="display:flex;align-items:center;gap:5px;margin-top:6px;">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Solicitar un nuevo enlace
+                    </a>
+                </div>
+            </div>
+
+            {% elif token %}<!--Else-if: si no hay error pero sí existe token válido-->
+
+            <!--
+                Formulario de restablecimiento de contraseña.
+                - id="form-restablecer": permite seleccionarlo fácilmente desde JavaScript.
+                - action="/procesar-restablecer-contrasena": destino nativo (fallback sin JS).
+                - method="POST": las contraseñas nunca viajan en la URL por seguridad.
+                El envío real se intercepta con JavaScript (fetch).
+            -->
+            <form class="formulario" action="/procesar-restablecer-contrasena" method="POST" id="form-restablecer">
+
+                <!-- Logo de NoteFlow -->
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <!-- Navegación de pestañas -->
+                <nav>
+                    <ul class="formulario-ul">
+                        <li class="li-formulario"><a href="/iniciarsesion.html">Iniciar Sesión</a></li>
+                        <li class="li-formulario"><a href="/registro.html">Registro</a></li>
+                    </ul>
+                </nav>
+
+                <!-- Ícono decorativo de llave -->
+                <div class="recovery-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                    </svg>
+                </div>
+
+                <h2 class="h2-registro">NUEVA CONTRASEÑA</h2>
+
+                <!--Instrucciones sobre requisitos de contraseña-->
+                <p class="instruccion">Ingresa tu nueva contraseña (mínimo 6 caracteres).</p>
+
+                <!--Campo oculto que contiene el token de recuperación desde el servidor-->
+                <input type="hidden" name="token" value="{{ token }}">
+
+                <section class="inputs"><!--Sección para agrupar campos de entrada-->
+
+                    <!--Etiqueta para primer campo de contraseña-->
+                    <label>Nueva Contraseña</label>
+                    <div class="input-wrapper">
+                        <!--Campo password con validación mínima de 6 caracteres, requerido-->
+                        <input type="password"
+                               name="nueva_contrasena"
+                               id="nueva_contrasena"
+                               placeholder="Mínimo 6 caracteres"
+                               required
+                               minlength="6"
+                               autocomplete="new-password">
+                        <!-- Botón para mostrar/ocultar contraseña -->
+                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña" data-target="nueva_contrasena">
+                            <svg class="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" viewBox="0 0 24 24" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Indicador de fortaleza de contraseña -->
+                    <div class="strength-bar-wrapper" id="strength-wrapper" style="display:none;">
+                        <div class="strength-bars">
+                            <div class="strength-bar" id="bar1"></div>
+                            <div class="strength-bar" id="bar2"></div>
+                            <div class="strength-bar" id="bar3"></div>
+                        </div>
+                        <span class="strength-label" id="strength-label">Contraseña débil</span>
+                    </div>
+
+                    <!--Etiqueta para campo de confirmación-->
+                    <label>Confirmar Contraseña</label>
+                    <div class="input-wrapper">
+                        <!--Campo password para confirmar, misma validación-->
+                        <input type="password"
+                               name="confirmar_contrasena"
+                               id="confirmar_contrasena"
+                               placeholder="Repite tu contraseña"
+                               required
+                               minlength="6"
+                               autocomplete="new-password">
+                        <!-- Botón para mostrar/ocultar confirmación -->
+                        <button type="button" class="toggle-password" aria-label="Mostrar contraseña" data-target="confirmar_contrasena">
+                            <svg class="icon-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" viewBox="0 0 24 24" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                        </button>
+                    </div>
+
+                </section><!--Cierre de la sección inputs-->
+
+                <!--Botón de envío del formulario-->
+                <button type="submit">Restablecer Contraseña</button>
+
+                <!-- Aviso de seguridad debajo del botón -->
+                <p class="security-note">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Conexión cifrada · Tu contraseña se guarda de forma segura
+                </p>
+
+            </form><!--Cierre del formulario-->
+
+            {% endif %}<!--Cierre del bloque condicional Jinja2-->
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle (incluye Popper.js) — necesario para los Toasts de Bootstrap -->
+    <!-- Se carga al final del body para no bloquear el renderizado del HTML -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <script><!--Inicio del bloque JavaScript-->
 // ========== FUNCIÓN PARA MOSTRAR TOASTS ==========
 function mostrarToast(mensaje, tipo = 'info') {
-    const toastContainer = document.querySelector('.toast-container');
-    
+    const toastContainer = document.querySelector('.toast-container-custom');
+
     const config = {
-        success: { 
-            icon: '✓', 
+        success: {
+            icon: '✓',
             title: 'Éxito',
             bgClass: 'toast-success'
         },
-        error: { 
-            icon: '✕', 
+        error: {
+            icon: '✕',
             title: 'Error',
             bgClass: 'toast-error'
         },
-        warning: { 
-            icon: '⚠', 
+        warning: {
+            icon: '⚠',
             title: 'Advertencia',
             bgClass: 'toast-warning'
         }
     };
-    
+
     const { icon, title, bgClass } = config[tipo] || config.info;
-    
+
     const toastEl = document.createElement('div');
     toastEl.className = `toast ${bgClass}`;
     toastEl.setAttribute('role', 'alert');
     toastEl.setAttribute('aria-live', 'assertive');
     toastEl.setAttribute('aria-atomic', 'true');
-    
+
     toastEl.innerHTML = `
         <div class="toast-header">
             <strong class="me-auto">${icon} ${title}</strong>
             <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
-        <div class="toast-body">
-            ${mensaje}
-        </div>
+        <div class="toast-body">${mensaje}</div>
     `;
-    
+
     toastContainer.appendChild(toastEl);
-    
-    const toast = new bootstrap.Toast(toastEl, {
-        autohide: true,
-        delay: 4000
-    });
-    
+
+    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
     toast.show();
-    
+
     toastEl.addEventListener('hidden.bs.toast', () => {
         toastEl.remove();
     });
@@ -132,14 +592,83 @@ function mostrarToast(mensaje, tipo = 'info') {
 // ========== MANEJO DEL FORMULARIO DE RESTABLECER CONTRASEÑA ==========
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('form-restablecer');
-    
+
     if (form) {
+
+        // ── Mostrar/ocultar contraseña ──
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId  = this.dataset.target;
+                const inputEl   = document.getElementById(targetId);
+                const iconEye    = this.querySelector('.icon-eye');
+                const iconEyeOff = this.querySelector('.icon-eye-off');
+
+                if (inputEl.type === 'password') {
+                    inputEl.type    = 'text';
+                    iconEye.style.display    = 'none';
+                    iconEyeOff.style.display = '';
+                } else {
+                    inputEl.type    = 'password';
+                    iconEye.style.display    = '';
+                    iconEyeOff.style.display = 'none';
+                }
+            });
+        });
+
+        // ── Indicador de fortaleza de contraseña ──
+        const nuevaInput      = document.getElementById('nueva_contrasena');
+        const strengthWrapper = document.getElementById('strength-wrapper');
+        const bar1            = document.getElementById('bar1');
+        const bar2            = document.getElementById('bar2');
+        const bar3            = document.getElementById('bar3');
+        const strengthLabel   = document.getElementById('strength-label');
+
+        if (nuevaInput) {
+            nuevaInput.addEventListener('input', function() {
+                const val = this.value;
+
+                if (!val) {
+                    strengthWrapper.style.display = 'none';
+                    return;
+                }
+
+                strengthWrapper.style.display = 'flex';
+
+                // Calcular nivel: débil (1), media (2), fuerte (3)
+                let score = 0;
+                if (val.length >= 6)  score++;
+                if (val.length >= 10) score++;
+                if (/[A-Z]/.test(val) && /[0-9]/.test(val)) score++;
+
+                // Resetear barras
+                [bar1, bar2, bar3].forEach(b => { b.className = 'strength-bar'; });
+
+                if (score === 1) {
+                    bar1.classList.add('weak');
+                    strengthLabel.textContent = 'Contraseña débil';
+                    strengthLabel.className   = 'strength-label weak';
+                } else if (score === 2) {
+                    bar1.classList.add('medium');
+                    bar2.classList.add('medium');
+                    strengthLabel.textContent = 'Contraseña media';
+                    strengthLabel.className   = 'strength-label medium';
+                } else if (score === 3) {
+                    bar1.classList.add('strong');
+                    bar2.classList.add('strong');
+                    bar3.classList.add('strong');
+                    strengthLabel.textContent = 'Contraseña fuerte';
+                    strengthLabel.className   = 'strength-label strong';
+                }
+            });
+        }
+
+        // ── Envío del formulario ──
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const nueva = document.getElementById('nueva_contrasena').value;
+
+            const nueva     = document.getElementById('nueva_contrasena').value;
             const confirmar = document.getElementById('confirmar_contrasena').value;
-            
+
             // Validación: ¿coinciden las contraseñas?
             if (nueva !== confirmar) {
                 mostrarToast('Las contraseñas no coinciden.', 'warning');
@@ -151,47 +680,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 mostrarToast('La contraseña debe tener al menos 6 caracteres.', 'warning');
                 return;
             }
-            
-            const formData = new FormData(this);
+
+            const formData  = new FormData(this);
             const submitBtn = this.querySelector('button[type="submit"]');
-            const btnText = submitBtn.textContent;
-            
-            submitBtn.disabled = true;
+            const btnText   = submitBtn.textContent;
+
+            submitBtn.disabled    = true;
             submitBtn.textContent = 'Actualizando...';
-            
+
             try {
                 const response = await fetch('/procesar-restablecer-contrasena', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     mostrarToast(data.mensaje, 'success');
-                    
+
                     // Redirigir después de 2 segundos
                     setTimeout(() => {
                         window.location.href = data.redirect;
                     }, 2000);
                 } else if (data.error) {
                     mostrarToast(data.error, 'error');
-                    submitBtn.disabled = false;
+                    submitBtn.disabled    = false;
                     submitBtn.textContent = btnText;
                 } else {
                     mostrarToast('Error al restablecer la contraseña.', 'error');
-                    submitBtn.disabled = false;
+                    submitBtn.disabled    = false;
                     submitBtn.textContent = btnText;
                 }
             } catch (error) {
                 mostrarToast('Error de conexión. Intenta más tarde.', 'error');
-                submitBtn.disabled = false;
+                submitBtn.disabled    = false;
                 submitBtn.textContent = btnText;
             }
         });
     }
 });
 </script><!--Cierre del bloque script-->
-    {% endif %}<!--Cierre del bloque condicional Jinja2-->
 </body><!--Cierre del body-->
 </html><!--Cierre del documento HTML-->
