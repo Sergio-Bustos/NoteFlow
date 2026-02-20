@@ -8,7 +8,7 @@
 
 body {
     min-height: 100vh;                        /* El cuerpo ocupa al menos toda la pantalla */
-    background: linear-gradient(135deg, #727272, #51368f, #ffffff); /* Fondo con degradado diagonal */
+    background: linear-gradient(135deg, #4340a0 0%, #51368f 50%, #8b5cf6 100%); /* Fondo con degradado diagonal */
     overflow-x: hidden;                       /* Evita que salga scroll horizontal */
 }
 

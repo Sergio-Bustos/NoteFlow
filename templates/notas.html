@@ -361,8 +361,12 @@
         #area-resultados.visible { display: block; }
 
         .resultados-cabecera {
-            display: flex; align-items: center;
-            justify-content: space-between; margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
         .resultados-titulo {
             font-size: 1rem; font-weight: 700; color: #1e1d3f;
@@ -456,8 +460,7 @@
         <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
         <li class="separator"></li>
-        <li><a href="/crear-nota"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
-        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
         <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
     </ul>
@@ -484,7 +487,6 @@
         </div>
     </header>
 
-    <a href="/crear-nota" class="btn-nueva-nota"><i class="fas fa-plus"></i> Nueva Nota</a>
 
     <!-- ÁREA DE RESULTADOS -->
     <div id="area-resultados">
@@ -953,7 +955,52 @@
         var color = "{{ usuario.Color_principal }}";
         document.body.classList.add(color === 'Negro' ? 'tema-oscuro' : 'tema-claro');
     });
-</script>
+</script> 
+<!-- MODAL ELEGIR FORMATO -->
+<div class="formato-backdrop" id="formato-backdrop" onclick="cerrarFormato()"></div>
+<div class="formato-modal" id="formato-modal">
+    <p class="formato-titulo">¿Qué tipo de nota quieres crear?</p>
+    <div class="formato-grid">
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-align-left" style="color:#5452d3"></i>
+            <span>Texto</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-image" style="color:#27ae60"></i>
+            <span>Imagen</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-microphone" style="color:#e74c3c"></i>
+            <span>Audio</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-video" style="color:#2980b9"></i>
+            <span>Video</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-paint-brush" style="color:#f39c12"></i>
+            <span>Dibujo</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-layer-group" style="color:#8e44ad"></i>
+            <span>Mixta</span>
+        </a>
+    </div>
+    <button class="formato-cerrar" onclick="cerrarFormato()">Cancelar</button>
+</div>
 
+<script>
+function abrirFormato() {
+    document.getElementById('formato-modal').classList.add('visible');
+    document.getElementById('formato-backdrop').classList.add('visible');
+}
+function cerrarFormato() {
+    document.getElementById('formato-modal').classList.remove('visible');
+    document.getElementById('formato-backdrop').classList.remove('visible');
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cerrarFormato();
+});
+</script>
 </body>
 </html>

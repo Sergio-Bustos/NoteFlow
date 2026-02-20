@@ -23,9 +23,9 @@
     <ul class="menu"> <!-- Lista del menú lateral -->
         <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-home"></i> Inicio</a></li> <!-- Inicio -->
         <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li> <!-- Mis notas -->
-        
+
         <li class="separator"></li> <!-- Línea separadora -->
-        <li><a href="/crear-nota"><i class="fas fa-plus-circle"></i> Crear nota</a></li> <!-- Crear nota -->
+        <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li> <!-- Crear nota -->
         <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li> <!-- Papelera -->
         <li class="separator"></li> <!-- Línea separadora -->
         <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li> <!-- Perfil -->
@@ -40,7 +40,6 @@
 <div class="main"> <!-- Contenido principal -->
 
     <header> <!-- Encabezado -->
-
 
         <!-- Información del usuario -->
         <a href="/perfil" class="usuario-info">
@@ -74,7 +73,7 @@
         </div>
 
         <div class="card warning-card"> <!-- Tarjeta especial -->
-            <a  style="text-decoration: none; color: inherit;">
+            <a style="text-decoration: none; color: inherit;">
                 <i class="fas fa-recycle stat-icon"></i> <!-- Icono -->
                 <h3>{{ notas_papelera }}</h3> <!-- Cantidad -->
                 <p>En papelera</p>
@@ -132,13 +131,48 @@
         </div>
         {% else %} <!-- Si NO hay notas recientes -->
         <p class="no-results-message">
-            No tienes notas activas recientemente. ¡Crea una nueva nota para empezar! 
-            <a href="/crear-nota" style="color: var(--color-principal);">Crear nota</a>
+            No tienes notas activas recientemente. ¡Crea una nueva nota para empezar!
+            <a href="#" onclick="abrirFormato(); return false;" style="color: var(--color-principal);">Crear nota</a>
         </p>
         {% endif %}
     </section>
 
 </div> <!-- Fin de main -->
+
+<!-- ══════════════════════════════════════
+     MODAL ELEGIR FORMATO DE NOTA
+══════════════════════════════════════ -->
+<div class="formato-backdrop" id="formato-backdrop" onclick="cerrarFormato()"></div>
+<div class="formato-modal" id="formato-modal">
+    <p class="formato-titulo">¿Qué tipo de nota quieres crear?</p>
+    <div class="formato-grid">
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-align-left" style="color:#5452d3"></i>
+            <span>Texto</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-image" style="color:#27ae60"></i>
+            <span>Imagen</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-microphone" style="color:#e74c3c"></i>
+            <span>Audio</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-video" style="color:#2980b9"></i>
+            <span>Video</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-paint-brush" style="color:#f39c12"></i>
+            <span>Dibujo</span>
+        </a>
+        <a href="/crear-nota" class="formato-opcion">
+            <i class="fas fa-layer-group" style="color:#8e44ad"></i>
+            <span>Mixta</span>
+        </a>
+    </div>
+    <button class="formato-cerrar" onclick="cerrarFormato()">Cancelar</button>
+</div>
 
 <!-- Modal de Confirmación para Cerrar Sesión -->
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
@@ -170,18 +204,29 @@
 
 <script>
     // ========== APLICAR TEMA AL CARGAR ==========
-    document.addEventListener('DOMContentLoaded', function() { // Cuando cargue la página
-        const colorPrincipal = "{{ usuario.color_principal if usuario else 'Blanco' }}"; // Color guardado del usuario
-        
-        if (colorPrincipal === "Negro") { // Tema oscuro
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorPrincipal = "{{ usuario.color_principal if usuario else 'Blanco' }}";
+        if (colorPrincipal === "Negro") {
             document.body.classList.add('tema-oscuro');
             document.body.classList.remove('tema-claro');
-        } else { // Tema claro
+        } else {
             document.body.classList.add('tema-claro');
             document.body.classList.remove('tema-oscuro');
         }
     });
-    
+
+    // ========== MODAL ELEGIR FORMATO ==========
+    function abrirFormato() {
+        document.getElementById('formato-modal').classList.add('visible');
+        document.getElementById('formato-backdrop').classList.add('visible');
+    }
+    function cerrarFormato() {
+        document.getElementById('formato-modal').classList.remove('visible');
+        document.getElementById('formato-backdrop').classList.remove('visible');
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') cerrarFormato();
+    });
 </script>
 
 </body>

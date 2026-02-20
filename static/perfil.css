@@ -1,131 +1,151 @@
-/* Estilos CSS para la página de perfil */
-:root {  /* Variables globales CSS */
+/* ============================================================================
+ * perfil.css – NoteFlow
+ * Página de perfil de usuario: responsive, temas claro/oscuro
+ * ============================================================================ */
 
-    /* Colores del Tema Claro */
-    --primary: #667eea;  /* Color principal azul */
-    --bg-claro: #f5f6fa; /* Fondo claro */
-    --text-claro: #2c3e50; /* Texto oscuro para el modo claro */
-    --card-bg-claro: #ffffff; /* Fondo de tarjetas en modo claro */
-    --border-claro: #e1e4ea; /* Bordes suaves modo claro */
-    
-    /* Colores Tema Oscuro */
-    --bg-oscuro: #1a1a1a; /* Fondo oscuro */
-    --text-oscuro: #e0e0e0; /* Texto claro */
-    --card-bg-oscuro: #2d2d2d; /* Fondo tarjetas oscuro */
-    --border-oscuro: #404040; /* Bordes modo oscuro */
-    
-    /* Colores comunes */
-    --radius: 12px; /* Radio de borde para elementos */
-    --success: #2ecc71; /* Verde éxito */
-    --danger: #e74c3c; /* Rojo error */
-    --warning: #f39c12; /* Amarillo advertencia */
+/* ============================================================================
+   1. VARIABLES Y RESET
+   ============================================================================ */
+:root {
+    --primary:        #4c62c2;
+    --primary-dark:   #4f5dd4;
+    --bg-claro:       #f0f2f8;
+    --text-claro:     #2c3e50;
+    --card-bg-claro:  #ffffff;
+    --border-claro:   #e1e4ea;
+
+    --bg-oscuro:      #111827;
+    --text-oscuro:    #e2e8f0;
+    --card-bg-oscuro: #1f2937;
+    --border-oscuro:  #374151;
+
+    --radius:   12px;
+    --success:  #2ecc71;
+    --danger:   #e74c3c;
+    --warning:  #f39c12;
 }
 
-/* Reset básico y transición animada global */
-* {
-    box-sizing: border-box; /* Mantiene tamaños controlados */
+*, *::before, *::after {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Animaciones suaves */
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* ========== TEMA CLARO (por defecto) ========== */
-
-/* Fuente general */
 body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; /* Tipografía */
-    line-height: 1.6; /* Altura de línea */
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
 }
 
-/* Modo claro activado */
+/* ============================================================================
+   2. TEMAS
+   ============================================================================ */
 body.tema-claro {
-    background: var(--bg-claro); /* Fondo */
-    color: var(--text-claro); /* Texto */
-}
-
-/* Tarjetas en modo claro */
-body.tema-claro .card {
-    background: var(--card-bg-claro); /* Fondo tarjeta */
+    background: var(--bg-claro);
     color: var(--text-claro);
-    border: 1px solid var(--border-claro); /* Borde claro */
 }
 
-/* Inputs y selects en modo claro */
+body.tema-claro .card {
+    background: var(--card-bg-claro);
+    color: var(--text-claro);
+    border: 1px solid var(--border-claro);
+}
+
 body.tema-claro input,
 body.tema-claro select {
-    background: white;
+    background: #fff;
     color: var(--text-claro);
     border-color: var(--border-claro);
 }
 
-/* Botón volver en modo claro */
 body.tema-claro .back-btn {
     background: var(--primary);
-    color: white;
+    color: #fff;
 }
 
-/* ========== TEMA OSCURO ========== */
+body.tema-claro .section-divider {
+    border-color: var(--border-claro);
+}
 
-/* Modo oscuro activado */
+body.tema-claro .info-row {
+    border-bottom-color: var(--border-claro);
+}
+
 body.tema-oscuro {
     background: var(--bg-oscuro);
     color: var(--text-oscuro);
 }
 
-/* Tarjetas en modo oscuro */
 body.tema-oscuro .card {
     background: var(--card-bg-oscuro);
     color: var(--text-oscuro);
     border: 1px solid var(--border-oscuro);
 }
 
-/* Inputs y selects en modo oscuro */
 body.tema-oscuro input,
 body.tema-oscuro select {
-    background: #333; /* Fondo input oscuro */
+    background: #2d3748;
     color: var(--text-oscuro);
     border-color: var(--border-oscuro);
 }
 
-/* Placeholder en modo oscuro */
 body.tema-oscuro input::placeholder {
-    color: #888; /* Placeholder gris suave */
+    color: #718096;
 }
 
-/* Botón volver en modo oscuro */
 body.tema-oscuro .back-btn {
     background: var(--primary);
-    color: white;
+    color: #fff;
 }
 
-/* Título destacado en modo oscuro */
 body.tema-oscuro .title {
-    color: var(--primary); /* Azul */
+    color: var(--primary);
 }
 
-/* Requisitos de contraseña en modo oscuro */
-body.tema-oscuro .password-requirements {
-    color: #aaa; /* Gris claro */
+body.tema-oscuro .password-requirements,
+body.tema-oscuro small {
+    color: #94a3b8;
 }
 
-/* ========== ESTILOS GENERALES ========== */
+body.tema-oscuro .section-divider {
+    border-color: var(--border-oscuro);
+}
 
-/* Contenedor principal */
+body.tema-oscuro .info-row {
+    border-bottom-color: var(--border-oscuro);
+}
+
+body.tema-oscuro .info-label {
+    color: #94a3b8;
+}
+
+body.tema-oscuro .tema-actual {
+    background: #374151;
+    color: #e2e8f0;
+}
+
+/* ============================================================================
+   3. LAYOUT PRINCIPAL
+   ============================================================================ */
 .container {
-    max-width: 900px; /* Ancho máximo */
-    margin: 40px auto; /* Centrado */
-    padding: 20px;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
 }
 
-/* Encabezado de sección */
+/* ============================================================================
+   4. HEADER (botón volver)
+   ============================================================================ */
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 30px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-/* Botón volver */
 .back-btn {
     padding: 10px 20px;
     border-radius: var(--radius);
@@ -133,242 +153,462 @@ body.tema-oscuro .password-requirements {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
     transition: all 0.3s;
+    white-space: nowrap;
 }
 
-/* Hover del botón volver */
 .back-btn:hover {
-    background: #724dda !important; /* Azul más oscuro */
-    transform: translateX(-3px); /* Movimiento */
+    background: var(--primary-dark) !important;
+    transform: translateX(-3px);
+    color: #fff;
 }
 
-/* Tarjetas */
+/* ============================================================================
+   5. CARDS
+   ============================================================================ */
 .card {
-    padding: 30px;
+    padding: 28px;
     border-radius: var(--radius);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Sombra ligera */
-    margin-bottom: 25px;
-    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 22px;
 }
 
-
-
-/* Títulos */
+/* ============================================================================
+   6. TÍTULOS DE SECCIÓN
+   ============================================================================ */
 .title {
-    font-size: 1.8rem;
-    font-weight: bold;
-    margin-bottom: 25px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 22px;
     color: var(--primary);
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
-/* Información de perfil */
+/* ============================================================================
+   7. SECCIÓN DE PERFIL — avatar + datos
+   ============================================================================ */
 .perfil-info {
     display: flex;
-    gap: 30px;
-    align-items: center;
-    flex-wrap: wrap; /* Se ajusta en pantallas pequeñas */
+    gap: 28px;
+    align-items: flex-start;
+    flex-wrap: wrap;
 }
 
-/* Contenedor del avatar */
-.perfil-info .avatar-container {
+.avatar-container {
     position: relative;
+    flex-shrink: 0;
 }
 
-/* Imagen de perfil */
-.perfil-info img {
-    width: 120px;
-    height: 120px;
-    object-fit: cover; /* Ajuste */
-    border-radius: 50%; /* Circular */
+.avatar-container img,
+#foto-perfil {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 50%;
     border: 4px solid var(--primary);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.30);
+    display: block;
 }
 
-/* Contenedor de datos */
-.perfil-info .data {
-    flex: 1; /* Ocupa el máximo disponible */
+/* Grid de información del usuario */
+.data {
+    flex: 1;
+    min-width: 0;
 }
 
-/* Estilo de cada registro de información */
-.perfil-info .data p {
-    margin: 10px 0;
-    font-size: 1.1rem;
+.info-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid transparent;
+    font-size: 0.95rem;
+    word-break: break-word;
 }
 
-/* Iconos dentro de data */
-.perfil-info .data p i {
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-icon {
     color: var(--primary);
     width: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 
-/* Espaciado entre campos */
+.info-label {
+    font-weight: 600;
+    white-space: nowrap;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.info-value {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-all; /* Correos largos */
+}
+
+/* Divisor entre sección de perfil y formulario de foto */
+.section-divider {
+    border: none;
+    border-top: 1px solid;
+    margin: 22px 0;
+}
+
+/* ============================================================================
+   8. FORMULARIOS
+   ============================================================================ */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
-/* Etiquetas */
 label {
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
 }
 
-/* Inputs */
 input, select {
     width: 100%;
-    padding: 12px 15px;
+    padding: 11px 14px;
     border-radius: var(--radius);
     border: 2px solid;
-    font-size: 1rem;
-    transition: all 0.3s;
+    font-size: 0.95rem;
+    transition: all 0.25s;
+    font-family: inherit;
 }
 
-/* Focus */
 input:focus, select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
-/* Input archivos */
 input[type="file"] {
-    padding: 10px;
+    padding: 9px 12px;
     cursor: pointer;
+    font-size: 0.88rem;
 }
 
-/* Botones */
+small,
+.password-requirements {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    display: block;
+    margin-top: 5px;
+}
+
+/* ============================================================================
+   9. BOTONES
+   ============================================================================ */
 button {
-    padding: 12px 24px;
+    padding: 11px 22px;
     background: var(--primary);
     border: none;
     border-radius: var(--radius);
-    color: white;
+    color: #fff;
     cursor: pointer;
-    transition: all 0.3s;
-    font-size: 1rem;
+    transition: all 0.25s;
+    font-size: 0.93rem;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    font-family: inherit;
 }
 
-/* Hover en botones */
 button:hover {
-    background: #724dda; 
-    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+    background: var(--primary-dark);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+    transform: translateY(-1px);
 }
 
-/* Botón presionado */
 button:active {
     transform: translateY(0);
 }
 
-/* Botón cerrar sesión */
+button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
 .logout {
     background: var(--danger);
     width: 100%;
+    justify-content: center;
 }
 
-/* Hover cerrar sesión */
 .logout:hover {
     background: #c0392b;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.35);
 }
 
-/* Alertas estilo base */
-.alert {
-    padding: 15px 20px;
+/* ============================================================================
+   10. VISTA PREVIA DE FOTO
+   ============================================================================ */
+.preview-foto {
+    margin-top: 14px;
+    text-align: center;
+}
+
+.preview-foto p {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.preview-foto img {
+    max-width: 160px;
+    max-height: 160px;
     border-radius: var(--radius);
-    margin-bottom: 20px;
+    border: 2px solid var(--primary);
+    object-fit: cover;
+}
+
+/* ============================================================================
+   11. BADGE TEMA ACTUAL
+   ============================================================================ */
+.tema-actual {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 18px;
+}
+
+body.tema-claro .tema-actual {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+body.tema-oscuro .tema-actual {
+    background: #374151;
+    color: #e2e8f0;
+}
+
+/* ============================================================================
+   12. TOASTS
+   ============================================================================ */
+.toast-container-custom {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 340px;
+    width: calc(100% - 32px);
+}
+
+.toast {
+    min-width: 0;
+    border-radius: 10px !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18) !important;
+    border: none !important;
+}
+
+.toast-success { border-left: 4px solid #28a745 !important; }
+.toast-error   { border-left: 4px solid #dc3545 !important; }
+.toast-warning { border-left: 4px solid #ffc107 !important; }
+.toast-info    { border-left: 4px solid #0dcaf0 !important; }
+
+/* ============================================================================
+   13. MODAL (cerrar sesión)
+   ============================================================================ */
+.modal-content {
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+/* ============================================================================
+   14. ALERTAS (legacy, se mantienen)
+   ============================================================================ */
+.alert {
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    margin-bottom: 18px;
     display: none;
     align-items: center;
     gap: 10px;
 }
 
-/* Mostrar alerta */
-.alert.show {
-    display: flex;
-}
+.alert.show { display: flex; }
 
-/* Alerta éxito */
 .alert-success {
     background: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
 }
 
-/* Alerta error */
 .alert-error {
     background: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
 }
 
-/* Requisitos de contraseña */
-.password-requirements {
-    font-size: 0.85rem;
-    margin-top: 5px;
-}
+/* ============================================================================
+   15. RESPONSIVE
+   ============================================================================ */
 
-/* Vista previa de foto */
-.preview-foto {
-    margin-top: 15px;
-    text-align: center;
-}
-
-/* Imagen de preview */
-.preview-foto img {
-    max-width: 200px;
-    max-height: 200px;
-    border-radius: var(--radius);
-    border: 2px solid;
-}
-
-/* Caja que muestra el tema actual */
-.tema-actual {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 15px;
-}
-
-/* Caja del tema actual modo claro */
-body.tema-claro .tema-actual {
-    background: #fff3cd;
-    color: #856404;
-}
-
-/* Caja del tema actual modo oscuro */
-body.tema-oscuro .tema-actual {
-    background: #7a7a7a;
-    color: #000000;
-}
-
-/* Responsividad */
+/* Tablet */
 @media (max-width: 768px) {
     .container {
-        padding: 15px;
-        margin: 20px auto;
+        padding: 20px 16px 48px;
     }
 
-    .perfil-info {
-        flex-direction: column; /* Apilado */
-        text-align: center;
+    .card {
+        padding: 22px 18px;
     }
 
     .title {
-        font-size: 1.5rem;
+        font-size: 1.15rem;
+        margin-bottom: 18px;
+    }
+
+    .perfil-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .avatar-container img,
+    #foto-perfil {
+        width: 100px;
+        height: 100px;
+    }
+
+    .data {
+        width: 100%;
+    }
+
+    .info-row {
+        justify-content: center;
+        flex-wrap: wrap;
+        text-align: left;
+    }
+
+    .info-label {
+        min-width: 70px;
+    }
+
+    /* Emails y teléfonos: permitir wrap */
+    .info-value {
+        word-break: break-word;
+        max-width: 100%;
+    }
+
+    /* Toast full width en móvil */
+    .toast-container-custom {
+        left: 16px;
+        right: 16px;
+        max-width: 100%;
+        width: auto;
     }
 }
 
+/* Móvil */
+@media (max-width: 480px) {
+    .container {
+        padding: 14px 12px 40px;
+    }
 
+    .card {
+        padding: 18px 14px;
+        border-radius: 10px;
+    }
+
+    .header {
+        margin-bottom: 18px;
+    }
+
+    .back-btn {
+        padding: 9px 16px;
+        font-size: 0.85rem;
+    }
+
+    .title {
+        font-size: 1.05rem;
+        gap: 8px;
+    }
+
+    .avatar-container img,
+    #foto-perfil {
+        width: 88px;
+        height: 88px;
+        border-width: 3px;
+    }
+
+    input, select {
+        font-size: 16px; /* Evita zoom en iOS */
+        padding: 11px 12px;
+    }
+
+    input[type="file"] {
+        font-size: 14px;
+    }
+
+    button {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 18px;
+    }
+
+    label {
+        font-size: 0.82rem;
+    }
+
+    .info-row {
+        font-size: 0.88rem;
+        padding: 8px 0;
+    }
+
+    /* El correo puede ser muy largo en móvil */
+    .info-value {
+        font-size: 0.85rem;
+        word-break: break-all;
+    }
+
+    .tema-actual {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+
+    .preview-foto img {
+        max-width: 120px;
+        max-height: 120px;
+    }
+}
+
+/* Móvil muy pequeño */
+@media (max-width: 360px) {
+    .card {
+        padding: 14px 12px;
+    }
+
+    .title {
+        font-size: 1rem;
+    }
+
+    .back-btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+    }
+}
