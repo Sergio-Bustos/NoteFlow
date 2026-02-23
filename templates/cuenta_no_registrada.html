@@ -1,38 +1,159 @@
-<!DOCTYPE html> <!-- Documento HTML5 -->
-<html lang="es"> <!-- Lenguaje español -->
-<head> <!-- Sección de encabezado -->
-    <meta charset="UTF-8">  <!-- Codificación de caracteres UTF-8 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Configuración de vista para dispositivos móviles -->
-    <title>Cuenta no registrada NoteFlow</title> <!-- Título de la página -->
-    <link rel="stylesheet" href="/static/formulario.css"> <!-- Enlace a la hoja de estilos CSS -->
-    <link rel="icon" type="image/icon" href="../static/logocircular.png"> <!-- Imagen-->
-</head>     <!-- Fin de la sección de encabezado -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuenta no registrada | NoteFlow</title>
+    <link rel="stylesheet" href="/static/formulario.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
 
-<body> <!-- Cuerpo del documento -->
-    <form class="formulario" style="text-align: center; padding: 30px;"> <!-- Formulario centrado con padding -->
+    <div class="fondo"></div>
+    <div class="overlay"></div>
 
-        <h2 class="h2-registro" style="color: #e74c3c;">¡Ops! Algo salió mal</h2> <!-- Título con estilo -->
+    <div class="page-wrapper">
 
-        <p style="font-size: 18px; margin-top: 10px;"> <!-- Párrafo con estilo -->
-            No puedes iniciar sesión con una cuenta no registrada. <!-- Mensaje informativo --> 
-        </p>
+        <!-- ── PANEL IZQUIERDO (decorativo) ── -->
+        <div class="panel-deco">
+            <div class="panel-deco-carousel">
+                <div class="carrusel">
+                    <div class="columna_izquierda">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                    </div>
+                    <div class="columna_derecha">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                    </div>
+                </div>
+            </div>
 
-        <p style="margin-top: 5px; margin-bottom: 25px; color: #555;">  <!-- Párrafo con estilo -->
-            Inténtalo nuevamente con una cuenta registrada.<!-- Mensaje adicional -->
-        </p>
-        <!--Inicio del boton-->
-        <button type="button" onclick="window.location.href='/registro.html'" 
-            style="
-                padding: 10px 20px; 
-                border-radius: 5px;
-                border: none;
-                background-color: #3498db;
-                color: white;
-                font-size: 16px;
-                cursor: pointer;
-            "> <!-- Estilo del boton para ir a registrarse-->
-            Ve a Registrarte  <!-- Texto del botón -->
-        </button> <!-- Fin del botón -->
-    </form> <!-- Fin del formulario -->
-</body> <!-- Fin del cuerpo del documento -->
-</html> <!-- Fin del documento HTML -->
+            <div class="panel-deco-content">
+                <div class="deco-logo">Note<span>Flow</span></div>
+                <h1>Únete a<br>NoteFlow</h1>
+                <p>Organiza tus ideas, notas y tareas en un solo lugar. Crea tu cuenta gratis y empieza hoy.</p>
+                <ul class="feature-list">
+                    <li>Notas organizadas al instante</li>
+                    <li>Sincronización en tiempo real</li>
+                    <li>Acceso desde cualquier dispositivo</li>
+                    <li>Seguro y privado</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ── PANEL DERECHO (mensaje) ── -->
+        <div class="panel-form">
+            <div class="formulario">
+
+                <!-- Logo -->
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <!-- Navegación -->
+                <nav>
+                    <ul class="formulario-ul">
+                        <li class="li-formulario">
+                            <a href="/iniciarsesion.html">Iniciar Sesión</a>
+                        </li>
+                        <li class="li-formulario">
+                            <a href="/registro.html">Registro</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Ícono de advertencia -->
+                <div style="text-align: center; margin: 24px 0 8px;">
+                    <div style="
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 64px;
+                        height: 64px;
+                        border-radius: 50%;
+                        background: #fff3f3;
+                        border: 2px solid #fddcdc;
+                    ">
+                        <svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:none;stroke:#c0392b;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Título -->
+                <h2 class="h2-registro" style="color: #c0392b;">Cuenta no encontrada</h2>
+
+                <!-- Mensaje principal -->
+                <p class="instruccion" style="margin-bottom: 6px;">
+                    El correo de Google que usaste <strong>no está registrado</strong> en NoteFlow.
+                </p>
+                <p class="instruccion" style="color: #999; font-size: 0.83rem;">
+                    Crea una cuenta gratis o inicia sesión con un correo ya registrado.
+                </p>
+
+                <!-- Separador -->
+                <div style="height: 1px; background: #ebebf5; margin: 20px 0;"></div>
+
+                <!-- Botón principal: Registrarse -->
+                <button type="button"
+                        onclick="window.location.href='/registro.html'"
+                        style="
+                            display: block;
+                            width: 100%;
+                            height: 46px;
+                            background: #5452d3;
+                            color: #fff;
+                            border: none;
+                            border-radius: 10px;
+                            font-size: 0.97rem;
+                            font-weight: 700;
+                            cursor: pointer;
+                            letter-spacing: 0.04em;
+                            box-shadow: 0 4px 14px rgba(84,82,211,0.28);
+                            transition: background 0.2s;
+                        "
+                        onmouseover="this.style.background='#3f3db8'"
+                        onmouseout="this.style.background='#5452d3'">
+                    Crear cuenta gratis
+                </button>
+
+                <!-- Separador "O" -->
+                <div class="separador">
+                    <span>O</span>
+                </div>
+
+                <!-- Botón secundario: Volver al login -->
+                <button type="button"
+                        class="google-btn"
+                        onclick="window.location.href='/iniciarsesion.html'">
+                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:#5452d3;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    <span>Volver a Iniciar Sesión</span>
+                </button>
+
+                <!-- Enlace de volver -->
+                <p style="margin-top: 20px;">
+                    <a href="javascript:history.back()" class="back-link">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Volver atrás
+                    </a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

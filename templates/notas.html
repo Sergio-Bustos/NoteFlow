@@ -954,6 +954,23 @@
     document.addEventListener('DOMContentLoaded', function() {
         var color = "{{ usuario.Color_principal }}";
         document.body.classList.add(color === 'Negro' ? 'tema-oscuro' : 'tema-claro');
+        
+        
+        window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        const tema = document.cookie.split(';')
+            .find(c => c.trim().startsWith('tema='))
+            ?.split('=')[1]?.trim();
+        
+        if (tema === 'Negro') {
+            document.body.classList.add('tema-oscuro');
+            document.body.classList.remove('tema-claro');
+        } else {
+            document.body.classList.add('tema-claro');
+            document.body.classList.remove('tema-oscuro');
+        }
+    }
+});
     });
 </script> 
 <!-- MODAL ELEGIR FORMATO -->

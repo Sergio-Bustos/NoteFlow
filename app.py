@@ -170,6 +170,10 @@ def mostrar_registro():
     return render_template("registro.html")
 
 
+@app.route('/cuenta-no-registrada')
+def cuenta_no_registrada():
+    return render_template("cuenta_no_registrada.html")
+
 @app.route('/procesar-registro', methods=['POST'])
 def procesar_registro():
     """Procesa el registro de un nuevo usuario."""
@@ -180,9 +184,10 @@ def procesar_registro():
         if conexion is None:
             return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
 
+        # Limpiar datos del formulario
         campos = ['nombre', 'apellido', 'telefono', 'correo', 'usuario', 'contraseña']
         datos_limpios = limpiar_datos_formulario(request.form, campos)
-
+        
         nombres = datos_limpios['nombre']
         apellidos = datos_limpios['apellido']
         telefono = datos_limpios['telefono']
@@ -191,6 +196,7 @@ def procesar_registro():
         contraseña = datos_limpios['contraseña']
         color_principal = request.form.get('color_principal', 'Blanco').strip()
 
+        # Validaciones
         if not all([nombres, apellidos, telefono, correo, usuario, contraseña]):
             return jsonify({'error': 'Todos los campos son obligatorios'}), 400
 
@@ -199,17 +205,20 @@ def procesar_registro():
 
         cursor = conexion.cursor()
 
+        # Verificar duplicados
         cursor.execute("""
             SELECT "ID_Cuenta" FROM public."Cuentas"
             WHERE "Usuario" = %s OR "Correo" = %s
         """, (usuario, correo))
-
+        
         if cursor.fetchone():
             return jsonify({'error': 'El usuario o correo ya está registrado en NoteFlow'}), 409
 
+        # Generar nuevo ID_Cuenta
         cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"')
         nuevo_id = cursor.fetchone()[0]
 
+        # Hashear la contraseña
         password_hash = generate_password_hash(contraseña)
 
         cursor.execute("""
@@ -222,6 +231,7 @@ def procesar_registro():
         cuenta_id = cursor.fetchone()[0]
         conexion.commit()
 
+        # Iniciar sesión automáticamente
         session['usuario_id'] = cuenta_id
         session['usuario_nombre'] = usuario
 
@@ -261,6 +271,7 @@ def procesar_login():
         if conexion is None:
             return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
 
+        # Limpiar datos
         campos = ['usuario', 'contraseña']
         datos_limpios = limpiar_datos_formulario(request.form, campos)
         usuario = datos_limpios['usuario']
@@ -284,13 +295,15 @@ def procesar_login():
 
         password_guardado = usuario_encontrado['Contraseña']
         login_exitoso = False
-
+        
+        # Verificar si es hash o texto plano
         if password_guardado.startswith('pbkdf2:sha256:') or password_guardado.startswith('scrypt:'):
             if check_password_hash(password_guardado, contraseña):
                 login_exitoso = True
         else:
             if password_guardado == contraseña:
                 login_exitoso = True
+                # MIGRAR a hash ahora
                 try:
                     nuevo_hash = generate_password_hash(contraseña)
                     cursor_temp = conexion.cursor()
@@ -304,11 +317,11 @@ def procesar_login():
                     print(f"Contraseña migrada a hash para usuario: {usuario}")
                 except Exception as e:
                     print(f"Error al migrar contraseña: {e}")
-
+        
         if login_exitoso:
             session['usuario_id'] = usuario_encontrado['ID_Cuenta']
             session['usuario_nombre'] = usuario_encontrado['Usuario']
-
+            
             return jsonify({
                 'success': True,
                 'mensaje': 'Inicio de sesión exitoso',
@@ -412,7 +425,7 @@ def google_callback():
         row = cursor.fetchone()
 
         if not row:
-            return render_template("cuenta_no_registrada.html")
+            return redirect(url_for('cuenta_no_registrada'))
 
         user_id = int(row[0])
         session["usuario_id"] = user_id
@@ -451,7 +464,7 @@ def procesar_olvide_contrasena():
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
 
         cursor = conexion.cursor()
-
+        
         cursor.execute('SELECT "ID_Cuenta", "Usuario" FROM public."Cuentas" WHERE "Correo" = %s', (correo,))
         usuario_row = cursor.fetchone()
 
@@ -465,9 +478,9 @@ def procesar_olvide_contrasena():
 
         token = secrets.token_urlsafe(32)
         expira = datetime.now() + timedelta(hours=1)
-
+        
         cursor.execute("""
-            UPDATE public."Cuentas"
+            UPDATE public."Cuentas" 
             SET "reset_token" = %s, "reset_token_expira" = %s
             WHERE "ID_Cuenta" = %s
         """, (token, expira, usuario_id))
@@ -475,7 +488,7 @@ def procesar_olvide_contrasena():
         conexion.commit()
 
         reset_url = url_for('mostrar_restablecer_contrasena', token=token, _external=True)
-
+         
         msg = Message('Restablecimiento de Contraseña NoteFlow', recipients=[correo])
         msg.body = f"""Hola {usuario_nombre}, 
 
@@ -506,8 +519,9 @@ Equipo NoteFlow
     except Exception as e:
         if conexion:
             conexion.rollback()
-        print(f"Error en procesar-olvide-contrasena: {e}")
-        return jsonify({'error': 'Error interno del servidor. Intenta más tarde.'}), 500
+        import traceback
+        traceback.print_exc()  # <-- esto imprime el error completo en consola
+        return jsonify({'error': str(e)}), 500
 
     finally:
         cerrar_db(cursor, conexion)
@@ -525,11 +539,11 @@ def mostrar_restablecer_contrasena(token):
         cursor = conexion.cursor(cursor_factory=RealDictCursor)
 
         cursor.execute("""
-            SELECT "ID_Cuenta"
-            FROM public."Cuentas"
+            SELECT "ID_Cuenta" 
+            FROM public."Cuentas" 
             WHERE "reset_token" = %s AND "reset_token_expira" > %s
         """, (token, datetime.now()))
-
+        
         usuario_row = cursor.fetchone()
 
         if usuario_row:
@@ -549,10 +563,10 @@ def mostrar_restablecer_contrasena(token):
 def procesar_restablecer_contrasena():
     conexion = None
     cursor = None
-
+    
     token = request.form.get('token', '').strip()
     nueva_contrasena = request.form.get('nueva_contrasena', '').strip()
-
+    
     if not token or not nueva_contrasena:
         return jsonify({'error': 'Faltan datos obligatorios.'}), 400
 
@@ -564,11 +578,11 @@ def procesar_restablecer_contrasena():
         cursor = conexion.cursor()
 
         cursor.execute("""
-            SELECT "ID_Cuenta"
-            FROM public."Cuentas"
+            SELECT "ID_Cuenta" 
+            FROM public."Cuentas" 
             WHERE "reset_token" = %s AND "reset_token_expira" > %s
         """, (token, datetime.now()))
-
+        
         usuario_id_row = cursor.fetchone()
 
         if not usuario_id_row:
@@ -582,7 +596,7 @@ def procesar_restablecer_contrasena():
             SET "Contraseña" = %s, "reset_token" = NULL, "reset_token_expira" = NULL
             WHERE "ID_Cuenta" = %s
         """, (password_hash, usuario_id))
-
+        
         conexion.commit()
 
         return jsonify({
@@ -636,11 +650,11 @@ def dashboard():
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
         usuario_row = cursor.fetchone()
-
+        
         if not usuario_row:
             session.clear()
             return redirect(url_for('mostrar_login'))
-
+ 
         usuario_para_template = {
             'nombre': usuario_row.get('Nombres'),
             'color_principal': usuario_row.get('Color_principal', 'Blanco'),
@@ -700,7 +714,7 @@ def dashboard():
             notas_papelera=notas_papelera,
             notas_recientes=notas_recientes
         )
-
+ 
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -725,7 +739,7 @@ def perfil():
         cursor = conexion.cursor()
 
         cursor.execute("""
-            SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos",
+            SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", 
                    "Correo", "Telefono", "Foto", "Color_principal"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
@@ -751,7 +765,7 @@ def perfil():
 @login_required
 def cambiar_tema():
     tema = request.form.get("tema")
-
+     
     if tema not in ["claro", "oscuro"]:
         return jsonify({"error": "Tema inválido"}), 400
 
@@ -774,7 +788,7 @@ def cambiar_tema():
         conexion.commit()
         session["color_principal"] = color_db
 
-        return jsonify({"success": True, "mensaje": f"Tema cambiado a {tema}"}), 200
+        return jsonify({"success": True, "mensaje": f"Tema cambiado a {tema}", "tema_db": color_db}), 200
 
     except Exception as e:
         if conexion:
@@ -793,7 +807,7 @@ def cambiar_password():
 
     campos = ['password_actual', 'password_nueva', 'password_confirmacion']
     datos_limpios = limpiar_datos_formulario(request.form, campos)
-
+    
     actual = datos_limpios['password_actual']
     nueva = datos_limpios['password_nueva']
     confirm = datos_limpios['password_confirmacion']
@@ -818,18 +832,18 @@ def cambiar_password():
         cursor = conexion.cursor()
 
         cursor.execute("""
-            SELECT "Contraseña"
-            FROM public."Cuentas"
+            SELECT "Contraseña" 
+            FROM public."Cuentas" 
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
-
+         
         user = cursor.fetchone()
 
         if not user:
             return jsonify({"error": "Usuario no encontrado"}), 404
 
         password_guardado = user["Contraseña"]
-
+        
         password_actual_correcta = False
         if password_guardado.startswith('pbkdf2:sha256:') or password_guardado.startswith('scrypt:'):
             if check_password_hash(password_guardado, actual):
@@ -837,7 +851,7 @@ def cambiar_password():
         else:
             if password_guardado == actual:
                 password_actual_correcta = True
-
+        
         if not password_actual_correcta:
             return jsonify({"error": "La contraseña actual es incorrecta"}), 401
 
@@ -847,9 +861,9 @@ def cambiar_password():
         else:
             if password_guardado == nueva:
                 return jsonify({"error": "La nueva contraseña debe ser diferente"}), 400
-
+ 
         nuevo_hash = generate_password_hash(nueva)
-
+        
         cursor.execute("""
             UPDATE public."Cuentas"
             SET "Contraseña" = %s
@@ -870,14 +884,6 @@ def cambiar_password():
         cerrar_db(cursor, conexion)
 
 
-# ==============================================================================
-# CORRECCIONES APLICADAS EN subir_foto:
-# 1. Validación de tamaño (5MB) en el servidor, no solo en el cliente.
-# 2. secure_filename() aplicado correctamente antes de extraer la extensión.
-# 3. El archivo se guarda ANTES de tocar la BD; si la BD falla, se borra el archivo.
-# 4. La foto anterior solo se elimina DESPUÉS de que la BD se actualiza con éxito.
-# 5. La condición para no borrar la foto por defecto cubre ambas rutas posibles.
-# ==============================================================================
 @app.route('/perfil/subir-foto', methods=["POST"])
 @login_required
 def subir_foto():
@@ -889,27 +895,13 @@ def subir_foto():
     if not allowed_file(archivo.filename):
         return jsonify({"error": "Formato no permitido. Usa: PNG, JPG, JPEG, GIF o WEBP"}), 400
 
-    # --- CORRECCIÓN 1: validar tamaño en el servidor (5 MB máximo) ---
-    archivo.seek(0, 2)           # mover al final
-    file_size = archivo.tell()   # leer posición = tamaño en bytes
-    archivo.seek(0)              # volver al inicio para poder guardarlo
-    if file_size > 5 * 1024 * 1024:
-        return jsonify({"error": "La imagen no debe superar 5 MB"}), 400
-
     user_id = session["usuario_id"]
-    ruta_completa = None
 
     try:
-        # --- CORRECCIÓN 2: secure_filename antes de extraer la extensión ---
-        nombre_seguro = secure_filename(archivo.filename)
-        ext = os.path.splitext(nombre_seguro)[1].lower()
+        ext = os.path.splitext(archivo.filename)[1].lower()
         filename_unique = f"user_{user_id}_{uuid.uuid4().hex}{ext}"
         ruta_completa = os.path.join(PROFILE_UPLOAD_FOLDER, filename_unique)
-
-        # --- CORRECCIÓN 3: guardar archivo PRIMERO, luego tocar la BD ---
         archivo.save(ruta_completa)
-
-        # Ruta relativa a /static/ — lo que se guarda en la BD y se pasa a url_for()
         ruta_db = f"uploads/profile/{filename_unique}"
 
         conexion = None
@@ -919,45 +911,39 @@ def subir_foto():
             conexion = conectar_db()
             cursor = conexion.cursor()
 
-            # Obtener foto anterior ANTES de actualizar
-            cursor.execute(
-                'SELECT "Foto" FROM public."Cuentas" WHERE "ID_Cuenta" = %s',
-                (user_id,)
-            )
+            cursor.execute("""
+                SELECT "Foto" FROM public."Cuentas" 
+                WHERE "ID_Cuenta" = %s
+            """, (user_id,))
+             
             result = cursor.fetchone()
             foto_anterior = result[0] if result else None
 
-            # Actualizar BD con la nueva ruta
-            cursor.execute(
-                'UPDATE public."Cuentas" SET "Foto" = %s WHERE "ID_Cuenta" = %s',
-                (ruta_db, user_id)
-            )
+            cursor.execute("""
+                UPDATE public."Cuentas"
+                SET "Foto" = %s
+                WHERE "ID_Cuenta" = %s
+            """, (ruta_db, user_id))
+
             conexion.commit()
 
-            # --- CORRECCIÓN 4 y 5: borrar foto anterior SOLO si la BD tuvo éxito,
-            #     y solo si no es la imagen por defecto ---
-            fotos_por_defecto = ('img/default_profile.png', 'uploads/profile/default_profile.png')
-            if foto_anterior and foto_anterior not in fotos_por_defecto:
-                ruta_anterior = os.path.join(BASE_DIR, "static", foto_anterior)
-                if os.path.exists(ruta_anterior):
-                    try:
+            if foto_anterior and foto_anterior != "uploads/profile/default_profile.png":
+                try:
+                    ruta_anterior = os.path.join(BASE_DIR, "static", foto_anterior)
+                    if os.path.exists(ruta_anterior):
                         os.remove(ruta_anterior)
-                    except Exception as e:
-                        # No es crítico; la foto nueva ya fue guardada y la BD ya fue actualizada
-                        print(f"No se pudo eliminar foto anterior: {e}")
+                except Exception as e:
+                    print(f"No se pudo eliminar foto anterior: {e}")
 
             return jsonify({
                 "success": True,
-                "mensaje": "Foto de perfil actualizada correctamente",
+                "mensaje": "Foto de perfil actualizada",
                 "nueva_foto": url_for('static', filename=ruta_db)
             }), 200
 
         except Exception as e:
             if conexion:
                 conexion.rollback()
-            # Si la BD falló, eliminar el archivo que ya se guardó en disco
-            if ruta_completa and os.path.exists(ruta_completa):
-                os.remove(ruta_completa)
             print(f"Error al actualizar BD: {e}")
             return jsonify({"error": "Error al guardar en base de datos"}), 500
 
@@ -970,7 +956,7 @@ def subir_foto():
 
 
 # ==============================================================================
-# 9. MIS NOTAS
+# 9. MIS NOTAS — solo visual, sin consultas de notas/carpetas
 # ==============================================================================
 @app.route("/notas")
 @login_required
@@ -988,6 +974,7 @@ def mostrar_notas():
         conexion = conectar_db(dict_cursor=True)
         cursor = conexion.cursor()
 
+        # Solo se consultan los datos básicos del usuario para el header
         cursor.execute("""
             SELECT "Nombres", "Foto", "Color_principal"
             FROM public."Cuentas"
@@ -999,6 +986,7 @@ def mostrar_notas():
             session.clear()
             return redirect(url_for('mostrar_login'))
 
+        # Se pasan listas vacías — el HTML es puramente visual por ahora
         return render_template(
             "notas.html",
             notas=[],

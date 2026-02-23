@@ -321,7 +321,6 @@
             btn.innerHTML = '<i class="fas fa-upload"></i> Cargar nueva imagen';
         }
     });
-
     // ========== CAMBIAR TEMA ==========
     document.getElementById('form-tema').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -344,6 +343,9 @@
             if (data.success) {
                 aplicarTemaVisual(temaNuevo);
                 mostrarToast(data.mensaje, 'success');
+
+                // ✅ Guardar cookie AQUÍ, dentro del if success
+                document.cookie = `tema=${data.tema_db};path=/;max-age=31536000`;
             } else {
                 mostrarToast(data.error || 'Error al cambiar tema', 'error');
             }
@@ -354,6 +356,7 @@
             btn.innerHTML = '<i class="fas fa-save"></i> Aplicar Tema';
         }
     });
+
 
     // ========== CAMBIAR CONTRASEÑA ==========
     document.getElementById('form-password').addEventListener('submit', async function(e) {
