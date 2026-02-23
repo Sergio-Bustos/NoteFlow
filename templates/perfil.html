@@ -344,7 +344,7 @@
                 aplicarTemaVisual(temaNuevo);
                 mostrarToast(data.mensaje, 'success');
 
-                // ✅ Guardar cookie AQUÍ, dentro del if success
+                // Guardar cookie AQUÍ, dentro del if success
                 document.cookie = `tema=${data.tema_db};path=/;max-age=31536000`;
             } else {
                 mostrarToast(data.error || 'Error al cambiar tema', 'error');

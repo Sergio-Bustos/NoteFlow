@@ -1044,9 +1044,11 @@ def papelera():
         notas_papelera = cursor.fetchall()
 
         return render_template(
-            "fasededesarrollo.html",
+            "papelera.html",
             notas_papelera=notas_papelera,
-            usuario=usuario
+            usuario=usuario,
+            now=datetime.now().date(),   # ← .date() para que sea solo fecha, igual que PostgreSQL
+            timedelta=timedelta
         )
 
     except Exception as e:
@@ -1057,7 +1059,69 @@ def papelera():
     finally:
         cerrar_db(cursor, conexion)
 
+@app.route('/papelera/restaurar/<int:nota_id>', methods=['POST'])
+@login_required
+def restaurar_nota(nota_id):
+    user_id = session['usuario_id']
+    conexion, cursor = None, None
+    try:
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Estado" = 'Activa'
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s
+        """, (nota_id, user_id))
+        conexion.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cerrar_db(cursor, conexion)
 
+
+@app.route('/papelera/eliminar/<int:nota_id>', methods=['POST'])
+@login_required
+def eliminar_nota_definitivo(nota_id):
+    user_id = session['usuario_id']
+    conexion, cursor = None, None
+    try:
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+        # Solo elimina si pertenece al usuario
+        cursor.execute("""
+            DELETE FROM public."Notas"
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s
+        """, (nota_id, user_id))
+        conexion.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+@app.route('/papelera/vaciar', methods=['POST'])
+@login_required
+def vaciar_papelera():
+    user_id = session['usuario_id']
+    conexion, cursor = None, None
+    try:
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+        cursor.execute("""
+            DELETE FROM public."Notas"
+            WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+        """, (user_id,))
+        conexion.commit()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cerrar_db(cursor, conexion)
 # ==============================================================================
 # 11. CREAR NOTA
 # ==============================================================================
