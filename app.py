@@ -3,6 +3,7 @@
 # =============================================== IMPORTACIONES =========================================================
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 from flask_mail import Mail, Message
+from flask_sqlalchemy import SQLAlchemy
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from google_auth_oauthlib.flow import Flow
@@ -30,6 +31,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'tu_clave_secreta_aqui_cambiala')
 app.static_folder = 'static'
 app.static_url_path = '/static'
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123456@db:5432/dbnoteflow"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Carpetas de uploads
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -1132,11 +1135,125 @@ def crear_nota():
 
 
 # ==============================================================================
-# RUN
+# 12. CONFIGURACIÓN DE LA BASE DE DATOS CON SQLALCHEMY (solo modelos para docker)
 # ==============================================================================
-if __name__ == "__main__":
-    app.run(
-        debug=True,
-        host="127.0.0.1",
-        port=5000
-    )
+
+db = SQLAlchemy(app)
+
+# =========================
+# CUENTAS
+# =========================
+class Cuentas(db.Model):
+    __tablename__ = "Cuentas"
+
+    ID_Cuenta = db.Column(db.Integer, primary_key=True)
+    Usuario = db.Column(db.Text, nullable=False)
+    Contraseña = db.Column(db.Text, nullable=False)
+    Nombres = db.Column(db.Text, nullable=False)
+    Apellidos = db.Column(db.Text, nullable=False)
+    Telefono = db.Column(db.Numeric(15,0), nullable=False)
+    Correo = db.Column(db.Text, nullable=False)
+    Color_principal = db.Column(db.Text, nullable=False)
+    reset_token = db.Column(db.Text)
+    reset_token_expira = db.Column(db.DateTime(timezone=True))
+    Foto = db.Column(db.Text)
+
+    notas = db.relationship("Notas", backref="cuenta", lazy=True)
+    carpetas = db.relationship("Carpetas", backref="cuenta", lazy=True)
+
+
+# =========================
+# CATEGORIAS
+# =========================
+class Categorias(db.Model):
+    __tablename__ = "Categorias"
+
+    ID_Categorias = db.Column(db.Integer, primary_key=True)
+    Nombre_categoria = db.Column(db.String(10), nullable=False)
+
+    notas = db.relationship("Notas", backref="categoria", lazy=True)
+
+
+# =========================
+# CARPETAS
+# =========================
+class Carpetas(db.Model):
+    __tablename__ = "Carpetas"
+
+    ID_Carpeta = db.Column(db.Integer, primary_key=True)
+    Nombre_carpeta = db.Column(db.Text, nullable=False)
+    ID_Cuenta = db.Column(db.Integer, db.ForeignKey("Cuentas.ID_Cuenta"), nullable=False)
+    Estado = db.Column(db.Text, nullable=False)
+
+    notas = db.relationship("Notas", backref="carpeta", lazy=True)
+
+
+# =========================
+# NOTAS
+# =========================
+class Notas(db.Model):
+    __tablename__ = "Notas"
+
+    ID_Nota = db.Column(db.Integer, primary_key=True)
+    Fecha_decreacion = db.Column(db.Date, nullable=False)
+    Contenido = db.Column(db.Text, nullable=False)
+    Descripcion = db.Column(db.Text, nullable=False)
+    Titulo = db.Column(db.Text, nullable=False)
+    Fecha_deedicion = db.Column(db.Date, nullable=False)
+    Estado = db.Column(db.Text, nullable=False)
+    Formato = db.Column(db.Text, nullable=False)
+
+    ID_Carpeta = db.Column(db.Integer, db.ForeignKey("Carpetas.ID_Carpeta"))
+    ID_Cuenta = db.Column(db.Integer, db.ForeignKey("Cuentas.ID_Cuenta"), nullable=False)
+    ID_Categorias = db.Column(db.Integer, db.ForeignKey("Categorias.ID_Categorias"), nullable=False)
+
+    adjuntos = db.relationship("Adjuntos", backref="nota", lazy=True)
+
+
+# =========================
+# ETIQUETAS
+# =========================
+class Etiquetas(db.Model):  
+    __tablename__ = "Etiquetas"
+
+    ID_Etiqueta = db.Column(db.Integer, primary_key=True)
+    Nombre_etiqueta = db.Column(db.Text)
+
+    notas = db.relationship("Notas_etiquetas", backref="etiqueta", lazy=True)
+
+
+# =========================
+# NOTAS_ETIQUETAS (tabla puente)
+# =========================
+class Notas_etiquetas(db.Model):
+    __tablename__ = "Notas_etiquetas"
+
+    ID_Nota = db.Column(db.Integer, db.ForeignKey("Notas.ID_Nota"), primary_key=True)
+    ID_Etiqueta = db.Column(db.Integer, db.ForeignKey("Etiquetas.ID_Etiqueta"), primary_key=True)
+
+
+# =========================
+# ADJUNTOS
+# =========================
+class Adjuntos(db.Model):
+    __tablename__ = "Adjuntos"
+
+    ID_Adjunto = db.Column(db.Integer, primary_key=True)
+    Nombre_archivo = db.Column(db.Text, nullable=False)
+    Formato = db.Column(db.Text, nullable=False)
+    Ruta_archivo = db.Column(db.Text, nullable=False)
+    ID_Nota = db.Column(db.Integer, db.ForeignKey("Notas.ID_Nota"), nullable=False)
+
+
+# =========================
+# TIPOS
+# =========================
+class Tipos(db.Model):
+    __tablename__ = "Tipos"
+
+    Formato = db.Column(db.Text, primary_key=True)
+
+with app.app_context():
+    print("🔥 CREANDO TABLAS 🔥")
+    db.create_all()
+
