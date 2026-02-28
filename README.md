@@ -13,22 +13,6 @@ Proyecto del Tecnico en Programacion de Software - SENA,demostrando y evidencian
 - Sergio Andres Bustos Mondragon
 - Juan Alejandro Tamayo Manzano
 
-🚀 Estado del proyecto:
-
-Fase actual: Desarrollo del módulo de Autenticación y Cuenta
-
-- Pruebas de autenticacion en las busquedas para el usuario en la seccion notas y carpetas
-
-- Pruebas de autenticacion de restablecer contraseña
-
-- Documentacion clara por parte de los sprints y del codigo back end y front end
-  
-- Product Backlog y Sprint Planning (11 semanas)
-
-- Implementación de pantalla de busqueda de notas
-
-- Conexión al backend y pruebas de autenticación
-
 🧩 Características principales:
 
 - Registro e inicio de sesión con validaciones (correo, alias, contraseña).
