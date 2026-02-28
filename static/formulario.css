@@ -1,11 +1,28 @@
 /* ============================================================================
- * formulario.css – NoteFlow
- * Layout de dos columnas: panel izquierdo decorativo + panel derecho formulario
- * ============================================================================ */
+   formulario.css — NoteFlow
+   Layout de dos columnas: panel izquierdo decorativo + panel derecho formulario
+   Organización:
+     1.  Variables y Reset
+     2.  Body base
+     3.  Layout — page-wrapper, panel-deco, panel-form
+     4.  Carrusel animado (compartido)
+     5.  Formulario base (compartido)
+     6.  Navegación de pestañas (compartida)
+     7.  Campos de entrada (compartidos)
+     8.  Botones (compartidos)
+     9.  Separador, enlaces y textos de pie (compartidos)
+     10. Toasts (compartidos — una sola definición)
+     11. INICIAR SESIÓN — estilos específicos
+     12. REGISTRO — estilos específicos
+     13. OLVIDÉ CONTRASEÑA — estilos específicos
+     14. RESTABLECER CONTRASEÑA — estilos específicos
+     15. CUENTA NO REGISTRADA — sin estilos extra (reutiliza base)
+     16. Responsive
+   ============================================================================ */
 
 
 /* ============================================================================
-   1. RESET Y VARIABLES GLOBALES
+   1. VARIABLES Y RESET
    ============================================================================ */
 *, *::before, *::after {
     margin: 0;
@@ -15,15 +32,15 @@
 }
 
 :root {
-    --purple:       #5452d3;
-    --purple-dark:  #3f3db8;
-    --purple-soft:  #faedfd;
-    --text-dark:    #1e1d3f;
-    --text-mid:     #555;
-    --text-light:   #666;
-    --border:       #e0e0e0;
-    --input-bg:     #f7f7fc;
-    --white:        #ffffff;
+    --purple:      #5452d3;
+    --purple-dark: #3f3db8;
+    --purple-soft: #faedfd;
+    --text-dark:   #1e1d3f;
+    --text-mid:    #555;
+    --text-light:  #666;
+    --border:      #e0e0e0;
+    --input-bg:    #f7f7fc;
+    --white:       #ffffff;
 }
 
 
@@ -39,75 +56,13 @@ body {
     overflow: hidden;
 }
 
-
-/* ============================================================================
-   3. CARRUSEL — vive DENTRO de .panel-deco
-   ============================================================================ */
-.fondo {
-    display: none;
-}
-
-.overlay {
-    display: none;
-}
-
-.panel-deco-carousel {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    z-index: 0;
-    border-radius: inherit;
-}
-
-.carrusel {
-    position: absolute;
-    inset: 0;
-    display: flex;
-}
-
-.columna_izquierda,
-.columna_derecha {
-    width: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    pointer-events: none;
-    gap: 0;
-}
-
-.columna_izquierda img,
-.columna_derecha img {
-    width: 100%;
-    max-width: 260px;
-    aspect-ratio: 1 / 1;
-    object-fit: contain;
-    opacity: 0.18;
-    flex-shrink: 0;
-    display: block;
-    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.20));
-}
-
-.columna_izquierda {
-    animation: scrollDown 12s linear infinite;
-}
-
-.columna_derecha {
-    animation: scrollUp 12s linear infinite;
-}
-
-@keyframes scrollDown {
-    0%   { transform: translateY(-50%); }
-    100% { transform: translateY(0%);   }
-}
-
-@keyframes scrollUp {
-    0%   { transform: translateY(0%);   }
-    100% { transform: translateY(-50%); }
-}
+/* .fondo y .overlay se mantienen en el HTML pero no necesitan estilos — no se renderizan */
+.fondo,
+.overlay { display: none; }
 
 
 /* ============================================================================
-   5. WRAPPER: LAYOUT DE DOS COLUMNAS
+   3. LAYOUT — page-wrapper, panel-deco, panel-form
    ============================================================================ */
 .page-wrapper {
     position: relative;
@@ -128,7 +83,7 @@ body {
     to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
-/* ── Panel izquierdo (decorativo) ── */
+/* Panel izquierdo decorativo */
 .panel-deco {
     flex: 1;
     position: relative;
@@ -140,9 +95,13 @@ body {
     align-items: flex-start;
     padding: 48px 40px;
     color: #fff;
-    gap: 0;
     min-width: 0;
     overflow: hidden;
+}
+
+.panel-deco-content {
+    position: relative;
+    z-index: 2;
 }
 
 .panel-deco .deco-logo {
@@ -153,9 +112,7 @@ body {
     line-height: 1;
 }
 
-.panel-deco .deco-logo span {
-    opacity: 0.55;
-}
+.panel-deco .deco-logo span { opacity: 0.55; }
 
 .panel-deco h1 {
     font-size: 1.7rem;
@@ -170,7 +127,6 @@ body {
     line-height: 1.65;
     opacity: 0.80;
     max-width: 300px;
-    text-align: left;
     color: #fff;
     margin: 0;
 }
@@ -201,12 +157,7 @@ body {
     flex-shrink: 0;
 }
 
-.panel-deco-content {
-    position: relative;
-    z-index: 2;
-}
-
-/* ── Panel derecho (formulario) ── */
+/* Panel derecho */
 .panel-form {
     width: 400px;
     flex-shrink: 0;
@@ -221,7 +172,59 @@ body {
 
 
 /* ============================================================================
-   6. FORMULARIO PRINCIPAL
+   4. CARRUSEL ANIMADO (compartido en todos los HTML)
+   ============================================================================ */
+.panel-deco-carousel {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+.carrusel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+}
+
+.columna_izquierda,
+.columna_derecha {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+}
+
+.columna_izquierda img,
+.columna_derecha img {
+    width: 100%;
+    max-width: 260px;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    opacity: 0.18;
+    flex-shrink: 0;
+    display: block;
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.20));
+}
+
+.columna_izquierda { animation: scrollDown 12s linear infinite; }
+.columna_derecha   { animation: scrollUp   12s linear infinite; }
+
+@keyframes scrollDown {
+    from { transform: translateY(-50%); }
+    to   { transform: translateY(0%);   }
+}
+
+@keyframes scrollUp {
+    from { transform: translateY(0%);   }
+    to   { transform: translateY(-50%); }
+}
+
+
+/* ============================================================================
+   5. FORMULARIO BASE (compartido)
    ============================================================================ */
 .formulario {
     flex: 1;
@@ -230,27 +233,6 @@ body {
     flex-direction: column;
 }
 
-/* Cuando el body necesita scroll (registro largo) */
-body.scroll-body {
-    align-items: flex-start;
-    overflow-y: auto;
-    padding: 24px 16px;
-}
-
-body.scroll-body .panel-form {
-    max-height: none;
-    overflow-y: visible;
-}
-
-body.scroll-body .page-wrapper {
-    margin: auto;
-    align-self: flex-start;
-}
-
-
-/* ============================================================================
-   7. LOGO DENTRO DEL FORMULARIO
-   ============================================================================ */
 .formulario-logo {
     text-align: center;
     margin-bottom: 18px;
@@ -263,13 +245,27 @@ body.scroll-body .page-wrapper {
     letter-spacing: -0.02em;
 }
 
-.logo-accent {
-    color: var(--gold);
+.logo-accent { color: var(--purple-dark); }
+
+.h2-registro {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 14px 0 18px;
+    letter-spacing: 0.07em;
+}
+
+.instruccion {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 14px;
+    text-align: center;
 }
 
 
 /* ============================================================================
-   8. NAVEGACIÓN DE PESTAÑAS
+   6. NAVEGACIÓN DE PESTAÑAS (compartida)
    ============================================================================ */
 nav {
     display: flex;
@@ -277,7 +273,6 @@ nav {
     align-items: center;
     border-bottom: 2px solid #ebebf5;
     margin-bottom: 16px;
-    padding-bottom: 0;
 }
 
 .formulario-ul {
@@ -308,25 +303,11 @@ nav {
 .li-formulario a.activo {
     color: var(--purple);
     border-bottom-color: var(--purple);
-    background: transparent;
 }
 
 
 /* ============================================================================
-   9. TÍTULOS
-   ============================================================================ */
-.h2-registro {
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin: 14px 0 18px;
-    letter-spacing: 0.07em;
-}
-
-
-/* ============================================================================
-   10. CAMPOS DE ENTRADA
+   7. CAMPOS DE ENTRADA (compartidos)
    ============================================================================ */
 .inputs {
     display: flex;
@@ -372,47 +353,18 @@ input:focus {
     display: block;
 }
 
-.forgot-password {
-    text-align: right;
-    margin-top: 7px;
-    margin-bottom: 0;
+/* Wrapper para input con botón de ojo */
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
-.forgot-password a {
-    font-size: 0.82rem;
-    color: var(--purple);
-    text-decoration: none;
-    font-weight: 500;
-    transition: opacity 0.2s;
-}
-
-.forgot-password a:hover {
-    opacity: 0.7;
-    text-decoration: underline;
-}
+.input-wrapper input { padding-right: 42px; }
 
 
 /* ============================================================================
-   11. FILA DE DOS COLUMNAS (nombre + apellido)
-   ============================================================================ */
-.input-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 0;
-}
-
-.input-col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.input-col label { margin-top: 12px; }
-
-
-/* ============================================================================
-   12. BOTONES
+   8. BOTONES (compartidos)
    ============================================================================ */
 button[type="submit"] {
     display: block;
@@ -436,13 +388,8 @@ button[type="submit"]:hover {
     box-shadow: 0 6px 18px rgba(84, 82, 211, 0.38);
 }
 
-button[type="submit"]:active  { transform: scale(0.98); }
-
-button[type="submit"]:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-    transform: none;
-}
+button[type="submit"]:active   { transform: scale(0.98); }
+button[type="submit"]:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
 .google-btn {
     display: flex;
@@ -461,11 +408,7 @@ button[type="submit"]:disabled {
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.google-btn img {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
+.google-btn img { width: 20px; height: 20px; flex-shrink: 0; }
 
 .google-btn:hover {
     border-color: var(--purple);
@@ -475,7 +418,7 @@ button[type="submit"]:disabled {
 
 
 /* ============================================================================
-   13. SEPARADOR "O INICIA SESIÓN CON"
+   9. SEPARADOR, ENLACES Y TEXTOS DE PIE (compartidos)
    ============================================================================ */
 .separador {
     display: flex;
@@ -495,10 +438,6 @@ button[type="submit"]:disabled {
     background: #e5e5ef;
 }
 
-
-/* ============================================================================
-   14. TEXTO, ENLACES Y PIE
-   ============================================================================ */
 p {
     text-align: center;
     margin-top: 14px;
@@ -513,37 +452,57 @@ p a {
     transition: opacity 0.2s;
 }
 
-p a:hover {
-    opacity: 0.75;
-    text-decoration: underline;
-}
+p a:hover { opacity: 0.75; text-decoration: underline; }
 
 .registro-link { margin-top: 18px; }
 
-.instruccion {
-    font-size: 0.85rem;
-    color: var(--text-light);
-    margin-bottom: 14px;
-    text-align: center;
-}
-
-/* Enlace "Volver" */
 .back-link {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 0.82rem;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 18px;
+    font-size: 0.85rem;
     color: var(--text-light) !important;
+    text-decoration: none;
     font-weight: 500 !important;
+    transition: opacity 0.2s;
 }
 
-.back-link:hover {
-    color: var(--purple) !important;
+.back-link:hover { color: var(--purple) !important; opacity: 0.70; }
+
+.back-link svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.security-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 0.78rem;
+    color: #aaa;
+}
+
+.security-note svg {
+    width: 13px;
+    height: 13px;
+    stroke: #bbb;
+    fill: none;
+    stroke-width: 2;
+    flex-shrink: 0;
 }
 
 
 /* ============================================================================
-   15. TOASTS PERSONALIZADOS
+   10. TOASTS (compartidos — definición única)
    ============================================================================ */
 .toast-container-custom {
     position: fixed;
@@ -564,6 +523,12 @@ p a:hover {
     overflow: hidden;
 }
 
+.toast-body {
+    font-size: 0.88rem;
+    color: var(--text-dark);
+    padding: 10px 14px;
+}
+
 .toast-success .toast-header {
     background-color: #eafaf1;
     color: #1a7a45;
@@ -578,6 +543,13 @@ p a:hover {
     font-weight: 600;
 }
 
+.toast-warning .toast-header {
+    background-color: #fffbea;
+    color: #856404;
+    border-bottom: 1px solid #ffe58a;
+    font-weight: 600;
+}
+
 .toast-info .toast-header {
     background-color: #eef0ff;
     color: #3d3ab8;
@@ -585,33 +557,275 @@ p a:hover {
     font-weight: 600;
 }
 
-.toast-body {
-    font-size: 0.88rem;
-    color: var(--text-dark);
-    padding: 10px 14px;
+
+/* ============================================================================
+   11. INICIAR SESIÓN — estilos específicos
+   ============================================================================ */
+.forgot-password {
+    text-align: right;
+    margin-top: 7px;
+    margin-bottom: 0;
 }
+
+.forgot-password a {
+    font-size: 0.82rem;
+    color: var(--purple);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.forgot-password a:hover { opacity: 0.7; text-decoration: underline; }
+
+
+/* ============================================================================
+   12. REGISTRO — estilos específicos
+   ============================================================================ */
+
+/* Fila nombre + apellido en dos columnas */
+.input-row {
+    display: flex;
+    gap: 12px;
+}
+
+.input-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-col label { margin-top: 12px; }
+
+/* El registro tiene contenido largo: necesita scroll */
+body.scroll-body {
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 32px 16px 48px;
+}
+
+body.scroll-body .fondo,
+body.scroll-body .overlay { position: fixed; }
+
+body.scroll-body .page-wrapper  { margin: auto; align-self: center; }
+body.scroll-body .panel-form    { max-height: none; overflow-y: visible; }
+
+
+/* ============================================================================
+   13. OLVIDÉ CONTRASEÑA — estilos específicos
+   ============================================================================ */
+
+/* Ícono decorativo encima del título (sobre/candado/llave) */
+.recovery-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--purple) 0%, #8b5cf6 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+    box-shadow: 0 6px 20px rgba(84, 82, 211, 0.30);
+}
+
+.recovery-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Pasos del proceso en el panel decorativo */
+.steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    opacity: 0.88;
+}
+
+.step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: #fff;
+    margin-top: 1px;
+}
+
+.step-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.step-text strong { font-size: 0.88rem; font-weight: 700; color: #fff; }
+.step-text span   { font-size: 0.80rem; color: rgba(255,255,255,0.65); line-height: 1.45; }
+
+
+/* ============================================================================
+   14. RESTABLECER CONTRASEÑA — estilos específicos
+   ============================================================================ */
+
+/* Variantes de paso: completado y activo */
+.step-number.done {
+    background: rgba(39, 174, 96, 0.35);
+    border-color: rgba(39, 174, 96, 0.70);
+}
+
+.step-number.active {
+    background: rgba(255,255,255,0.30);
+    border-color: rgba(255,255,255,0.80);
+}
+
+/* Botón para mostrar/ocultar contraseña */
+.toggle-password {
+    position: absolute;
+    right: 13px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: #bbb;
+    width: auto;
+    height: auto;
+    box-shadow: none;
+    margin-top: 0;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--purple);
+    background: none;
+    box-shadow: none;
+    transform: none;
+}
+
+.toggle-password svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Indicador de fortaleza de contraseña */
+.strength-bar-wrapper {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.strength-bars {
+    display: flex;
+    gap: 4px;
+}
+
+.strength-bar {
+    flex: 1;
+    height: 4px;
+    border-radius: 4px;
+    background: #e5e5ef;
+    transition: background 0.3s;
+}
+
+.strength-bar.weak   { background: #e74c3c; }
+.strength-bar.medium { background: #f39c12; }
+.strength-bar.strong { background: #27ae60; }
+
+.strength-label {
+    font-size: 0.74rem;
+    color: #aaa;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: color 0.3s;
+}
+
+.strength-label.weak   { color: #e74c3c; }
+.strength-label.medium { color: #f39c12; }
+.strength-label.strong { color: #27ae60; }
+
+/* Bloque de error (token inválido o expirado) */
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 8px 0 16px;
+    gap: 14px;
+}
+
+.error-state-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.28);
+}
+
+.error-state-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.error-msg {
+    font-size: 0.90rem;
+    color: #c0392b;
+    background: #fdf0f0;
+    border: 1px solid #f5c0bb;
+    border-radius: 10px;
+    padding: 10px 16px;
+    width: 100%;
+}
+
+
+/* ============================================================================
+   15. CUENTA NO REGISTRADA
+   Reutiliza completamente los estilos base. Sin reglas adicionales.
+   ============================================================================ */
 
 
 /* ============================================================================
    16. RESPONSIVE
    ============================================================================ */
 
-/* ── Tablet grande: reducir ancho del panel form ── */
+/* Tablet grande */
 @media screen and (max-width: 860px) {
-    .page-wrapper {
-        width: min(760px, 96vw);
-    }
-
-    .panel-form {
-        width: 360px;
-    }
-
-    .formulario {
-        padding: 30px 28px 36px;
-    }
+    .page-wrapper { width: min(760px, 96vw); }
+    .panel-form   { width: 360px; }
+    .formulario   { padding: 30px 28px 36px; }
 }
 
-/* ── Tablet: ocultar panel decorativo, formulario ocupa todo el ancho ── */
+/* Tablet: ocultar panel decorativo */
 @media screen and (max-width: 720px) {
     body {
         align-items: center;
@@ -634,110 +848,38 @@ p a:hover {
         overflow-y: visible;
     }
 
-    .formulario {
-        padding: 30px 28px 36px;
-    }
+    .formulario { padding: 30px 28px 36px; }
 
-    /* Toast adaptado a mobile */
-    .toast-container-custom {
-        top: 12px;
-        right: 12px;
-        left: 12px;
-        max-width: 100%;
-    }
-
-    .toast {
-        min-width: unset;
-        width: 100%;
-    }
+    .toast-container-custom { top: 12px; right: 12px; left: 12px; max-width: 100%; }
+    .toast { min-width: unset; width: 100%; }
 }
 
-/* ── Móvil estándar ── */
+/* Móvil estándar */
 @media screen and (max-width: 480px) {
-    body {
-        padding: 16px 12px;
-    }
-
-    .page-wrapper {
-        border-radius: 18px;
-        max-width: 100%;
-    }
-
-    .formulario {
-        padding: 24px 20px 32px;
-    }
-
-    .h2-registro {
-        font-size: 1rem;
-        margin: 10px 0 14px;
-    }
-
-    .formulario-logo {
-        margin-bottom: 14px;
-    }
-
-    .logo-text {
-        font-size: 1.3rem;
-    }
-
-    .li-formulario a {
-        padding: 8px 14px 12px;
-        font-size: 0.85rem;
-    }
-
-    input {
-        height: 44px;
-        font-size: 16px; /* Evita zoom automático en iOS */
-    }
-
-    button[type="submit"] {
-        height: 48px;
-        font-size: 1rem;
-        margin-top: 18px;
-    }
-
-    .google-btn {
-        height: 48px;
-        font-size: 0.9rem;
-    }
-
-    .separador {
-        margin: 14px 0 10px;
-    }
-
-    .registro-link {
-        margin-top: 14px;
-    }
-
-    /* Fila nombre+apellido: stack vertical en móvil pequeño */
-    .input-row {
-        flex-direction: column;
-        gap: 0;
-    }
-
-    .input-col {
-        width: 100%;
-    }
+    body            { padding: 16px 12px; }
+    .page-wrapper   { border-radius: 18px; max-width: 100%; }
+    .formulario     { padding: 24px 20px 32px; }
+    .h2-registro    { font-size: 1rem; margin: 10px 0 14px; }
+    .formulario-logo { margin-bottom: 14px; }
+    .logo-text      { font-size: 1.3rem; }
+    .li-formulario a { padding: 8px 14px 12px; font-size: 0.85rem; }
+    input           { height: 44px; font-size: 16px; } /* evita zoom en iOS */
+    button[type="submit"] { height: 48px; font-size: 1rem; margin-top: 18px; }
+    .google-btn     { height: 48px; font-size: 0.9rem; }
+    .separador      { margin: 14px 0 10px; }
+    .registro-link  { margin-top: 14px; }
+    .input-row      { flex-direction: column; gap: 0; }
+    .input-col      { width: 100%; }
 }
 
-/* ── Móvil muy pequeño ── */
+/* Móvil muy pequeño */
 @media screen and (max-width: 360px) {
-    .formulario {
-        padding: 20px 16px 28px;
-    }
-
-    .li-formulario a {
-        padding: 8px 10px 12px;
-        font-size: 0.80rem;
-    }
-
-    .h2-registro {
-        font-size: 0.95rem;
-        letter-spacing: 0.05em;
-    }
+    .formulario      { padding: 20px 16px 28px; }
+    .li-formulario a { padding: 8px 10px 12px; font-size: 0.80rem; }
+    .h2-registro     { font-size: 0.95rem; letter-spacing: 0.05em; }
 }
 
-/* ── Landscape móvil ── */
+/* Landscape móvil */
 @media screen and (max-height: 640px) and (orientation: landscape) {
     body {
         align-items: flex-start;
@@ -745,14 +887,8 @@ p a:hover {
         padding: 16px;
     }
 
-    .page-wrapper {
-        margin: auto;
-        min-height: unset;
-    }
-
-    .panel-deco {
-        display: none; /* Ocultar panel deco en landscape estrecho */
-    }
+    .page-wrapper { margin: auto; min-height: unset; }
+    .panel-deco   { display: none; }
 
     .panel-form {
         width: 100%;
@@ -762,38 +898,16 @@ p a:hover {
         margin: auto;
     }
 
-    .formulario {
-        padding: 20px 28px;
-    }
-
-    label {
-        margin-top: 9px;
-    }
-
+    .formulario { padding: 20px 28px; }
+    label       { margin-top: 9px; }
     button[type="submit"],
-    .google-btn {
-        height: 42px;
-    }
+    .google-btn { height: 42px; }
 }
 
-/* ── Landscape tablet mediano con panel deco ── */
+/* Landscape tablet — mostrar panel deco si hay ancho suficiente */
 @media screen and (min-width: 721px) and (max-height: 640px) and (orientation: landscape) {
-    .panel-deco {
-        display: flex; /* Mostrar si hay suficiente ancho */
-        padding: 28px 32px;
-    }
-
-    .panel-deco h1 {
-        font-size: 1.3rem;
-        margin-bottom: 10px;
-    }
-
-    .panel-deco .deco-logo {
-        margin-bottom: 16px;
-    }
-
-    .panel-deco .feature-list {
-        margin-top: 16px;
-        gap: 8px;
-    }
+    .panel-deco { display: flex; padding: 28px 32px; }
+    .panel-deco h1 { font-size: 1.3rem; margin-bottom: 10px; }
+    .panel-deco .deco-logo { margin-bottom: 16px; }
+    .panel-deco .feature-list { margin-top: 16px; gap: 8px; }
 }

@@ -1254,6 +1254,6 @@ class Tipos(db.Model):
     Formato = db.Column(db.Text, primary_key=True)
 
 with app.app_context():
-    print("🔥 CREANDO TABLAS 🔥")
+    print("ATENCION: CREANDO TABLAS ")
     db.create_all()
 

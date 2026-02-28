@@ -1,425 +1,935 @@
-/* ========== VARIABLES PARA TEMAS ========== */
-        :root {
-            --color-principal: #5452d3; /* Color principal */
-             
-            /* Tema Claro */
-            --bg-claro: #ecf0f1; /* Fondo claro */
-            --sidebar-claro: #5452d3; /* Barra lateral clara */
-            --texto-claro: #2c3e50; /* Texto claro */
-            --card-claro: #ffffff; /* Tarjetas claras */
-            --border-claro: #bdc3c7; /* Bordes claros */
-            
-            /* Tema Oscuro */
-            --bg-oscuro: #1a1a1a; /* Fondo oscuro */
-            --sidebar-oscuro: #1f1f1f; /* Barra lateral oscura */
-            --texto-oscuro: #e0e0e0; /* Texto oscuro */
-            --card-oscuro: #2d2d2d; /* Tarjetas oscuras */
-            --border-oscuro: #404040; /* Bordes oscuros */
-            
-            /* Colores comunes */
-            --color-secundario: #f39c12; /* Color secundario */
-            --color-peligro: #e74c3c; /* Color de peligro */
-            --color-exito: #2ecc71; /* Color de éxito */
-        }
-        
-        * {
-            margin: 0; /*Eliminar espacios por defecto*/
-            padding: 0; /*Eliminar espacios por defecto en el relleno*/
-            box-sizing: border-box; /* Incluir bordes y padding en el tamaño total de los elementos */
-        }
+/* ============================================================
+   NOTEFLOW — dashboard.css
+   Organización:
+   1. Variables y Reset
+   2. Temas (claro / oscuro)
+   3. SIDEBAR
+   4. LAYOUT GENERAL (main, header, usuario-info)
+   5. DASHBOARD.HTML — Bienvenida, Stats, Notas recientes
+   6. NOTAS.HTML — Búsqueda inteligente
+   7. PAPELERA.HTML — Lista de notas eliminadas
+   8. MODAL ELEGIR FORMATO (compartido)
+   9. Responsive
+   ============================================================ */
 
-        /* ========== TEMA CLARO (Por defecto) ========== */
-        body.tema-claro {  /* Estilo para tema claro */
-            background-color: var(--bg-claro);  /* Fondo claro */
-            color: var(--texto-claro); /* Texto claro */
-            font-family: sans-serif; /* Fuente sans-serif */
-        }
 
-        body.tema-claro .sidebar { /* Estilo de la barra lateral en tema claro */
-            background-color: var(--sidebar-claro); /* Barra lateral clara */
-        }
- 
-        body.tema-claro .nota-card,  /* Estilo de las tarjetas de notas en tema claro */
-        body.tema-claro .stats .card {   /*  Estilo de las tarjetas de estadísticas en tema claro */
-            background-color: var(--card-claro); /* Color del fondo blanco*/
-            color: var(--texto-claro); /*Texto blanco */
-        }
- 
-        body.tema-claro header { /* Header cuando el tema es claro*/
-            border-bottom: 1px solid var(--border-claro); /* Borde claro de boton*/
-        }
+/* ============================================================
+   1. VARIABLES Y RESET
+   ============================================================ */
+:root {
+    --color-principal:  #5452d3;
+    --color-secundario: #f39c12;
+    --color-peligro:    #e74c3c;
+    --color-exito:      #2ecc71;
 
-        body.tema-claro .usuario-info { /* Info del usuario cuando esta claro en blanco */
-            color: var(--texto-claro); /* Color del texto claro/blanco */
-        }
+    /* Tema claro */
+    --bg-claro:      #ecf0f1;
+    --sidebar-claro: #5452d3;
+    --texto-claro:   #2c3e50;
+    --card-claro:    #ffffff;
+    --border-claro:  #bdc3c7;
 
-        body.tema-claro .bienvenida h2, /*  Body de bienvenida y de notas recientes en tema claro el titulo h2 */
-        body.tema-claro .recientes h2 { /*  de recientes el titulo h2*/
-            color: var(--texto-claro); /* color del texto claro/blanco*/
-        } 
+    /* Tema oscuro */
+    --bg-oscuro:      #1a1a1a;
+    --sidebar-oscuro: #1f1f1f;
+    --texto-oscuro:   #e0e0e0;
+    --card-oscuro:    #2d2d2d;
+    --border-oscuro:  #404040;
+}
 
-        /* ========== TEMA OSCURO ========== */
-        body.tema-oscuro { /* Estilo para tema oscuro */ 
-            background-color: var(--bg-oscuro); /* fondo de color negro */
-            color: var(--texto-oscuro);  /* color del texto oscuro/blanco */
-            font-family: sans-serif; /* Fuente sans-serif */
-        }
- 
-        body.tema-oscuro .sidebar { /*  Barra lateral en tema oscuro */
-            background-color: var(--sidebar-oscuro); /* fondo de color negro */
-            border-right: 1px solid var(--border-oscuro); /* borde oscuro */
-        }
-
-        body.tema-oscuro .nota-card, /* Tarjetas de notas en tema oscuro */
-        body.tema-oscuro .stats .card { /* Tarjetas de estadísticas en tema oscuro */
-            background-color: var(--card-oscuro); /* fondo oscuro */
-            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* sombra para profundidad */
-        }
-
-        body.tema-oscuro header { /* Encabezado en tema oscuro */
-            border-bottom: 1px solid var(--border-oscuro); /* borde oscuro */
-        }
-
-        body.tema-oscuro .usuario-info { /* Información del usuario en tema oscuro */
-            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
-        }
-
-        body.tema-oscuro .bienvenida h2, /* Títulos de bienvenida en tema oscuro */
-        body.tema-oscuro .recientes h2 { /* Títulos de notas recientes en tema oscuro */
-            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
-        }
-
-        body.tema-oscuro .nota-card h4 { /* Título h4 de las tarjetas de notas en tema oscuro */
-            color: var(--texto-oscuro); /* color del texto oscuro/blanco */
-        } 
-
-        body.tema-oscuro .description { /* Descripción de las tarjetas de notas en tema oscuro */
-            color: #95a5a6 !important; /* color gris claro para mejor legibilidad */
-        }
-
-        body.tema-oscuro .card-footer { /* Pie de las tarjetas en tema oscuro */
-            border-top-color: var(--border-oscuro); /* color del borde superior oscuro */
-        }
-
-        body.tema-oscuro .card-footer small { /* Texto pequeño en el pie de las tarjetas en tema oscuro */
-            color: #7f8c8d; /* color gris medio para mejor legibilidad */
-        }
-
-        /* ========== ESTILOS GENERALES ========== */
-        .sidebar {
-            width: 250px; /* Ancho fijo de la barra lateral */
-            height: 100vh; /* Altura completa de la ventana */
-            position: fixed; /* Posición fija */
-            color: white; /* Color del texto blanco */
-            padding: 20px 0; /* Relleno superior e inferior */
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1); /* Sombra para profundidad */
-        }
-
-        .logo {  /* Estilo del logo en la barra lateral */
-            text-align: center; /* Centrar el logo */
-            font-size: 1.8em; /* Tamaño de fuente grande */
-            font-weight: bold; /* Fuente en negrita */
-            margin-bottom: 30px; /* Margen inferior */
-            color: white; /* Color del texto blanco */
-        }
-
-        .menu { /* Estilo del menú de navegación */
-            list-style: none; /* Eliminar viñetas de la lista */
-            padding: 0; /* Eliminar relleno */
-        }
-
-        .menu li a {  /* Estilo de los enlaces del menú */
-            display: block; /* Mostrar como bloque */
-            padding: 12px 20px; /* Relleno */
-            color: #ecf0f1; /* Color del texto claro */
-            text-decoration: none; /* Eliminar subrayado */
-            transition: background-color 0.2s; /* Transición suave para el fondo */
-        }
-
-        .menu li a:hover, /* Estilo al pasar el ratón sobre los enlaces del menú */
-        .menu li a.active { /* Estilo para el enlace activo del menú */
-            background-color: rgba(255,255,255,0.1); /* Fondo ligeramente más claro */
-            border-left: 5px solid var(--color-principal);  /* Borde izquierdo destacado */
-            padding-left: 15px; /* Ajuste del relleno izquierdo */
-        }
-
-        .menu li a i { /* Estilo de los iconos en los enlaces del menú */
-            margin-right: 10px; /* Espacio entre el icono y el texto */
-        }
-
-        .separator { /* Estilo del separador en la barra lateral */
-            border-top: 1px solid rgba(255,255,255,0.1);    /* Línea superior tenue */
-            margin: 15px 0; /* Margen superior e inferior */
-        }
-
-        .logout-btn { /* Estilo del botón de cierre de sesión */
-            display: block; /* Mostrar como bloque */
-            text-align: center; /* Centrar el texto */
-            margin: 30px 20px 0; /* Margen */
-            padding: 10px 0; /* Relleno */
-            background-color: var(--color-peligro);  /* Fondo rojo */
-            color: white; /* Color del texto blanco */
-            text-decoration: none; /* Eliminar subrayado */
-            border-radius: 5px; /* Bordes redondeados */
-            transition: background-color 0.2s; /* Transición suave para el fondo */
-        }
-
-        .logout-btn:hover { /* Estilo al pasar el ratón sobre el botón de cierre de sesión */
-            background-color: #c0392b; /* Fondo rojo oscuro */
-        }
-
-        .main { /* Estilo del contenedor principal */
-            margin-left: 250px; /* Margen izquierdo para dejar espacio a la barra lateral */
-            padding: 30px; /* Relleno */
-        }
-
-        header { /* Estilo del encabezado */
-            display: flex; /* Usar flexbox */
-            justify-content: space-between; /* Espacio entre elementos */
-            align-items: center; /* Alinear verticalmente */
-            padding-bottom: 20px; /* Relleno inferior */
-            margin-bottom: 30px; /* Margen inferior */
-        }
-
-        .search-btn { /* Estilo del botón de búsqueda */
-            background-color: var(--color-principal); /* Fondo del color principal */
-            color: white; /* Color del texto blanco */
-            border: none; /* Sin borde */
-            padding: 10px 15px; /* Relleno */
-            border-radius: 5px; /* Bordes redondeados */
-            cursor: pointer; /* Cambiar el cursor al pasar sobre el botón */
-            transition: background-color 0.2s; /* Transición suave para el fondo */
-            font-size: 1em; /* Tamaño de fuente */
-        }
-
-        .search-btn:hover { /* Estilo al pasar el ratón sobre el botón de búsqueda */
-            background-color: #2980b9; /* Fondo azul oscuro */
-        }
-
-        .usuario-info { /* Estilo de la información del usuario */
-            display: flex; /* Usar flexbox */
-            align-items: center; /* Alinear verticalmente */
-            text-decoration: none; /* Eliminar subrayado */
-        }
-
-        .usuario-info img { /* Estilo de la imagen del usuario */
-            width: 40px; /* Ancho */
-            height: 40px; /* Alto */
-            border-radius: 50%; /* Hacerla circular */
-            margin-right: 10px; /* Margen derecho */
-            border: 2px solid var(--color-principal); /* Borde del color principal */
-            object-fit: cover; /* Ajustar la imagen */
-        }
-
-        .profile-dropdown-icon { /* Estilo del icono desplegable del perfil */
-            margin-left: 10px; /* Espacio entre el icono y el texto */
-        }
-
-        .bienvenida h2 { /* Estilo del título de bienvenida */
-            margin-bottom: 5px; /* Margen inferior */
-        }
-
-        .stats { /* Estilo del contenedor de estadísticas */
-            display: flex; /* Usar flexbox */
-            gap: 20px; /* Espacio entre las tarjetas */
-            margin-bottom: 40px; /* Margen inferior */
-        }
-
-        .stats .card { /* Estilo de las tarjetas de estadísticas */
-            flex: 1; /* Tomar igual espacio */
-            padding: 20px; /* Relleno */
-            border-radius: 8px; /* Bordes redondeados */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Sombra para profundidad */
-            text-align: center; /* Centrar el texto */
-        }
-
-        .stats .stat-icon { /* Estilo de los iconos de estadísticas */
-            font-size: 2em; /* Tamaño grande */
-            color: var(--color-principal);  /* Color del icono */
-            margin-bottom: 10px; /* Margen inferior */
-        }
-
-        .stats .warning-card .stat-icon { /* Estilo del icono de advertencia */
-            color: var(--color-secundario); /* Color secundario */
-        } 
-
-        .stats h3 { /* Estilo del título h3 en las tarjetas de estadísticas */
-            margin: 0; /* Eliminar margen */
-            font-size: 2em; /* Tamaño grande */
-        }
-
-        .recientes h2 { /* Estilo del título de notas recientes */
-            margin-bottom: 20px; /* Margen inferior */
-        }
-
-        .grid { /* Estilo del contenedor de la cuadrícula de notas */
-            display: grid; /* Usar grid layout */
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Columnas responsivas */
-            gap: 20px; /* Espacio entre las tarjetas */
-        }
- 
-        .nota-card { /* Estilo de las tarjetas de notas */
-            padding: 15px; /* Relleno */
-            border-radius: 8px; /* Bordes redondeados */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Sombra para profundidad */
-            border-left: 5px solid var(--color-principal); /* Borde izquierdo del color principal */
-            display: flex; /* Usar flexbox */
-            flex-direction: column; /* Dirección de columna */
-        }
-
-        .nota-card h4 { /* Estilo del título h4 de las tarjetas de notas */
-            margin-top: 0; /* Eliminar margen superior */
-            margin-bottom: 5px; /* Margen inferior */
-        }
-
-        .nota-card .description { /* Estilo de la descripción en las tarjetas de notas */
-            font-size: 0.9em;   /* Tamaño de fuente más pequeño */
-            color: #7f8c8d;     /* Color gris medio */
-            flex-grow: 1; /* Permitir que la descripción crezca */
-            margin-bottom: 10px; /* Margen inferior */
-        }
-
-        .card-header { /* Estilo del encabezado de las tarjetas */
-            display: flex; /* Usar flexbox */
-            justify-content: space-between; /* Espacio entre elementos */
-            margin-bottom: 10px; /* Margen inferior */
-        }
-
-        .visibility-indicator i { /* Estilo de los iconos de visibilidad */
-            font-size: 1.1em; /* Tamaño del icono */
-            margin-right: 5px; /* Espacio entre el icono y el texto */
-        } 
-
-        .fa-lock { /* Estilo del icono de candado */
-            color: var(--color-peligro); /* Color de peligro */
-        }
-
-        .fa-globe { /* Estilo del icono de globo */
-            color: var(--color-exito); /* Color de éxito */
-        }
-
-        .attachment-indicator i { /* Estilo del icono de adjunto */
-            color: var(--color-principal); /* Color del icono */
-        }
-
-        .tags-container { /* Estilo del contenedor de etiquetas */
-            margin-bottom: 15px; /* Margen inferior */
-            display: flex; /* Usar flexbox */
-            flex-wrap: wrap; /* Permitir que las etiquetas se envuelvan */
-            gap: 5px; /* Espacio entre las etiquetas */
-        }
-
-        .tag-chip { /* Estilo de las etiquetas tipo chip */
-            background-color: #f1c40f; /* Fondo amarillo */
-            color: #2c3e50; /* Color del texto oscuro */
-            font-size: 0.75em; /* Tamaño de fuente pequeño */
-            padding: 3px 8px; /* Relleno */
-            border-radius: 12px; /* Bordes redondeados */
-            font-weight: bold; /* Fuente en negrita */
-        }
-
-        .tag-chip.no-tag { /* Estilo para la etiqueta "Sin etiquetas" */
-            background-color: #95a5a6; /* Fondo gris */
-            color: white; /* Color del texto blanco */
-            font-style: italic; /* Texto en cursiva */
-        }
-
-        .card-footer { /* Estilo del pie de las tarjetas */
-            display: flex; /* Usar flexbox */
-            justify-content: space-between; /* Espacio entre elementos */
-            align-items: center; /* Alinear verticalmente */
-            border-top: 1px solid; /* Borde superior */
-            padding-top: 10px; /* Relleno superior */
-            margin-top: auto; /* Empujar el pie al final */
-        }
-
-        .card-footer small {  /* Estilo del texto pequeño en el pie de las tarjetas */
-            color: #95a5a6; /* Color gris claro */
-            font-size: 0.8em; /* Tamaño de fuente pequeño */
-        }
-
-        .view-btn { /* Estilo del botón de ver nota */
-            background-color: var(--color-principal); /* Fondo del color principal */
-            color: white; /* Color del texto blanco */
-            text-decoration: none; /* Eliminar subrayado */
-            padding: 5px 10px; /* Relleno */
-            border-radius: 5px; /* Bordes redondeados */
-            font-size: 0.9em; /* Tamaño de fuente */
-            transition: background-color 0.2s; /* Transición suave para el fondo */
-        }
-
-        .view-btn:hover { /* Estilo al pasar el ratón sobre el botón de ver nota */
-            background-color: #2980b9; /* Fondo azul oscuro */
-        }   
-
-        .no-results-message { /* Estilo del mensaje de no resultados */
-            color: #95a5a6; /* Color gris claro */
-            font-style: italic; /* Texto en cursiva */
-        }
-
-@media (max-width: 768px) {
-
-    /* -------------------------------------------
-       Sidebar en móviles
-       - Se hace horizontal ocupando el ancho completo.
-       - Se vuelve relativa para no quedar fija en pantalla.
-       - Se reduce padding para ahorrar espacio.
-       ------------------------------------------- */
-    .sidebar {
-        width: 100%;        /* Ahora ocupa todo el ancho */
-        height: auto;       /* Permite que crezca según su contenido */
-        position: relative; /* Evita que tape el contenido */
-        padding: 10px 0;    /* Reduce el espacio en móviles */
-    }
-
-    /* -------------------------------------------
-       Items del menú
-       - Se ajusta el padding para pantallas pequeñas.
-       ------------------------------------------- */
-    .menu li a {
-        padding: 10px 15px; /* Más compacto en móviles */
-    }
-
-    /* -------------------------------------------
-       Contenedor principal
-       - Se elimina el margen izquierdo usado para la sidebar.
-       - Se reduce el padding para aprovechar mejor el espacio.
-       ------------------------------------------- */
-    .main {
-        margin-left: 0;  /* Sidebar ya no ocupa espacio a la izquierda */
-        padding: 15px;   /* Menos relleno: más espacio útil */
-    }
-
-    /* -------------------------------------------
-       Tarjetas de estadísticas
-       - El diseño pasa de horizontal a vertical.
-       ------------------------------------------- */
-    .stats {
-        flex-direction: column; /* Apila las tarjetas una debajo de otra */
-    }
-
-    /* -------------------------------------------
-       Grid de notas
-       - Fuerza que exista solo una columna para lectura óptima.
-       ------------------------------------------- */
-    .grid {
-        grid-template-columns: 1fr; /* Una sola columna */
-    }
-
-    /* -------------------------------------------
-       Encabezado
-       - Se reorganiza verticalmente para que no se deforme.
-       ------------------------------------------- */
-    header {
-        flex-direction: column;     /* De fila → columna */
-        align-items: flex-start;    /* Alineación más natural */
-        gap: 10px;                  /* Espaciado entre elementos */
-    }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 
-/* ── MODAL ELEGIR FORMATO ── */
+/* ============================================================
+   2. TEMAS
+   ============================================================ */
+
+/* ── Claro ── */
+body.tema-claro {
+    background-color: var(--bg-claro);
+    color: var(--texto-claro);
+    font-family: sans-serif;
+}
+body.tema-claro .sidebar                { background-color: var(--sidebar-claro); }
+body.tema-claro .nota-card,
+body.tema-claro .stats .card            { background-color: var(--card-claro); color: var(--texto-claro); }
+body.tema-claro header                  { border-bottom: 1px solid var(--border-claro); }
+body.tema-claro .usuario-info           { color: var(--texto-claro); }
+body.tema-claro .bienvenida h2,
+body.tema-claro .recientes h2           { color: var(--texto-claro); }
+
+/* ── Oscuro ── */
+body.tema-oscuro {
+    background-color: var(--bg-oscuro);
+    color: var(--texto-oscuro);
+    font-family: sans-serif;
+}
+body.tema-oscuro .sidebar               { background-color: var(--sidebar-oscuro); border-right: 1px solid var(--border-oscuro); }
+body.tema-oscuro .nota-card,
+body.tema-oscuro .stats .card           { background-color: var(--card-oscuro); color: var(--texto-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+body.tema-oscuro header                 { border-bottom: 1px solid var(--border-oscuro); }
+body.tema-oscuro .usuario-info          { color: var(--texto-oscuro); }
+body.tema-oscuro .bienvenida h2,
+body.tema-oscuro .recientes h2          { color: var(--texto-oscuro); }
+body.tema-oscuro .nota-card h4          { color: var(--texto-oscuro); }
+body.tema-oscuro .description           { color: #95a5a6 !important; }
+body.tema-oscuro .card-footer           { border-top-color: var(--border-oscuro); }
+body.tema-oscuro .card-footer small     { color: #7f8c8d; }
+/* Papelera — oscuro */
+body.tema-oscuro .aviso-papelera        { background: rgba(255,224,130,0.08); border-color: rgba(255,224,130,0.25); color: #ffe082; }
+body.tema-oscuro .nota-papelera         { background: var(--card-oscuro); border-color: var(--border-oscuro); color: var(--texto-oscuro); }
+body.tema-oscuro .nota-papelera:hover   { border-color: var(--border-oscuro); box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
+body.tema-oscuro .nota-descripcion      { color: #7f8c8d; }
+body.tema-oscuro .formato-badge         { background: rgba(84,82,211,0.22); color: #9b99f5; }
+/* Formato modal — oscuro */
+body.tema-oscuro .formato-modal         { background: #1f2937; }
+body.tema-oscuro .formato-opcion        { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); color: #e2e8f0; }
+body.tema-oscuro .formato-opcion:hover  { background: rgba(84,82,211,0.15); border-color: #5452d3; color: #e2e8f0; }
+body.tema-oscuro .formato-cerrar        { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.35); }
+body.tema-oscuro .formato-titulo        { color: rgba(255,255,255,0.30); }
+
+
+/* ============================================================
+   3. SIDEBAR
+   ============================================================ */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    color: white;
+    padding: 20px 0;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.logo {
+    text-align: center;
+    font-size: 1.8em;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: white;
+}
+
+.menu {
+    list-style: none;
+    padding: 0;
+}
+
+.menu li a {
+    display: block;
+    padding: 12px 20px;
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.menu li a:hover,
+.menu li a.active {
+    background-color: rgba(255,255,255,0.1);
+    border-left: 5px solid var(--color-principal);
+    padding-left: 15px;
+}
+
+.menu li a i { margin-right: 10px; }
+
+.separator {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin: 15px 0;
+}
+
+.logout-btn {
+    display: block;
+    text-align: center;
+    margin: 30px 20px 0;
+    padding: 10px 0;
+    background-color: var(--color-peligro);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+.logout-btn:hover { background-color: #c0392b; }
+
+
+/* ============================================================
+   4. LAYOUT GENERAL
+   ============================================================ */
+.main {
+    margin-left: 250px;
+    padding: 30px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.usuario-info {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.usuario-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    border: 2px solid var(--color-principal);
+    object-fit: cover;
+}
+
+.profile-dropdown-icon { margin-left: 10px; }
+
+
+/* ============================================================
+   5. DASHBOARD.HTML — Bienvenida, Stats, Notas recientes
+   ============================================================ */
+
+/* Bienvenida */
+.bienvenida h2 { margin-bottom: 5px; }
+
+/* Stats */
+.stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stats .card {
+    flex: 1;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.stats .stat-icon {
+    font-size: 2em;
+    color: var(--color-principal);
+    margin-bottom: 10px;
+}
+
+.stats .warning-card .stat-icon { color: var(--color-secundario); }
+.stats h3 { margin: 0; font-size: 2em; }
+
+/* Notas recientes */
+.recientes h2 { margin-bottom: 20px; }
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Tarjeta de nota */
+.nota-card {
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-left: 5px solid var(--color-principal);
+    display: flex;
+    flex-direction: column;
+}
+
+.nota-card h4 { margin-top: 0; margin-bottom: 5px; }
+
+.nota-card .description {
+    font-size: 0.9em;
+    color: #7f8c8d;
+    flex-grow: 1;
+    margin-bottom: 10px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.visibility-indicator i { font-size: 1.1em; margin-right: 5px; }
+.fa-lock  { color: var(--color-peligro); }
+.fa-globe { color: var(--color-exito); }
+.attachment-indicator i { color: var(--color-principal); }
+
+.tags-container {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.tag-chip {
+    background-color: #f1c40f;
+    color: #2c3e50;
+    font-size: 0.75em;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+.tag-chip.no-tag {
+    background-color: #95a5a6;
+    color: white;
+    font-style: italic;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid;
+    padding-top: 10px;
+    margin-top: auto;
+}
+
+.card-footer small { color: #95a5a6; font-size: 0.8em; }
+
+.view-btn {
+    background-color: var(--color-principal);
+    color: white;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+.view-btn:hover { background-color: #2980b9; }
+
+.no-results-message { color: #95a5a6; font-style: italic; }
+
+
+/* ============================================================
+   6. NOTAS.HTML — Búsqueda inteligente
+   ============================================================ */
+
+/* Botón de apertura del modal */
+.btn-busqueda-inteligente {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-principal);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.btn-busqueda-inteligente:hover { background: #4340c0; }
+
+/* Área de resultados */
+#area-resultados { display: none; }
+#area-resultados.visible { display: block; }
+
+.resultados-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.resultados-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.badge-count {
+    background: var(--color-principal);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.btn-nueva-busqueda {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: none;
+    border: 2px solid var(--color-principal);
+    color: var(--color-principal);
+    border-radius: 8px;
+    padding: 7px 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-nueva-busqueda:hover { background: var(--color-principal); color: #fff; }
+
+.sin-resultados {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: #aaa;
+    font-size: 1rem;
+}
+.sin-resultados i { font-size: 2.5rem; opacity: 0.35; }
+
+/* ── Backdrop y Modal ── */
+.modal-backdrop-busqueda {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,30,0.55);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-backdrop-busqueda.activo { display: flex; }
+
+.modal-busqueda {
+    background: #fff;
+    border-radius: 20px;
+    width: min(520px, 96vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.22);
+    padding: 0 0 24px;
+}
+
+body.tema-oscuro .modal-busqueda { background: #1e1e2e; color: var(--texto-oscuro); }
+
+.modal-header-busqueda {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 24px 16px;
+    border-bottom: 1px solid #f0f0f5;
+}
+
+body.tema-oscuro .modal-header-busqueda { border-bottom-color: var(--border-oscuro); }
+
+.modal-header-busqueda h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+}
+
+.modal-header-busqueda h3 i { color: var(--color-principal); }
+
+.btn-cerrar-modal {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+.btn-cerrar-modal:hover { color: var(--color-peligro); background: rgba(231,76,60,0.08); }
+
+/* Paso 1: elegir tipo */
+.paso-seleccion { padding: 20px 24px; }
+.paso-seleccion .subtitulo { font-size: 0.85rem; color: #aaa; margin-bottom: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.tipo-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.tipo-opcion {
+    border: 2px solid #e8e8f0;
+    border-radius: 14px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.12s;
+}
+.tipo-opcion:hover { transform: translateY(-2px); }
+.tipo-opcion.notas:hover    { border-color: var(--color-principal); background: rgba(84,82,211,0.04); }
+.tipo-opcion.carpetas:hover { border-color: var(--color-secundario); background: rgba(243,156,18,0.04); }
+
+body.tema-oscuro .tipo-opcion { border-color: var(--border-oscuro); }
+
+.tipo-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.tipo-opcion.notas    .tipo-icono { background: rgba(84,82,211,0.10); color: var(--color-principal); }
+.tipo-opcion.carpetas .tipo-icono { background: rgba(243,156,18,0.12); color: var(--color-secundario); }
+
+.tipo-opcion h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 5px; }
+.tipo-opcion p  { font-size: 0.78rem; color: #aaa; margin: 0; line-height: 1.4; }
+
+/* Paneles de búsqueda */
+.panel-busqueda { display: none; padding: 0 24px; }
+.panel-busqueda.activo { display: block; }
+
+.panel-subheader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 0 8px;
+    border-bottom: 1px solid #f0f0f5;
+    margin-bottom: 4px;
+}
+body.tema-oscuro .panel-subheader { border-bottom-color: var(--border-oscuro); }
+
+.btn-volver {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+.btn-volver:hover { color: var(--color-principal); background: rgba(84,82,211,0.08); }
+
+.tipo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.tipo-badge.notas    { background: rgba(84,82,211,0.10); color: var(--color-principal); }
+.tipo-badge.carpetas { background: rgba(243,156,18,0.12); color: var(--color-secundario); }
+
+.panel-hint { font-size: 0.78rem; color: #bbb; margin-left: auto; }
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.input-wrapper > i {
+    position: absolute;
+    left: 14px;
+    color: #bbb;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+.input-busqueda {
+    width: 100%;
+    border: 2px solid #e8e8f0;
+    border-radius: 10px;
+    padding: 11px 14px 11px 40px;
+    font-size: 0.92rem;
+    outline: none;
+    background: #fafafa;
+    transition: border-color 0.18s;
+}
+.input-busqueda:focus { border-color: var(--color-principal); background: #fff; }
+body.tema-oscuro .input-busqueda { background: #2a2a3c; border-color: var(--border-oscuro); color: var(--texto-oscuro); }
+body.tema-oscuro .input-busqueda:focus { border-color: var(--color-principal); background: #2e2e42; }
+
+.filtros-seccion { padding-top: 4px; }
+.filtros-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #bbb;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.filtros-grid { display: grid; gap: 10px; }
+.filtros-grid.col2 { grid-template-columns: 1fr 1fr; }
+
+.filtro-item { display: flex; flex-direction: column; gap: 5px; }
+.filtro-item label { font-size: 0.78rem; font-weight: 600; color: #aaa; display: flex; align-items: center; gap: 6px; }
+
+.filtro-item select,
+.filtro-item input[type="date"] {
+    border: 1.5px solid #e8e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    outline: none;
+    background: #fafafa;
+    transition: border-color 0.18s;
+}
+.filtro-item select:focus,
+.filtro-item input[type="date"]:focus { border-color: var(--color-principal); }
+body.tema-oscuro .filtro-item select,
+body.tema-oscuro .filtro-item input[type="date"] { background: #2a2a3c; border-color: var(--border-oscuro); color: var(--texto-oscuro); }
+
+/* Etiquetas */
+.etiquetas-buscador {
+    position: relative;
+    margin-bottom: 8px;
+}
+.etiquetas-buscador input {
+    width: 100%;
+    border: 1.5px solid #e8e8f0;
+    border-radius: 8px;
+    padding: 8px 34px 8px 10px;
+    font-size: 0.83rem;
+    outline: none;
+    background: #fafafa;
+    transition: border-color 0.18s;
+}
+.etiquetas-buscador input:focus { border-color: var(--color-principal); }
+.etiquetas-buscador .icono-busq { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #ccc; font-size: 0.8rem; pointer-events: none; }
+body.tema-oscuro .etiquetas-buscador input { background: #2a2a3c; border-color: var(--border-oscuro); color: var(--texto-oscuro); }
+
+.etiquetas-nueva-hint {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--color-principal);
+    background: rgba(84,82,211,0.07);
+    border-radius: 7px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.etiquetas-nueva-hint:hover { background: rgba(84,82,211,0.14); }
+
+.etiquetas-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.etiqueta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f0f0f8;
+    color: #555;
+    border: 1.5px solid transparent;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.etiqueta-chip i { opacity: 0; font-size: 0.65rem; transition: opacity 0.15s; }
+.etiqueta-chip:hover { border-color: var(--color-principal); color: var(--color-principal); background: rgba(84,82,211,0.06); }
+.etiqueta-chip.activa { background: var(--color-principal); color: #fff; border-color: var(--color-principal); }
+.etiqueta-chip.activa i { opacity: 1; }
+body.tema-oscuro .etiqueta-chip { background: rgba(255,255,255,0.06); color: var(--texto-oscuro); }
+
+/* Chips filtros activos */
+.filtros-activos {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(84,82,211,0.05);
+    border-radius: 10px;
+    border: 1px dashed rgba(84,82,211,0.25);
+}
+.filtros-activos.visible { display: flex; }
+.fa-label { font-size: 0.72rem; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+
+.chip-activo {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(84,82,211,0.12);
+    color: var(--color-principal);
+    border-radius: 20px;
+    padding: 3px 8px 3px 10px;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.chip-activo button { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0 2px; opacity: 0.7; }
+.chip-activo button:hover { opacity: 1; }
+
+.btn-limpiar-all {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Footer de panel */
+.panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 18px;
+    border-top: 1px solid #f0f0f5;
+    margin-top: 16px;
+}
+body.tema-oscuro .panel-footer { border-top-color: var(--border-oscuro); }
+
+.btn-limpiar {
+    background: none;
+    border: 1.5px solid #ddd;
+    color: #888;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+}
+.btn-limpiar:hover { border-color: #aaa; color: #555; }
+
+.btn-buscar {
+    background: var(--color-principal);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 20px;
+    font-size: 0.83rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+.btn-buscar:hover { background: #4340c0; }
+.btn-buscar.carpetas { background: var(--color-secundario); }
+.btn-buscar.carpetas:hover { background: #e08e0b; }
+
+
+/* ============================================================
+   7. PAPELERA.HTML
+   ============================================================ */
+
+/* Aviso 30 días */
+.aviso-papelera {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 28px;
+    font-size: 0.88rem;
+    color: #7a5c00;
+}
+.aviso-papelera i { font-size: 1.1rem; margin-top: 2px; flex-shrink: 0; color: #f39c12; }
+
+/* Cabecera sección */
+.papelera-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.papelera-header h2 { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 10px; margin: 0; }
+.papelera-header h2 i { color: var(--color-peligro); }
+
+.badge-total {
+    background: var(--color-peligro);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+/* Papelera vacía */
+.papelera-vacia { text-align: center; padding: 72px 20px; color: #bbb; }
+.papelera-vacia i { font-size: 4rem; opacity: 0.25; display: block; margin-bottom: 18px; }
+.papelera-vacia p { font-size: 1rem; color: #aaa; margin: 0; }
+
+/* Tarjeta de nota eliminada */
+.nota-papelera {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: var(--card-claro, #fff);
+    border: 1.5px solid #e0e0e0;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    opacity: 0.82;
+    transition: box-shadow 0.2s, border-color 0.2s, opacity 0.2s;
+    position: relative;
+}
+.nota-papelera:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.10); border-color: #bbb; opacity: 1; }
+
+.nota-papelera .icono-nota {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    background: rgba(231,76,60,0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.nota-papelera .icono-nota i { color: var(--color-peligro); font-size: 1.25rem; }
+
+.nota-info { flex: 1; min-width: 0; }
+
+.nota-titulo {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nota-descripcion {
+    font-size: 0.84rem;
+    color: #95a5a6;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.nota-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+    color: #aaa;
+}
+.nota-meta i { margin-right: 4px; }
+
+.formato-badge {
+    background: rgba(84,82,211,0.10);
+    color: #5452d3;
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Días restantes */
+.dias-restantes {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.dias-restantes.urgente     { background: rgba(231,76,60,0.12);  color: #e74c3c; }
+.dias-restantes.advertencia { background: rgba(243,156,18,0.12); color: #e67e22; }
+.dias-restantes.normal      { background: rgba(149,165,166,0.12); color: #7f8c8d; }
+
+/* Acciones */
+.nota-acciones { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+
+.btn-restaurar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 2px solid #2ecc71;
+    color: #2ecc71;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-restaurar:hover { background: #2ecc71; color: #fff; }
+
+.btn-eliminar-def {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 2px solid #e74c3c;
+    color: #e74c3c;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-eliminar-def:hover { background: #e74c3c; color: #fff; }
+
+/* Barra de acciones masivas */
+.barra-acciones {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-vaciar-todo {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--color-peligro);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 9px 18px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.12s;
+}
+.btn-vaciar-todo:hover    { background: #c0392b; transform: translateY(-1px); }
+.btn-vaciar-todo:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Toast */
+.toast-container-custom {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 340px;
+}
+
+
+/* ============================================================
+   8. MODAL ELEGIR FORMATO (compartido en los 3 HTML)
+   ============================================================ */
 .formato-backdrop {
     display: none;
     position: fixed;
@@ -449,8 +959,8 @@
     animation: formatoIn 0.24s cubic-bezier(0.34,1.26,0.64,1) both;
 }
 @keyframes formatoIn {
-    from { opacity:0; transform: translate(-50%,-46%) scale(0.95); }
-    to   { opacity:1; transform: translate(-50%,-50%) scale(1);    }
+    from { opacity: 0; transform: translate(-50%,-46%) scale(0.95); }
+    to   { opacity: 1; transform: translate(-50%,-50%) scale(1);    }
 }
 
 .formato-titulo {
@@ -507,9 +1017,24 @@
 }
 .formato-cerrar:hover { border-color: #e74c3c; color: #e74c3c; }
 
-/* Tema oscuro */
-body.tema-oscuro .formato-modal    { background: #1f2937; }
-body.tema-oscuro .formato-opcion   { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); color: #e2e8f0; }
-body.tema-oscuro .formato-opcion:hover { background: rgba(84,82,211,0.15); border-color: #5452d3; color: #e2e8f0; }
-body.tema-oscuro .formato-cerrar   { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.35); }
-body.tema-oscuro .formato-titulo   { color: rgba(255,255,255,0.30); }
+
+/* ============================================================
+   9. RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+    .sidebar               { width: 100%; height: auto; position: relative; padding: 10px 0; }
+    .menu li a             { padding: 10px 15px; }
+    .main                  { margin-left: 0; padding: 15px; }
+    .stats                 { flex-direction: column; }
+    .grid                  { grid-template-columns: 1fr; }
+    header                 { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .filtros-grid.col2     { grid-template-columns: 1fr; }
+    .tipo-opciones         { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .nota-papelera         { flex-direction: column; }
+    .nota-acciones         { flex-direction: row; width: 100%; }
+    .btn-restaurar,
+    .btn-eliminar-def      { flex: 1; justify-content: center; }
+}
