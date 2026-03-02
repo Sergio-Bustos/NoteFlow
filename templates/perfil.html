@@ -1,154 +1,194 @@
-<!DOCTYPE html><!--Declaración de documento HTML5-->
-<html lang="es"><!--Elemento raíz con idioma español-->
-<head><!--Inicio de la sección de metadatos-->
-    <meta charset="UTF-8"> <!--  Codificacion de caracteres -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!--  Configuración para dispositivos móviles -->
-    <title>Perfil | NoteFlow</title> <!-- Título de la pestaña del navegador -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Enlace a Font Awesome para iconos -->
-    <link rel="icon" type="image/icon" href="../static/logocircular.png"> <!-- Imagen-->
-    <!-- Bootstrap 5 CSS -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil | NoteFlow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/icon" href="../static/logocircular.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <link rel="stylesheet" href="/static/perfil.css"> <!-- Enlace a hoja de estilos general -->
-    
-</head> <!--Cierre del head-->
-<body> <!--Inicio del cuerpo del documento-->
+    <link rel="stylesheet" href="/static/perfil.css">
+</head>
+<body>
 
 <!-- Contenedor de Toasts -->
 <div class="toast-container-custom"></div>
 
-<div class="container"> <!-- Contenedor principal -->
-    <div class="header"> <!-- Encabezado con botón de regreso -->
-        <a href="/dashboard" class="back-btn">  <!-- Enlace clase boton volver-->
-            <i class="fas fa-arrow-left"></i> Volver al Dashboard  <!-- Icono de flecha y texto  -->
+<div class="container">
+    <div class="header">
+        <a href="/dashboard" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
         </a>
-    </div> <!-- Cierre del encabezado -->
+    </div>
 
-    <!-- INFORMACIÓN DEL PERFIL -->
-    <div class="card"> <!-- Tarjeta de información del perfil -->
-        <div class="title"> <!-- Título de la tarjeta -->
+    <!-- ── INFORMACIÓN DEL PERFIL ── -->
+    <div class="card">
+        <div class="title">
             <i class="fas fa-user-circle"></i>
-            Información del Perfil 
-        </div> <!-- Cierre del título -->
+            Información del Perfil
+        </div>
 
-        <div class="perfil-info"> <!-- Contenedor de información del perfil -->
-            <div class="avatar-container"> <!-- Contenedor de la foto de perfil -->
-                <img id="foto-perfil" src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}" alt="Foto de perfil"> <!-- Imagen de perfil con ruta dinámica -->
+        <div class="perfil-info">
+            <div class="avatar-container">
+                <img id="foto-perfil"
+                     src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}"
+                     alt="Foto de perfil">
             </div>
 
-            <div class="data"> <!-- Contenedor de datos del usuario -->
-                <p><i class="fas fa-user"></i> <strong>Nombre:</strong> {{ usuario.Nombres }} {{ usuario.Apellidos }}</p> <!-- Nombre completo del usuario -->
-                <p><i class="fas fa-envelope"></i> <strong>Correo:</strong> {{ usuario.Correo }}</p> <!-- Correo electrónico del usuario -->
-                <p><i class="fas fa-at"></i> <strong>Usuario:</strong> {{ usuario.Usuario }}</p> <!-- Nombre de usuario -->
-                <p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> {{ usuario.Telefono }}</p> <!-- Número de teléfono del usuario -->
-            </div> <!-- Cierre del contenedor de datos -->
-        </div> <!-- Cierre del contenedor de información del perfil -->
+            <div class="data">
+                <p><i class="fas fa-user"></i>     <strong>Nombre:</strong>   {{ usuario.Nombres }} {{ usuario.Apellidos }}</p>
+                <p><i class="fas fa-envelope"></i> <strong>Correo:</strong>   {{ usuario.Correo }}</p>
+                <p><i class="fas fa-at"></i>       <strong>Usuario:</strong>  {{ usuario.Usuario }}</p>
+                <p><i class="fas fa-phone"></i>    <strong>Teléfono:</strong> {{ usuario.Telefono }}</p>
 
-        <!-- SUBIR FOTO DE PERFIL -->
-        <form id="form-foto" enctype="multipart/form-data" style="margin-top: 30px; border-top: 1px solid var(--border-claro); padding-top: 20px;"> <!-- Formulario para subir foto de perfil -->
-            <div class="form-group">  <!-- Grupo de formulario -->
-                <label><i class="fas fa-camera"></i> Cambiar foto de perfil</label> <!-- Etiqueta del campo -->
-                <input type="file" name="foto" id="input-foto" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required> <!-- Campo de entrada para seleccionar archivo -->
-                <small class="password-requirements">Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 5MB)</small> <!-- Requisitos de formato de archivo -->
-            </div> <!-- Cierre del grupo de formulario -->
-            <div class="preview-foto" id="preview-foto" style="display: none;"> <!-- Contenedor de vista previa de la foto -->
-                <p><strong>Vista previa:</strong></p>   <!-- Texto de vista previa -->
-                <img id="preview-img" src="" alt="Vista previa"> <!-- Imagen de vista previa -->
-            </div> <!-- Cierre del contenedor de vista previa -->
-            <button type="submit"> <!-- Botón para subir la foto -->
-                <i class="fas fa-upload"></i> Cargar nueva imagen <!-- Texto del botón -->
-            </button> <!-- Cierre del botón -->
-        </form> <!-- Cierre del formulario de subir foto -->
-    </div> <!-- Cierre de la tarjeta de información del perfil -->
+                <!-- Botón eliminar foto — solo visible si el usuario tiene foto propia -->
+                {% if usuario.Foto and usuario.Foto not in ['img/default_profile.png', 'uploads/profile/default_profile.png', '', none] %}
+                <button id="btn-eliminar-foto" class="btn-eliminar-foto" onclick="confirmarEliminarFoto()">
+                    <i class="fas fa-trash-alt"></i> Eliminar foto de perfil
+                </button>
+                {% else %}
+                <button id="btn-eliminar-foto" class="btn-eliminar-foto" style="display:none;" onclick="confirmarEliminarFoto()">
+                    <i class="fas fa-trash-alt"></i> Eliminar foto de perfil
+                </button>
+                {% endif %}
+            </div>
+        </div>
 
-    <!-- PREFERENCIAS DE APARIENCIA --> 
-    <div class="card"> <!-- Tarjeta de preferencias de apariencia -->
-        <div class="title"> <!-- Título de la tarjeta -->
-            <i class="fas fa-palette"></i> 
-            Preferencias de Apariencia
-        </div> <!-- Cierre del título -->
-
-        <div class="tema-actual" id="tema-actual-badge"> <!-- Contenedor del tema actual -->
-            <i class="fas fa-sun" id="tema-icon"></i> <!-- Icono del tema actual -->
-            <span id="tema-texto">Tema Claro Activo</span> <!-- Texto del tema actual -->
-        </div> <!-- Cierre del contenedor del tema actual -->
- 
-        <form id="form-tema"> <!-- Formulario para cambiar tema -->
-            <div class="form-group"> <!-- Grupo de formulario -->
-                <label><i class="fas fa-adjust"></i> Cambiar tema del sistema</label> <!-- Etiqueta del campo -->
-                <select name="tema" id="select-tema"> <!-- Selector de tema -->
-                    <option value="claro" {% if usuario.Color_principal == "Blanco" %}selected{% endif %}> 
-                        ☀️ Modo Claro
-                    </option> <!-- Opción de modo claro -->
-                    <option value="oscuro" {% if usuario.Color_principal == "Negro" %}selected{% endif %}>
-                        🌙 Modo Oscuro
-                    </option>
-                </select> <!-- Cierre del selector de tema -->
-            </div> <!-- Cierre del grupo de formulario -->
-
-            <button type="submit"> <!-- Botón para aplicar el tema -->
-                <i class="fas fa-save"></i> Aplicar Tema <!-- Texto del botón -->
-            </button> <!-- Cierre del botón -->
-        </form> <!-- Cierre del formulario de cambiar tema -->
-    </div> <!-- Cierre de la tarjeta de preferencias de apariencia -->
- 
-    <!-- CAMBIAR CONTRASEÑA -->
-    <div class="card"> <!-- Tarjeta para cambiar contraseña -->
-        <div class="title"> <!-- Título de la tarjeta -->
-            <i class="fas fa-lock"></i> <!-- Icono de candado -->
-            Cambiar Contraseña
-        </div> <!-- Cierre del título -->
-
-        <form id="form-password"> <!-- Formulario para cambiar contraseña -->
-            <div class="form-group"> <!-- Grupo de formulario -->
-                <label><i class="fas fa-key"></i> Contraseña actual</label> <!-- Etiqueta del campo -->
-                <input type="password" name="password_actual" id="password_actual" required> <!-- Campo de entrada para la contraseña actual -->
-            </div> <!-- Cierre del grupo de formulario -->
-
-            <div class="form-group"> <!-- Grupo de formulario -->
-                <label><i class="fas fa-lock"></i> Nueva contraseña</label> <!-- Etiqueta del campo -->
-                <input type="password" name="password_nueva" id="password_nueva" minlength="6" maxlength="15" required> <!-- Campo de entrada para la nueva contraseña -->
-                <small class="password-requirements">Entre 6 y 15 caracteres</small> <!-- Requisitos de la nueva contraseña -->
-            </div>  <!-- Cierre del grupo de formulario -->
-
-            <div class="form-group"> <!-- Grupo de formulario -->
-                <label><i class="fas fa-check-circle"></i> Confirmar nueva contraseña</label> <!-- Etiqueta del campo -->
-                <input type="password" name="password_confirmacion" id="password_confirmacion" minlength="6" maxlength="15" required> <!-- Campo de entrada para confirmar la nueva contraseña -->
-            </div> <!-- Cierre del grupo de formulario -->
-
-            <button type="submit"> <!-- Botón para actualizar la contraseña -->
-                <i class="fas fa-sync-alt"></i> Actualizar Contraseña <!-- Texto del botón -->
-            </button> <!-- Cierre del botón -->
+        <!-- ── SUBIR FOTO DE PERFIL ── -->
+        <form id="form-foto" enctype="multipart/form-data"
+              style="margin-top:30px; border-top:1px solid var(--border-claro); padding-top:20px;">
+            <div class="form-group">
+                <label><i class="fas fa-camera"></i> Cambiar foto de perfil</label>
+                <input type="file" name="foto" id="input-foto"
+                       accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
+                <small class="password-requirements">Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 5MB)</small>
+            </div>
+            <div class="preview-foto" id="preview-foto" style="display:none;">
+                <p><strong>Vista previa:</strong></p>
+                <img id="preview-img" src="" alt="Vista previa">
+            </div>
+            <button type="submit">
+                <i class="fas fa-upload"></i> Cargar nueva imagen
+            </button>
         </form>
-    </div> <!-- Cierre de la tarjeta para cambiar contraseña -->
+    </div>
 
-    <!-- CERRAR SESIÓN -->
-    <div class="card"> <!-- Tarjeta para cerrar sesión -->
-        <button class="logout" data-bs-toggle="modal" data-bs-target="#logoutModal"> <!-- Botón para cerrar sesión -->
-            <i class="fas fa-sign-out-alt"></i> Cerrar sesión <!-- Texto del botón -->
-        </button> <!-- Cierre del botón -->
-    </div> <!-- Cierre de la tarjeta para cerrar sesión -->
+    <!-- ── PREFERENCIAS DE APARIENCIA ── -->
+    <div class="card">
+        <div class="title">
+            <i class="fas fa-palette"></i>
+            Preferencias de Apariencia
+        </div>
 
-</div> <!-- Cierre del contenedor principal -->
+        <div class="tema-actual" id="tema-actual-badge">
+            <i class="fas fa-sun" id="tema-icon"></i>
+            <span id="tema-texto">Tema Claro Activo</span>
+        </div>
 
-<!-- Modal de Confirmación para Cerrar Sesión -->
-<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <form id="form-tema">
+            <div class="form-group">
+                <label><i class="fas fa-adjust"></i> Cambiar tema del sistema</label>
+                <select name="tema" id="select-tema">
+                    <option value="claro"  {% if usuario.Color_principal == "Blanco" %}selected{% endif %}>☀️ Modo Claro</option>
+                    <option value="oscuro" {% if usuario.Color_principal == "Negro"  %}selected{% endif %}>🌙 Modo Oscuro</option>
+                </select>
+            </div>
+            <button type="submit">
+                <i class="fas fa-save"></i> Aplicar Tema
+            </button>
+        </form>
+    </div>
+
+    <!-- ── CAMBIAR CONTRASEÑA ── -->
+    <div class="card">
+        <div class="title">
+            <i class="fas fa-lock"></i>
+            Cambiar Contraseña
+        </div>
+
+        <form id="form-password">
+            <div class="form-group">
+                <label><i class="fas fa-key"></i> Contraseña actual</label>
+                <input type="password" name="password_actual" id="password_actual" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> Nueva contraseña</label>
+                <input type="password" name="password_nueva" id="password_nueva"
+                       minlength="6" maxlength="15" required>
+                <small class="password-requirements">Entre 6 y 15 caracteres</small>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-check-circle"></i> Confirmar nueva contraseña</label>
+                <input type="password" name="password_confirmacion" id="password_confirmacion"
+                       minlength="6" maxlength="15" required>
+            </div>
+            <button type="submit">
+                <i class="fas fa-sync-alt"></i> Actualizar Contraseña
+            </button>
+        </form>
+    </div>
+
+    <!-- ── CERRAR SESIÓN ── -->
+    <div class="card">
+        <button class="logout" data-bs-toggle="modal" data-bs-target="#logoutModal">
+            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </button>
+    </div>
+
+</div><!-- /container -->
+
+
+<!-- ── MODAL: Confirmar eliminar foto ── -->
+<div class="modal fade" id="modalEliminarFoto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                <h5 class="modal-title" id="logoutModalLabel" style="color: #212529; font-weight: 600;">
+            <div class="modal-header" style="border-bottom:2px solid #e74c3c;">
+                <h5 class="modal-title" style="color:#e74c3c; font-weight:700;">
+                    <i class="fas fa-exclamation-triangle"></i> Eliminar foto de perfil
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+                ¿Estás seguro de que deseas eliminar tu foto de perfil?
+                <br><br>
+                <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Se reemplazará por la imagen predeterminada. Esta acción no se puede deshacer.
+                </span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff !important;">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar-foto"
+                        style="color:#fff !important; font-weight:600;">
+                    <i class="fas fa-trash-alt"></i> Sí, eliminar foto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ── MODAL: Confirmar cerrar sesión ── -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color:#f8f9fa; border-bottom:2px solid #dee2e6;">
+                <h5 class="modal-title" style="color:#212529; font-weight:600;">
                     <i class="fas fa-sign-out-alt"></i> Confirmar Cierre de Sesión
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="color: #495057; font-size: 16px; padding: 20px;">
+            <div class="modal-body" style="color:#495057; font-size:16px; padding:20px;">
                 ¿Estás seguro de que deseas cerrar sesión en NoteFlow?
             </div>
-            <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="color: #fff; font-weight: 500;">
+            <div class="modal-footer" style="background-color:#f8f9fa; border-top:1px solid #dee2e6;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="color:#fff; font-weight:500;">
                     <i class="fas fa-times"></i> Cancelar
                 </button>
-                <a href="/perfil/cerrar-sesion" class="btn btn-danger" style="color: #fff; font-weight: 500;">
+                <a href="/perfil/cerrar-sesion" class="btn btn-danger"
+                   style="color:#fff; font-weight:500;">
                     <i class="fas fa-sign-out-alt"></i> Sí, cerrar sesión
                 </a>
             </div>
@@ -156,174 +196,197 @@
     </div>
 </div>
 
-<!-- Bootstrap 5 JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script> 
-    // ========== FUNCIÓN PARA MOSTRAR TOASTS ==========
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+    /* ══════════════════════════════════════════
+       TOASTS
+    ══════════════════════════════════════════ */
     function mostrarToast(mensaje, tipo = 'info') {
         const container = document.querySelector('.toast-container-custom');
-        
-        const iconos = {
-            success: '✓',
-            error: '✕',
-            warning: '⚠',
-            info: 'ℹ'
-        };
-        
-        const titulos = {
-            success: 'Éxito',
-            error: 'Error',
-            warning: 'Advertencia',
-            info: 'Información'
-        };
-        
-        const colores = {
-            success: 'bg-success',
-            error: 'bg-danger',
-            warning: 'bg-warning',
-            info: 'bg-info'
-        };
-        
+
+        const iconos  = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+        const titulos = { success: 'Éxito', error: 'Error', warning: 'Advertencia', info: 'Información' };
+        const colores = { success: 'bg-success', error: 'bg-danger', warning: 'bg-warning', info: 'bg-info' };
+
         const toastEl = document.createElement('div');
         toastEl.className = `toast toast-${tipo} align-items-center text-white ${colores[tipo]} border-0`;
         toastEl.setAttribute('role', 'alert');
-        toastEl.setAttribute('aria-live', 'assertive');
         toastEl.setAttribute('aria-atomic', 'true');
-        
         toastEl.innerHTML = `
             <div class="d-flex">
                 <div class="toast-body">
                     <strong>${iconos[tipo]} ${titulos[tipo]}:</strong> ${mensaje}
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        `;
-        
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast"></button>
+            </div>`;
         container.appendChild(toastEl);
-        
-        const toast = new bootstrap.Toast(toastEl, {
-            autohide: true,
-            delay: 4000
-        });
-        
+        const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
         toast.show();
-        
-        toastEl.addEventListener('hidden.bs.toast', () => {
-            toastEl.remove();
-        });
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     }
 
-    // ========== APLICAR TEMA AL CARGAR LA PÁGINA ==========
-    document.addEventListener('DOMContentLoaded', function() {
+
+    /* ══════════════════════════════════════════
+       TEMA (claro / oscuro)
+    ══════════════════════════════════════════ */
+    document.addEventListener('DOMContentLoaded', function () {
         const colorPrincipal = "{{ usuario.Color_principal }}";
-        aplicarTemaVisual(colorPrincipal === "Negro" ? "oscuro" : "claro");
-    }); 
- 
+        aplicarTemaVisual(colorPrincipal === 'Negro' ? 'oscuro' : 'claro');
+    });
+
     function aplicarTemaVisual(tema) {
-        const body = document.body;
-        const icon = document.getElementById('tema-icon');
+        const body  = document.body;
+        const icon  = document.getElementById('tema-icon');
         const texto = document.getElementById('tema-texto');
-        
-        if (tema === "oscuro") {
+
+        if (tema === 'oscuro') {
             body.classList.add('tema-oscuro');
             body.classList.remove('tema-claro');
-            icon.className = 'fas fa-moon';
+            icon.className  = 'fas fa-moon';
             texto.textContent = 'Tema Oscuro Activo';
         } else {
             body.classList.add('tema-claro');
             body.classList.remove('tema-oscuro');
-            icon.className = 'fas fa-sun';
+            icon.className  = 'fas fa-sun';
             texto.textContent = 'Tema Claro Activo';
         }
     }
 
-    // ========== VISTA PREVIA DE FOTO ==========
-    document.getElementById('input-foto').addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        
+
+    /* ══════════════════════════════════════════
+       VISTA PREVIA DE FOTO
+    ══════════════════════════════════════════ */
+    document.getElementById('input-foto').addEventListener('change', function (e) {
+        const file = e.target.files[0];
         if (!file) return;
-        
-        // Validar tamaño (5MB máximo)
+
         if (file.size > 5 * 1024 * 1024) {
             mostrarToast('La imagen no debe superar 5MB', 'warning');
             this.value = '';
             return;
         }
-        
+
         const reader = new FileReader();
-        reader.onload = function(event) {
-            const previewContainer = document.getElementById('preview-foto');
-            const previewImg = document.getElementById('preview-img');
-            
-            previewImg.src = event.target.result;
-            previewContainer.style.display = 'block';
+        reader.onload = function (ev) {
+            document.getElementById('preview-img').src = ev.target.result;
+            document.getElementById('preview-foto').style.display = 'block';
         };
         reader.readAsDataURL(file);
     });
 
-    // ========== SUBIR FOTO DE PERFIL ==========
-    document.getElementById('form-foto').addEventListener('submit', async function(e) {
+
+    /* ══════════════════════════════════════════
+       SUBIR FOTO
+    ══════════════════════════════════════════ */
+    document.getElementById('form-foto').addEventListener('submit', async function (e) {
         e.preventDefault();
-        
+
         const formData = new FormData(this);
-        const btn = this.querySelector('button');
-        
+        const btn = this.querySelector('button[type="submit"]');
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
 
         try {
-            const response = await fetch('/perfil/subir-foto', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
+            const resp = await fetch('/perfil/subir-foto', { method: 'POST', body: formData });
+            const data = await resp.json();
 
             if (data.success) {
                 mostrarToast(data.mensaje, 'success');
                 document.getElementById('foto-perfil').src = data.nueva_foto;
                 document.getElementById('preview-foto').style.display = 'none';
+                // Mostrar botón eliminar ahora que hay foto
+                document.getElementById('btn-eliminar-foto').style.display = '';
                 this.reset();
             } else {
                 mostrarToast(data.error || 'Error al subir la foto', 'error');
             }
-        } catch (error) {
+        } catch (err) {
             mostrarToast('Error de conexión al subir la foto', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-upload"></i> Cargar nueva imagen';
         }
     });
-    // ========== CAMBIAR TEMA ==========
-    document.getElementById('form-tema').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const temaNuevo = formData.get('tema');
 
-        const btn = this.querySelector('button');
+
+    /* ══════════════════════════════════════════
+       ELIMINAR FOTO DE PERFIL
+    ══════════════════════════════════════════ */
+
+    // 1. Abrir modal de confirmación
+    function confirmarEliminarFoto() {
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminarFoto'));
+        modal.show();
+
+        // Clonar botón para evitar listeners duplicados
+        const btnOld = document.getElementById('btn-confirmar-eliminar-foto');
+        const btnNew = btnOld.cloneNode(true);
+        btnOld.parentNode.replaceChild(btnNew, btnOld);
+
+        btnNew.addEventListener('click', async function () {
+            modal.hide();
+            await ejecutarEliminarFoto();
+        });
+    }
+
+    // 2. Llamar al backend y actualizar la UI
+    async function ejecutarEliminarFoto() {
+        const btn = document.getElementById('btn-eliminar-foto');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+
+        try {
+            const resp = await fetch('/perfil/eliminar-foto', { method: 'POST' });
+            const data = await resp.json();
+
+            if (data.success) {
+                // Actualizar la imagen a la foto por defecto
+                document.getElementById('foto-perfil').src = data.foto_default;
+                // Ocultar el botón eliminar (ya no hay foto propia)
+                btn.style.display = 'none';
+                mostrarToast(data.mensaje, 'success');
+            } else {
+                mostrarToast(data.error || 'Error al eliminar la foto', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar foto de perfil';
+            }
+        } catch (err) {
+            mostrarToast('Error de conexión', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar foto de perfil';
+        }
+    }
+
+
+    /* ══════════════════════════════════════════
+       CAMBIAR TEMA
+    ══════════════════════════════════════════ */
+    document.getElementById('form-tema').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData  = new FormData(this);
+        const temaNuevo = formData.get('tema');
+        const btn = this.querySelector('button[type="submit"]');
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aplicando...';
 
         try {
-            const response = await fetch('/perfil/cambiar-tema', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
+            const resp = await fetch('/perfil/cambiar-tema', { method: 'POST', body: formData });
+            const data = await resp.json();
 
             if (data.success) {
                 aplicarTemaVisual(temaNuevo);
                 mostrarToast(data.mensaje, 'success');
-
-                // Guardar cookie AQUÍ, dentro del if success
                 document.cookie = `tema=${data.tema_db};path=/;max-age=31536000`;
             } else {
                 mostrarToast(data.error || 'Error al cambiar tema', 'error');
             }
-        } catch (error) {
+        } catch (err) {
             mostrarToast('Error de conexión', 'error');
         } finally {
             btn.disabled = false;
@@ -332,39 +395,33 @@
     });
 
 
-    // ========== CAMBIAR CONTRASEÑA ==========
-    document.getElementById('form-password').addEventListener('submit', async function(e) {
+    /* ══════════════════════════════════════════
+       CAMBIAR CONTRASEÑA
+    ══════════════════════════════════════════ */
+    document.getElementById('form-password').addEventListener('submit', async function (e) {
         e.preventDefault();
-        
-        const actual = document.getElementById('password_actual').value;
-        const nueva = document.getElementById('password_nueva').value;
+
+        const nueva    = document.getElementById('password_nueva').value;
         const confirma = document.getElementById('password_confirmacion').value;
 
-        // Validación: ¿coinciden?
         if (nueva !== confirma) {
             mostrarToast('Las contraseñas nuevas no coinciden', 'warning');
             return;
         }
-
-        // Validación: tamaño
         if (nueva.length < 6 || nueva.length > 15) {
             mostrarToast('La contraseña debe tener entre 6 y 15 caracteres', 'warning');
             return;
         }
 
         const formData = new FormData(this);
-        const btn = this.querySelector('button');
-        
+        const btn = this.querySelector('button[type="submit"]');
+
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
 
         try {
-            const response = await fetch('/perfil/cambiar-password', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
+            const resp = await fetch('/perfil/cambiar-password', { method: 'POST', body: formData });
+            const data = await resp.json();
 
             if (data.success) {
                 mostrarToast(data.mensaje, 'success');
@@ -372,7 +429,7 @@
             } else {
                 mostrarToast(data.error || 'Error al cambiar contraseña', 'error');
             }
-        } catch (error) {
+        } catch (err) {
             mostrarToast('Error de conexión', 'error');
         } finally {
             btn.disabled = false;
@@ -381,6 +438,5 @@
     });
 
 </script>
-
 </body>
 </html>

@@ -1,0 +1,102 @@
+/* Configuración Base */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;                        /* El cuerpo ocupa al menos toda la pantalla */
+    background: linear-gradient(135deg, #4340a0 0%, #51368f 50%, #8b5cf6 100%); /* Fondo con degradado diagonal */
+    overflow-x: hidden;                       /* Evita que salga scroll horizontal */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    margin: 0;
+}
+
+h1 {
+    color: #ffffff;
+    font-weight: 300;
+    margin-bottom: 25px;
+    font-family: "cursive", sans-serif;
+
+}
+
+/* Barra de herramientas */
+.controles {
+    background: white;
+    padding: 15px 30px;
+    border-radius: 50px;
+    box-shadow: 0 10px 20px rgba(74, 20, 140, 0.1);
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    margin-bottom: 25px;
+    border: 1px solid #e1bee7;
+}
+
+.control-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #7b1fa2;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Inputs */
+input[type="color"] {
+    border: none;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+    background: none;
+}
+
+input[type="range"] {
+    accent-color: #9c27b0;
+    cursor: pointer;
+}
+
+/* Botones */
+button {
+    padding: 10px 22px;
+    border-radius: 25px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#btnLimpiar {
+    background-color: #e1bee7;
+    color: #4a148c;
+}
+
+#btnLimpiar:hover {
+    background-color: #ce93d8;
+}
+
+#btnGuardar {
+    background-color: #6a1b9a;
+    color: white;
+    box-shadow: 0 4px 10px rgba(106, 27, 154, 0.3);
+}
+
+#btnGuardar:hover {
+    background-color: #4a148c;
+    transform: translateY(-2px);
+}
+
+/* El Lienzo */
+#pizarra {
+    background-color: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    border: 8px solid white;
+    /* Cursor de precisión sin manito */
+    cursor: crosshair; 
+    touch-action: none; /* Evita scroll en móviles al dibujar */
+}

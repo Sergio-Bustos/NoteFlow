@@ -957,7 +957,85 @@ def subir_foto():
         print(f"Error al subir archivo: {e}")
         return jsonify({"error": "Error al subir el archivo"}), 500
 
+# 8.1 - Eliminar foto de perfil 
+# ==============================================================================
+# 8B. ELIMINAR FOTO DE PERFIL
+# ==============================================================================
 
+@app.route('/perfil/eliminar-foto', methods=['POST'])
+@login_required
+def eliminar_foto_perfil():
+    """
+    Elimina la foto de perfil del usuario:
+    - Borra el archivo físico del servidor (si no es la imagen por defecto).
+    - Pone NULL (o vacío) en la columna Foto de la BD.
+    """
+    user_id = session['usuario_id']
+    conexion = None
+    cursor   = None
+
+    try:
+        conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+
+        # Obtener la ruta actual de la foto
+        cursor.execute("""
+            SELECT "Foto" FROM public."Cuentas"
+            WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        row = cursor.fetchone()
+
+        if not row:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+
+        foto_actual = row[0] if row else None
+
+        # Borrar archivo físico solo si existe y no es la foto por defecto
+        fotos_default = {
+            None,
+            '',
+            'img/default_profile.png',
+            'uploads/profile/default_profile.png'
+        }
+
+        if foto_actual and foto_actual not in fotos_default:
+            ruta_fisica = os.path.join(BASE_DIR, 'static', foto_actual)
+            try:
+                if os.path.exists(ruta_fisica):
+                    os.remove(ruta_fisica)
+                    print(f"Foto eliminada del servidor: {ruta_fisica}")
+            except Exception as e:
+                print(f"No se pudo eliminar el archivo físico: {e}")
+                # No interrumpimos: igual actualizamos la BD
+
+        # Limpiar la columna Foto en la BD (NULL)
+        cursor.execute("""
+            UPDATE public."Cuentas"
+            SET "Foto" = NULL
+            WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        conexion.commit()
+
+        # Devolver la ruta de la imagen por defecto para que el JS la ponga
+        foto_default_url = url_for('static', filename='img/default_profile.png')
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Foto de perfil eliminada correctamente',
+            'foto_default': foto_default_url
+        }), 200
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        print(f"Error al eliminar foto de perfil: {e}")
+        return jsonify({'error': 'Error al eliminar la foto de perfil'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
 # ==============================================================================
 # 9. MIS NOTAS — solo visual, sin consultas de notas/carpetas
 # ==============================================================================
@@ -1009,6 +1087,7 @@ def mostrar_notas():
 # ==============================================================================
 # 10. PAPELERA
 # ==============================================================================
+
 @app.route('/papelera')
 @login_required
 def papelera():
@@ -1020,6 +1099,7 @@ def papelera():
         conexion = conectar_db(dict_cursor=True)
         cursor = conexion.cursor()
 
+        # Datos del usuario para el header
         cursor.execute("""
             SELECT "Nombres", "Foto", "Color_principal"
             FROM public."Cuentas"
@@ -1031,6 +1111,46 @@ def papelera():
             session.clear()
             return redirect(url_for('mostrar_login'))
 
+        # Eliminación automática de notas con más de 30 días en papelera
+        cursor.execute("""
+            SELECT n."ID_Nota", a."Ruta_archivo"
+            FROM public."Notas" n
+            LEFT JOIN public."Adjuntos" a ON n."ID_Nota" = a."ID_Nota"
+            WHERE n."ID_Cuenta" = %s
+              AND LOWER(n."Estado") = 'papelera'
+              AND n."Fecha_deedicion" <= (CURRENT_DATE - INTERVAL '30 days')
+        """, (user_id,))
+        notas_vencidas = cursor.fetchall()
+
+        if notas_vencidas:
+            # Eliminar archivos físicos
+            for fila in notas_vencidas:
+                ruta = fila.get('Ruta_archivo') if isinstance(fila, dict) else fila[1]
+                if ruta:
+                    ruta_completa = os.path.join(BASE_DIR, 'static', ruta)
+                    try:
+                        if os.path.exists(ruta_completa):
+                            os.remove(ruta_completa)
+                    except Exception as e:
+                        print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
+
+            # Obtener IDs de notas vencidas
+            ids_vencidos = list({
+                fila.get('ID_Nota') if isinstance(fila, dict) else fila[0]
+                for fila in notas_vencidas
+            })
+
+            cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_vencidos,))
+            cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids_vencidos,))
+            cursor.execute("""
+                DELETE FROM public."Notas"
+                WHERE "ID_Cuenta" = %s
+                  AND LOWER("Estado") = 'papelera'
+                  AND "Fecha_deedicion" <= (CURRENT_DATE - INTERVAL '30 days')
+            """, (user_id,))
+            conexion.commit()
+
+        # Obtener notas en papelera (ya sin las vencidas)
         cursor.execute("""
             SELECT
                 "ID_Nota",
@@ -1050,7 +1170,7 @@ def papelera():
             "papelera.html",
             notas_papelera=notas_papelera,
             usuario=usuario,
-            now=datetime.now().date(),   # ← .date() para que sea solo fecha, igual que PostgreSQL
+            now=datetime.now().date(),
             timedelta=timedelta
         )
 
@@ -1062,24 +1182,41 @@ def papelera():
     finally:
         cerrar_db(cursor, conexion)
 
+
 @app.route('/papelera/restaurar/<int:nota_id>', methods=['POST'])
 @login_required
 def restaurar_nota(nota_id):
+    """Restaura una nota de la papelera al estado Activa. Solo el propietario puede hacerlo."""
     user_id = session['usuario_id']
     conexion, cursor = None, None
     try:
         conexion = conectar_db()
         cursor = conexion.cursor()
+
+        # Verificar que la nota existe, pertenece al usuario y está en papelera
+        cursor.execute("""
+            SELECT "ID_Nota" FROM public."Notas"
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+        """, (nota_id, user_id))
+
+        if not cursor.fetchone():
+            return jsonify({'error': 'Nota no encontrada o sin permiso para restaurarla'}), 404
+
         cursor.execute("""
             UPDATE public."Notas"
-            SET "Estado" = 'Activa'
+            SET "Estado" = 'Activa', "Fecha_deedicion" = CURRENT_DATE
             WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s
         """, (nota_id, user_id))
+
         conexion.commit()
-        return jsonify({'success': True}), 200
+        return jsonify({'success': True, 'mensaje': 'Nota restaurada correctamente'}), 200
+
     except Exception as e:
-        if conexion: conexion.rollback()
-        return jsonify({'error': str(e)}), 500
+        if conexion:
+            conexion.rollback()
+        print(f"Error al restaurar nota {nota_id}: {e}")
+        return jsonify({'error': 'Error al restaurar la nota'}), 500
+
     finally:
         cerrar_db(cursor, conexion)
 
@@ -1087,21 +1224,58 @@ def restaurar_nota(nota_id):
 @app.route('/papelera/eliminar/<int:nota_id>', methods=['POST'])
 @login_required
 def eliminar_nota_definitivo(nota_id):
+    """Elimina permanentemente una nota, sus adjuntos físicos y registros relacionados."""
     user_id = session['usuario_id']
     conexion, cursor = None, None
     try:
-        conexion = conectar_db()
+        conexion = conectar_db(dict_cursor=True)
         cursor = conexion.cursor()
-        # Solo elimina si pertenece al usuario
+
+        # Verificar que la nota existe, pertenece al usuario y está en papelera
+        cursor.execute("""
+            SELECT "ID_Nota" FROM public."Notas"
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+        """, (nota_id, user_id))
+
+        if not cursor.fetchone():
+            return jsonify({'error': 'Nota no encontrada o sin permiso para eliminarla'}), 404
+
+        # Obtener rutas de adjuntos para borrar archivos físicos
+        cursor.execute("""
+            SELECT "Ruta_archivo" FROM public."Adjuntos"
+            WHERE "ID_Nota" = %s
+        """, (nota_id,))
+        adjuntos = cursor.fetchall()
+
+        for adj in adjuntos:
+            ruta = adj.get('Ruta_archivo') if isinstance(adj, dict) else adj[0]
+            if ruta:
+                ruta_completa = os.path.join(BASE_DIR, 'static', ruta)
+                try:
+                    if os.path.exists(ruta_completa):
+                        os.remove(ruta_completa)
+                except Exception as e:
+                    print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
+
+        # Limpiar tablas relacionadas antes de eliminar la nota
+        cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
+
+        # Eliminar la nota definitivamente
         cursor.execute("""
             DELETE FROM public."Notas"
             WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s
         """, (nota_id, user_id))
+
         conexion.commit()
-        return jsonify({'success': True}), 200
+        return jsonify({'success': True, 'mensaje': 'Nota eliminada definitivamente'}), 200
+
     except Exception as e:
-        if conexion: conexion.rollback()
-        return jsonify({'error': str(e)}), 500
+        if conexion:
+            conexion.rollback()
+        print(f"Error al eliminar nota {nota_id}: {e}")
+        return jsonify({'error': 'Error al eliminar la nota'}), 500
+
     finally:
         cerrar_db(cursor, conexion)
 
@@ -1109,33 +1283,183 @@ def eliminar_nota_definitivo(nota_id):
 @app.route('/papelera/vaciar', methods=['POST'])
 @login_required
 def vaciar_papelera():
+    """Elimina permanentemente TODAS las notas en papelera del usuario junto con sus adjuntos."""
     user_id = session['usuario_id']
     conexion, cursor = None, None
     try:
-        conexion = conectar_db()
+        conexion = conectar_db(dict_cursor=True)
         cursor = conexion.cursor()
+
+        # Obtener IDs de notas en papelera del usuario
+        cursor.execute("""
+            SELECT "ID_Nota" FROM public."Notas"
+            WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+        """, (user_id,))
+        filas = cursor.fetchall()
+        ids = [f['ID_Nota'] if isinstance(f, dict) else f[0] for f in filas]
+
+        if not ids:
+            return jsonify({'success': True, 'mensaje': 'La papelera ya estaba vacía'}), 200
+
+        # Obtener archivos adjuntos para borrarlos del servidor
+        cursor.execute("""
+            SELECT "Ruta_archivo" FROM public."Adjuntos"
+            WHERE "ID_Nota" = ANY(%s)
+        """, (ids,))
+        adjuntos = cursor.fetchall()
+
+        for adj in adjuntos:
+            ruta = adj.get('Ruta_archivo') if isinstance(adj, dict) else adj[0]
+            if ruta:
+                ruta_completa = os.path.join(BASE_DIR, 'static', ruta)
+                try:
+                    if os.path.exists(ruta_completa):
+                        os.remove(ruta_completa)
+                except Exception as e:
+                    print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
+
+        # Limpiar tablas relacionadas
+        cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids,))
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids,))
+
+        # Eliminar todas las notas en papelera
         cursor.execute("""
             DELETE FROM public."Notas"
             WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
         """, (user_id,))
+
         conexion.commit()
-        return jsonify({'success': True}), 200
+        return jsonify({'success': True, 'mensaje': 'Papelera vaciada correctamente'}), 200
+
     except Exception as e:
-        if conexion: conexion.rollback()
-        return jsonify({'error': str(e)}), 500
+        if conexion:
+            conexion.rollback()
+        print(f"Error al vaciar papelera del usuario {user_id}: {e}")
+        return jsonify({'error': 'Error al vaciar la papelera'}), 500
+
     finally:
         cerrar_db(cursor, conexion)
 # ==============================================================================
 # 11. CREAR NOTA
 # ==============================================================================
+
 @app.route('/crear-nota')
 @login_required
 def crear_nota():
     return render_template("fasededesarrollo.html")
 
+# ==============================================================================
+# 12. Ruta backend de guardar nota de dibujo
+# ==============================================================================
+
+
+import uuid as _uuid
+
+DIBUJO_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "dibujos")
+if not os.path.exists(DIBUJO_UPLOAD_FOLDER):
+    os.makedirs(DIBUJO_UPLOAD_FOLDER)
+
+
+@app.route('/bloc-dibujo')
+@login_required
+def bloc_dibujo():
+    """Página del bloc de dibujo."""
+    return render_template("dibujo.html")
+
+
+@app.route('/guardar-nota-dibujo', methods=['POST'])
+@login_required
+def guardar_nota_dibujo():
+    """
+    Recibe el canvas como imagen PNG (multipart/form-data),
+    lo guarda en disco y crea una nota de tipo 'dibujo' en la BD.
+    """
+    user_id = session['usuario_id']
+    conexion = None
+    cursor   = None
+
+    try:
+        # ── 1. Validar campos ──────────────────────────────────────────────
+        titulo  = request.form.get('titulo', '').strip() or 'Dibujo sin título'
+        archivo = request.files.get('imagen')
+
+        if not archivo or archivo.filename == '':
+            return jsonify({'error': 'No se recibió ninguna imagen'}), 400
+
+        # Aceptar solo PNG / JPEG / WEBP
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        if ext not in {'.png', '.jpg', '.jpeg', '.webp'}:
+            return jsonify({'error': 'Formato de imagen no permitido'}), 400
+
+        # ── 2. Guardar archivo físico ──────────────────────────────────────
+        filename = f"dibujo_{user_id}_{_uuid.uuid4().hex}{ext}"
+        ruta_completa = os.path.join(DIBUJO_UPLOAD_FOLDER, filename)
+        archivo.save(ruta_completa)
+        ruta_db = f"uploads/dibujos/{filename}"
+
+        # ── 3. Insertar nota en la BD ──────────────────────────────────────
+        conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+        hoy    = datetime.now().date()
+
+
+        # Nuevo ID_Nota
+        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
+        nuevo_id_nota = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion",
+                 "Estado", "Formato", "ID_Cuenta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'dibujo', %s, %s)
+            RETURNING "ID_Nota"
+        """, (
+            nuevo_id_nota,
+            titulo,
+            f'Nota de dibujo: {titulo}',   # Descripcion
+            '',                             # Contenido (el dibujo va como adjunto)
+            hoy, hoy,
+            user_id,
+        ))
+        nota_id = cursor.fetchone()[0]
+
+        # ── 4. Registrar adjunto ───────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
+        nuevo_id_adj = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Adjuntos"
+                ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+            VALUES (%s, %s, %s, %s, %s)
+        """, (nuevo_id_adj, filename, ext.lstrip('.'), ruta_db, nota_id))
+
+        conexion.commit()
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Nota de dibujo guardada correctamente',
+            'nota_id': nota_id,
+            'redirect': '/notas'
+        }), 201
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error al guardar la nota de dibujo'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
+
 
 # ==============================================================================
-# 12. CONFIGURACIÓN DE LA BASE DE DATOS CON SQLALCHEMY (solo modelos para docker)
+# 13. CONFIGURACIÓN DE LA BASE DE DATOS CON SQLALCHEMY (solo modelos para docker)
 # ==============================================================================
 
 db = SQLAlchemy(app)
@@ -1162,16 +1486,6 @@ class Cuentas(db.Model):
     carpetas = db.relationship("Carpetas", backref="cuenta", lazy=True)
 
 
-# =========================
-# CATEGORIAS
-# =========================
-class Categorias(db.Model):
-    __tablename__ = "Categorias"
-
-    ID_Categorias = db.Column(db.Integer, primary_key=True)
-    Nombre_categoria = db.Column(db.String(10), nullable=False)
-
-    notas = db.relationship("Notas", backref="categoria", lazy=True)
 
 
 # =========================
@@ -1205,7 +1519,7 @@ class Notas(db.Model):
 
     ID_Carpeta = db.Column(db.Integer, db.ForeignKey("Carpetas.ID_Carpeta"))
     ID_Cuenta = db.Column(db.Integer, db.ForeignKey("Cuentas.ID_Cuenta"), nullable=False)
-    ID_Categorias = db.Column(db.Integer, db.ForeignKey("Categorias.ID_Categorias"), nullable=False)
+
 
     adjuntos = db.relationship("Adjuntos", backref="nota", lazy=True)
 
@@ -1256,4 +1570,3 @@ class Tipos(db.Model):
 with app.app_context():
     print("ATENCION: CREANDO TABLAS ")
     db.create_all()
-
