@@ -911,3 +911,86 @@ body.scroll-body .panel-form    { max-height: none; overflow-y: visible; }
     .panel-deco .deco-logo { margin-bottom: 16px; }
     .panel-deco .feature-list { margin-top: 16px; gap: 8px; }
 }
+
+/* ============================================================================
+   17. VERIFICAR REGISTRO — estilos específicos
+   ============================================================================ */
+
+/* Contenedor de los 6 inputs de código */
+.codigo-inputs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 24px 0;
+}
+
+/* Cada caja de un dígito */
+.codigo-inputs input {
+    width: 52px;
+    height: 62px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--input-bg);
+    color: var(--text-dark);       /* texto visible sobre fondo claro */
+    padding: 0;
+    outline: none;
+    caret-color: transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.codigo-inputs input:focus {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 4px rgba(84, 82, 211, 0.12);
+    background: var(--white);
+}
+
+.codigo-inputs input.filled {
+    border-color: var(--purple);
+    background: var(--white);
+}
+
+/* Hint del correo */
+.correo-hint {
+    color: var(--text-light);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.correo-hint strong {
+    color: var(--text-dark);
+}
+
+/* Temporizador */
+.timer-wrap {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 8px;
+}
+
+.timer-wrap #timer-count {
+    font-weight: bold;
+    color: var(--purple);
+}
+
+/* Botón reenviar */
+#btn-reenviar {
+    background: none;
+    border: none;
+    color: var(--purple);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    font-weight: 600;
+}
+
+#btn-reenviar:disabled {
+    color: #aaa;
+    cursor: default;
+    text-decoration: none;
+}

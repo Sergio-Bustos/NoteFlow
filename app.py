@@ -16,6 +16,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import re
+import random
 load_dotenv()
 # =====================================================================================================================
 
@@ -216,7 +217,7 @@ def procesar_registro():
         
         if cursor.fetchone():
             return jsonify({'error': 'El usuario o correo ya está registrado en NoteFlow'}), 409
-
+        
         # Generar nuevo ID_Cuenta
         cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"')
         nuevo_id = cursor.fetchone()[0]
@@ -1414,8 +1415,8 @@ def guardar_nota_dibujo():
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
                  "Fecha_decreacion", "Fecha_deedicion",
-                 "Estado", "Formato", "ID_Cuenta")
-            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'dibujo', %s, %s)
+                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'dibujo', %s, NULL)
             RETURNING "ID_Nota"
         """, (
             nuevo_id_nota,

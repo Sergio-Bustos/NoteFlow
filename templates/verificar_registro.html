@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Correo | NoteFlow</title>
+    <link rel="stylesheet" href="/static/formulario.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
+</head>
+
+<body>
+    <div class="fondo"></div>
+    <div class="overlay"></div>
+    <div class="toast-container-custom"></div>
+
+    <div class="page-wrapper">
+
+        <!-- Panel decorativo izquierdo (idéntico al de registro) -->
+        <div class="panel-deco">
+            <div class="panel-deco-carousel">
+                <div class="carrusel">
+                    <div class="columna_izquierda">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                    </div>
+                    <div class="columna_derecha">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                        <img src="{{ url_for('static', filename='Logofondo2.png') }}" alt="">
+                        <img src="{{ url_for('static', filename='Logofondo.png') }}"  alt="">
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-deco-content">
+                <div class="deco-logo">Note<span>Flow</span></div>
+                <h1>Casi<br>listo 🎉</h1>
+                <p>Revisa tu bandeja de entrada. Si no ves el correo, revisa tu carpeta de spam.</p>
+                <ul class="feature-list">
+                    <li>El código expira en 15 minutos</li>
+                    <li>Puedes solicitar uno nuevo si caduca</li>
+                    <li>El código tiene 6 dígitos</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Panel derecho: formulario de verificación -->
+        <div class="panel-form">
+            <form class="formulario" id="form-verificacion" action="/procesar-verificacion" method="POST">
+
+                <div class="formulario-logo">
+                    <span class="logo-text">Note<span class="logo-accent">Flow</span></span>
+                </div>
+
+                <h2 class="h2-registro">VERIFICAR CORREO</h2>
+
+                <p class="correo-hint">
+                    Ingresa el código que enviamos a<br>
+                    <strong>{{ correo }}</strong>
+                </p>
+
+                <!-- 6 cajas de un dígito cada una -->
+                <div class="codigo-inputs" id="codigo-inputs">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code" aria-label="Dígito 1">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 2">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 3">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 4">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 5">
+                    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" aria-label="Dígito 6">
+                </div>
+
+                <!-- Campo oculto que se llena con el código completo -->
+                <input type="hidden" name="codigo" id="campo-codigo">
+
+                <!-- Temporizador -->
+                <div class="timer-wrap">
+                    El código expira en <span id="timer-count">15:00</span>
+                </div>
+
+                <section class="inputs" style="margin-top: 20px;">
+                    <!-- Botón principal -->
+                    <button type="submit" id="btn-verificar" style="width:100%;">
+                        Verificar y crear cuenta
+                    </button>
+                </section>
+
+                <!-- Reenviar código -->
+                <p style="text-align:center; margin-top: 14px; font-size: 13px; color: #888;">
+                    ¿No recibiste el código?
+                    <button type="button" id="btn-reenviar" disabled>
+                        Reenviar (espera <span id="espera-count">60s</span>)
+                    </button>
+                </p>
+
+                <p>
+                    <a href="/registro.html" class="back-link">
+                        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Volver al registro
+                    </a>
+                </p>
+            </form>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/verificar_registro.js') }}"></script> <!-- Script personalizado del formulario de verificación -->
+</body>
+</html>
