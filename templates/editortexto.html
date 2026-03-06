@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Notas</title>
+    <link rel="stylesheet" href="/static/estilostexto.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="contenedor-editor">
+        <header>
+            <h1>Nota</h1>
+        </header>
+
+        <div class="seccion-titulo">
+            <label>Nombre del Archivo</label>
+            <input type="text" id="titulo-nota" placeholder="Hoja en blanco" maxlength="40">
+        </div>
+
+        <div class="toolbar">
+            <div class="grupo">
+                <button onmousedown="aplicarFormato('bold', event)" title="Negrita"><b>B</b></button>
+                <button onmousedown="aplicarFormato('italic', event)" title="Cursiva"><i>I</i></button>
+                <button onmousedown="aplicarFormato('underline', event)" title="Subrayado"><u>U</u></button>
+            </div>
+
+            <div class="grupo">
+                <button onmousedown="aplicarFormato('justifyLeft', event)">⇐</button>
+                <button onmousedown="aplicarFormato('justifyCenter', event)">⇔</button>
+                <button onmousedown="aplicarFormato('justifyRight', event)">⇒</button>
+            </div>
+
+            <div class="grupo">
+                <select onchange="cambiarTamano(this.value)">
+                    <option value="3">Tamaño Normal</option>
+                    <option value="5">Grande</option>
+                    <option value="7">Extra Grande</option>
+                </select>
+            </div>
+
+            <div class="grupo color-pro">
+                <div class="color-wrapper">
+                    <input type="color" id="inputColor" onchange="cambiarColor(this.value)" value="#6a1b9a">
+                    <div class="color-visual" id="colorMuestra"></div>
+                </div>
+            </div>
+
+            <button id="btnGuardar" onclick="guardarEnPostgres()">GUARDAR</button>
+        </div>
+
+        <div id="cuerpo-nota" contenteditable="true" placeholder="Escribe tu contenido aquí..."></div>
+    </div>
+
+    <script src="/static/js/logicatexto.js"></script> <!-- Script personalizado del editor -->
+</body>
+</html>

@@ -1,0 +1,167 @@
+:root {
+    --fondo: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+    --borde: #1e1b4b;
+    --morado: #8b5cf6;
+    --morado-claro: #f3e5f5;
+    --cyan: #06b6d4;
+    --amarillo: #ffcc00;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--fondo);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.contenedor-editor {
+    background: white;
+    width: 95%;
+    max-width: 1200px;
+    padding: 30px;
+    border-radius: 40px;
+    border: 6px solid var(--borde);
+    box-shadow: 12px 12px 0px rgba(0,0,0,0.3);
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    border-bottom: 4px solid var(--morado-claro);
+    padding-bottom: 15px;
+}
+
+header h1 {
+    color: var(--borde);
+    margin: 0;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+header h1 span { color: var(--morado); font-size: 0.8em; }
+
+.custom-file-upload label {
+    background: var(--cyan);
+    color: var(--borde);
+    padding: 12px 25px;
+    border-radius: 15px;
+    border: 3px solid var(--borde);
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--borde);
+}
+
+#upload-input { display: none; }
+
+.layout-edicion {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 30px;
+}
+
+/* Área del Lienzo con fondo de tablero */
+.canvas-container {
+    background-color: #eee;
+    background-image: linear-gradient(45deg, #e0e0e0 25%, transparent 25%), linear-gradient(-45deg, #e0e0e0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e0e0e0 75%), linear-gradient(-45deg, transparent 75%, #e0e0e0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    border: 5px solid var(--borde);
+    border-radius: 25px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: crosshair;
+}
+
+#canvasVisible {
+    max-width: 100%;
+    max-height: 70vh;
+    box-shadow: 0 0 30px rgba(0,0,0,0.2);
+}
+
+/* Panel de Controles */
+.panel-controles {
+    background: #f8f1fa;
+    padding: 25px;
+    border-radius: 25px;
+    border: 4px solid var(--borde);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sub-panel {
+    border-bottom: 2px solid #e1bee7;
+    padding-bottom: 15px;
+}
+
+.sub-panel h3 {
+    color: var(--morado);
+    margin: 0 0 15px 0;
+    text-transform: uppercase;
+    font-weight: 900;
+    font-size: 14px;
+}
+
+.grupo-control {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.grupo-control label {
+    font-weight: 700;
+    color: var(--borde);
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+input[type="range"] { accent-color: var(--morado); cursor: pointer; width: 100%; }
+
+.botones-fila { display: flex; gap: 10px; margin-bottom: 10px; }
+
+.controles-pincel { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+
+input[type="color"] { border: 2px solid var(--borde); border-radius: 8px; cursor: pointer; }
+
+/* Botones */
+button {
+    padding: 10px 15px;
+    border-radius: 12px;
+    border: 3px solid var(--borde);
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.1s;
+    box-shadow: 0 4px 0 var(--borde);
+    font-family: 'Nunito', sans-serif;
+}
+
+button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--borde); }
+
+.btn-toggle { background: white; color: var(--borde); width: 100%; }
+.btn-toggle.active { background: var(--morado); color: white; }
+
+.btn-reset { background: #ff4444; color: white; width: 100%; }
+
+.botones-accion { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+
+#btnDescargar { background: var(--amarillo); color: var(--borde); font-size: 16px; padding: 15px; }
+#btnResetAll { background: #eee; color: var(--borde); border-color: #ccc; box-shadow: 0 4px 0 #ccc; }#btnGuardarDB {
+    background: var(--cyan);
+    color: var(--borde);
+    font-size: 14px;
+    padding: 12px;
+    margin-top: 5px;
+}
+
+#btnGuardarDB:hover {
+    background: #00e5ff;
+    transform: scale(1.02);
+}

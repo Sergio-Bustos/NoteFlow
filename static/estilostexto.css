@@ -1,0 +1,150 @@
+:root {
+    --fondo-gradiente: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+    --borde-dark: #1e1b4b;
+    --azul-brillante: #06b6d4;
+    --morado-brillante: #8b5cf6;
+    --morado-claro: #f3e5f5;
+    --amarillo-gartic: #ffcc00;
+}
+
+body {
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    background: var(--fondo-gradiente);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.contenedor-editor {
+    width: 95%;
+    max-width: 850px;
+    background: white;
+    padding: 30px;
+    border-radius: 35px;
+    border: 6px solid var(--borde-dark);
+    box-shadow: 12px 12px 0px rgba(0, 0, 0, 0.4);
+}
+
+header h1 {
+    color: #4a148c;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 900;
+    margin-top: 0;
+    text-shadow: 3px 3px 0px var(--morado-claro);
+}
+
+/* Título estilo Archivo */
+.seccion-titulo {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.seccion-titulo label {
+    background: var(--borde-dark);
+    color: white;
+    width: fit-content;
+    padding: 4px 12px;
+    border-radius: 10px 10px 0 0;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+#titulo-nota {
+    border: 4px solid var(--borde-dark);
+    border-radius: 0 15px 15px 15px;
+    padding: 12px 20px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    box-shadow: 6px 6px 0px var(--azul-brillante);
+    outline: none;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: #f0ebff;
+    padding: 15px;
+    border-radius: 20px;
+    border: 4px solid var(--borde-dark);
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.grupo {
+    display: flex;
+    gap: 8px;
+    border-right: 3px solid rgba(30, 27, 75, 0.15);
+    padding-right: 12px;
+}
+
+.grupo:last-child { border: none; }
+
+button, select {
+    background: white;
+    border: 3px solid var(--borde-dark);
+    color: var(--borde-dark);
+    padding: 8px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 800;
+    transition: all 0.1s;
+    box-shadow: 0 4px 0 var(--borde-dark);
+}
+
+button:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--borde-dark); }
+button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--borde-dark); }
+
+/* Color Selector Pro */
+.color-wrapper {
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+
+#inputColor {
+    position: absolute;
+    opacity: 0;
+    width: 100%; height: 100%;
+    cursor: pointer; z-index: 10;
+}
+
+.color-visual {
+    width: 100%; height: 100%;
+    background-color: #6a1b9a;
+    border: 3px solid var(--borde-dark);
+    border-radius: 50%;
+    box-shadow: 0 3px 0 var(--borde-dark);
+}
+
+#btnGuardar {
+    background: var(--amarillo-gartic);
+    margin-left: auto;
+    font-size: 16px;
+    padding: 10px 20px;
+}
+
+/* Área de Notas */
+#cuerpo-nota {
+    min-height: 400px;
+    background: #fafaff;
+    border: 4px solid var(--morado-claro);
+    border-radius: 25px;
+    padding: 25px;
+    outline: none;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--borde-dark);
+}
+
+[contenteditable]:empty:before {
+    content: attr(placeholder);
+    color: #aaa;
+    font-style: italic;
+}

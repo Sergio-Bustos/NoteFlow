@@ -179,8 +179,16 @@ def cuenta_no_registrada():
     return render_template("cuenta_no_registrada.html")
 
 @app.route('/procesar-registro', methods=['POST'])
+# ============================================================
+# TROZO 1 — Reemplaza tu /procesar-registro actual
+# ============================================================
+@app.route('/procesar-registro', methods=['POST'])
 def procesar_registro():
-    """Procesa el registro de un nuevo usuario."""
+    """
+    PASO 1: Valida los datos, genera código de 6 dígitos,
+    lo guarda en sesión y lo envía al correo.
+    NO crea la cuenta todavía.
+    """
     conexion = None
     cursor = None
     try:
@@ -188,19 +196,17 @@ def procesar_registro():
         if conexion is None:
             return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
 
-        # Limpiar datos del formulario
         campos = ['nombre', 'apellido', 'telefono', 'correo', 'usuario', 'contraseña']
         datos_limpios = limpiar_datos_formulario(request.form, campos)
-        
-        nombres = datos_limpios['nombre']
-        apellidos = datos_limpios['apellido']
-        telefono = datos_limpios['telefono']
-        correo = datos_limpios['correo']
-        usuario = datos_limpios['usuario']
+
+        nombres    = datos_limpios['nombre']
+        apellidos  = datos_limpios['apellido']
+        telefono   = datos_limpios['telefono']
+        correo     = datos_limpios['correo']
+        usuario    = datos_limpios['usuario']
         contraseña = datos_limpios['contraseña']
         color_principal = request.form.get('color_principal', 'Blanco').strip()
 
-        # Validaciones
         if not all([nombres, apellidos, telefono, correo, usuario, contraseña]):
             return jsonify({'error': 'Todos los campos son obligatorios'}), 400
 
@@ -208,52 +214,201 @@ def procesar_registro():
             return jsonify({'error': 'El teléfono debe contener entre 7 y 15 dígitos'}), 400
 
         cursor = conexion.cursor()
-
-        # Verificar duplicados
         cursor.execute("""
             SELECT "ID_Cuenta" FROM public."Cuentas"
             WHERE "Usuario" = %s OR "Correo" = %s
         """, (usuario, correo))
-        
+
         if cursor.fetchone():
             return jsonify({'error': 'El usuario o correo ya está registrado en NoteFlow'}), 409
-        
-        # Generar nuevo ID_Cuenta
+
+        # Generar código y guardarlo en sesión (NO inserta en BD todavía)
+        codigo = str(random.randint(100000, 999999))
+        expira = datetime.now() + timedelta(minutes=15)
+
+        session['registro_pendiente'] = {
+            'nombres':    nombres,
+            'apellidos':  apellidos,
+            'telefono':   telefono,
+            'correo':     correo,
+            'usuario':    usuario,
+            'contraseña': generate_password_hash(contraseña),  # ya hasheada
+            'color':      color_principal,
+            'codigo':     codigo,
+            'expira':     expira.isoformat()
+        }
+
+        # Enviar correo con el código
+        msg = Message(
+            subject='Tu código de verificación NoteFlow',
+            recipients=[correo]
+        )
+        msg.body = (
+            f"Hola {nombres},\n\n"
+            f"Tu código de verificación para NoteFlow es:\n\n"
+            f"    {codigo}\n\n"
+            f"Este código expira en 15 minutos.\n\n"
+            f"Si no fuiste tú, ignora este correo.\n\n"
+            f"Equipo NoteFlow"
+        )
+
+        try:
+            mail.send(msg)
+        except Exception as mail_e:
+            print(f"Error al enviar correo: {mail_e}")
+            return jsonify({'error': 'Error al enviar el correo de verificación.'}), 500
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Código enviado',
+            'redirect': '/verificar-registro'   # <-- redirige al formulario del código
+        }), 200
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        print(f"Error al iniciar registro: {e}")
+        return jsonify({'error': 'Error al procesar la solicitud'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+# ============================================================
+# TROZO 2 — Ruta que muestra el formulario para ingresar el código
+#            (necesitas crear la plantilla verificar_registro.html)
+# ============================================================
+@app.route('/verificar-registro')
+def mostrar_verificacion():
+    """Muestra el formulario para ingresar el código de verificación."""
+    if 'registro_pendiente' not in session:
+        return redirect(url_for('mostrar_registro'))
+    correo = session['registro_pendiente'].get('correo', '')
+    return render_template('verificar_registro.html', correo=correo)
+
+
+# ============================================================
+# TROZO 3 — Valida el código y crea la cuenta si es correcto
+# ============================================================
+@app.route('/procesar-verificacion', methods=['POST'])
+def procesar_verificacion():
+    """PASO 2: Valida el código y crea la cuenta si es correcto."""
+    pendiente = session.get('registro_pendiente')
+    if not pendiente:
+        return jsonify({'error': 'Sesión expirada. Por favor regístrate de nuevo.'}), 400
+
+    codigo_ingresado = request.form.get('codigo', '').strip()
+
+    # Verificar expiración
+    expira = datetime.fromisoformat(pendiente['expira'])
+    if datetime.now() > expira:
+        session.pop('registro_pendiente', None)
+        return jsonify({'error': 'El código ha expirado. Por favor regístrate de nuevo.'}), 400
+
+    # Verificar código
+    if codigo_ingresado != pendiente['codigo']:
+        return jsonify({'error': 'Código incorrecto. Inténtalo de nuevo.'}), 401
+
+    # Código correcto → crear la cuenta
+    conexion = None
+    cursor = None
+    try:
+        conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'No se pudo conectar a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+
+        # Doble chequeo: que no se haya registrado mientras esperaba
+        cursor.execute("""
+            SELECT "ID_Cuenta" FROM public."Cuentas"
+            WHERE "Usuario" = %s OR "Correo" = %s
+        """, (pendiente['usuario'], pendiente['correo']))
+
+        if cursor.fetchone():
+            session.pop('registro_pendiente', None)
+            return jsonify({'error': 'El usuario o correo ya fue registrado.'}), 409
+
         cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"')
         nuevo_id = cursor.fetchone()[0]
 
-        # Hashear la contraseña
-        password_hash = generate_password_hash(contraseña)
-
         cursor.execute("""
             INSERT INTO public."Cuentas"
-            ("ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Color_principal")
+            ("ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos",
+             "Telefono", "Correo", "Color_principal")
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING "ID_Cuenta";
-        """, (nuevo_id, usuario, password_hash, nombres, apellidos, telefono, correo, color_principal))
+        """, (
+            nuevo_id,
+            pendiente['usuario'],
+            pendiente['contraseña'],   # ya viene hasheada del paso 1
+            pendiente['nombres'],
+            pendiente['apellidos'],
+            pendiente['telefono'],
+            pendiente['correo'],
+            pendiente['color']
+        ))
 
         cuenta_id = cursor.fetchone()[0]
         conexion.commit()
 
-        # Iniciar sesión automáticamente
+        session.pop('registro_pendiente', None)
         session['usuario_id'] = cuenta_id
-        session['usuario_nombre'] = usuario
+        session['usuario_nombre'] = pendiente['usuario']
 
         return jsonify({
             'success': True,
-            'mensaje': 'Registro exitoso',
-            'id': cuenta_id,
+            'mensaje': '¡Cuenta creada exitosamente!',
             'redirect': '/dashboard'
         }), 201
 
     except Exception as e:
         if conexion:
             conexion.rollback()
-        print(f"Error al registrar el usuario: {e}")
-        return jsonify({'error': 'Error al procesar la solicitud'}), 500
+        print(f"Error al crear la cuenta: {e}")
+        return jsonify({'error': 'Error al crear la cuenta'}), 500
 
     finally:
         cerrar_db(cursor, conexion)
+
+
+# ============================================================
+# TROZO 4 — Reenviar código (botón "No recibí el código")
+# ============================================================
+@app.route('/reenviar-codigo', methods=['POST'])
+def reenviar_codigo():
+    """Genera un nuevo código y lo reenvía al correo."""
+    pendiente = session.get('registro_pendiente')
+    if not pendiente:
+        return jsonify({'error': 'Sesión expirada. Por favor regístrate de nuevo.'}), 400
+
+    codigo = str(random.randint(100000, 999999))
+    expira = datetime.now() + timedelta(minutes=15)
+
+    session['registro_pendiente']['codigo'] = codigo
+    session['registro_pendiente']['expira'] = expira.isoformat()
+    session.modified = True  # importante para que Flask guarde el cambio en sesión
+
+    msg = Message(
+        subject='Tu nuevo código de verificación NoteFlow',
+        recipients=[pendiente['correo']]
+    )
+    msg.body = (
+        f"Hola {pendiente['nombres']},\n\n"
+        f"Tu nuevo código de verificación para NoteFlow es:\n\n"
+        f"    {codigo}\n\n"
+        f"Este código expira en 15 minutos.\n\n"
+        f"Si no fuiste tú, ignora este correo.\n\n"
+        f"Equipo NoteFlow"
+    )
+
+    try:
+        mail.send(msg)
+    except Exception as e:
+        print(f"Error al reenviar correo: {e}")
+        return jsonify({'error': 'Error al reenviar el correo'}), 500
+
+    return jsonify({'success': True, 'mensaje': 'Nuevo código enviado'}), 200
 
 
 # ==============================================================================
@@ -1349,6 +1504,25 @@ def vaciar_papelera():
 def crear_nota():
     return render_template("fasededesarrollo.html")
 
+
+
+# ====================
+# 11.1 - CREAR NOTA DE TEXTO
+# =====================
+
+@app.route('/crear-nota-texto')
+@login_required
+def crear_nota_texto():
+    return render_template("editortexto.html")
+
+# ==============================================================================
+# 11.2 - CREAR NOTA DE IMAGEN
+# ==============================================================================
+
+@app.route('/crear-nota-imagen')
+@login_required
+def crear_nota_imagen():
+    return render_template("editorimagen.html")
 # ==============================================================================
 # 12. Ruta backend de guardar nota de dibujo
 # ==============================================================================

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Notas-imagen</title>
+    <link rel="stylesheet" href="/static/estilosimagen.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="contenedor-editor">
+        <header>
+            <h1>Editor Note-flow<span>PRO</span></h1>
+            <div class="custom-file-upload">
+                <label for="upload-input">CARGAR FOTO</label>
+                <input type="file" id="upload-input" accept="image/*">
+            </div>
+        </header>
+
+        <div class="layout-edicion">
+            <div class="canvas-container">
+                <canvas id="canvasVisible"></canvas>
+            </div>
+
+            <div class="panel-controles">
+                
+                <div class="sub-panel">
+                    <h3>Filtros</h3>
+                    <div class="grupo-control">
+                        <label>Brillo</label>
+                        <input type="range" class="filter-slider" id="brightness" min="0" max="200" value="100">
+                    </div>
+                    <div class="grupo-control">
+                        <label>Contraste</label>
+                        <input type="range" class="filter-slider" id="contrast" min="0" max="200" value="100">
+                    </div>
+                    <div class="grupo-control">
+                        <label>Saturación</label>
+                        <input type="range" class="filter-slider" id="saturation" min="0" max="200" value="100">
+                    </div>
+                    <div class="grupo-control">
+                        <label>Grises</label>
+                        <input type="range" class="filter-slider" id="grayscale" min="0" max="100" value="0">
+                    </div>
+                    <button onclick="toggleFiltroMorado()" id="btnFiltroMorado" class="btn-toggle">Filtro Púrpura</button>
+                </div>
+
+                <div class="sub-panel">
+                    <h3>Transformar</h3>
+                    <div class="botones-fila">
+                        <button onclick="ajustarZoom(0.1)" title="Zoom In">➕</button>
+                        <button onclick="ajustarZoom(-0.1)" title="Zoom Out">➖</button>
+                        <button onclick="rotar(90)" title="Rotar 90°">🔄</button>
+                    </div>
+                </div>
+
+                <div class="sub-panel">
+                    <h3>Pincel</h3>
+                    <div class="controles-pincel">
+                        <input type="color" id="colorPincel" value="#8b5cf6">
+                        <input type="range" id="grosorPincel" min="1" max="25" value="5">
+                    </div>
+                    <button onclick="limpiarDibujo()" class="btn-reset">Borrar Trazos</button>
+                </div>
+
+                <div class="botones-accion">
+                    <button onclick="descargarResultado()" id="btnDescargar">DESCARGAR FINAL</button>
+                    <button onclick="enviarABaseDeDatos()" id="btnGuardarDB">GUARDAR EN BASE DE DATOS</button>
+                    <button onclick="resetearTodo()" id="btnResetAll">RESETEAR TODO</button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <canvas id="canvasBuffer" style="display:none;"></canvas>
+
+    <script src="js/Logica_Imagen.js"></script>
+</body>
+</html>
