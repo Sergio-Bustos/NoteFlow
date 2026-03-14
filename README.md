@@ -1,6 +1,6 @@
 <div align="center">
   
-## NoteFlow
+## NoteFlow: Bloc de notas
 
   
 <img src="static/logocircular.png" width="100" alt="Logo NoteFlow">
