@@ -40,8 +40,17 @@ header {
     border-radius: 8px;                        /* Bordes redondeados */
 }
 
+.logo-container:hover .logo-img  {
+    transform: scale(1.1);                     /* Efecto de aumento al pasar el mouse */
+    transition: transform 0.3s ease;           /* Suaviza el efecto */
+}
+
+.logo-container:hover .logo  {
+    transform: scale(1.1);                     /* Efecto de aumento al pasar el mouse */
+    transition: transform 0.3s ease;           /* Suaviza el efecto */
+}
 .logo {
-    font-size: 28px;                           /* Tamaño del texto del logo */
+    font-size: 34px;                           /* Tamaño del texto del logo */
     font-weight: 700;                          /* Texto grueso */
     color: #333;                               /* Color gris oscuro */
     letter-spacing: 1px;                       /* Espacio entre letras */
@@ -68,18 +77,21 @@ header {
 
 .nav-links a:hover {
     color: #5568d3;                            /* Cambia color al pasar el mouse */
-    background: #f5f7ff;                       /* Suaviza fondo al pasar el mouse */
+    background: #f5f7ff;   
+                        /* Suaviza fondo al pasar el mouse */
 }
 
 .nav-links .btn-registro {
     background: #667eea;                       /* Botón morado */
-    color: #fff;                               /* Texto blanco */
-}
+    color: #fff;                      /* Suaviza fondo al pasar el mouse */
+}                             /* Texto blanco */
 
 .nav-links .btn-registro:hover {
     background: #5568d3;   
     color: #fff;                   /* Fondo claro al pasar el mouse */
 }
+
+
 
 /* ========== CONTENIDO PRINCIPAL ========== */
 main {
@@ -108,12 +120,24 @@ main {
     font-weight: 800;                          /* Muy grueso */
 }
 
+.hero h1:hover {
+    color: #c7c7c7; 
+    transform: scale(1.05);     
+    transition: transform 0.3s ease, color 0.3s ease;                     /* Cambia color al pasar el mouse */
+}
+
 .hero p {
     font-size: 20px;                           /* Texto descriptivo */
     color: #f0f0f0;                            /* Color blanco suave */
     margin-bottom: 40px;                       /* Separación inferior */
     line-height: 1.6;                          /* Mejora legibilidad */
 }
+
+.hero p:hover {
+    color: #c7c7c7; 
+    transform: scale(1.05);     
+    transition: transform 0.3s ease, color 0.3s ease;   
+    }                  /* Cambia color al pasar el mouse */
 
 /* ========== PAGE HEADER ========== */
 .page-header {
@@ -161,7 +185,9 @@ main {
 }
 
 .btn-primary:hover {
-    background: #5568d3;                       /* Morado más oscuro */
+    background: #5568d3; 
+    transform: scale(1.05);     
+    transition: transform 0.3s ease, color 0.3s ease;                     /* Morado más oscuro */
 }
 
 .btn-secondary {
@@ -172,6 +198,8 @@ main {
 
 .btn-secondary:hover {
     background: rgba(102, 126, 234, 0.1);      /* Fondo ligeramente morado */
+    transform: scale(1.05);     
+    transition: transform 0.3s ease, color 0.3s ease;                     
 }
 
 /* ========== TARJETAS DE CARACTERÍSTICAS ========== */
@@ -190,6 +218,12 @@ main {
     padding: 30px;                             /* Espacio interno */
     border-radius: 15px;                       /* Bordes redondeados */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Sombra */
+}
+
+.feature-card:hover {
+    transform: scale(1.05);     
+    transition: transform 0.3s ease, color 0.3s ease;                     /* Efecto de aumento */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
 }
 
 .feature-card h3 {
