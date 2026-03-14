@@ -31,6 +31,53 @@ Proyecto del Tecnico en Programacion de Software - SENA,demostrando y evidencian
 
 - Documentación técnica completa bajo metodología SCRUM.
 
+Configuracion Para Su Funcionamiento ⚙️⚙️:
+
+1. Clonar el repositorio de Noteflow:
+
+   ```bash
+   git clone https://github.com/NoteFlow/NoteFlow.git
+   ```
+
+2. Descargar .env para que tengas acceso ala base de datos de Noteflow y funcione de manera correcta en tu docker (Link Aqui) 👉 https://drive.google.com/drive/folders/1j6oWPRPDeAs3kQf88-q5krcMAhVzE79K?usp=sharing
+
+Solo personas con acceso ala carpeta (Programadores Oficiales de Noteflow) pueden descargar el archivo .env y usarlo para configurar la base de datos de Noteflow en el docker y el proyecto.
+
+
+3. Configurar el entorno de desarrollo: 🔧
+
+   - Instalar Docker y Docker Compose en tu máquina.
+
+   - Navegar al directorio del proyecto y ejecutar:
+
+     ```bash
+     docker-compose up --build
+     ```
+
+   - Esto levantará los servicios necesarios (backend, frontend, base de datos) en contenedores Docker. 🌐
+
+   - Acceder a la aplicación en tu navegador web:
+
+     ```
+     127.0.0.1:5000 🌐
+     ```
+
+Si ya quieres que otras personas se conecten mediante la red a tu pagina web usa ipconfig y copia la ip de tu computadora. un ejemplo de eso seria 🌐
+```
+192.168.1.100:5000
+```
+
+con el puerto asignado en Noteflow de la pagina que es 5000 y la ip de tu computadora. 🌐
+
+4. Asegurarse que la base de datos PostgreSQL esté funcionando y accesible desde el contenedor de Docker. 🐳
+
+Para verificar esto se debe tener en cuenta que la base de datos PostgreSQL debe estar configurada correctamente en el archivo .env y que el puerto 5432 de la base de datos PostgreSQL debe estar expuesto en el contenedor de Docker. 👾
+
+Con esto se creara una pagina local donde la URL seria "localhost:5050" y ahi se podra acceder para que puedas conectar la base de datos y verificar que todo funcione correctamente. ✅
+
+5. Disfruta de Noteflow y Organiza tus Notas de manera eficiente y personalizada. 👻👍
+
+
 ⚙️ Tecnologías utilizadas:
 
 -----------------------------------------------------------------------------------------------
