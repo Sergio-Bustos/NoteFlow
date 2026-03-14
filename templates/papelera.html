@@ -22,12 +22,12 @@
     <div class="logo">NoteFlow</div>
     <ul class="menu">
         <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+         <li><a href="{{ url_for('mostrar_notas') }}"><i class="fas fa-list-ul"></i> Mis notas</a></li>
         <li class="separator"></li>
         <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
-        <li><a href="/papelera" class="active"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li><a href="{{ url_for('papelera') }}" class="active"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
-        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
+        <li><a href="{{ url_for('perfil') }}"><i class="fas fa-user-circle"></i> Perfil</a></li>
     </ul>
     <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
         <i class="fas fa-sign-out-alt"></i> Cerrar sesión
@@ -43,11 +43,7 @@
             <h2><i class="fas fa-trash-alt" style="color: #e74c3c;"></i> Papelera</h2>
         </div>
         <a href="{{ url_for('perfil') }}" class="usuario-info">
-            {% if usuario.Foto %}
-                <img src="{{ url_for('static', filename=usuario.Foto) }}" alt="Foto de perfil">
-            {% else %}
-                <img src="{{ url_for('static', filename='img/default_profile.png') }}" alt="Foto de perfil">
-            {% endif %}
+          <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto de perfil"> 
             <span>{{ usuario.Nombres }}</span>
             <i class="fas fa-chevron-down profile-dropdown-icon"></i>
         </a>

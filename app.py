@@ -815,9 +815,9 @@ def dashboard():
             return redirect(url_for('mostrar_login'))
  
         usuario_para_template = {
-            'nombre': usuario_row.get('Nombres'),
-            'color_principal': usuario_row.get('Color_principal', 'Blanco'),
-            'foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'img/default_profile.png'
+            'Nombres': usuario_row.get('Nombres'),
+            'Color_principal': usuario_row.get('Color_principal', 'Blanco'),
+            'Foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'default_profile.png',
         }
 
         cursor.execute("""

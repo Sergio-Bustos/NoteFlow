@@ -7,7 +7,7 @@
 
     <!-- Hoja de iconos Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="icon" type="image/icon" href="../static/logocircular.png"> <!-- Imagen para el icono -->
+   <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}"> <!-- Imagen para el icono -->
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Link a bootstrap -->
 
@@ -22,8 +22,7 @@
 
     <ul class="menu"> <!-- Lista del menú lateral -->
         <li><a href="{{ url_for('dashboard') }}" class="active"><i class="fas fa-home"></i> Inicio</a></li> <!-- Inicio -->
-        <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li> <!-- Mis notas -->
-
+        <li><a href="{{ url_for('mostrar_notas') }}"><i class="fas fa-list-ul"></i> Mis notas</a></li> <!-- Mis notas -->
         <li class="separator"></li> <!-- Línea separadora -->
         <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li> <!-- Crear nota -->
         <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li> <!-- Papelera -->
@@ -39,22 +38,19 @@
 
 <div class="main"> <!-- Contenido principal -->
 
-    <header> <!-- Encabezado -->
+    <header> <!-- Encabezado -->    
 
         <!-- Información del usuario -->
-        <a href="/perfil" class="usuario-info">
-            {% if usuario.foto %} <!-- Si el usuario tiene foto -->
-                <img src="{{ url_for('static', filename=usuario.foto) }}" alt="Foto de perfil">
-            {% else %} <!-- Foto por defecto -->
-                <img src="{{ url_for('static', filename='img/default_profile.png') }}" alt="Foto de perfil">
-            {% endif %}
-            <span><strong>{{ usuario.nombre }}</strong></span> <!-- Nombre del usuario -->
+        <a href="{{ url_for('perfil') }}" class="usuario-info">
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" 
+            alt="Foto de perfil"> <!-- Foto de perfil -->
+            <span><strong>{{ usuario.Nombres }}</strong></span> <!-- Nombre del usuario -->
             <i class="fas fa-chevron-down profile-dropdown-icon"></i> <!-- Icono adicional -->
         </a>
     </header>
 
     <section class="bienvenida"> <!-- Sección de bienvenida -->
-        <h2>Hola, {{ usuario.nombre }} 👋</h2> <!-- Título -->
+        <h2>Hola, {{ usuario.Nombres }} 👋</h2> <!-- Título -->
         <p>Tu resumen de NoteFlow:</p> <!-- Texto -->
         <br> <!-- Espacio -->
     </section>

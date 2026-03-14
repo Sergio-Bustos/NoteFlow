@@ -18,7 +18,7 @@
     <div class="logo">NoteFlow</div>
     <ul class="menu">
         <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+        <li><a href="{{ url_for('mostrar_notas') }}" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
         <li class="separator"></li>
         <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
@@ -40,7 +40,7 @@
                 <i class="fas fa-search"></i> Realiza la busqueda
             </button>
             <a href="{{ url_for('perfil') }}" class="usuario-info">
-                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile.png') }}" alt="Foto">
+                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto">
                 <span>{{ usuario.Nombres }}</span>
                 <i class="fas fa-chevron-down profile-dropdown-icon"></i>
             </a>
