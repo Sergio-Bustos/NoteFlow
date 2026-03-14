@@ -1,6 +1,13 @@
 <div align="center">
 
+
+<img src="static/logocircular.png" width="100" alt="Logo NoteFlow">
+&nbsp;&nbsp;&nbsp;&nbsp;
+
+
 # 📝 NoteFlow
+
+</div>
 
 **Sistema web de gestión de notas personales — Proyecto SENA**
 
