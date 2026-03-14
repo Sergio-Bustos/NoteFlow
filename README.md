@@ -118,7 +118,7 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/NoteFlow/NoteFlow.git
+git clone https://github.com/Sergio-Bustos/NoteFlow
 cd NoteFlow
 ```
 
@@ -170,7 +170,7 @@ Asegúrate de que PostgreSQL esté corriendo y de que el puerto `5432` esté exp
 
 ```bash
 docker ps
-docker logs <nombre-contenedor-db>
+docker logs "nombre-contenedor-db"
 ```
 
 ---
@@ -209,5 +209,6 @@ Uso educativo. Todos los derechos reservados por el equipo de desarrollo.
 ---
 
 <div align="center">
+  **"NoteFlow... la solución de tu desorden digital, proximamente en la web..."**
   Hecho con 💜 por el equipo NoteFlow · SENA 2025
 </div>
