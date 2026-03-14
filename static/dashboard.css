@@ -300,7 +300,7 @@ header {
     font-size: 0.9em;
     transition: background-color 0.2s;
 }
-.view-btn:hover { background-color: #2980b9; }
+.view-btn:hover { background-color: #4400ff; }
 
 .no-results-message { color: #95a5a6; font-style: italic; }
 

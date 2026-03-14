@@ -2,79 +2,145 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Notas-imagen</title>
-    <link rel="stylesheet" href="/static/estilosimagen.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Imagen — NoteFlow</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/estilosimagen.css">
 </head>
 <body>
 
-    <div class="contenedor-editor">
-        <header>
-            <h1>Editor Note-flow<span>PRO</span></h1>
-            <div class="custom-file-upload">
-                <label for="upload-input">CARGAR FOTO</label>
-                <input type="file" id="upload-input" accept="image/*">
-            </div>
-        </header>
+<div class="contenedor-editor">
 
-        <div class="layout-edicion">
-            <div class="canvas-container">
+    <!-- HEADER -->
+    <header>
+        <div class="header-izq">
+            <a href="/notas" class="btn-volver" id="btnVolver">
+                <i class="fas fa-arrow-left"></i> Mis notas
+            </a>
+            <h1>Editor de Imagen <span>NoteFlow</span></h1>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <span class="estado-guardado" id="estadoGuardado">
+                <i class="fas fa-check-circle"></i> Guardado
+            </span>
+            <label class="btn-cargar-foto" for="upload-input">
+                <i class="fas fa-upload"></i> Cargar imagen
+            </label>
+            <input type="file" id="upload-input" accept="image/*">
+        </div>
+    </header>
+
+    <!-- LAYOUT -->
+    <div class="layout-edicion">
+
+        <!-- CANVAS + BARRA INFERIOR -->
+        <div class="canvas-wrap">
+            <div class="canvas-container" id="canvasContainer">
+                <div class="canvas-placeholder" id="canvasPlaceholder">
+                    <i class="fas fa-image"></i>
+                    <span>Carga una imagen para empezar</span>
+                </div>
                 <canvas id="canvasVisible"></canvas>
             </div>
 
-            <div class="panel-controles">
-                
-                <div class="sub-panel">
-                    <h3>Filtros</h3>
-                    <div class="grupo-control">
-                        <label>Brillo</label>
-                        <input type="range" class="filter-slider" id="brightness" min="0" max="200" value="100">
-                    </div>
-                    <div class="grupo-control">
-                        <label>Contraste</label>
-                        <input type="range" class="filter-slider" id="contrast" min="0" max="200" value="100">
-                    </div>
-                    <div class="grupo-control">
-                        <label>Saturación</label>
-                        <input type="range" class="filter-slider" id="saturation" min="0" max="200" value="100">
-                    </div>
-                    <div class="grupo-control">
-                        <label>Grises</label>
-                        <input type="range" class="filter-slider" id="grayscale" min="0" max="100" value="0">
-                    </div>
-                    <button onclick="toggleFiltroMorado()" id="btnFiltroMorado" class="btn-toggle">Filtro Púrpura</button>
-                </div>
-
-                <div class="sub-panel">
-                    <h3>Transformar</h3>
-                    <div class="botones-fila">
-                        <button onclick="ajustarZoom(0.1)" title="Zoom In">➕</button>
-                        <button onclick="ajustarZoom(-0.1)" title="Zoom Out">➖</button>
-                        <button onclick="rotar(90)" title="Rotar 90°">🔄</button>
-                    </div>
-                </div>
-
-                <div class="sub-panel">
-                    <h3>Pincel</h3>
-                    <div class="controles-pincel">
-                        <input type="color" id="colorPincel" value="#8b5cf6">
-                        <input type="range" id="grosorPincel" min="1" max="25" value="5">
-                    </div>
-                    <button onclick="limpiarDibujo()" class="btn-reset">Borrar Trazos</button>
-                </div>
-
-                <div class="botones-accion">
-                    <button onclick="descargarResultado()" id="btnDescargar">DESCARGAR FINAL</button>
-                    <button onclick="enviarABaseDeDatos()" id="btnGuardarDB">GUARDAR EN BASE DE DATOS</button>
-                    <button onclick="resetearTodo()" id="btnResetAll">RESETEAR TODO</button>
-                </div>
-                
+            <!-- Barra inferior: título, descripción, etiquetas, guardar -->
+            <div class="barra-inferior">
+                <input type="text" id="inputTitulo"      placeholder="Título de la nota..." maxlength="100">
+                <input type="text" id="inputDescripcion" placeholder="Descripción..." maxlength="200">
+                <input type="text" id="inputEtiquetas"   placeholder="Etiquetas: trabajo, ideas..." maxlength="200">
+                <button class="btn-guardar-principal" id="btnGuardar" onclick="guardarEnBackend()">
+                    <i class="fas fa-save"></i> Guardar nota
+                </button>
             </div>
         </div>
+
+        <!-- PANEL DE CONTROLES -->
+        <div class="panel-controles">
+
+            <!-- Filtros -->
+            <div class="sub-panel">
+                <h3><i class="fas fa-sliders-h"></i> Filtros</h3>
+                <div class="grupo-control">
+                    <label>Brillo</label>
+                    <input type="range" class="filter-slider" id="brightness" min="0" max="200" value="100">
+                </div>
+                <div class="grupo-control">
+                    <label>Contraste</label>
+                    <input type="range" class="filter-slider" id="contrast" min="0" max="200" value="100">
+                </div>
+                <div class="grupo-control">
+                    <label>Saturación</label>
+                    <input type="range" class="filter-slider" id="saturation" min="0" max="200" value="100">
+                </div>
+                <div class="grupo-control">
+                    <label>Grises</label>
+                    <input type="range" class="filter-slider" id="grayscale" min="0" max="100" value="0">
+                </div>
+                <button onclick="toggleFiltroMorado()" id="btnFiltroMorado" class="btn-panel full">
+                    <i class="fas fa-paint-brush"></i> Filtro Púrpura
+                </button>
+            </div>
+
+            <!-- Transformar -->
+            <div class="sub-panel">
+                <h3><i class="fas fa-sync-alt"></i> Transformar</h3>
+                <div class="botones-fila">
+                    <button onclick="ajustarZoom(0.1)"  class="btn-panel" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+                    <button onclick="ajustarZoom(-0.1)" class="btn-panel" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+                    <button onclick="rotar(90)"         class="btn-panel" title="Rotar 90°"><i class="fas fa-redo"></i> 90°</button>
+                    <button onclick="rotar(-90)"        class="btn-panel" title="Rotar -90°"><i class="fas fa-undo"></i> 90°</button>
+                </div>
+            </div>
+
+            <!-- Pincel -->
+            <div class="sub-panel">
+                <h3><i class="fas fa-pen"></i> Pincel</h3>
+                <div class="controles-pincel">
+                    <input type="color" id="colorPincel" value="#8b5cf6">
+                    <input type="range" id="grosorPincel" min="1" max="25" value="5" style="flex:1;">
+                </div>
+                <button onclick="limpiarDibujo()" class="btn-panel full danger" style="margin-top:10px;">
+                    <i class="fas fa-eraser"></i> Borrar trazos
+                </button>
+            </div>
+
+            <!-- Acciones -->
+            <div class="sub-panel">
+                <h3><i class="fas fa-download"></i> Acciones</h3>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button onclick="descargarResultado()" class="btn-panel full amarillo">
+                        <i class="fas fa-download"></i> Descargar imagen
+                    </button>
+                    <button onclick="resetearTodo()" class="btn-panel full">
+                        <i class="fas fa-trash-alt"></i> Resetear todo
+                    </button>
+                </div>
+            </div>
+
+        </div>
     </div>
+</div>
 
-    <canvas id="canvasBuffer" style="display:none;"></canvas>
+<!-- Canvas oculto para procesamiento -->
+<canvas id="canvasBuffer" style="display:none;"></canvas>
 
-    <script src="static/js/logicaimagen.js"></script>
+<!-- Modal salida sin guardar -->
+<div class="modal-overlay" id="modalSalida">
+    <div class="modal-box">
+        <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>¿Salir sin guardar?</h3>
+        <p>Tienes cambios sin guardar. Si sales ahora, <strong>se perderán.</strong></p>
+        <div class="modal-btns">
+            <button class="btn-modal-cancelar" id="btnModalCancelar">Seguir editando</button>
+            <button class="btn-modal-salir" id="btnModalSalir">Sí, salir</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toastImagen"></div>
+
+<script src="{{ url_for('static', filename='js/logicaimagen.js') }}"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@
     <div class="logo">NoteFlow</div>
     <ul class="menu">
         <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
-        <li><a href="{{ url_for('mostrar_notas') }}" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+        <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
         <li class="separator"></li>
         <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
@@ -292,11 +292,11 @@
             <i class="fas fa-image" style="color:#27ae60"></i>
             <span>Imagen</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-audio" class="formato-opcion">
             <i class="fas fa-microphone" style="color:#e74c3c"></i>
             <span>Audio</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-video" class="formato-opcion">
             <i class="fas fa-video" style="color:#2980b9"></i>
             <span>Video</span>
         </a>
@@ -313,7 +313,8 @@
 </div>
 
 
-<script src="{{ url_for('static', filename='js/notas.js') }}"></script> <!-- Script personalizado del notas -->
+<script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
+<script src="{{ url_for('static', filename='js/notas.js') }}"></script>
 
 </body>
 </html>

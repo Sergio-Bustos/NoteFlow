@@ -9,12 +9,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='papelera.css') }}"> <!-- Estilos personalizados de papelera -->
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='papelera.css') }}">
 </head>
 <body>
 
-<!-- Toasts -->
+<!-- Toast container -->
 <div class="toast-container-custom" id="toast-container"></div>
 
 <!-- ── SIDEBAR ── -->
@@ -22,12 +21,12 @@
     <div class="logo">NoteFlow</div>
     <ul class="menu">
         <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
-         <li><a href="{{ url_for('mostrar_notas') }}"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+        <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li>
         <li class="separator"></li>
         <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
-        <li><a href="{{ url_for('papelera') }}" class="active"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li><a href="/papelera" class="active"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
-        <li><a href="{{ url_for('perfil') }}"><i class="fas fa-user-circle"></i> Perfil</a></li>
+        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
     </ul>
     <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
         <i class="fas fa-sign-out-alt"></i> Cerrar sesión
@@ -40,7 +39,10 @@
     <!-- Header -->
     <header>
         <div class="bienvenida">
-            <h2><i class="fas fa-trash-alt" style="color: #e74c3c;"></i> Papelera</h2>
+            <h2>
+                <i class="fas fa-trash-alt" style="color:#e74c3c;"></i>
+                Papelera
+            </h2>
         </div>
         <a href="{{ url_for('perfil') }}" class="usuario-info">
           <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto de perfil"> 
@@ -53,8 +55,8 @@
     <div class="aviso-papelera">
         <i class="fas fa-exclamation-triangle"></i>
         <span>
-            Las notas en la papelera se eliminan <strong>automáticamente a los 30 días</strong> de haber sido eliminadas.
-            Puedes restaurarlas o eliminarlas definitivamente en cualquier momento.
+            Las notas en la papelera se eliminan <strong>automáticamente a los 30 días</strong>
+            de haber sido eliminadas. Puedes restaurarlas o eliminarlas definitivamente en cualquier momento.
         </span>
     </div>
 
@@ -78,7 +80,6 @@
     <div id="lista-papelera">
 
         {% if notas_papelera %}
-
             {% for nota in notas_papelera %}
             <div class="nota-papelera" id="nota-{{ nota.ID_Nota }}" data-id="{{ nota.ID_Nota }}">
 
@@ -135,10 +136,9 @@
                                 En papelera desde: {{ nota.Fecha_deedicion.strftime('%d/%m/%Y') }}
                             </span>
 
-                            {# Normalizar a date si viene como datetime #}
                             {% set fecha_ed = nota.Fecha_deedicion.date() if nota.Fecha_deedicion.__class__.__name__ == 'datetime' else nota.Fecha_deedicion %}
                             {% if fecha_ed %}
-                                {% set dias_en_papelera = (now - fecha_ed).days %}
+                                {% set dias_en_papelera = (now.date() - fecha_ed).days %}
                                 {% set dias_en_papelera = [dias_en_papelera, 0] | max %}
                                 {% set dias_restantes   = [30 - dias_en_papelera, 0] | max %}
 
@@ -187,7 +187,6 @@
             {% endfor %}
 
         {% else %}
-            <!-- Estado vacío inicial -->
             <div class="papelera-vacia" id="papelera-vacia">
                 <i class="fas fa-trash-alt"></i>
                 <p>La papelera está vacía. ¡Todo en orden!</p>
@@ -201,7 +200,7 @@
 
 <!-- ============================================================
      MODAL: Confirmar restaurar
-     ============================================================ -->
+============================================================ -->
 <div class="modal fade" id="modalRestaurar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -230,7 +229,7 @@
 
 <!-- ============================================================
      MODAL: Confirmar eliminar definitivamente
-     ============================================================ -->
+============================================================ -->
 <div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -263,7 +262,7 @@
 
 <!-- ============================================================
      MODAL: Vaciar toda la papelera
-     ============================================================ -->
+============================================================ -->
 <div class="modal fade" id="modalVaciar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -274,8 +273,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="font-size:0.97rem; padding:20px;">
-                ¿Estás seguro de que deseas eliminar <strong>todas las notas</strong> de la papelera
-                de forma permanente?
+                ¿Estás seguro de que deseas eliminar <strong>todas las notas</strong> de la papelera de forma permanente?
                 <br><br>
                 <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
                     <i class="fas fa-exclamation-circle"></i>
@@ -298,7 +296,7 @@
 
 <!-- ============================================================
      MODAL: Cerrar sesión
-     ============================================================ -->
+============================================================ -->
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -324,7 +322,7 @@
 
 <!-- ============================================================
      MODAL: Elegir formato de nota
-     ============================================================ -->
+============================================================ -->
 <div class="formato-backdrop" id="formato-backdrop" onclick="cerrarFormato()"></div>
 <div class="formato-modal" id="formato-modal">
     <p class="formato-titulo">¿Qué tipo de nota quieres crear?</p>
@@ -335,10 +333,10 @@
         <a href="/crear-nota-imagen" class="formato-opcion">
             <i class="fas fa-image" style="color:#27ae60"></i><span>Imagen</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-audio" class="formato-opcion">
             <i class="fas fa-microphone" style="color:#e74c3c"></i><span>Audio</span>
         </a>
-        <a href="/crear-nota" class="formato-opcion">
+        <a href="/crear-nota-video" class="formato-opcion">
             <i class="fas fa-video" style="color:#2980b9"></i><span>Video</span>
         </a>
         <a href="/bloc-dibujo" class="formato-opcion">
@@ -354,9 +352,10 @@
 
 <!-- ============================================================
      SCRIPTS
-     ============================================================ -->
+============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/papelera.js') }}"></script> <!-- Script personalizado de papelera -->
+<script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
+<script src="{{ url_for('static', filename='js/papelera.js') }}"></script>
 
 </body>
 </html>

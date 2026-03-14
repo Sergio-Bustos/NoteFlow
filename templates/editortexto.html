@@ -3,56 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor de Notas</title>
+    <title>NoteFlow - Editor de Texto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="/static/estilostexto.css">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+
 </head>
 <body>
 
-    <div class="contenedor-editor">
-        <header>
-            <h1>Nota</h1>
-        </header>
+<!-- TOP BAR -->
+<div class="top-bar">
+    <button class="btn-volver" id="btnVolver">
+        <i class="fas fa-arrow-left"></i> Volver
+    </button>
+    <span class="titulo-pagina">✏️ Editor de Texto</span>
+    <button class="btn-guardar-top" onclick="guardarNota()">
+        <i class="fas fa-save"></i> Guardar
+    </button>
+</div>
 
-        <div class="seccion-titulo">
-            <label>Nombre del Archivo</label>
-            <input type="text" id="titulo-nota" placeholder="Hoja en blanco" maxlength="40">
+<!-- CONTENEDOR EDITOR -->
+<div class="contenedor-editor">
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <div class="grupo">
+            <button onmousedown="fmt('bold',event)" title="Negrita"><b>B</b></button>
+            <button onmousedown="fmt('italic',event)" title="Cursiva"><i>I</i></button>
+            <button onmousedown="fmt('underline',event)" title="Subrayado"><u>U</u></button>
+            <button onmousedown="fmt('strikeThrough',event)" title="Tachado"><s>S</s></button>
         </div>
 
-        <div class="toolbar">
-            <div class="grupo">
-                <button onmousedown="aplicarFormato('bold', event)" title="Negrita"><b>B</b></button>
-                <button onmousedown="aplicarFormato('italic', event)" title="Cursiva"><i>I</i></button>
-                <button onmousedown="aplicarFormato('underline', event)" title="Subrayado"><u>U</u></button>
-            </div>
-
-            <div class="grupo">
-                <button onmousedown="aplicarFormato('justifyLeft', event)">⇐</button>
-                <button onmousedown="aplicarFormato('justifyCenter', event)">⇔</button>
-                <button onmousedown="aplicarFormato('justifyRight', event)">⇒</button>
-            </div>
-
-            <div class="grupo">
-                <select onchange="cambiarTamano(this.value)">
-                    <option value="3">Tamaño Normal</option>
-                    <option value="5">Grande</option>
-                    <option value="7">Extra Grande</option>
-                </select>
-            </div>
-
-            <div class="grupo color-pro">
-                <div class="color-wrapper">
-                    <input type="color" id="inputColor" onchange="cambiarColor(this.value)" value="#6a1b9a">
-                    <div class="color-visual" id="colorMuestra"></div>
-                </div>
-            </div>
-
-            <button id="btnGuardar" onclick="guardarEnPostgres()">GUARDAR</button>
+        <div class="grupo">
+            <button onmousedown="fmt('justifyLeft',event)" title="Izquierda"><i class="fas fa-align-left"></i></button>
+            <button onmousedown="fmt('justifyCenter',event)" title="Centrar"><i class="fas fa-align-center"></i></button>
+            <button onmousedown="fmt('justifyRight',event)" title="Derecha"><i class="fas fa-align-right"></i></button>
         </div>
 
-        <div id="cuerpo-nota" contenteditable="true" placeholder="Escribe tu contenido aquí..."></div>
+        <div class="grupo">
+            <button onmousedown="fmt('insertUnorderedList',event)" title="Lista"><i class="fas fa-list-ul"></i></button>
+            <button onmousedown="fmt('insertOrderedList',event)" title="Lista numerada"><i class="fas fa-list-ol"></i></button>
+        </div>
+
+        <div class="grupo">
+            <select onchange="cambiarTamano(this.value); this.value=''" title="Tamaño">
+                <option value="">Tamaño</option>
+                <option value="2">Pequeño</option>
+                <option value="3">Normal</option>
+                <option value="5">Grande</option>
+                <option value="7">Extra</option>
+            </select>
+        </div>
+
+        <div class="grupo">
+            <div class="color-wrapper" title="Color de texto">
+                <input type="color" id="inputColor" value="#4338ca" onchange="cambiarColor(this.value)">
+                <div class="color-visual" id="colorMuestra"></div>
+            </div>
+        </div>
     </div>
 
-    <script src="/static/js/logicatexto.js"></script> <!-- Script personalizado del editor -->
+    <!-- ÁREA DE ESCRITURA -->
+    <div id="cuerpo-nota"
+         contenteditable="true"
+         placeholder="Escribe tu nota aquí..."></div>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+        <div class="campo-meta titulo-campo">
+            <label>Título</label>
+            <input type="text" id="inputTitulo" placeholder="Título de la nota" maxlength="100">
+        </div>
+        <div class="campo-meta">
+            <label>Descripción</label>
+            <input type="text" id="inputDescripcion" placeholder="Breve descripción..." maxlength="200">
+        </div>
+        <div class="campo-meta">
+            <label>Etiquetas</label>
+            <input type="text" id="inputEtiquetas" placeholder="trabajo, ideas, urgente...">
+        </div>
+        <button class="btn-guardar-bottom" onclick="guardarNota()">
+            <i class="fas fa-save"></i> GUARDAR NOTA
+        </button>
+    </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/logicatexto.js"></script>
 </body>
 </html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Video — NoteFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/estilosvideo.css">
+</head>
+<body>
+
+<!-- ENCABEZADO -->
+<div class="app-header">
+    <div class="app-titulo">
+        <i class="fas fa-film"></i>
+        Editor de video
+    </div>
+    <a href="/notas" class="btn-volver" id="btnVolver">
+        <i class="fas fa-arrow-left"></i> Mis notas
+    </a>
+</div>
+
+<!-- PANEL PRINCIPAL -->
+<div class="panel">
+
+    <!-- ══ TOOLBAR ══ -->
+    <div class="toolbar">
+
+        <!-- Controles de transporte -->
+        <div class="transport-group">
+            <button class="btn-transport" id="btnRetroceder" title="Retroceder 10s">
+                <i class="fas fa-backward-step"></i>
+            </button>
+            <button class="btn-transport btn-play" id="btnPlay" title="Reproducir / Pausar" disabled>
+                <i class="fas fa-play" id="iconPlay"></i>
+            </button>
+            <button class="btn-transport" id="btnDetener" title="Detener" disabled>
+                <i class="fas fa-stop"></i>
+            </button>
+            <button class="btn-transport" id="btnIrInicio" title="Ir al inicio" disabled>
+                <i class="fas fa-backward-fast"></i>
+            </button>
+            <button class="btn-transport" id="btnIrFin" title="Ir al final" disabled>
+                <i class="fas fa-forward-fast"></i>
+            </button>
+            <button class="btn-transport btn-record" id="btnGrabarCam" title="Grabar desde cámara">
+                <i class="fas fa-video" id="iconGrabarCam"></i>
+            </button>
+        </div>
+
+        <!-- Separador -->
+        <div class="toolbar-sep"></div>
+
+        <!-- Pantalla completa -->
+        <button class="btn-transport" id="btnFullscreen" title="Pantalla completa" disabled>
+            <i class="fas fa-expand"></i>
+        </button>
+
+        <!-- Separador -->
+        <div class="toolbar-sep"></div>
+
+        <!-- Acciones -->
+        <div class="acciones-group">
+            <label class="btn-accion-video btn-cargar" for="inputVideo" title="Cargar archivo de video">
+                <i class="fas fa-upload"></i> Cargar video
+            </label>
+            <input type="file" id="inputVideo"
+                   accept=".mp4,.webm,.ogg,.mkv,.wmv,.mov,.avi"
+                   style="display:none;">
+            <button class="btn-accion-video btn-guardar" id="btnGuardarTop">
+                <i class="fas fa-floppy-disk"></i> Guardar nota
+            </button>
+        </div>
+    </div><!-- /toolbar -->
+
+    <!-- ══ ZONA DE VIDEO ══ -->
+    <div class="zona-video" id="zonaVideo">
+
+        <!-- Placeholder cuando no hay video -->
+        <div class="video-placeholder" id="videoPlaceholder">
+            <div class="placeholder-icono">
+                <i class="fas fa-film"></i>
+            </div>
+            <p class="placeholder-titulo">Sin video cargado</p>
+            <p class="placeholder-sub">Carga un archivo o graba desde tu cámara</p>
+            <div class="placeholder-btns">
+                <label class="btn-cargar-video" for="inputVideo">
+                    <i class="fas fa-upload"></i> Cargar archivo
+                </label>
+                <button class="btn-cargar-video btn-cam" id="btnEmpezarGrabar">
+                    <i class="fas fa-video"></i> Grabar ahora
+                </button>
+            </div>
+        </div>
+
+        <!-- Reproductor nativo -->
+        <video id="videoPlayer"
+               style="display:none;"
+               preload="metadata">
+        </video>
+
+        <!-- Preview de cámara (durante grabación) -->
+        <video id="camaraPreview"
+               style="display:none;"
+               autoplay muted playsinline>
+        </video>
+
+        <!-- Overlay de grabación -->
+        <div class="grabacion-overlay" id="grabacionOverlay" style="display:none;">
+            <div class="grabacion-badge">
+                <div class="grabacion-pulso"></div>
+                <span>REC <strong id="timerGrabacion">0:00</strong></span>
+            </div>
+            <button class="btn-stop-rec" id="btnDetenerGrabacion">
+                <i class="fas fa-stop"></i> Detener
+            </button>
+        </div>
+
+    </div><!-- /zona-video -->
+
+    <!-- ══ BARRA DE PROGRESO ══ -->
+    <div class="progreso-wrap" id="progresoWrap" style="display:none;">
+        <div class="progreso-tiempo" id="tiempoActual">0:00</div>
+        <div class="progreso-track" id="progresoTrack">
+            <div class="progreso-fill" id="progresoFill"></div>
+            <div class="progreso-thumb" id="progresoThumb"></div>
+        </div>
+        <div class="progreso-tiempo" id="tiempoDuracion">0:00</div>
+    </div>
+
+    <!-- ══ PANEL INFERIOR: volumen + info ══ -->
+    <div class="panel-inferior">
+
+        <!-- Volumen -->
+        <div class="volumen-zona">
+            <div class="volumen-header">
+                <i class="fas fa-volume-high" id="iconVolumen"></i>
+                <span class="volumen-titulo">Volumen</span>
+                <span class="volumen-valor" id="valVolumen">100%</span>
+            </div>
+            <div class="volumen-slider-wrap">
+                <span class="vol-min"><i class="fas fa-volume-off"></i></span>
+                <input type="range" id="sliderVolumen" class="volumen-slider"
+                       min="0" max="100" value="100" step="1">
+                <span class="vol-max"><i class="fas fa-volume-high"></i></span>
+            </div>
+        </div>
+
+        <!-- Info del archivo -->
+        <div class="info-zona">
+            <div class="info-row" id="infoNada">
+                <i class="fas fa-circle-info"></i>
+                <span>Carga un video para ver su información</span>
+            </div>
+            <div class="info-datos" id="infoDatos" style="display:none;">
+                <div class="dato-item">
+                    <span class="dato-label">Duración total:</span>
+                    <span class="dato-valor" id="datoDuracion">—</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">Peso:</span>
+                    <span class="dato-valor" id="datoPeso">—</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">Formato:</span>
+                    <span class="dato-valor" id="datoFormato">—</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">Resolución:</span>
+                    <span class="dato-valor" id="datoResolucion">—</span>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /panel-inferior -->
+
+    <!-- ══ BARRA INFERIOR ══ -->
+    <div class="barra-inferior">
+        <input type="text" class="input-titulo" id="inputTitulo"
+               placeholder="Título de tu nota de video..." maxlength="100">
+        <input type="text" class="input-titulo" id="inputDescripcion"
+               placeholder="Descripción breve (opcional)..." maxlength="200"
+               style="flex:1.5;">
+        <input type="text" class="input-titulo" id="inputEtiquetas"
+               placeholder="Etiquetas: tutorial, clase, ..." maxlength="200"
+               style="flex:1.2;">
+        <span class="estado-guardado" id="estadoGuardado">
+            <i class="fas fa-check-circle"></i> Guardado
+        </span>
+        <button class="btn-accion-video btn-guardar" id="btnGuardarBottom">
+            <i class="fas fa-floppy-disk"></i> Guardar nota
+        </button>
+    </div>
+
+</div><!-- /panel -->
+
+<!-- MODAL SALIDA SIN GUARDAR -->
+<div class="modal-overlay" id="modalSalida">
+    <div class="modal-box">
+        <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>¿Salir sin guardar?</h3>
+        <p>Tienes un video sin guardar. Si sales ahora, <strong>se perderá todo el trabajo.</strong></p>
+        <div class="modal-btns">
+            <button class="btn-modal-cancelar" id="btnModalCancelar">Seguir editando</button>
+            <button class="btn-modal-salir" id="btnModalSalir">Sí, salir</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-video" id="toastVideo"></div>
+
+<script src="/static/js/video.js"></script>
+</body>
+</html>

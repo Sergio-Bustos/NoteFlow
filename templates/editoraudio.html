@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Audio — NoteFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/estilosaudio.css">
+</head>
+<body>
+
+<!-- ENCABEZADO -->
+<div class="app-header">
+    <div class="app-titulo">
+        <i class="fas fa-headphones"></i>
+        Editor de audio
+    </div>
+    <a href="/notas" class="btn-volver" id="btnVolver">
+        <i class="fas fa-arrow-left"></i> Mis notas
+    </a>
+</div>
+
+<!-- PANEL PRINCIPAL -->
+<div class="panel">
+
+    <!-- ══ TOOLBAR ══ -->
+    <div class="toolbar">
+
+        <!-- Controles de transporte -->
+        <div class="transport-group">
+            <button class="btn-transport" id="btnRetroceder" title="Retroceder 5s">
+                <i class="fas fa-backward-step"></i>
+            </button>
+            <button class="btn-transport btn-play" id="btnPlay" title="Reproducir / Pausar" disabled>
+                <i class="fas fa-play" id="iconPlay"></i>
+            </button>
+            <button class="btn-transport" id="btnDetener" title="Detener" disabled>
+                <i class="fas fa-stop"></i>
+            </button>
+            <button class="btn-transport" id="btnIrInicio" title="Ir al inicio">
+                <i class="fas fa-backward-fast"></i>
+            </button>
+            <button class="btn-transport" id="btnIrFin" title="Ir al final">
+                <i class="fas fa-forward-fast"></i>
+            </button>
+            <button class="btn-transport btn-record" id="btnGrabar" title="Grabar desde micrófono">
+                <i class="fas fa-circle" id="iconGrabar"></i>
+            </button>
+        </div>
+
+        <!-- Separador -->
+        <div class="toolbar-sep"></div>
+
+        <!-- Acciones -->
+        <div class="acciones-group">
+            <button class="btn-accion-audio btn-deshacer" id="btnDeshacer" title="Deshacer (Ctrl+Z)" disabled>
+                <i class="fas fa-rotate-left"></i> Deshacer
+            </button>
+            <button class="btn-accion-audio btn-rehacer" id="btnRehacer" title="Rehacer (Ctrl+Y)" disabled>
+                <i class="fas fa-rotate-right"></i> Rehacer
+            </button>
+            <button class="btn-accion-audio btn-guardar" id="btnGuardarTop">
+                <i class="fas fa-floppy-disk"></i> Guardar nota
+            </button>
+        </div>
+    </div><!-- /toolbar -->
+
+    <!-- ══ ZONA DE ONDA ══ -->
+    <div class="zona-onda" id="zonaOnda">
+
+        <!-- Placeholder cuando no hay audio -->
+        <div class="onda-placeholder" id="ondaPlaceholder">
+            <div class="placeholder-icono">
+                <i class="fas fa-music"></i>
+            </div>
+            <p class="placeholder-titulo">Sin audio cargado</p>
+            <p class="placeholder-sub">Carga un archivo o graba desde tu micrófono</p>
+            <div class="placeholder-btns">
+                <label class="btn-cargar-audio" for="inputAudio">
+                    <i class="fas fa-upload"></i> Cargar archivo
+                </label>
+                <button class="btn-cargar-audio btn-mic" id="btnEmpezarGrabar">
+                    <i class="fas fa-microphone"></i> Grabar ahora
+                </button>
+            </div>
+            <input type="file" id="inputAudio" accept=".mp3,.aac,.ogg,.wav,.flac,.wma,.m4a" style="display:none;">
+        </div>
+
+        <!-- Regla de tiempo -->
+        <canvas class="regla-tiempo" id="reglaCanvas" style="display:none;"></canvas>
+
+        <!-- Canvas de la forma de onda -->
+        <div class="waveform-wrap" id="waveformWrap" style="display:none;">
+            <canvas id="waveCanvas"></canvas>
+            <div class="playhead" id="playhead"></div>
+            <div class="region-sel" id="regionSel" style="display:none;"></div>
+            <div class="track-label" id="trackLabel"></div>
+        </div>
+
+    </div><!-- /zona-onda -->
+
+    <!-- ══ PANEL INFERIOR: volumen + info ══ -->
+    <div class="panel-inferior">
+
+        <!-- Barra de volumen estilo Windows -->
+        <div class="volumen-zona">
+            <div class="volumen-header">
+                <i class="fas fa-volume-high" id="iconVolumen"></i>
+                <span class="volumen-titulo">Volumen</span>
+                <span class="volumen-valor" id="valVolumen">100%</span>
+            </div>
+            <div class="volumen-slider-wrap">
+                <span class="vol-min"><i class="fas fa-volume-off"></i></span>
+                <input type="range" id="sliderVolumen" class="volumen-slider"
+                       min="0" max="100" value="100" step="1">
+                <span class="vol-max"><i class="fas fa-volume-high"></i></span>
+            </div>
+        </div>
+
+        <!-- Info del archivo -->
+        <div class="info-zona" id="infoZona">
+            <div class="info-row" id="infoNada">
+                <i class="fas fa-circle-info"></i>
+                <span>Carga un archivo de audio para ver su información</span>
+            </div>
+            <div class="info-datos" id="infoDatos" style="display:none;">
+                <div class="dato-item">
+                    <span class="dato-label">Duración total:</span>
+                    <span class="dato-valor" id="datoDuracion">—</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">Peso:</span>
+                    <span class="dato-valor" id="datoPeso">—</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">Formato:</span>
+                    <span class="dato-valor" id="datoFormato">—</span>
+                </div>
+                <div class="dato-item">
+                    <span class="dato-label">Tiempo actual:</span>
+                    <span class="dato-valor" id="datoTiempoActual">0:00</span>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /panel-inferior -->
+
+    <!-- ══ BARRA INFERIOR ══ -->
+    <div class="barra-inferior">
+        <input type="text" class="input-titulo" id="inputTitulo"
+               placeholder="Título de tu nota de audio..." maxlength="100">
+        <input type="text" class="input-titulo" id="inputDescripcion"
+               placeholder="Descripción breve (opcional)..." maxlength="200"
+               style="flex:1.5;">
+        <input type="text" class="input-titulo" id="inputEtiquetas"
+               placeholder="Etiquetas: música, podcast, ..." maxlength="200"
+               style="flex:1.2;">
+        <span class="estado-guardado" id="estadoGuardado">
+            <i class="fas fa-check-circle"></i> Guardado
+        </span>
+        <button class="btn-accion-audio btn-guardar" id="btnGuardarBottom">
+            <i class="fas fa-floppy-disk"></i> Guardar nota
+        </button>
+    </div>
+
+</div><!-- /panel -->
+
+<!-- BARRA DE GRABACIÓN ACTIVA -->
+<div class="barra-grabacion" id="barraGrabacion" style="display:none;">
+    <div class="grabacion-pulso"></div>
+    <span class="grabacion-texto">Grabando... <strong id="timerGrabacion">0:00</strong></span>
+    <button class="btn-stop-rec" id="btnDetenerGrabacion">
+        <i class="fas fa-stop"></i> Detener grabación
+    </button>
+</div>
+
+<!-- MODAL SALIDA SIN GUARDAR -->
+<div class="modal-overlay" id="modalSalida">
+    <div class="modal-box">
+        <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>¿Salir sin guardar?</h3>
+        <p>Tienes un audio sin guardar. Si sales ahora, <strong>se perderá todo el trabajo.</strong></p>
+        <div class="modal-btns">
+            <button class="btn-modal-cancelar" id="btnModalCancelar">Seguir editando</button>
+            <button class="btn-modal-salir" id="btnModalSalir">Sí, salir</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-audio" id="toastAudio"></div>
+
+<script src="/static/js/audio.js"></script>
+</body>
+</html>

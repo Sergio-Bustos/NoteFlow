@@ -6,7 +6,7 @@
     <title>Bloc de Dibujo | NoteFlow</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/static/dibujo.css"> <!-- Tiene el estilo de caracteristicas -->
+    <link rel="stylesheet" href="/static/dibujo.css">
 </head>
 <body>
 
@@ -16,7 +16,8 @@
             <i class="fas fa-paint-brush"></i>
             Bloc de Dibujo
         </div>
-        <a href="/notas" class="btn-volver">
+        <!-- El href ya no es directo: JS intercepta si hay cambios sin guardar -->
+        <a href="/notas" class="btn-volver" id="btnVolver">
             <i class="fas fa-arrow-left"></i> Mis notas
         </a>
     </div>
@@ -103,20 +104,34 @@
 
         <!-- ── Barra inferior ── -->
         <div class="barra-inferior">
+            <!-- Título -->
             <input type="text" class="input-titulo" id="inputTitulo"
-                   placeholder="Título de tu nota de dibujo..." maxlength="100">
+                   placeholder="Título de tu nota..." maxlength="100"
+                   style="flex:1.2; min-width:140px;">
+
+            <!-- Descripción -->
+            <input type="text" class="input-titulo" id="inputDescripcion"
+                   placeholder="Descripción breve (opcional)..." maxlength="200"
+                   style="flex:1.8; min-width:160px;">
+
             <span class="estado-guardado" id="estadoGuardado">
                 <i class="fas fa-check-circle"></i> Guardado
             </span>
             <button class="btn-accion btn-guardar" id="btnGuardar2" style="margin-left:auto;">
                 <i class="fas fa-save"></i> Guardar nota
             </button>
+            <!-- Etiquetas -->
+            <input type="text" class="input-titulo" id="inputEtiquetas"
+                placeholder="Etiquetas: trabajo, ideas, ..." maxlength="200"
+                style="flex:1.5; min-width:140px;">
         </div>
 
     </div><!-- /panel -->
 
+
+
     <!-- Toast -->
     <div class="toast-dibujo" id="toastDibujo"></div>
-    <script src="{{ url_for('static', filename='js/dibujo.js') }}"></script> <!-- Script personalizado del dashboard -->
+    <script src="{{ url_for('static', filename='js/dibujo.js') }}"></script>
 </body>
 </html>

@@ -35,6 +35,7 @@ app.static_url_path = '/static'
 app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://postgres:123456@db:5432/dbnoteflow"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+
 # Carpetas de uploads
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 PROFILE_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "profile")
@@ -818,6 +819,7 @@ def dashboard():
             'Nombres': usuario_row.get('Nombres'),
             'Color_principal': usuario_row.get('Color_principal', 'Blanco'),
             'Foto': usuario_row.get('Foto') if usuario_row.get('Foto') else 'default_profile.png',
+
         }
 
         cursor.execute("""
@@ -1241,21 +1243,27 @@ def mostrar_notas():
 
 
 # ==============================================================================
-# 10. PAPELERA
+# 10. PAPELERA — Vista principal
 # ==============================================================================
-
 @app.route('/papelera')
 @login_required
 def papelera():
+    """
+    Muestra todas las notas en estado 'papelera' del usuario.
+    Además, elimina automáticamente las que llevan más de 30 días,
+    incluyendo sus archivos físicos y registros relacionados.
+    """
     user_id = session['usuario_id']
     conexion = None
     cursor = None
 
     try:
         conexion = conectar_db(dict_cursor=True)
+        if conexion is None:
+            return "Error de conexión a la base de datos", 500
         cursor = conexion.cursor()
 
-        # Datos del usuario para el header
+        # ── 1. Datos del usuario para el header ───────────────────────────
         cursor.execute("""
             SELECT "Nombres", "Foto", "Color_principal"
             FROM public."Cuentas"
@@ -1267,19 +1275,19 @@ def papelera():
             session.clear()
             return redirect(url_for('mostrar_login'))
 
-        # Eliminación automática de notas con más de 30 días en papelera
+        # ── 2. Limpieza automática: notas con más de 30 días en papelera ──
         cursor.execute("""
             SELECT n."ID_Nota", a."Ruta_archivo"
             FROM public."Notas" n
             LEFT JOIN public."Adjuntos" a ON n."ID_Nota" = a."ID_Nota"
             WHERE n."ID_Cuenta" = %s
               AND LOWER(n."Estado") = 'papelera'
-              AND n."Fecha_deedicion" <= (CURRENT_DATE - INTERVAL '30 days')
+              AND n."Fecha_deedicion" <= (CURRENT_TIMESTAMP - INTERVAL '30 days')
         """, (user_id,))
         notas_vencidas = cursor.fetchall()
 
         if notas_vencidas:
-            # Eliminar archivos físicos
+            # Borrar archivos físicos de adjuntos
             for fila in notas_vencidas:
                 ruta = fila.get('Ruta_archivo') if isinstance(fila, dict) else fila[1]
                 if ruta:
@@ -1290,23 +1298,24 @@ def papelera():
                     except Exception as e:
                         print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
 
-            # Obtener IDs de notas vencidas
+            # IDs únicos de notas vencidas
             ids_vencidos = list({
                 fila.get('ID_Nota') if isinstance(fila, dict) else fila[0]
                 for fila in notas_vencidas
             })
 
-            cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_vencidos,))
+            # Eliminar relaciones y la nota
+            cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = ANY(%s)', (ids_vencidos,))
             cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids_vencidos,))
             cursor.execute("""
                 DELETE FROM public."Notas"
                 WHERE "ID_Cuenta" = %s
                   AND LOWER("Estado") = 'papelera'
-                  AND "Fecha_deedicion" <= (CURRENT_DATE - INTERVAL '30 days')
+                  AND "Fecha_deedicion" <= (CURRENT_TIMESTAMP - INTERVAL '30 days')
             """, (user_id,))
             conexion.commit()
 
-        # Obtener notas en papelera (ya sin las vencidas)
+        # ── 3. Obtener notas en papelera (ya sin las vencidas) ────────────
         cursor.execute("""
             SELECT
                 "ID_Nota",
@@ -1326,7 +1335,7 @@ def papelera():
             "papelera.html",
             notas_papelera=notas_papelera,
             usuario=usuario,
-            now=datetime.now().date(),
+            now=datetime.now(),
             timedelta=timedelta
         )
 
@@ -1339,20 +1348,31 @@ def papelera():
         cerrar_db(cursor, conexion)
 
 
+# ==============================================================================
+# 10.1 PAPELERA — Restaurar una nota
+# ==============================================================================
 @app.route('/papelera/restaurar/<int:nota_id>', methods=['POST'])
 @login_required
 def restaurar_nota(nota_id):
-    """Restaura una nota de la papelera al estado Activa. Solo el propietario puede hacerlo."""
+    """
+    Restaura una nota de estado 'papelera' a 'Activa'.
+    Solo el propietario de la nota puede restaurarla.
+    """
     user_id = session['usuario_id']
     conexion, cursor = None, None
+
     try:
         conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
         cursor = conexion.cursor()
 
         # Verificar que la nota existe, pertenece al usuario y está en papelera
         cursor.execute("""
             SELECT "ID_Nota" FROM public."Notas"
-            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+            WHERE "ID_Nota" = %s
+              AND "ID_Cuenta" = %s
+              AND LOWER("Estado") = 'papelera'
         """, (nota_id, user_id))
 
         if not cursor.fetchone():
@@ -1360,8 +1380,10 @@ def restaurar_nota(nota_id):
 
         cursor.execute("""
             UPDATE public."Notas"
-            SET "Estado" = 'Activa', "Fecha_deedicion" = CURRENT_DATE
-            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s
+            SET "Estado" = 'Activa',
+                "Fecha_deedicion" = CURRENT_TIMESTAMP
+            WHERE "ID_Nota" = %s
+              AND "ID_Cuenta" = %s
         """, (nota_id, user_id))
 
         conexion.commit()
@@ -1377,20 +1399,34 @@ def restaurar_nota(nota_id):
         cerrar_db(cursor, conexion)
 
 
+# ==============================================================================
+# 10.2 PAPELERA — Eliminar una nota definitivamente
+# ==============================================================================
 @app.route('/papelera/eliminar/<int:nota_id>', methods=['POST'])
 @login_required
 def eliminar_nota_definitivo(nota_id):
-    """Elimina permanentemente una nota, sus adjuntos físicos y registros relacionados."""
+    """
+    Elimina permanentemente una nota que está en la papelera:
+    1. Borra los archivos físicos de sus adjuntos del servidor.
+    2. Elimina los registros de Adjuntos y Notas_etiquetas.
+    3. Elimina la nota de la BD.
+    Solo el propietario puede ejecutar esta acción.
+    """
     user_id = session['usuario_id']
     conexion, cursor = None, None
+
     try:
         conexion = conectar_db(dict_cursor=True)
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
         cursor = conexion.cursor()
 
-        # Verificar que la nota existe, pertenece al usuario y está en papelera
+        # Verificar propiedad y estado
         cursor.execute("""
             SELECT "ID_Nota" FROM public."Notas"
-            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+            WHERE "ID_Nota" = %s
+              AND "ID_Cuenta" = %s
+              AND LOWER("Estado") = 'papelera'
         """, (nota_id, user_id))
 
         if not cursor.fetchone():
@@ -1413,11 +1449,9 @@ def eliminar_nota_definitivo(nota_id):
                 except Exception as e:
                     print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
 
-        # Limpiar tablas relacionadas antes de eliminar la nota
-        cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+        # Limpiar tablas relacionadas y eliminar la nota
+        cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = %s', (nota_id,))
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
-
-        # Eliminar la nota definitivamente
         cursor.execute("""
             DELETE FROM public."Notas"
             WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s
@@ -1436,14 +1470,23 @@ def eliminar_nota_definitivo(nota_id):
         cerrar_db(cursor, conexion)
 
 
+# ==============================================================================
+# 10.3 PAPELERA — Vaciar toda la papelera
+# ==============================================================================
 @app.route('/papelera/vaciar', methods=['POST'])
 @login_required
 def vaciar_papelera():
-    """Elimina permanentemente TODAS las notas en papelera del usuario junto con sus adjuntos."""
+    """
+    Elimina permanentemente TODAS las notas en papelera del usuario,
+    incluyendo sus archivos físicos adjuntos y registros relacionados.
+    """
     user_id = session['usuario_id']
     conexion, cursor = None, None
+
     try:
         conexion = conectar_db(dict_cursor=True)
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
         cursor = conexion.cursor()
 
         # Obtener IDs de notas en papelera del usuario
@@ -1457,7 +1500,7 @@ def vaciar_papelera():
         if not ids:
             return jsonify({'success': True, 'mensaje': 'La papelera ya estaba vacía'}), 200
 
-        # Obtener archivos adjuntos para borrarlos del servidor
+        # Obtener y borrar archivos adjuntos físicos
         cursor.execute("""
             SELECT "Ruta_archivo" FROM public."Adjuntos"
             WHERE "ID_Nota" = ANY(%s)
@@ -1475,10 +1518,10 @@ def vaciar_papelera():
                     print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
 
         # Limpiar tablas relacionadas
-        cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids,))
+        cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = ANY(%s)', (ids,))
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids,))
 
-        # Eliminar todas las notas en papelera
+        # Eliminar todas las notas en papelera del usuario
         cursor.execute("""
             DELETE FROM public."Notas"
             WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
@@ -1545,43 +1588,39 @@ def bloc_dibujo():
 @app.route('/guardar-nota-dibujo', methods=['POST'])
 @login_required
 def guardar_nota_dibujo():
-    """
-    Recibe el canvas como imagen PNG (multipart/form-data),
-    lo guarda en disco y crea una nota de tipo 'dibujo' en la BD.
-    """
     user_id = session['usuario_id']
     conexion = None
     cursor   = None
 
     try:
         # ── 1. Validar campos ──────────────────────────────────────────────
-        titulo  = request.form.get('titulo', '').strip() or 'Dibujo sin título'
-        archivo = request.files.get('imagen')
+        titulo      = request.form.get('titulo',      '').strip() or 'Dibujo sin título'
+        descripcion = request.form.get('descripcion', '').strip() or f'Nota de dibujo: {titulo}'
+        etiquetas_raw = request.form.get('etiquetas', '').strip()
 
+        archivo = request.files.get('imagen')
         if not archivo or archivo.filename == '':
             return jsonify({'error': 'No se recibió ninguna imagen'}), 400
 
-        # Aceptar solo PNG / JPEG / WEBP
         ext = os.path.splitext(archivo.filename)[1].lower()
         if ext not in {'.png', '.jpg', '.jpeg', '.webp'}:
             return jsonify({'error': 'Formato de imagen no permitido'}), 400
 
         # ── 2. Guardar archivo físico ──────────────────────────────────────
-        filename = f"dibujo_{user_id}_{_uuid.uuid4().hex}{ext}"
+        filename      = f"dibujo_{user_id}_{_uuid.uuid4().hex}{ext}"
         ruta_completa = os.path.join(DIBUJO_UPLOAD_FOLDER, filename)
         archivo.save(ruta_completa)
         ruta_db = f"uploads/dibujos/{filename}"
 
-        # ── 3. Insertar nota en la BD ──────────────────────────────────────
+        # ── 3. Conectar BD ─────────────────────────────────────────────────
         conexion = conectar_db()
         if conexion is None:
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
 
         cursor = conexion.cursor()
-        hoy    = datetime.now().date()
+        hoy    = datetime.now()
 
-
-        # Nuevo ID_Nota
+        # ── 4. Insertar nota ───────────────────────────────────────────────
         cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
         nuevo_id_nota = cursor.fetchone()[0]
 
@@ -1592,17 +1631,10 @@ def guardar_nota_dibujo():
                  "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
             VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'dibujo', %s, NULL)
             RETURNING "ID_Nota"
-        """, (
-            nuevo_id_nota,
-            titulo,
-            f'Nota de dibujo: {titulo}',   # Descripcion
-            '',                             # Contenido (el dibujo va como adjunto)
-            hoy, hoy,
-            user_id,
-        ))
+        """, (nuevo_id_nota, titulo, descripcion, '', hoy, hoy, user_id))
         nota_id = cursor.fetchone()[0]
 
-        # ── 4. Registrar adjunto ───────────────────────────────────────────
+        # ── 5. Registrar adjunto ───────────────────────────────────────────
         cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
         nuevo_id_adj = cursor.fetchone()[0]
 
@@ -1611,6 +1643,29 @@ def guardar_nota_dibujo():
                 ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
             VALUES (%s, %s, %s, %s, %s)
         """, (nuevo_id_adj, filename, ext.lstrip('.'), ruta_db, nota_id))
+
+        # ── 6. Registrar etiquetas ─────────────────────────────────────────
+        if etiquetas_raw:
+            etiquetas = [e.strip() for e in etiquetas_raw.split(',') if e.strip()]
+            for nombre in etiquetas:
+                cursor.execute("""
+                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
+                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
+                """, (nombre,))
+                row = cursor.fetchone()
+                if row:
+                    id_etiqueta = row[0]
+                else:
+                    cursor.execute('SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"')
+                    id_etiqueta = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
+                        VALUES (%s, %s)
+                    """, (id_etiqueta, nombre))
+                cursor.execute("""
+                    INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
+                    VALUES (%s, %s)
+                """, (nota_id, id_etiqueta))
 
         conexion.commit()
 
@@ -1632,9 +1687,398 @@ def guardar_nota_dibujo():
         cerrar_db(cursor, conexion)
 
 
+# ==============================================================================
+# 13. Ruta backend de guardar nota de imagen
+# ==============================================================================
+
+IMAGEN_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "imagenes")
+if not os.path.exists(IMAGEN_UPLOAD_FOLDER):
+    os.makedirs(IMAGEN_UPLOAD_FOLDER)
+
+
+@app.route('/guardar-nota-imagen', methods=['POST'])
+@login_required
+def guardar_nota_imagen():
+    """
+    Recibe la imagen editada (canvas procesado) como PNG (multipart/form-data),
+    la guarda en disco y crea una nota de tipo 'imagen' en la BD.
+    """
+    user_id = session['usuario_id']
+    conexion = None
+    cursor   = None
+
+    try:
+        # ── 1. Validar campos ──────────────────────────────────────────────
+        titulo        = request.form.get('titulo',      '').strip() or 'Imagen sin título'
+        descripcion   = request.form.get('descripcion', '').strip() or f'Nota de imagen: {titulo}'
+        etiquetas_raw = request.form.get('etiquetas',   '').strip()
+
+        archivo = request.files.get('imagen')
+        if not archivo or archivo.filename == '':
+            return jsonify({'error': 'No se recibió ninguna imagen'}), 400
+
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        if ext not in {'.png', '.jpg', '.jpeg', '.webp'}:
+            return jsonify({'error': 'Formato de imagen no permitido'}), 400
+
+        # ── 2. Guardar archivo físico ──────────────────────────────────────
+        filename      = f"imagen_{user_id}_{_uuid.uuid4().hex}{ext}"
+        ruta_completa = os.path.join(IMAGEN_UPLOAD_FOLDER, filename)
+        archivo.save(ruta_completa)
+        ruta_db = f"uploads/imagenes/{filename}"
+
+        # ── 3. Conectar BD ─────────────────────────────────────────────────
+        conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+        hoy    = datetime.now()
+
+        # ── 4. Insertar nota ───────────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
+        nuevo_id_nota = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion",
+                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'imagen', %s, NULL)
+            RETURNING "ID_Nota"
+        """, (nuevo_id_nota, titulo, descripcion, '', hoy, hoy, user_id))
+        nota_id = cursor.fetchone()[0]
+
+        # ── 5. Registrar adjunto ───────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
+        nuevo_id_adj = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Adjuntos"
+                ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+            VALUES (%s, %s, %s, %s, %s)
+        """, (nuevo_id_adj, filename, ext.lstrip('.'), ruta_db, nota_id))
+
+        # ── 6. Registrar etiquetas ─────────────────────────────────────────
+        if etiquetas_raw:
+            etiquetas = [e.strip() for e in etiquetas_raw.split(',') if e.strip()]
+            for nombre in etiquetas:
+                cursor.execute("""
+                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
+                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
+                """, (nombre,))
+                row = cursor.fetchone()
+                if row:
+                    id_etiqueta = row[0]
+                else:
+                    cursor.execute('SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"')
+                    id_etiqueta = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
+                        VALUES (%s, %s)
+                    """, (id_etiqueta, nombre))
+                cursor.execute("""
+                    INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
+                    VALUES (%s, %s)
+                """, (nota_id, id_etiqueta))
+
+        conexion.commit()
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Nota de imagen guardada correctamente',
+            'nota_id': nota_id,
+            'redirect': '/notas'
+        }), 201
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error al guardar la nota de imagen'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+# ==============================================================================
+# 14. Ruta backend de guardar nota de TEXTO
 
 # ==============================================================================
-# 13. CONFIGURACIÓN DE LA BASE DE DATOS CON SQLALCHEMY (solo modelos para docker)
+
+TEXTO_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "textos")
+if not os.path.exists(TEXTO_UPLOAD_FOLDER):
+    os.makedirs(TEXTO_UPLOAD_FOLDER)
+
+
+@app.route('/guardar-nota-texto', methods=['POST'])
+@login_required
+def guardar_nota_texto():
+    """
+    Recibe el contenido HTML del editor de texto y lo guarda como nota
+    de tipo 'texto' en la BD. El HTML se almacena en el campo Contenido.
+    No genera adjunto de archivo físico — el contenido vive en la BD.
+    """
+    user_id  = session['usuario_id']
+    conexion = None
+    cursor   = None
+
+    try:
+        # ── 1. Leer campos ─────────────────────────────────────────────────
+        titulo        = request.form.get('titulo',      '').strip() or 'Nota sin título'
+        descripcion   = request.form.get('descripcion', '').strip() or f'Nota de texto: {titulo}'
+        contenido     = request.form.get('contenido',   '').strip()
+        etiquetas_raw = request.form.get('etiquetas',   '').strip()
+
+        if not contenido:
+            return jsonify({'error': 'El contenido de la nota está vacío'}), 400
+
+        # ── 2. Conectar BD ─────────────────────────────────────────────────
+        conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+        hoy    = datetime.now()
+
+        # ── 3. Insertar nota ───────────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
+        nuevo_id_nota = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion",
+                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'texto', %s, NULL)
+            RETURNING "ID_Nota"
+        """, (nuevo_id_nota, titulo, descripcion, contenido, hoy, hoy, user_id))
+        nota_id = cursor.fetchone()[0]
+
+        # ── 4. Registrar etiquetas ─────────────────────────────────────────
+        if etiquetas_raw:
+            etiquetas = [e.strip() for e in etiquetas_raw.split(',') if e.strip()]
+            for nombre in etiquetas:
+                cursor.execute("""
+                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
+                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
+                """, (nombre,))
+                row = cursor.fetchone()
+                if row:
+                    id_etiqueta = row[0]
+                else:
+                    cursor.execute('SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"')
+                    id_etiqueta = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
+                        VALUES (%s, %s)
+                    """, (id_etiqueta, nombre))
+                cursor.execute("""
+                    INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
+                    VALUES (%s, %s)
+                """, (nota_id, id_etiqueta))
+
+        conexion.commit()
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Nota de texto guardada correctamente',
+            'nota_id': nota_id,
+            'redirect': '/notas'
+        }), 201
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error al guardar la nota de texto'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+# ==============================================================================
+# 15 - EDITOR DE AUDIO — Rutas y lógica de backend
+# ==============================================================================
+
+# ── Carpeta de uploads de audios ──────────────────────────────────────────────
+AUDIO_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "audios")
+if not os.path.exists(AUDIO_UPLOAD_FOLDER):
+    os.makedirs(AUDIO_UPLOAD_FOLDER)
+
+# Extensiones y tipos MIME permitidos para audio
+AUDIO_EXTENSIONES_PERMITIDAS = {'.mp3', '.aac', '.ogg', '.wav', '.flac', '.wma', '.m4a', '.webm'}
+AUDIO_TIPOS_MIME_PERMITIDOS  = {
+    'audio/mpeg', 'audio/mp3', 'audio/aac', 'audio/ogg', 'audio/wav',
+    'audio/flac', 'audio/x-flac', 'audio/wma', 'audio/x-ms-wma',
+    'audio/mp4', 'audio/x-m4a', 'audio/webm', 'video/webm'
+}
+AUDIO_MAX_BYTES = 200 * 1024 * 1024   # 200 MB
+
+
+# ── Vista del editor de audio ─────────────────────────────────────────────────
+@app.route('/crear-nota-audio')
+@login_required
+def crear_nota_audio():
+    """Página del editor de audio."""
+    return render_template("editoraudio.html")
+
+
+# ── Guardar nota de audio ─────────────────────────────────────────────────────
+@app.route('/guardar-nota-audio', methods=['POST'])
+@login_required
+def guardar_nota_audio():
+    """
+    Recibe el archivo de audio (multipart/form-data), lo valida,
+    lo guarda en disco y crea una nota de tipo 'audio' en la BD.
+
+    Campos del formulario:
+        titulo        — str, máx 100 chars
+        descripcion   — str, máx 200 chars (opcional)
+        etiquetas     — str, separadas por coma (opcional)
+        audio         — File
+
+    Respuesta JSON:
+        { success: True, nota_id: int, redirect: '/notas' }
+        { error: 'mensaje' }
+    """
+    user_id  = session['usuario_id']
+    conexion = None
+    cursor   = None
+
+    try:
+        # ── 1. Leer campos de texto ────────────────────────────────────────
+        titulo        = request.form.get('titulo',      '').strip() or 'Audio sin título'
+        descripcion   = request.form.get('descripcion', '').strip() or f'Nota de audio: {titulo}'
+        etiquetas_raw = request.form.get('etiquetas',   '').strip()
+
+        # ── 2. Validar archivo ─────────────────────────────────────────────
+        archivo = request.files.get('audio')
+        if not archivo or archivo.filename == '':
+            return jsonify({'error': 'No se recibió ningún archivo de audio'}), 400
+
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        if ext not in AUDIO_EXTENSIONES_PERMITIDAS:
+            return jsonify({
+                'error': f'Formato no permitido ({ext}). '
+                          'Usa: MP3, AAC, OGG, WAV, FLAC, WMA, M4A'
+            }), 400
+
+        # Leer los bytes para verificar el tamaño real
+        audio_bytes = archivo.read()
+        if len(audio_bytes) > AUDIO_MAX_BYTES:
+            return jsonify({'error': 'El archivo supera el límite de 200 MB'}), 400
+
+        # ── 3. Guardar archivo físico ──────────────────────────────────────
+        filename      = f"audio_{user_id}_{_uuid.uuid4().hex}{ext}"
+        ruta_completa = os.path.join(AUDIO_UPLOAD_FOLDER, filename)
+
+        with open(ruta_completa, 'wb') as f:
+            f.write(audio_bytes)
+
+        ruta_db = f"uploads/audios/{filename}"
+
+        # ── 4. Conectar BD ─────────────────────────────────────────────────
+        conexion = conectar_db()
+        if conexion is None:
+            # Limpiar archivo ya guardado
+            try: os.remove(ruta_completa)
+            except: pass
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+        hoy    = datetime.now()
+
+        # ── 5. Insertar nota ───────────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
+        nuevo_id_nota = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion",
+                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'audio', %s, NULL)
+            RETURNING "ID_Nota"
+        """, (nuevo_id_nota, titulo, descripcion, '', hoy, hoy, user_id))
+
+        nota_id = cursor.fetchone()[0]
+
+        # ── 6. Registrar adjunto ───────────────────────────────────────────
+        formato_adj = ext.lstrip('.')   # ej: "ogg", "mp3", "wav"
+
+        # Garantizar que el formato exista en Tipos (FK requerida)
+        cursor.execute("""
+            INSERT INTO public."Tipos" ("Formato")
+            VALUES (%s)
+            ON CONFLICT ("Formato") DO NOTHING
+        """, (formato_adj,))
+
+        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
+        nuevo_id_adj = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Adjuntos"
+                ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+            VALUES (%s, %s, %s, %s, %s)
+        """, (nuevo_id_adj, filename, formato_adj, ruta_db, nota_id))
+
+        # ── 7. Registrar etiquetas ─────────────────────────────────────────
+        if etiquetas_raw:
+            etiquetas = [e.strip() for e in etiquetas_raw.split(',') if e.strip()]
+            for nombre in etiquetas:
+                cursor.execute("""
+                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
+                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
+                """, (nombre,))
+                row = cursor.fetchone()
+                if row:
+                    id_etiqueta = row[0]
+                else:
+                    cursor.execute(
+                        'SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"'
+                    )
+                    id_etiqueta = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
+                        VALUES (%s, %s)
+                    """, (id_etiqueta, nombre))
+                cursor.execute("""
+                    INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
+                    VALUES (%s, %s)
+                """, (nota_id, id_etiqueta))
+
+        conexion.commit()
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Nota de audio guardada correctamente',
+            'nota_id': nota_id,
+            'redirect': '/notas'
+        }), 201
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error al guardar la nota de audio'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
+## ===============================================================================
+## 16. Editor de video - Ruta BACK END
+## ===============================================================================
+
+@app.route('/crear-nota-video')
+@login_required
+def crear_nota_video():
+    """Página del editor de video."""
+    return render_template("editorvideo.html")
+
+# ==============================================================================
+# 17. CONFIGURACIÓN DE LA BASE DE DATOS CON SQLALCHEMY (solo modelos para docker)
 # ==============================================================================
 
 db = SQLAlchemy(app)
@@ -1659,8 +2103,6 @@ class Cuentas(db.Model):
 
     notas = db.relationship("Notas", backref="cuenta", lazy=True)
     carpetas = db.relationship("Carpetas", backref="cuenta", lazy=True)
-
-
 
 
 # =========================
