@@ -1,11 +1,9 @@
 <div align="center">
 
-
+# NoteFlow
 <img src="static/logocircular.png" width="100" alt="Logo NoteFlow">
 &nbsp;&nbsp;&nbsp;&nbsp;
 
-
-# 📝 NoteFlow
 
 </div>
 
