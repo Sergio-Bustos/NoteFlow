@@ -209,6 +209,6 @@ Uso educativo. Todos los derechos reservados por el equipo de desarrollo.
 ---
 
 <div align="center">
-  **"NoteFlow... la solución de tu desorden digital, proximamente en la web..."**
+  **NoteFlow... la solución de tu desorden digital, proximamente en la web...**
   Hecho con 💜 por el equipo NoteFlow · SENA 2025
 </div>
