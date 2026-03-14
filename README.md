@@ -199,16 +199,15 @@ NoteFlow/
 
 ---
 
-
-
 ## 📜 Licencia
 
 Proyecto académico desarrollado en el **SENA — Servicio Nacional de Aprendizaje**.  
 Uso educativo. Todos los derechos reservados por el equipo de desarrollo.
 
 ---
-
 <div align="center">
- **"NoteFlow... la solución de tu desorden digital, proximamente en la web..."**
+  <span style="font-weight: 900; font-size: 1.1em;">"NoteFlow... la solución de tu desorden digital, próximamente en la web..."</span>
+  <br>
   Hecho con 💜 por el equipo NoteFlow · SENA 2025
 </div>
+
