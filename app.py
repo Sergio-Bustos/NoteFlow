@@ -21,10 +21,12 @@ load_dotenv()
 # =====================================================================================================================
 
 # ======================== Configuración OAuth en HTTP (desarrollo) ==========================
+
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI')
+
 # ============================================================================================
 
 # ======================== Configuración de Flask ==========================
@@ -57,6 +59,7 @@ DB_CONFIG = {
 # ==========================================================================
 
 # ======================== Configuración de Flask-Mail ==========================
+
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT'))
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS') == 'True'
@@ -66,11 +69,13 @@ app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_DEFAULT_CHARSET'] = 'utf-8'
 mail = Mail(app)
+
 # ===============================================================================
 
-# ======================================================================
-# FUNCIONES AUXILIARES
-# ======================================================================
+# ===============================================================================
+# FUNCIONES AUXILIARES = AQUELLAS FUNCIONES QUE SE REQUIEREN EN UN MOMENTO, PARA AHORRAR LINEAS DE CÓDIGOS EN LAS RUTAS PRINCIPALES Y HACERLAS MÁS LIMPÍAS. 
+# ===============================================================================
+
 def conectar_db(dict_cursor=False):
     """Crea y devuelve una conexión a PostgreSQL."""
     try:
@@ -154,6 +159,7 @@ def verificar_adjuntos_nota(nota_id, cursor):
 # ==============================================================================
 #  1. PÁGINA DE BIENVENIDA
 # ==============================================================================
+
 @app.route('/')
 def inicio():
     """Página de bienvenida (antes de autenticarse)."""
@@ -169,6 +175,7 @@ def caracteristicas():
 # ==============================================================================
 #  2. REGISTRARSE
 # ==============================================================================
+
 @app.route('/registro.html')
 def mostrar_registro():
     """Formulario de registro."""
@@ -180,9 +187,11 @@ def cuenta_no_registrada():
     return render_template("cuenta_no_registrada.html")
 
 @app.route('/procesar-registro', methods=['POST'])
+
 # ============================================================
-# TROZO 1 — Reemplaza tu /procesar-registro actual
+# TROZO 1 — Valida datos, genera código, lo guarda en sesión y lo envía al correo
 # ============================================================
+
 @app.route('/procesar-registro', methods=['POST'])
 def procesar_registro():
     """
@@ -276,9 +285,9 @@ def procesar_registro():
 
 
 # ============================================================
-# TROZO 2 — Ruta que muestra el formulario para ingresar el código
-#            (necesitas crear la plantilla verificar_registro.html)
+# TROZO 2 — Muestra el formulario para ingresar el código de verificación
 # ============================================================
+
 @app.route('/verificar-registro')
 def mostrar_verificacion():
     """Muestra el formulario para ingresar el código de verificación."""
@@ -291,6 +300,7 @@ def mostrar_verificacion():
 # ============================================================
 # TROZO 3 — Valida el código y crea la cuenta si es correcto
 # ============================================================
+
 @app.route('/procesar-verificacion', methods=['POST'])
 def procesar_verificacion():
     """PASO 2: Valida el código y crea la cuenta si es correcto."""
@@ -376,6 +386,7 @@ def procesar_verificacion():
 # ============================================================
 # TROZO 4 — Reenviar código (botón "No recibí el código")
 # ============================================================
+
 @app.route('/reenviar-codigo', methods=['POST'])
 def reenviar_codigo():
     """Genera un nuevo código y lo reenvía al correo."""
@@ -415,6 +426,7 @@ def reenviar_codigo():
 # ==============================================================================
 # 3. INICIAR SESIÓN (Usuario/Contraseña)
 # ==============================================================================
+
 @app.route('/iniciarsesion.html')
 def mostrar_login():
     """Formulario de inicio de sesión."""
@@ -501,6 +513,7 @@ def procesar_login():
 # ==============================================================================
 # 4. INICIAR SESIÓN CON GOOGLE
 # ==============================================================================
+
 @app.route("/google/login")
 def google_login():
     client_config = {
@@ -604,6 +617,7 @@ def google_callback():
 # ==============================================================================
 # 5. OLVIDÉ MI CONTRASEÑA (Restablecer)
 # ==============================================================================
+
 @app.route('/olvide-contrasena')
 def mostrar_olvide_contrasena():
     return render_template('olvide_contrasena.html')
@@ -778,6 +792,7 @@ def procesar_restablecer_contrasena():
 # ==============================================================================
 # 6. CERRAR SESIÓN
 # ==============================================================================
+
 @app.route('/logout')
 def cerrar_sesion():
     session.clear()
@@ -794,6 +809,7 @@ def cerrar_sesion_perfil():
 # ==============================================================================
 # 7. DASHBOARD
 # ==============================================================================
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -888,6 +904,7 @@ def dashboard():
 # ==============================================================================
 # 8. PERFIL
 # ==============================================================================
+
 @app.route('/perfil')
 @login_required
 def perfil():
@@ -1116,6 +1133,7 @@ def subir_foto():
         return jsonify({"error": "Error al subir el archivo"}), 500
 
 # 8.1 - Eliminar foto de perfil 
+
 # ==============================================================================
 # 8B. ELIMINAR FOTO DE PERFIL
 # ==============================================================================
@@ -1194,9 +1212,11 @@ def eliminar_foto_perfil():
 
     finally:
         cerrar_db(cursor, conexion)
+
 # ==============================================================================
 # 9. MIS NOTAS — solo visual, sin consultas de notas/carpetas
 # ==============================================================================
+
 @app.route("/notas")
 @login_required
 def mostrar_notas():
@@ -1245,6 +1265,7 @@ def mostrar_notas():
 # ==============================================================================
 # 10. PAPELERA — Vista principal
 # ==============================================================================
+
 @app.route('/papelera')
 @login_required
 def papelera():
@@ -1351,6 +1372,7 @@ def papelera():
 # ==============================================================================
 # 10.1 PAPELERA — Restaurar una nota
 # ==============================================================================
+
 @app.route('/papelera/restaurar/<int:nota_id>', methods=['POST'])
 @login_required
 def restaurar_nota(nota_id):
@@ -1402,6 +1424,7 @@ def restaurar_nota(nota_id):
 # ==============================================================================
 # 10.2 PAPELERA — Eliminar una nota definitivamente
 # ==============================================================================
+
 @app.route('/papelera/eliminar/<int:nota_id>', methods=['POST'])
 @login_required
 def eliminar_nota_definitivo(nota_id):
@@ -1473,6 +1496,7 @@ def eliminar_nota_definitivo(nota_id):
 # ==============================================================================
 # 10.3 PAPELERA — Vaciar toda la papelera
 # ==============================================================================
+
 @app.route('/papelera/vaciar', methods=['POST'])
 @login_required
 def vaciar_papelera():
@@ -1538,19 +1562,9 @@ def vaciar_papelera():
 
     finally:
         cerrar_db(cursor, conexion)
-# ==============================================================================
-# 11. CREAR NOTA
-# ==============================================================================
-
-@app.route('/crear-nota')
-@login_required
-def crear_nota():
-    return render_template("fasededesarrollo.html")
-
-
 
 # ====================
-# 11.1 - CREAR NOTA DE TEXTO
+# 11 - CREAR NOTA DE TEXTO
 # =====================
 
 @app.route('/crear-nota-texto')
@@ -1559,13 +1573,128 @@ def crear_nota_texto():
     return render_template("editortexto.html")
 
 # ==============================================================================
-# 11.2 - CREAR NOTA DE IMAGEN
+# 11.1 - CREAR NOTA DE IMAGEN
 # ==============================================================================
 
 @app.route('/crear-nota-imagen')
 @login_required
 def crear_nota_imagen():
     return render_template("editorimagen.html")
+
+# ==============================================================================
+# 11.2 Ruta backend de guardar nota de imagen
+# ==============================================================================
+
+IMAGEN_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "imagenes")
+if not os.path.exists(IMAGEN_UPLOAD_FOLDER):
+    os.makedirs(IMAGEN_UPLOAD_FOLDER)
+
+
+@app.route('/guardar-nota-imagen', methods=['POST'])
+@login_required
+def guardar_nota_imagen():
+    """
+    Recibe la imagen editada (canvas procesado) como PNG (multipart/form-data),
+    la guarda en disco y crea una nota de tipo 'imagen' en la BD.
+    """
+    user_id = session['usuario_id']
+    conexion = None
+    cursor   = None
+
+    try:
+        # ── 1. Validar campos ──────────────────────────────────────────────
+        titulo        = request.form.get('titulo',      '').strip() or 'Imagen sin título'
+        descripcion   = request.form.get('descripcion', '').strip() or f'Nota de imagen: {titulo}'
+        etiquetas_raw = request.form.get('etiquetas',   '').strip()
+
+        archivo = request.files.get('imagen')
+        if not archivo or archivo.filename == '':
+            return jsonify({'error': 'No se recibió ninguna imagen'}), 400
+
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        if ext not in {'.png', '.jpg', '.jpeg', '.webp'}:
+            return jsonify({'error': 'Formato de imagen no permitido'}), 400
+
+        # ── 2. Guardar archivo físico ──────────────────────────────────────
+        filename      = f"imagen_{user_id}_{_uuid.uuid4().hex}{ext}"
+        ruta_completa = os.path.join(IMAGEN_UPLOAD_FOLDER, filename)
+        archivo.save(ruta_completa)
+        ruta_db = f"uploads/imagenes/{filename}"
+
+        # ── 3. Conectar BD ─────────────────────────────────────────────────
+        conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+        hoy    = datetime.now()
+
+        # ── 4. Insertar nota ───────────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
+        nuevo_id_nota = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion",
+                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'imagen', %s, NULL)
+            RETURNING "ID_Nota"
+        """, (nuevo_id_nota, titulo, descripcion, '', hoy, hoy, user_id))
+        nota_id = cursor.fetchone()[0]
+
+        # ── 5. Registrar adjunto ───────────────────────────────────────────
+        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
+        nuevo_id_adj = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Adjuntos"
+                ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+            VALUES (%s, %s, %s, %s, %s)
+        """, (nuevo_id_adj, filename, ext.lstrip('.'), ruta_db, nota_id))
+
+        # ── 6. Registrar etiquetas ─────────────────────────────────────────
+        if etiquetas_raw:
+            etiquetas = [e.strip() for e in etiquetas_raw.split(',') if e.strip()]
+            for nombre in etiquetas:
+                cursor.execute("""
+                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
+                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
+                """, (nombre,))
+                row = cursor.fetchone()
+                if row:
+                    id_etiqueta = row[0]
+                else:
+                    cursor.execute('SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"')
+                    id_etiqueta = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
+                        VALUES (%s, %s)
+                    """, (id_etiqueta, nombre))
+                cursor.execute("""
+                    INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
+                    VALUES (%s, %s)
+                """, (nota_id, id_etiqueta))
+
+        conexion.commit()
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Nota de imagen guardada correctamente',
+            'nota_id': nota_id,
+            'redirect': '/notas'
+        }), 201
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error al guardar la nota de imagen'}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
 # ==============================================================================
 # 12. Ruta backend de guardar nota de dibujo
 # ==============================================================================
@@ -1687,121 +1816,9 @@ def guardar_nota_dibujo():
         cerrar_db(cursor, conexion)
 
 
+
 # ==============================================================================
-# 13. Ruta backend de guardar nota de imagen
-# ==============================================================================
-
-IMAGEN_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "imagenes")
-if not os.path.exists(IMAGEN_UPLOAD_FOLDER):
-    os.makedirs(IMAGEN_UPLOAD_FOLDER)
-
-
-@app.route('/guardar-nota-imagen', methods=['POST'])
-@login_required
-def guardar_nota_imagen():
-    """
-    Recibe la imagen editada (canvas procesado) como PNG (multipart/form-data),
-    la guarda en disco y crea una nota de tipo 'imagen' en la BD.
-    """
-    user_id = session['usuario_id']
-    conexion = None
-    cursor   = None
-
-    try:
-        # ── 1. Validar campos ──────────────────────────────────────────────
-        titulo        = request.form.get('titulo',      '').strip() or 'Imagen sin título'
-        descripcion   = request.form.get('descripcion', '').strip() or f'Nota de imagen: {titulo}'
-        etiquetas_raw = request.form.get('etiquetas',   '').strip()
-
-        archivo = request.files.get('imagen')
-        if not archivo or archivo.filename == '':
-            return jsonify({'error': 'No se recibió ninguna imagen'}), 400
-
-        ext = os.path.splitext(archivo.filename)[1].lower()
-        if ext not in {'.png', '.jpg', '.jpeg', '.webp'}:
-            return jsonify({'error': 'Formato de imagen no permitido'}), 400
-
-        # ── 2. Guardar archivo físico ──────────────────────────────────────
-        filename      = f"imagen_{user_id}_{_uuid.uuid4().hex}{ext}"
-        ruta_completa = os.path.join(IMAGEN_UPLOAD_FOLDER, filename)
-        archivo.save(ruta_completa)
-        ruta_db = f"uploads/imagenes/{filename}"
-
-        # ── 3. Conectar BD ─────────────────────────────────────────────────
-        conexion = conectar_db()
-        if conexion is None:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-
-        cursor = conexion.cursor()
-        hoy    = datetime.now()
-
-        # ── 4. Insertar nota ───────────────────────────────────────────────
-        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
-        nuevo_id_nota = cursor.fetchone()[0]
-
-        cursor.execute("""
-            INSERT INTO public."Notas"
-                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
-                 "Fecha_decreacion", "Fecha_deedicion",
-                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
-            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'imagen', %s, NULL)
-            RETURNING "ID_Nota"
-        """, (nuevo_id_nota, titulo, descripcion, '', hoy, hoy, user_id))
-        nota_id = cursor.fetchone()[0]
-
-        # ── 5. Registrar adjunto ───────────────────────────────────────────
-        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
-        nuevo_id_adj = cursor.fetchone()[0]
-
-        cursor.execute("""
-            INSERT INTO public."Adjuntos"
-                ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
-            VALUES (%s, %s, %s, %s, %s)
-        """, (nuevo_id_adj, filename, ext.lstrip('.'), ruta_db, nota_id))
-
-        # ── 6. Registrar etiquetas ─────────────────────────────────────────
-        if etiquetas_raw:
-            etiquetas = [e.strip() for e in etiquetas_raw.split(',') if e.strip()]
-            for nombre in etiquetas:
-                cursor.execute("""
-                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
-                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
-                """, (nombre,))
-                row = cursor.fetchone()
-                if row:
-                    id_etiqueta = row[0]
-                else:
-                    cursor.execute('SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"')
-                    id_etiqueta = cursor.fetchone()[0]
-                    cursor.execute("""
-                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
-                        VALUES (%s, %s)
-                    """, (id_etiqueta, nombre))
-                cursor.execute("""
-                    INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
-                    VALUES (%s, %s)
-                """, (nota_id, id_etiqueta))
-
-        conexion.commit()
-
-        return jsonify({
-            'success': True,
-            'mensaje': 'Nota de imagen guardada correctamente',
-            'nota_id': nota_id,
-            'redirect': '/notas'
-        }), 201
-
-    except Exception as e:
-        if conexion:
-            conexion.rollback()
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': 'Error al guardar la nota de imagen'}), 500
-
-    finally:
-        cerrar_db(cursor, conexion)
-# ==============================================================================
-# 14. Ruta backend de guardar nota de TEXTO
+# 13. Ruta backend de guardar nota de TEXTO
 
 # ==============================================================================
 
@@ -1898,7 +1915,7 @@ def guardar_nota_texto():
 
 
 # ==============================================================================
-# 15 - EDITOR DE AUDIO — Rutas y lógica de backend
+# 14 - EDITOR DE AUDIO - BACKEND
 # ==============================================================================
 
 # ── Carpeta de uploads de audios ──────────────────────────────────────────────
@@ -2068,14 +2085,222 @@ def guardar_nota_audio():
         cerrar_db(cursor, conexion)
 
 ## ===============================================================================
-## 16. Editor de video - Ruta BACK END
-## ===============================================================================
+## 15. Editor de video - Ruta BACK END
+## ==============================================================================
 
+# ── Carpeta de uploads de videos ──────────────────────────────────────────────
+VIDEO_UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads", "videos")
+if not os.path.exists(VIDEO_UPLOAD_FOLDER):
+    os.makedirs(VIDEO_UPLOAD_FOLDER)
+
+# Extensiones permitidas
+VIDEO_EXTENSIONES = {'.mp4', '.webm', '.ogg', '.mkv', '.wmv', '.mov', '.avi'}
+VIDEO_MAX_BYTES   = 2 * 1024 * 1024 * 1024   # 2 GB
+
+
+# ── Vista del editor de video ─────────────────────────────────────────────────
 @app.route('/crear-nota-video')
 @login_required
 def crear_nota_video():
-    """Página del editor de video."""
+    """Renderiza la página del editor de video."""
     return render_template("editorvideo.html")
+
+
+# ── Guardar nota de video ─────────────────────────────────────────────────────
+@app.route('/guardar-nota-video', methods=['POST'])
+@login_required
+def guardar_nota_video():
+    """
+    Recibe el archivo de video (multipart/form-data), lo valida,
+    lo guarda en disco y crea una nota de tipo 'video' en la BD.
+
+    Campos del formulario:
+        titulo        — str  (máx 100 chars)
+        descripcion   — str  (máx 200 chars, opcional)
+        etiquetas     — str  separadas por coma (opcional, máx 20 chars c/u)
+        video         — File
+
+    Respuesta JSON exitosa:
+        { "success": true, "nota_id": int, "redirect": "/notas" }
+
+    Respuesta JSON de error:
+        { "error": "mensaje descriptivo" }
+    """
+    user_id   = session['usuario_id']
+    conexion  = None
+    cursor    = None
+    ruta_fisica_guardada = None   # para rollback físico si falla la BD
+
+    try:
+        # ── 1. Leer y limpiar campos de texto ──────────────────────────────
+        titulo        = request.form.get('titulo',      '').strip() or 'Video sin título'
+        descripcion   = request.form.get('descripcion', '').strip() or f'Nota de video: {titulo}'
+        etiquetas_raw = request.form.get('etiquetas',   '').strip()
+
+        # ── 2. Validar archivo ─────────────────────────────────────────────
+        archivo = request.files.get('video')
+        if not archivo or archivo.filename == '':
+            return jsonify({'error': 'No se recibió ningún archivo de video'}), 400
+
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        if ext not in VIDEO_EXTENSIONES:
+            return jsonify({
+                'error': f'Formato no permitido ({ext}). '
+                          'Usa: MP4, WebM, OGG, MKV, WMV, MOV o AVI'
+            }), 400
+
+        # Leer en chunks para no saturar RAM con archivos grandes
+        # Flask ya limita el tamaño con MAX_CONTENT_LENGTH si se configura.
+        # Aquí verificamos el Content-Length declarado por el cliente.
+        content_length = request.content_length
+        if content_length and content_length > VIDEO_MAX_BYTES:
+            return jsonify({'error': 'El archivo supera el límite de 2 GB'}), 400
+
+        # ── 3. Guardar archivo físico en chunks (eficiente con videos grandes) ──
+        filename      = f"video_{user_id}_{_uuid.uuid4().hex}{ext}"
+        ruta_completa = os.path.join(VIDEO_UPLOAD_FOLDER, filename)
+        ruta_db       = f"uploads/videos/{filename}"
+
+        chunk_size   = 4 * 1024 * 1024   # 4 MB por chunk
+        bytes_escritos = 0
+
+        with open(ruta_completa, 'wb') as f:
+            while True:
+                chunk = archivo.stream.read(chunk_size)
+                if not chunk:
+                    break
+                bytes_escritos += len(chunk)
+                if bytes_escritos > VIDEO_MAX_BYTES:
+                    # Supera el límite: cerrar y borrar
+                    f.close()
+                    os.remove(ruta_completa)
+                    return jsonify({'error': 'El archivo supera el límite de 2 GB'}), 400
+                f.write(chunk)
+
+        if bytes_escritos == 0:
+            os.remove(ruta_completa)
+            return jsonify({'error': 'El archivo de video está vacío'}), 400
+
+        ruta_fisica_guardada = ruta_completa   # registrar para rollback
+
+        # ── 4. Conectar BD ─────────────────────────────────────────────────
+        conexion = conectar_db()
+        if conexion is None:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conexion.cursor()
+        hoy    = datetime.now()
+
+        # ── 5. Garantizar que el formato exista en Tipos (FK requerida) ────
+        formato_adj = ext.lstrip('.')   # ej: "mp4", "webm", "mkv"
+        cursor.execute("""
+            INSERT INTO public."Tipos" ("Formato")
+            VALUES (%s)
+            ON CONFLICT ("Formato") DO NOTHING
+        """, (formato_adj,))
+
+        # ── 6. Insertar nota ───────────────────────────────────────────────
+        cursor.execute(
+            'SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"'
+        )
+        nuevo_id_nota = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion",
+                 "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
+            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'video', %s, NULL)
+            RETURNING "ID_Nota"
+        """, (nuevo_id_nota, titulo, descripcion, '', hoy, hoy, user_id))
+
+        nota_id = cursor.fetchone()[0]
+
+        # ── 7. Registrar adjunto ───────────────────────────────────────────
+        cursor.execute(
+            'SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"'
+        )
+        nuevo_id_adj = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO public."Adjuntos"
+                ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+            VALUES (%s, %s, %s, %s, %s)
+        """, (nuevo_id_adj, filename, formato_adj, ruta_db, nota_id))
+
+        # ── 8. Registrar etiquetas ─────────────────────────────────────────
+        if etiquetas_raw:
+            etiquetas = [
+                e.strip()[:20]
+                for e in etiquetas_raw.split(',')
+                if e.strip()
+            ]
+            for nombre in etiquetas:
+                # Reusar etiqueta existente o crear nueva
+                cursor.execute("""
+                    SELECT "ID_Etiqueta" FROM public."Etiquetas"
+                    WHERE LOWER("Nombre_etiqueta") = LOWER(%s)
+                """, (nombre,))
+                row = cursor.fetchone()
+
+                if row:
+                    id_etiqueta = row[0]
+                else:
+                    cursor.execute(
+                        'SELECT COALESCE(MAX("ID_Etiqueta"), 0) + 1 FROM public."Etiquetas"'
+                    )
+                    id_etiqueta = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Etiquetas" ("ID_Etiqueta", "Nombre_etiqueta")
+                        VALUES (%s, %s)
+                    """, (id_etiqueta, nombre))
+
+                # Evitar duplicado en tabla puente
+                cursor.execute("""
+                    SELECT 1 FROM public."Notas_etiquetas"
+                    WHERE "ID_Nota" = %s AND "ID_Etiqueta" = %s
+                """, (nota_id, id_etiqueta))
+                if not cursor.fetchone():
+                    cursor.execute("""
+                        INSERT INTO public."Notas_etiquetas" ("ID_Nota", "ID_Etiqueta")
+                        VALUES (%s, %s)
+                    """, (nota_id, id_etiqueta))
+
+        # ── 9. Confirmar transacción ───────────────────────────────────────
+        conexion.commit()
+        ruta_fisica_guardada = None   # todo OK, no borrar en finally
+
+        return jsonify({
+            'success': True,
+            'mensaje': 'Nota de video guardada correctamente',
+            'nota_id': int(nota_id),
+            'redirect': '/notas'
+        }), 201
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Error interno al guardar la nota de video'}), 500
+
+    finally:
+        # Rollback físico: borrar archivo si la BD falló
+        if ruta_fisica_guardada and os.path.exists(ruta_fisica_guardada):
+            try:
+                os.remove(ruta_fisica_guardada)
+            except Exception:
+                pass
+        cerrar_db(cursor, conexion)
+
+## ===============================================================================
+## 16. Editor de mixta - Ruta BACK END
+## ==============================================================================
+@app.route('/crear-nota-mixta')
+@login_required
+def crear_nota_mixta():
+    """Renderiza la página del editor de nota mixta."""
+    return render_template("editormixta.html")
 
 # ==============================================================================
 # 17. CONFIGURACIÓN DE LA BASE DE DATOS CON SQLALCHEMY (solo modelos para docker)
