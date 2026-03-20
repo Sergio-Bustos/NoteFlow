@@ -1,4 +1,4 @@
-    /* ══════════════════════════════════════════
+/* ══════════════════════════════════════════
        TOASTS
     ══════════════════════════════════════════ */
     function mostrarToast(mensaje, tipo = 'info') {
@@ -31,8 +31,7 @@
        TEMA (claro / oscuro)
     ══════════════════════════════════════════ */
     document.addEventListener('DOMContentLoaded', function () {
-        const colorPrincipal = "{{ usuario.Color_principal }}";
-        aplicarTemaVisual(colorPrincipal === 'Negro' ? 'oscuro' : 'claro');
+        aplicarTemaVisual(window.COLOR_PRINCIPAL === 'Negro' ? 'oscuro' : 'claro');
     });
 
     function aplicarTemaVisual(tema) {

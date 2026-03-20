@@ -1,4 +1,4 @@
-    /* ===========================================================
+/* ===========================================================
        ESTADO
        =========================================================== */
     var tagsActivos = new Set();
@@ -232,29 +232,27 @@
     /* ===========================================================
        TEMA
        =========================================================== */
-    document.addEventListener('DOMContentLoaded', function() {
-        var color = "{{ usuario.Color_principal }}";
-        document.body.classList.add(color === 'Negro' ? 'tema-oscuro' : 'tema-claro');
-        
-        
-        window.addEventListener('pageshow', function(event) {
-    if (event.persisted) {
-        const tema = document.cookie.split(';')
-            .find(c => c.trim().startsWith('tema='))
-            ?.split('=')[1]?.trim();
-        
-        if (tema === 'Negro') {
-            document.body.classList.add('tema-oscuro');
-            document.body.classList.remove('tema-claro');
-        } else {
-            document.body.classList.add('tema-claro');
-            document.body.classList.remove('tema-oscuro');
-        }
+    function _aplicarTema(esOscuro) {
+        document.body.classList.toggle('tema-oscuro', esOscuro);
+        document.body.classList.toggle('tema-claro',  !esOscuro);
     }
-});
+
+    document.addEventListener('DOMContentLoaded', function() {
+        _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
     });
 
-    
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            var cookie = document.cookie.split(';')
+                .find(function(c) { return c.trim().startsWith('tema='); });
+            if (cookie) {
+                var val = cookie.split('=')[1].trim();
+                _aplicarTema(val === 'Negro');
+            } else {
+                _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
+            }
+        }
+    });
 function abrirFormato() {
     document.getElementById('formato-modal').classList.add('visible');
     document.getElementById('formato-backdrop').classList.add('visible');

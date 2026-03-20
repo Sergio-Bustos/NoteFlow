@@ -1,18 +1,25 @@
-    /* ──────────────────────────────────────────
+/* ──────────────────────────────────────────
        TEMA (claro / oscuro)
     ────────────────────────────────────────── */
+    function _aplicarTema(esOscuro) {
+        document.body.classList.toggle('tema-oscuro', esOscuro);
+        document.body.classList.toggle('tema-claro',  !esOscuro);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-        const color = "{{ usuario.Color_principal }}";
-        document.body.classList.add(color === 'Negro' ? 'tema-oscuro' : 'tema-claro');
+        _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
     });
 
     window.addEventListener('pageshow', function (event) {
         if (event.persisted) {
-            const tema = document.cookie.split(';')
-                .find(c => c.trim().startsWith('tema='))
-                ?.split('=')[1]?.trim();
-            document.body.classList.toggle('tema-oscuro', tema === 'Negro');
-            document.body.classList.toggle('tema-claro',  tema !== 'Negro');
+            const cookie = document.cookie.split(';')
+                .find(c => c.trim().startsWith('tema='));
+            if (cookie) {
+                const val = cookie.split('=')[1].trim();
+                _aplicarTema(val === 'Negro');
+            } else {
+                _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
+            }
         }
     });
 

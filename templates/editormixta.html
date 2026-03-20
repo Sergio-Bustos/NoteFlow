@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteFlow — Nota Mixta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/mixta.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+</head>
+<body>
+
+<!-- ══ TOP BAR ══ -->
+<div class="top-bar">
+    <button class="btn-volver" id="btnVolver">
+        <i class="fas fa-arrow-left"></i> Volver
+    </button>
+    <span class="titulo-pagina">Nota Mixta</span>
+    <button class="btn-guardar-top" id="btnGuardarTop">
+        <i class="fas fa-save"></i> Guardar
+    </button>
+</div>
+
+<!-- ══ CONTENEDOR EDITOR ══ -->
+<div class="contenedor-editor">
+
+    <!-- ── TABS DE SECCIÓN ── -->
+    <div class="tabs-bar">
+        <button class="tab-btn activo" data-tab="texto">
+            <i class="fas fa-align-left"></i> Texto
+        </button>
+        <button class="tab-btn" data-tab="imagenes">
+            <i class="fas fa-image"></i> Imágenes
+        </button>
+        <button class="tab-btn" data-tab="audio">
+            <i class="fas fa-music"></i> Audio
+        </button>
+        <button class="tab-btn" data-tab="video">
+            <i class="fas fa-video"></i> Video
+        </button>
+
+        <!-- Chips de adjuntos (siempre visibles en la barra de tabs) -->
+        <div class="chips-adjuntos">
+            <span class="chip-adj" id="chipImg"  style="display:none;">
+                <i class="fas fa-image"></i><span id="cntImg">0</span>
+            </span>
+            <span class="chip-adj" id="chipAud"  style="display:none;">
+                <i class="fas fa-music"></i><span id="cntAud">0</span>
+            </span>
+            <span class="chip-adj" id="chipVid"  style="display:none;">
+                <i class="fas fa-video"></i><span id="cntVid">0</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         SECCIÓN TEXTO
+    ══════════════════════════════ -->
+    <div class="seccion-tab activo" id="tab-texto">
+
+        <!-- Toolbar de formato -->
+        <div class="toolbar">
+            <div class="grupo">
+                <button onmousedown="fmt('bold',event)"         title="Negrita"><b>B</b></button>
+                <button onmousedown="fmt('italic',event)"        title="Cursiva"><i>I</i></button>
+                <button onmousedown="fmt('underline',event)"     title="Subrayado"><u>U</u></button>
+                <button onmousedown="fmt('strikeThrough',event)" title="Tachado"><s>S</s></button>
+            </div>
+            <div class="grupo">
+                <button onmousedown="fmt('justifyLeft',event)"   title="Izquierda"><i class="fas fa-align-left"></i></button>
+                <button onmousedown="fmt('justifyCenter',event)" title="Centro"><i class="fas fa-align-center"></i></button>
+                <button onmousedown="fmt('justifyRight',event)"  title="Derecha"><i class="fas fa-align-right"></i></button>
+            </div>
+            <div class="grupo">
+                <button onmousedown="fmt('insertUnorderedList',event)" title="Lista"><i class="fas fa-list-ul"></i></button>
+                <button onmousedown="fmt('insertOrderedList',event)"   title="Numerada"><i class="fas fa-list-ol"></i></button>
+            </div>
+            <div class="grupo">
+                <select onchange="cambiarTamano(this.value); this.value=''" title="Tamaño">
+                    <option value="">Tamaño</option>
+                    <option value="2">Pequeño</option>
+                    <option value="3">Normal</option>
+                    <option value="5">Grande</option>
+                    <option value="7">Extra</option>
+                </select>
+            </div>
+            <div class="grupo">
+                <div class="color-wrapper" title="Color de texto">
+                    <input type="color" id="inputColor" value="#3b1f6b"
+                           onchange="cambiarColor(this.value)">
+                    <div class="color-visual" id="colorMuestra"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de escritura -->
+        <div id="cuerpo-nota"
+             contenteditable="true"
+             placeholder="Escribe el contenido de texto de tu nota..."></div>
+    </div>
+
+    <!-- ══════════════════════════════
+         SECCIÓN IMÁGENES
+    ══════════════════════════════ -->
+    <div class="seccion-tab" id="tab-imagenes">
+        <div class="zona-carga" id="zonaDropImg">
+            <div class="zona-carga-inner">
+                <i class="fas fa-images"></i>
+                <p class="zona-titulo">Arrastra imágenes aquí</p>
+                <p class="zona-sub">JPEG, PNG, GIF, WEBP, SVG — máx. 200 MB c/u</p>
+                <label class="btn-zona" for="inputImagenes">
+                    <i class="fas fa-folder-open"></i> Elegir archivos
+                </label>
+                <input type="file" id="inputImagenes" multiple
+                       accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.pntg,.wmf"
+                       style="display:none;">
+            </div>
+        </div>
+        <div class="grid-previews" id="gridImagenes"></div>
+    </div>
+
+    <!-- ══════════════════════════════
+         SECCIÓN AUDIO
+    ══════════════════════════════ -->
+    <div class="seccion-tab" id="tab-audio">
+        <div class="zona-carga" id="zonaDropAud">
+            <div class="zona-carga-inner">
+                <i class="fas fa-music"></i>
+                <p class="zona-titulo">Arrastra audios aquí</p>
+                <p class="zona-sub">MP3, AAC, OGG, WAV, FLAC, WMA, M4A — máx. 200 MB c/u</p>
+                <div class="zona-btns">
+                    <label class="btn-zona" for="inputAudios">
+                        <i class="fas fa-folder-open"></i> Elegir archivos
+                    </label>
+                    <button class="btn-zona btn-zona-rec" id="btnGrabarAudio">
+                        <i class="fas fa-microphone" id="iconMic"></i> Grabar
+                    </button>
+                </div>
+                <input type="file" id="inputAudios" multiple
+                       accept=".mp3,.aac,.ogg,.wav,.flac,.wma,.m4a,.webm"
+                       style="display:none;">
+            </div>
+        </div>
+
+        <!-- Barra grabación activa -->
+        <div class="barra-grabacion" id="barraGrabAudio" style="display:none;">
+            <div class="grab-pulso"></div>
+            <span>Grabando... <strong id="timerAudio">0:00</strong></span>
+            <button class="btn-stop-rec" id="btnStopAudio">
+                <i class="fas fa-stop"></i> Detener
+            </button>
+        </div>
+
+        <div class="lista-archivos" id="listaAudios"></div>
+    </div>
+
+    <!-- ══════════════════════════════
+         SECCIÓN VIDEO
+    ══════════════════════════════ -->
+    <div class="seccion-tab" id="tab-video">
+        <div class="zona-carga" id="zonaDropVid">
+            <div class="zona-carga-inner">
+                <i class="fas fa-film"></i>
+                <p class="zona-titulo">Arrastra videos aquí</p>
+                <p class="zona-sub">MP4, WebM, OGG, MKV, MOV, AVI — máx. 2 GB c/u</p>
+                <div class="zona-btns">
+                    <label class="btn-zona" for="inputVideos">
+                        <i class="fas fa-folder-open"></i> Elegir archivos
+                    </label>
+                    <button class="btn-zona btn-zona-cam" id="btnGrabarVideo">
+                        <i class="fas fa-video" id="iconCam"></i> Grabar
+                    </button>
+                </div>
+                <input type="file" id="inputVideos" multiple
+                       accept=".mp4,.webm,.ogg,.mkv,.wmv,.mov,.avi"
+                       style="display:none;">
+            </div>
+        </div>
+
+        <!-- Preview cámara + overlay grabación -->
+        <div class="cam-wrap" id="camWrap" style="display:none;">
+            <video id="camaraPreview" autoplay muted playsinline></video>
+            <div class="grab-overlay">
+                <div class="grabacion-badge">
+                    <div class="grab-pulso"></div>
+                    <span>REC <strong id="timerVideo">0:00</strong></span>
+                </div>
+                <button class="btn-stop-rec" id="btnStopVideo">
+                    <i class="fas fa-stop"></i> Detener
+                </button>
+            </div>
+        </div>
+
+        <div class="lista-archivos" id="listaVideos"></div>
+    </div>
+
+    <!-- ══ BOTTOM BAR ══ -->
+    <div class="bottom-bar">
+        <div class="campo-meta titulo-campo">
+            <label>Título</label>
+            <input type="text" id="inputTitulo"
+                   placeholder="Título de la nota" maxlength="100">
+        </div>
+        <div class="campo-meta">
+            <label>Descripción</label>
+            <input type="text" id="inputDescripcion"
+                   placeholder="Breve descripción..." maxlength="200">
+        </div>
+        <div class="campo-meta">
+            <label>Etiquetas</label>
+            <input type="text" id="inputEtiquetas"
+                   placeholder="trabajo, ideas..." maxlength="200">
+        </div>
+        <button class="btn-guardar-bottom" id="btnGuardarBottom">
+            <i class="fas fa-save"></i> GUARDAR NOTA
+        </button>
+    </div>
+
+</div><!-- /contenedor-editor -->
+
+<!-- MODAL SALIDA SIN GUARDAR -->
+<div class="modal-overlay" id="modalSalida">
+    <div class="modal-box">
+        <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3>¿Salir sin guardar?</h3>
+        <p>Tienes contenido sin guardar. Si sales ahora, <strong>se perderá todo.</strong></p>
+        <div class="modal-btns">
+            <button class="btn-modal-cancelar" id="btnModalCancelar">Quedarse</button>
+            <button class="btn-modal-salir"    id="btnModalSalir">Salir igual</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/mixta.js"></script>
+</body>
+</html>
