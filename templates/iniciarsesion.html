@@ -1,18 +1,4 @@
-<!DOCTYPE html>
-<!--
-    Página: Iniciar Sesión
-    Proyecto: NoteFlow
-    Propósito: Formulario de autenticación de usuarios. Permite el ingreso mediante
-               apodo/contraseña o a través de Google OAuth. Incluye un panel
-               decorativo izquierdo con carrusel animado y el formulario en el panel derecho.
-    Backend: Envía los datos vía fetch (AJAX) a /procesar-login (POST).
-             Espera una respuesta JSON con { success, redirect } o { error }.
-    Rutas relacionadas:
-        POST /procesar-login   → Valida credenciales y retorna JSON
-        GET  /google/login     → Inicia flujo OAuth con Google
-        GET  /olvide-contrasena → Página de recuperación de contraseña
-        GET  /registro.html    → Página de creación de cuenta
--->
+<!DOCTYPE html> <!-- Página: Iniciar Sesión -->
 <html lang="es">
 <head>
     <meta charset="UTF-8"> <!-- Codificación UTF-8 para soporte de tildes y ñ -->

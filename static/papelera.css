@@ -1,4 +1,4 @@
-        /* ── Aviso informativo ── */
+        /* â”€â”€ Aviso informativo â”€â”€ */
         .aviso-papelera {
             display: flex;
             align-items: center;
@@ -13,7 +13,7 @@
         }
         .aviso-papelera i { color: #f39c12; font-size: 1.1rem; flex-shrink: 0; }
 
-        /* ── Cabecera de sección ── */
+        /* â”€â”€ Cabecera de secciÃ³n â”€â”€ */
         .papelera-header {
             display: flex;
             align-items: center;
@@ -43,7 +43,7 @@
             min-width: 28px;
         }
 
-        /* ── Botón vaciar ── */
+        /* â”€â”€ BotÃ³n vaciar â”€â”€ */
         .btn-vaciar-todo {
             display: inline-flex;
             align-items: center;
@@ -60,7 +60,7 @@
         }
         .btn-vaciar-todo:hover { background: #c0392b; transform: translateY(-1px); }
 
-        /* ── Tarjeta de nota en papelera ── */
+        /* â”€â”€ Tarjeta de nota en papelera â”€â”€ */
         .nota-papelera {
             display: flex;
             align-items: flex-start;
@@ -80,13 +80,13 @@
             filter: none;
         }
 
-        /* ── Ícono de formato ── */
+        /* â”€â”€ Ãcono de formato â”€â”€ */
         .icono-nota {
             flex-shrink: 0;
             width: 44px;
             height: 44px;
             border-radius: 10px;
-            background: rgba(84, 82, 211, 0.10);
+            background: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -94,7 +94,7 @@
             color: #5452d3;
         }
 
-        /* ── Información de la nota ── */
+        /* â”€â”€ InformaciÃ³n de la nota â”€â”€ */
         .nota-info { flex: 1; min-width: 0; }
 
         .nota-titulo {
@@ -114,7 +114,7 @@
             line-height: 1.45;
         }
 
-        /* ── Meta información ── */
+        /* â”€â”€ Meta informaciÃ³n â”€â”€ */
         .nota-meta {
             display: flex;
             flex-wrap: wrap;
@@ -134,13 +134,13 @@
             font-size: 0.78rem;
         }
 
-        /* ── Días en papelera ── */
+        /* â”€â”€ DÃ­as en papelera â”€â”€ */
         .dias-restantes { border-radius: 20px; padding: 3px 10px; font-weight: 600; font-size: 0.78rem; }
         .dias-restantes.urgente    { background: rgba(231, 76, 60, 0.13);  color: #c0392b; }
         .dias-restantes.advertencia{ background: rgba(243,156, 18, 0.13); color: #d68910; }
         .dias-restantes.normal     { background: rgba(39, 174, 96, 0.10);  color: #1e8449; }
 
-        /* ── Botones de acción ── */
+        /* â”€â”€ Botones de acciÃ³n â”€â”€ */
         .nota-acciones {
             display: flex;
             flex-direction: column;
@@ -172,7 +172,7 @@
         }
         .btn-eliminar-def:hover { background: #e74c3c; color: #fff; transform: translateY(-1px); }
 
-        /* ── Papelera vacía ── */
+        /* â”€â”€ Papelera vacÃ­a â”€â”€ */
         .papelera-vacia {
             text-align: center;
             padding: 70px 20px;
@@ -181,7 +181,7 @@
         .papelera-vacia i { font-size: 4rem; margin-bottom: 18px; display: block; opacity: 0.35; }
         .papelera-vacia p { font-size: 1.05rem; font-weight: 500; }
 
-        /* ── Toast container ── */
+        /* â”€â”€ Toast container â”€â”€ */
         .toast-container-custom {
             position: fixed;
             top: 20px;
@@ -192,7 +192,7 @@
             gap: 8px;
         }
 
-        /* ── Responsive ── */
+        /* â”€â”€ Responsive â”€â”€ */
         @media (max-width: 600px) {
             .nota-papelera { flex-direction: column; }
             .nota-acciones { flex-direction: row; width: 100%; }

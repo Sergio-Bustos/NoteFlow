@@ -1,6 +1,6 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
+<!DOCTYPE html><!--Declaración del tipo de documento HTML5-->
+<html lang="es"><!--Elemento raíz del documento, idioma español-->
+<head><!--Inicio de la sección de metadatos del documento-->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Notas | NoteFlow</title>
@@ -253,7 +253,7 @@
 <!-- ============================================================
      FIX 2: Modal cerrar sesión — botones con colores correctos
      ============================================================ -->
-<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade logout-modal" id="logoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -264,10 +264,10 @@
             <div class="modal-footer">
                 <!-- Cancelar: fondo gris, letra blanca (Bootstrap .btn-secondary) -->
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#fff !important;">Cancelar</button>
+                        style="color:#ffffff !important;">Cancelar</button>
                 <!-- Cerrar sesión: fondo rojo, letra blanca -->
                 <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger"
-                   style="color:#fff !important;">
+                   style="color:#ffffff !important;">
                     <i class="fas fa-sign-out-alt"></i> Cerrar sesión
                 </a>
             </div>

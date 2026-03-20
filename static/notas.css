@@ -1,23 +1,23 @@
 /* ============================================================================
-   notas.css — NoteFlow
-   Estilos específicos de la página Mis Notas (notas.html).
+   notas.css â€” NoteFlow
+   Estilos especÃ­ficos de la pÃ¡gina Mis Notas (notas.html).
    Depende de dashboard.css para variables de tema, sidebar y layout base.
-   Organización:
-     1.  Barra de búsqueda clásica (search-bar)
+   OrganizaciÃ³n:
+     1.  Barra de bÃºsqueda clÃ¡sica (search-bar)
      2.  Panel de filtros desplegable
-     3.  Lista de resultados — items de nota y carpeta
-     4.  Contadores y paginación
-     5.  Mensaje vacío
-     6.  Modal búsqueda inteligente — estructura y pasos
-     7.  Modal búsqueda inteligente — inputs, filtros y etiquetas
-     8.  Modal búsqueda inteligente — área de resultados
+     3.  Lista de resultados â€” items de nota y carpeta
+     4.  Contadores y paginaciÃ³n
+     5.  Mensaje vacÃ­o
+     6.  Modal bÃºsqueda inteligente â€” estructura y pasos
+     7.  Modal bÃºsqueda inteligente â€” inputs, filtros y etiquetas
+     8.  Modal bÃºsqueda inteligente â€” Ã¡rea de resultados
      9.  Tema oscuro
      10. Responsive
    ============================================================================ */
 
 
 /* ============================================================================
-   1. BARRA DE BÚSQUEDA CLÁSICA
+   1. BARRA DE BÃšSQUEDA CLÃSICA
    ============================================================================ */
 .search-bar-wrapper {
     display: flex;
@@ -137,7 +137,7 @@
 
 
 /* ============================================================================
-   3. LISTA DE RESULTADOS — ITEMS DE NOTA Y CARPETA
+   3. LISTA DE RESULTADOS â€” ITEMS DE NOTA Y CARPETA
    ============================================================================ */
 .seccion-titulo {
     font-size: 1em;
@@ -166,7 +166,7 @@
     border-color: var(--color-principal);
 }
 
-/* Íconos de nota y carpeta */
+/* Ãconos de nota y carpeta */
 .nota-icono,
 .carpeta-icono {
     width: 44px;
@@ -215,7 +215,7 @@
     white-space: nowrap;
 }
 
-/* Botones de acción en cada item */
+/* Botones de acciÃ³n en cada item */
 .btn-accion {
     background: transparent;
     border: 2px solid var(--color-principal);
@@ -238,7 +238,7 @@
 
 
 /* ============================================================================
-   4. CONTADORES Y PAGINACIÓN
+   4. CONTADORES Y PAGINACIÃ“N
    ============================================================================ */
 .contadores {
     display: flex;
@@ -294,7 +294,7 @@
 
 
 /* ============================================================================
-   5. MENSAJE VACÍO
+   5. MENSAJE VACÃO
    ============================================================================ */
 .vacio-msg {
     text-align: center;
@@ -307,10 +307,10 @@
 
 
 /* ============================================================================
-   6. MODAL BÚSQUEDA INTELIGENTE — ESTRUCTURA Y PASOS
+   6. MODAL BÃšSQUEDA INTELIGENTE â€” ESTRUCTURA Y PASOS
    ============================================================================ */
 
-/* Botón de apertura en el header */
+/* BotÃ³n de apertura en el header */
 .btn-busqueda-inteligente {
     display: flex;
     align-items: center;
@@ -405,7 +405,7 @@
 
 .btn-cerrar-modal:hover { background: #f0f0f5; color: #444; }
 
-/* Paso 1 — Selección de tipo */
+/* Paso 1 â€” SelecciÃ³n de tipo */
 .paso-seleccion { padding: 28px 28px 32px; }
 
 .paso-seleccion .subtitulo {
@@ -448,7 +448,7 @@
 .tipo-opcion h4 { font-size: 1.05rem; font-weight: 700; color: #1e1d3f; margin-bottom: 6px; }
 .tipo-opcion p  { font-size: 0.82rem; color: #999; margin: 0; line-height: 1.5; }
 
-/* Paso 2 — Panel de búsqueda */
+/* Paso 2 â€” Panel de bÃºsqueda */
 .panel-busqueda { display: none; }
 .panel-busqueda.activo {
     display: block;
@@ -546,10 +546,10 @@
 
 
 /* ============================================================================
-   7. MODAL BÚSQUEDA INTELIGENTE — INPUTS, FILTROS Y ETIQUETAS
+   7. MODAL BÃšSQUEDA INTELIGENTE â€” INPUTS, FILTROS Y ETIQUETAS
    ============================================================================ */
 
-/* Input de búsqueda principal */
+/* Input de bÃºsqueda principal */
 .input-wrapper {
     position: relative;
     padding: 18px 28px 0;
@@ -586,7 +586,7 @@
 
 .input-busqueda::placeholder { color: #ccc; }
 
-/* Sección de filtros */
+/* SecciÃ³n de filtros */
 .filtros-seccion { padding: 16px 28px 0; }
 
 .filtros-label {
@@ -771,7 +771,7 @@
 
 
 /* ============================================================================
-   8. MODAL BÚSQUEDA INTELIGENTE — ÁREA DE RESULTADOS
+   8. MODAL BÃšSQUEDA INTELIGENTE â€” ÃREA DE RESULTADOS
    ============================================================================ */
 #area-resultados         { margin-top: 28px; display: none; }
 #area-resultados.visible { display: block; }
@@ -839,7 +839,7 @@
    9. TEMA OSCURO
    ============================================================================ */
 
-/* Barra de búsqueda clásica */
+/* Barra de bÃºsqueda clÃ¡sica */
 body.tema-oscuro .search-input-group { border-color: var(--border-oscuro); background-color: var(--card-oscuro); }
 body.tema-oscuro .filtros-panel      { background: var(--card-oscuro); border-color: var(--border-oscuro); }
 body.tema-oscuro .filtro-grupo select,
@@ -851,11 +851,11 @@ body.tema-oscuro .nota-icono    { background: rgba(84, 82, 211, 0.18); }
 body.tema-oscuro .carpeta-icono { background: rgba(243, 156, 18, 0.18); }
 body.tema-oscuro .formato-badge { background: rgba(84, 82, 211, 0.20); }
 
-/* Paginación */
+/* PaginaciÃ³n */
 body.tema-oscuro .paginacion a,
 body.tema-oscuro .paginacion span { border-color: var(--border-oscuro); }
 
-/* Modal búsqueda inteligente */
+/* Modal bÃºsqueda inteligente */
 body.tema-oscuro .modal-busqueda           { background: #1a1940; border: 1px solid rgba(255,255,255,0.08); }
 body.tema-oscuro .modal-header-busqueda,
 body.tema-oscuro .panel-subheader          { border-color: rgba(255,255,255,0.08); }

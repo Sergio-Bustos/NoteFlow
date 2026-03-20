@@ -1,13 +1,13 @@
 /* ============================================================
-   NOTEFLOW — dashboard.css
-   Organización:
+   NOTEFLOW â€” dashboard.css
+   OrganizaciÃ³n:
    1. Variables y Reset
    2. Temas (claro / oscuro)
    3. SIDEBAR
    4. LAYOUT GENERAL (main, header, usuario-info)
-   5. DASHBOARD.HTML — Bienvenida, Stats, Notas recientes
-   6. NOTAS.HTML — Búsqueda inteligente
-   7. PAPELERA.HTML — Lista de notas eliminadas
+   5. DASHBOARD.HTML â€” Bienvenida, Stats, Notas recientes
+   6. NOTAS.HTML â€” BÃºsqueda inteligente
+   7. PAPELERA.HTML â€” Lista de notas eliminadas
    8. MODAL ELEGIR FORMATO (compartido)
    9. Responsive
    ============================================================ */
@@ -48,7 +48,7 @@
    2. TEMAS
    ============================================================ */
 
-/* ── Claro ── */
+/* â”€â”€ Claro â”€â”€ */
 body.tema-claro {
     background-color: var(--bg-claro);
     color: var(--texto-claro);
@@ -62,7 +62,7 @@ body.tema-claro .usuario-info           { color: var(--texto-claro); }
 body.tema-claro .bienvenida h2,
 body.tema-claro .recientes h2           { color: var(--texto-claro); }
 
-/* ── Oscuro ── */
+/* â”€â”€ Oscuro â”€â”€ */
 body.tema-oscuro {
     background-color: var(--bg-oscuro);
     color: var(--texto-oscuro);
@@ -79,18 +79,79 @@ body.tema-oscuro .nota-card h4          { color: var(--texto-oscuro); }
 body.tema-oscuro .description           { color: #95a5a6 !important; }
 body.tema-oscuro .card-footer           { border-top-color: var(--border-oscuro); }
 body.tema-oscuro .card-footer small     { color: #7f8c8d; }
-/* Papelera — oscuro */
+/* Papelera â€” oscuro */
 body.tema-oscuro .aviso-papelera        { background: rgba(255,224,130,0.08); border-color: rgba(255,224,130,0.25); color: #ffe082; }
 body.tema-oscuro .nota-papelera         { background: var(--card-oscuro); border-color: var(--border-oscuro); color: var(--texto-oscuro); }
 body.tema-oscuro .nota-papelera:hover   { border-color: var(--border-oscuro); box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
 body.tema-oscuro .nota-descripcion      { color: #7f8c8d; }
 body.tema-oscuro .formato-badge         { background: rgba(84,82,211,0.22); color: #9b99f5; }
-/* Formato modal — oscuro */
+/* Formato modal â€” oscuro */
 body.tema-oscuro .formato-modal         { background: #1f2937; }
 body.tema-oscuro .formato-opcion        { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); color: #e2e8f0; }
 body.tema-oscuro .formato-opcion:hover  { background: rgba(84,82,211,0.15); border-color: #5452d3; color: #e2e8f0; }
 body.tema-oscuro .formato-cerrar        { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.35); }
 body.tema-oscuro .formato-titulo        { color: rgba(255,255,255,0.30); }
+
+/* Modal cerrar sesion */
+.logout-modal .modal-content {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+}
+
+.logout-modal .modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 18px 20px 14px;
+}
+
+.logout-modal .modal-title {
+    color: #212529;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logout-modal .modal-body {
+    color: #495057;
+    font-size: 0.98rem;
+    padding: 20px;
+}
+
+.logout-modal .modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 14px 20px 18px;
+}
+
+body.tema-oscuro .logout-modal .modal-content {
+    background: #ffffff;
+    color: #212529;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.30);
+}
+
+body.tema-oscuro .logout-modal .modal-header,
+body.tema-oscuro .logout-modal .modal-footer {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+body.tema-oscuro .logout-modal .modal-title,
+body.tema-oscuro .logout-modal .modal-body {
+    color: #212529;
+}
+
+body.tema-oscuro .logout-modal .btn-close {
+    filter: none;
+    opacity: 0.8;
+}
+
+body.tema-oscuro .logout-modal .btn-close:hover {
+    opacity: 1;
+}
 
 
 /* ============================================================
@@ -189,7 +250,7 @@ header {
 
 
 /* ============================================================
-   5. DASHBOARD.HTML — Bienvenida, Stats, Notas recientes
+   5. DASHBOARD.HTML â€” Bienvenida, Stats, Notas recientes
    ============================================================ */
 
 /* Bienvenida */
@@ -306,10 +367,10 @@ header {
 
 
 /* ============================================================
-   6. NOTAS.HTML — Búsqueda inteligente
+   6. NOTAS.HTML â€” BÃºsqueda inteligente
    ============================================================ */
 
-/* Botón de apertura del modal */
+/* BotÃ³n de apertura del modal */
 .btn-busqueda-inteligente {
     display: inline-flex;
     align-items: center;
@@ -326,7 +387,7 @@ header {
 }
 .btn-busqueda-inteligente:hover { background: #4340c0; }
 
-/* Área de resultados */
+/* Ãrea de resultados */
 #area-resultados { display: none; }
 #area-resultados.visible { display: block; }
 
@@ -383,7 +444,7 @@ header {
 }
 .sin-resultados i { font-size: 2.5rem; opacity: 0.35; }
 
-/* ── Backdrop y Modal ── */
+/* â”€â”€ Backdrop y Modal â”€â”€ */
 .modal-backdrop-busqueda {
     display: none;
     position: fixed;
@@ -477,7 +538,7 @@ body.tema-oscuro .tipo-opcion { border-color: var(--border-oscuro); }
 .tipo-opcion h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 5px; }
 .tipo-opcion p  { font-size: 0.78rem; color: #aaa; margin: 0; line-height: 1.4; }
 
-/* Paneles de búsqueda */
+/* Paneles de bÃºsqueda */
 .panel-busqueda { display: none; padding: 0 24px; }
 .panel-busqueda.activo { display: block; }
 
@@ -728,7 +789,7 @@ body.tema-oscuro .panel-footer { border-top-color: var(--border-oscuro); }
    7. PAPELERA.HTML
    ============================================================ */
 
-/* Aviso 30 días */
+/* Aviso 30 dÃ­as */
 .aviso-papelera {
     display: flex;
     align-items: flex-start;
@@ -743,7 +804,7 @@ body.tema-oscuro .panel-footer { border-top-color: var(--border-oscuro); }
 }
 .aviso-papelera i { font-size: 1.1rem; margin-top: 2px; flex-shrink: 0; color: #f39c12; }
 
-/* Cabecera sección */
+/* Cabecera secciÃ³n */
 .papelera-header {
     display: flex;
     align-items: center;
@@ -764,7 +825,7 @@ body.tema-oscuro .panel-footer { border-top-color: var(--border-oscuro); }
     border-radius: 20px;
 }
 
-/* Papelera vacía */
+/* Papelera vacÃ­a */
 .papelera-vacia { text-align: center; padding: 72px 20px; color: #bbb; }
 .papelera-vacia i { font-size: 4rem; opacity: 0.25; display: block; margin-bottom: 18px; }
 .papelera-vacia p { font-size: 1rem; color: #aaa; margin: 0; }
@@ -837,7 +898,7 @@ body.tema-oscuro .panel-footer { border-top-color: var(--border-oscuro); }
     white-space: nowrap;
 }
 
-/* Días restantes */
+/* DÃ­as restantes */
 .dias-restantes {
     display: inline-flex;
     align-items: center;
@@ -1038,3 +1099,4 @@ body.tema-oscuro .panel-footer { border-top-color: var(--border-oscuro); }
     .btn-restaurar,
     .btn-eliminar-def      { flex: 1; justify-content: center; }
 }
+
