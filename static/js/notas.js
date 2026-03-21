@@ -216,19 +216,125 @@
     }
 
     /* ===========================================================
-       BUSCAR NOTAS / CARPETAS
-       =========================================================== */
-    function buscarNotas() {
-        cerrarModal();
-        // TODO: fetch('/api/buscar-notas', { method:'POST', ... })
-        mostrarSinResultados('notas');
-    }
-    function buscarCarpetas() {
-        cerrarModal();
-        // TODO: fetch('/api/buscar-carpetas', { method:'POST', ... })
-        mostrarSinResultados('carpetas');
+   ÍCONOS POR FORMATO
+   =========================================================== */
+var ICONOS_FORMATO = {
+    texto:   { clase: 'fas fa-align-left',   color: '#5452d3' },
+    imagen:  { clase: 'fas fa-image',         color: '#27ae60' },
+    audio:   { clase: 'fas fa-microphone',    color: '#e74c3c' },
+    video:   { clase: 'fas fa-video',         color: '#2980b9' },
+    dibujo:  { clase: 'fas fa-paint-brush',   color: '#f39c12' },
+    mixta:   { clase: 'fas fa-layer-group',   color: '#8e44ad' },
+    default: { clase: 'fas fa-file-alt',      color: '#888'    },
+};
+
+/* ===========================================================
+   RENDERIZAR TARJETAS DE NOTAS
+   =========================================================== */
+function renderizarNotas(notas, esVistaPrev) {
+    var area       = document.getElementById('area-resultados');
+    var contenedor = document.getElementById('resultados-notas');
+    var sinRes     = document.getElementById('sin-resultados');
+    var badge      = document.getElementById('badge-res');
+    var icono      = document.getElementById('icono-res');
+    var label      = document.getElementById('label-res');
+
+    area.classList.add('visible');
+    document.getElementById('resultados-carpetas').innerHTML = '';
+    icono.className   = 'fas fa-file-alt';
+
+    if (esVistaPrev) {
+        label.textContent = 'Notas recientes';
+        badge.textContent = notas.length;
+    } else {
+        label.textContent = 'Notas encontradas';
+        badge.textContent = notas.length;
     }
 
+    if (notas.length === 0) {
+        contenedor.innerHTML = '';
+        sinRes.style.display = 'flex';
+        area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+    }
+
+    sinRes.style.display = 'none';
+    contenedor.innerHTML = notas.map(function(nota) {
+        var fmt    = ICONOS_FORMATO[nota.formato] || ICONOS_FORMATO.default;
+        var tags   = nota.etiquetas.length
+            ? nota.etiquetas.map(function(t) {
+                return '<span class="nota-tag">#' + t + '</span>';
+              }).join('')
+            : '';
+        var carpeta = nota.carpeta
+            ? '<span class="nota-carpeta"><i class="fas fa-folder"></i> ' + nota.carpeta + '</span>'
+            : '';
+
+        return (
+            '<div class="nota-card" onclick="window.location.href=\'/editar-nota/' + nota.id + '\'">' +
+                '<div class="nota-card-header">' +
+                    '<i class="' + fmt.clase + '" style="color:' + fmt.color + ';font-size:1.2rem;"></i>' +
+                    '<span class="nota-formato-badge">' + nota.formato + '</span>' +
+                    carpeta +
+                '</div>' +
+                '<h4 class="nota-titulo">' + (nota.titulo || 'Sin título') + '</h4>' +
+                '<p class="nota-descripcion">' + (nota.descripcion || '') + '</p>' +
+                '<div class="nota-tags">' + tags + '</div>' +
+                '<div class="nota-footer">' +
+                    '<span><i class="fas fa-clock"></i> ' + nota.edicion + '</span>' +
+                '</div>' +
+            '</div>'
+        );
+    }).join('');
+
+    // Si es vista previa, agrega el botón "Ver todas"
+    if (esVistaPrev) {
+        contenedor.innerHTML += (
+            '<div class="ver-todas-card" onclick="buscarNotas()">' +
+                '<i class="fas fa-search"></i>' +
+                '<span>Ver todas mis notas</span>' +
+            '</div>'
+        );
+    }
+
+    area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ===========================================================
+   BUSCAR NOTAS (real — reemplaza el stub anterior)
+   =========================================================== */
+function buscarNotas() {
+    cerrarModal();
+    fetch('/api/mis-notas')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                renderizarNotas(data.notas);
+            } else {
+                mostrarSinResultados('notas');
+            }
+        })
+        .catch(function() {
+            mostrarSinResultados('notas');
+        });
+}
+
+/* ===========================================================
+   CARGA AUTOMÁTICA — 3 NOTAS MÁS RECIENTES
+   =========================================================== */
+function cargarNotasRecientes() {
+    fetch('/api/mis-notas')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.notas.length > 0) {
+                // Solo las 3 más recientes
+                renderizarNotas(data.notas.slice(0, 3), true);
+            }
+        })
+        .catch(function() {
+            // Si falla silenciosamente, no pasa nada
+        });
+}
     /* ===========================================================
        TEMA
        =========================================================== */
@@ -239,6 +345,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
+        cargarNotasRecientes();
     });
 
     window.addEventListener('pageshow', function(event) {

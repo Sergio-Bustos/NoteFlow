@@ -1184,6 +1184,62 @@ def mostrar_notas():
     finally:
         cerrar_db(cursor, conexion)
 
+# ==============================================================================
+# 9.2 Agregar Notas a Mis notas
+# ==============================================================================
+
+@app.route("/api/mis-notas")
+@login_required
+def api_mis_notas():
+    """
+    Devuelve las notas activas del usuario en formato JSON.
+    Se usa en la página /notas para cargar las notas automáticamente al entrar.
+    """
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+        cursor.execute("""
+            SELECT
+                n."ID_Nota",
+                n."Titulo",
+                n."Descripcion",
+                n."Formato",
+                n."Fecha_decreacion",
+                n."Fecha_deedicion",
+                c."Nombre_carpeta"
+            FROM public."Notas" n
+            LEFT JOIN public."Carpetas" c ON n."ID_Carpeta" = c."ID_Carpeta"
+            WHERE n."ID_Cuenta" = %s AND n."Estado" = 'Activa'
+            ORDER BY n."Fecha_deedicion" DESC
+        """, (user_id,))
+        filas = cursor.fetchall()
+
+        notas = []
+        for n in filas:
+            etiquetas = obtener_etiquetas_nota(n["ID_Nota"], cursor)
+            notas.append({
+                "id":          n["ID_Nota"],
+                "titulo":      n["Titulo"],
+                "descripcion": n["Descripcion"],
+                "formato":     n["Formato"],
+                "creacion":    str(n["Fecha_decreacion"]),
+                "edicion":     str(n["Fecha_deedicion"]),
+                "carpeta":     n["Nombre_carpeta"],
+                "etiquetas":   [e["Nombre_etiqueta"] for e in etiquetas],
+            })
+
+        return jsonify({"success": True, "notas": notas}), 200
+
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Error al obtener las notas"}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
 
 # ==============================================================================
 # 10. PAPELERA

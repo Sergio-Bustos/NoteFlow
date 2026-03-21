@@ -13,6 +13,7 @@
      8.  Modal bÃºsqueda inteligente â€” Ã¡rea de resultados
      9.  Tema oscuro
      10. Responsive
+     11. Grid Notas
    ============================================================================ */
 
 
@@ -927,4 +928,108 @@ body.tema-oscuro .sin-resultados p         { color: rgba(255,255,255,0.35); }
     .filtros-seccion,
     .filtros-activos,
     .panel-footer             { padding-left: 16px; padding-right: 16px; }
+}
+/* ============================================================================
+   11. Grid de Notas
+   ============================================================================ */
+
+#resultados-notas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.nota-card {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border, #e0e0e0);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: box-shadow .2s, transform .2s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nota-card:hover {
+    box-shadow: 0 4px 18px rgba(0,0,0,.12);
+    transform: translateY(-2px);
+}
+.nota-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.nota-formato-badge {
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--color-principal-light, #f0f0f0);
+    color: var(--color-principal, #5452d3);
+}
+.nota-carpeta {
+    font-size: .78rem;
+    color: var(--color-secundario, #888);
+    margin-left: auto;
+}
+.nota-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--texto-principal, #222);
+}
+
+.nota-descripcion {
+    font-size: .85rem;
+    color: var(--texto-secundario, #666);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 2;
+}
+.nota-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.nota-tag {
+    font-size: .75rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--tag-bg, #eef);
+    color: var(--color-principal, #5452d3);
+}
+.nota-footer {
+    font-size: .75rem;
+    color: var(--texto-secundario, #999);
+    margin-top: auto;
+}
+
+/* ---- Tarjeta "Ver todas" ---- */
+.ver-todas-card {
+    border: 2px dashed var(--color-principal, #5452d3);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    cursor: pointer;
+    color: var(--color-principal, #5452d3);
+    font-weight: 600;
+    font-size: .95rem;
+    transition: background .2s;
+}
+.ver-todas-card:hover {
+    background: var(--color-principal-light, #f0f0ff);
+}
+.ver-todas-card i {
+    font-size: 1.6rem;
 }
