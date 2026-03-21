@@ -14,6 +14,7 @@
      9.  Tema oscuro
      10. Responsive
      11. Grid Notas
+     12. Estado vacío — sin notas
    ============================================================================ */
 
 
@@ -950,6 +951,100 @@ body.tema-oscuro .sin-resultados p         { color: rgba(255,255,255,0.35); }
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative;
+}
+
+.btn-eliminar-nota {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #e74c3c;
+    background: transparent;
+    color: #e74c3c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: .85rem;
+    transition: background .2s, color .2s;
+    z-index: 2;
+}
+.btn-eliminar-nota:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+/* ---- Modal eliminar nota (mismo estilo que logicatexto) ---- */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.visible {
+    display: flex;
+}
+.modal-box {
+    background: var(--bg-card, #fff);
+    border-radius: 16px;
+    padding: 32px 28px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+.modal-icono {
+    font-size: 2rem;
+    color: #e74c3c;
+    margin-bottom: 12px;
+}
+.modal-box h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--texto-principal, #222);
+}
+.modal-box p {
+    font-size: .9rem;
+    color: var(--texto-secundario, #666);
+    margin-bottom: 24px;
+}
+.modal-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.btn-modal-cancelar {
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: 1px solid var(--border, #ddd);
+    background: transparent;
+    color: var(--texto-principal, #333);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+}
+.btn-modal-cancelar:hover {
+    background: var(--bg-hover, #f5f5f5);
+}
+.btn-modal-salir {
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+}
+.btn-modal-salir:hover {
+    background: #c0392b;
 }
 .nota-card:hover {
     box-shadow: 0 4px 18px rgba(0,0,0,.12);
@@ -1032,4 +1127,77 @@ body.tema-oscuro .sin-resultados p         { color: rgba(255,255,255,0.35); }
 }
 .ver-todas-card i {
     font-size: 1.6rem;
+}
+
+/* ============================================================================
+   12. Estado vacío — sin notas
+   ============================================================================ */
+.estado-vacio {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 20px;
+    gap: 16px;
+    animation: fadeInVacio .5s ease forwards;
+    width: 100%;
+}
+
+@keyframes fadeInVacio {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.estado-vacio-icono {
+    width: 90px;
+    height: auto;
+    user-select: none;
+    opacity: 0.9;
+    display: block;
+    margin: 0 auto;
+}
+
+body.tema-oscuro .estado-vacio-icono {
+    color: #2a2a2a;
+}
+
+.estado-vacio-titulo {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #bbb;
+    margin: 0;
+}
+
+body.tema-oscuro .estado-vacio-titulo {
+    color: #444;
+}
+
+.estado-vacio-sub {
+    font-size: .95rem;
+    color: #ccc;
+    margin: 0;
+}
+
+body.tema-oscuro .estado-vacio-sub {
+    color: #3a3a3a;
+}
+
+.estado-vacio-btn {
+    margin-top: 8px;
+    padding: 12px 28px;
+    border-radius: 10px;
+    background: var(--color-principal, #5452d3);
+    color: #fff;
+    font-weight: 600;
+    font-size: .95rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity .2s;
+}
+
+.estado-vacio-btn:hover {
+    opacity: .85;
+    color: #fff;
 }

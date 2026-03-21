@@ -1193,7 +1193,14 @@ def mostrar_notas():
 def api_mis_notas():
     """
     Devuelve las notas activas del usuario en formato JSON.
-    Se usa en la página /notas para cargar las notas automáticamente al entrar.
+    Acepta filtros opcionales por query params:
+      - q        : texto en título o contenido
+      - formato  : texto, imagen, audio, video, dibujo, mixta
+      - carpeta  : nombre de carpeta
+      - desde    : fecha de creación desde (YYYY-MM-DD)
+      - hasta    : fecha de edición hasta (YYYY-MM-DD)
+      - etiquetas: etiquetas separadas por coma
+      - orden    : reciente, antiguo, az, za
     """
     user_id  = session["usuario_id"]
     conexion = None
@@ -1201,7 +1208,18 @@ def api_mis_notas():
     try:
         conexion = conectar_db(dict_cursor=True)
         cursor   = conexion.cursor()
-        cursor.execute("""
+
+        # Leer filtros
+        q         = request.args.get("q",         "").strip()
+        formato   = request.args.get("formato",   "").strip()
+        carpeta   = request.args.get("carpeta",   "").strip()
+        desde     = request.args.get("desde",     "").strip()
+        hasta     = request.args.get("hasta",     "").strip()
+        etiquetas = request.args.get("etiquetas", "").strip()
+        orden     = request.args.get("orden",     "reciente").strip()
+
+        # Base de la consulta
+        sql    = """
             SELECT
                 n."ID_Nota",
                 n."Titulo",
@@ -1213,13 +1231,63 @@ def api_mis_notas():
             FROM public."Notas" n
             LEFT JOIN public."Carpetas" c ON n."ID_Carpeta" = c."ID_Carpeta"
             WHERE n."ID_Cuenta" = %s AND n."Estado" = 'Activa'
-            ORDER BY n."Fecha_deedicion" DESC
-        """, (user_id,))
+        """
+        params = [user_id]
+
+        # Filtro texto
+        if q:
+            sql    += ' AND (LOWER(n."Titulo") LIKE %s OR LOWER(n."Contenido") LIKE %s)'
+            params += [f"%{q.lower()}%", f"%{q.lower()}%"]
+
+        # Filtro formato
+        if formato:
+            sql    += ' AND LOWER(n."Formato") = %s'
+            params += [formato.lower()]
+
+        # Filtro carpeta
+        if carpeta:
+            sql    += ' AND LOWER(c."Nombre_carpeta") LIKE %s'
+            params += [f"%{carpeta.lower()}%"]
+
+        # Filtro fecha desde (creación)
+        if desde:
+            sql    += ' AND n."Fecha_decreacion" >= %s'
+            params += [desde]
+
+        # Filtro fecha hasta (edición)
+        if hasta:
+            sql    += ' AND n."Fecha_deedicion" <= %s'
+            params += [hasta]
+
+        # Filtro etiquetas
+        etiquetas_lista = [e.strip().lower() for e in etiquetas.split(",") if e.strip()]
+        if etiquetas_lista:
+            for tag in etiquetas_lista:
+                sql += """
+                    AND EXISTS (
+                        SELECT 1 FROM public."Notas_etiquetas" ne
+                        JOIN public."Etiquetas" e ON ne."ID_Etiqueta" = e."ID_Etiqueta"
+                        WHERE ne."ID_Nota" = n."ID_Nota"
+                        AND LOWER(e."Nombre_etiqueta") = %s
+                    )
+                """
+                params += [tag]
+
+        # Orden
+        ordenes = {
+            "reciente": 'n."Fecha_deedicion" DESC',
+            "antiguo":  'n."Fecha_deedicion" ASC',
+            "az":       'n."Titulo" ASC',
+            "za":       'n."Titulo" DESC',
+        }
+        sql += f' ORDER BY {ordenes.get(orden, ordenes["reciente"])}'
+
+        cursor.execute(sql, params)
         filas = cursor.fetchall()
 
         notas = []
         for n in filas:
-            etiquetas = obtener_etiquetas_nota(n["ID_Nota"], cursor)
+            etiquetas_nota = obtener_etiquetas_nota(n["ID_Nota"], cursor)
             notas.append({
                 "id":          n["ID_Nota"],
                 "titulo":      n["Titulo"],
@@ -1228,7 +1296,7 @@ def api_mis_notas():
                 "creacion":    str(n["Fecha_decreacion"]),
                 "edicion":     str(n["Fecha_deedicion"]),
                 "carpeta":     n["Nombre_carpeta"],
-                "etiquetas":   [e["Nombre_etiqueta"] for e in etiquetas],
+                "etiquetas":   [e["Nombre_etiqueta"] for e in etiquetas_nota],
             })
 
         return jsonify({"success": True, "notas": notas}), 200
@@ -1239,6 +1307,39 @@ def api_mis_notas():
 
     finally:
         cerrar_db(cursor, conexion)
+
+# ==============================================================================
+# 9.3 Notas Ruta eliminar papelera
+# ==============================================================================
+@app.route("/papelera/mover/<int:nota_id>", methods=["POST"])
+@login_required
+def mover_a_papelera(nota_id):
+    """Mueve una nota al estado 'Papelera' (eliminación suave)."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db()
+        cursor   = conexion.cursor()
+        # Verifica que la nota pertenezca al usuario
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Estado" = 'Papelera', "Fecha_deedicion" = %s
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND "Estado" = 'Activa'
+        """, (datetime.now(), nota_id, user_id))
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Nota no encontrada o sin permisos"}), 404
+
+        conexion.commit()
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({"error": "Error interno"}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)        
 
 
 # ==============================================================================

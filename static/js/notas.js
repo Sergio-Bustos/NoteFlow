@@ -271,20 +271,25 @@ function renderizarNotas(notas, esVistaPrev) {
             : '';
 
         return (
-            '<div class="nota-card" onclick="window.location.href=\'/editar-nota/' + nota.id + '\'">' +
-                '<div class="nota-card-header">' +
-                    '<i class="' + fmt.clase + '" style="color:' + fmt.color + ';font-size:1.2rem;"></i>' +
-                    '<span class="nota-formato-badge">' + nota.formato + '</span>' +
-                    carpeta +
-                '</div>' +
-                '<h4 class="nota-titulo">' + (nota.titulo || 'Sin título') + '</h4>' +
-                '<p class="nota-descripcion">' + (nota.descripcion || '') + '</p>' +
-                '<div class="nota-tags">' + tags + '</div>' +
-                '<div class="nota-footer">' +
-                    '<span><i class="fas fa-clock"></i> ' + nota.edicion + '</span>' +
-                '</div>' +
-            '</div>'
-        );
+        '<div class="nota-card" data-id="' + nota.id + '" onclick="window.location.href=\'/editar-nota/' + nota.id + '\'">' +
+            '<button class="btn-eliminar-nota" ' +
+                'onclick="abrirModalEliminarNota(' + nota.id + ', \'' + (nota.titulo || 'Sin título').replace(/'/g, "\\'") + '\', event)" ' +
+                'title="Mover a papelera">' +
+                '<i class="fas fa-trash-alt"></i>' +
+            '</button>' +
+            '<div class="nota-card-header">' +
+                '<i class="' + fmt.clase + '" style="color:' + fmt.color + ';font-size:1.2rem;"></i>' +
+                '<span class="nota-formato-badge">' + nota.formato + '</span>' +
+                carpeta +
+            '</div>' +
+            '<h4 class="nota-titulo">' + (nota.titulo || 'Sin título') + '</h4>' +
+            '<p class="nota-descripcion">' + (nota.descripcion || '') + '</p>' +
+            '<div class="nota-tags">' + tags + '</div>' +
+            '<div class="nota-footer">' +
+                '<span><i class="fas fa-clock"></i> ' + nota.edicion + '</span>' +
+            '</div>' +
+        '</div>'
+    );
     }).join('');
 
     // Si es vista previa, agrega el botón "Ver todas"
@@ -305,11 +310,37 @@ function renderizarNotas(notas, esVistaPrev) {
    =========================================================== */
 function buscarNotas() {
     cerrarModal();
-    fetch('/api/mis-notas')
+
+    // Recoger todos los filtros del modal
+    var params = new URLSearchParams();
+
+    var q = document.getElementById('nota-texto').value.trim();
+    if (q) params.set('q', q);
+
+    var formato = document.getElementById('nota-formato').value;
+    if (formato) params.set('formato', formato);
+
+    var carpeta = document.getElementById('nota-carpeta').value;
+    if (carpeta) params.set('carpeta', carpeta);
+
+    var desde = document.getElementById('nota-fecha-desde').value;
+    if (desde) params.set('desde', desde);
+
+    var hasta = document.getElementById('nota-fecha-hasta').value;
+    if (hasta) params.set('hasta', hasta);
+
+    var orden = document.getElementById('nota-orden').value;
+    if (orden) params.set('orden', orden);
+
+    if (tagsActivos.size > 0) {
+        params.set('etiquetas', Array.from(tagsActivos).join(','));
+    }
+
+    fetch('/api/mis-notas?' + params.toString())
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                renderizarNotas(data.notas);
+                renderizarNotas(data.notas, false);
             } else {
                 mostrarSinResultados('notas');
             }
@@ -327,13 +358,88 @@ function cargarNotasRecientes() {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success && data.notas.length > 0) {
-                // Solo las 3 más recientes
                 renderizarNotas(data.notas.slice(0, 3), true);
+            } else {
+                // Sin notas — mostrar estado vacío
+                document.getElementById('estado-vacio').style.display = 'flex';
             }
         })
-        .catch(function() {
-            // Si falla silenciosamente, no pasa nada
-        });
+        .catch(function() {});
+}
+/* ===========================================================
+   MODAL ELIMINAR NOTA (desde tarjeta)
+   =========================================================== */
+var _notaAEliminarId = null;
+
+(function inyectarModalEliminarNota() {
+    if (document.getElementById('modalEliminarNota')) return;
+    var overlay = document.createElement('div');
+    overlay.id        = 'modalEliminarNota';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML =
+        '<div class="modal-box">' +
+            '<div class="modal-icono"><i class="fas fa-trash-alt"></i></div>' +
+            '<h3>¿Eliminar nota?</h3>' +
+            '<p>La nota se moverá a la <strong>papelera</strong>. Podrás restaurarla desde ahí.</p>' +
+            '<div class="modal-btns">' +
+                '<button class="btn-modal-cancelar" id="btnCancelarEliminarNota">Cancelar</button>' +
+                '<button class="btn-modal-salir"    id="btnConfirmarEliminarNota">Mover a papelera</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+
+    // Cerrar al hacer clic en el fondo
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) cerrarModalEliminarNota();
+    });
+
+    document.getElementById('btnCancelarEliminarNota').addEventListener('click', cerrarModalEliminarNota);
+    document.getElementById('btnConfirmarEliminarNota').addEventListener('click', ejecutarEliminarNota);
+})();
+
+function abrirModalEliminarNota(id, titulo, e) {
+    e.stopPropagation(); // evita que abra el editor
+    _notaAEliminarId = id;
+    document.getElementById('modalEliminarNota').querySelector('p').innerHTML =
+        'La nota <strong>"' + titulo + '"</strong> se moverá a la papelera. Podrás restaurarla desde ahí.';
+    document.getElementById('modalEliminarNota').classList.add('visible');
+}
+
+function cerrarModalEliminarNota() {
+    document.getElementById('modalEliminarNota').classList.remove('visible');
+    _notaAEliminarId = null;
+}
+
+async function ejecutarEliminarNota() {
+    if (!_notaAEliminarId) return;
+    var id = _notaAEliminarId;
+    cerrarModalEliminarNota();
+
+    try {
+        var resp = await fetch('/papelera/mover/' + id, { method: 'POST' });
+        var data = await resp.json();
+
+        if (data.success) {
+            // Animación de salida y eliminar tarjeta del DOM
+            var card = document.querySelector('.nota-card[data-id="' + id + '"]');
+            if (card) {
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity    = '0';
+                card.style.transform  = 'scale(0.9)';
+                setTimeout(function() {
+                    card.remove();
+                    // Actualizar badge
+                    var restantes = document.querySelectorAll('.nota-card').length;
+                    var badge = document.getElementById('badge-res');
+                    if (badge) badge.textContent = restantes;
+                }, 320);
+            }
+        } else {
+            alert(data.error || 'Error al mover la nota a la papelera');
+        }
+    } catch (e) {
+        alert('Error de conexión');
+    }
 }
     /* ===========================================================
        TEMA

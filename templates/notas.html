@@ -67,6 +67,15 @@
         <div id="resultados-notas"></div>
         <div id="resultados-carpetas"></div>
     </div>
+<!-- Estado vacío — sin notas creadas -->
+    <div class="estado-vacio" id="estado-vacio" style="display:none;">
+        <img src="{{ url_for('static', filename='nota-vacia.svg') }}" alt="" class="estado-vacio-icono">
+        <h2 class="estado-vacio-titulo">¡Ups, parece que no tienes notas!</h2>
+        <p class="estado-vacio-sub">Empieza a capturar tus ideas ahora mismo.</p>
+        <a href="#" class="estado-vacio-btn" onclick="abrirFormato(); return false;">
+            <i class="fas fa-plus"></i> Crear nota
+        </a>
+    </div>
 </div>
 
 
@@ -131,6 +140,7 @@
                         <option value="imagen">Imagen</option>
                         <option value="audio">Audio</option>
                         <option value="video">Video</option>
+                        <option value="dibujo">Dibujo</option>
                         <option value="mixta">Mixta</option>
                     </select>
                 </div>
