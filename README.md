@@ -123,6 +123,7 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 
 - [Git](https://git-scm.com/)
 - [Docker](https://www.docker.com/) y Docker Compose
+- [NGrok](https://apps.microsoft.com/detail/9mvs1j51gmk6?hl=es-ES&gl=ES)
 
 ### 1. Clonar el repositorio
 
@@ -172,6 +173,14 @@ Luego accede desde cualquier dispositivo con:
 http://<tu-ip-local>:5000
 # Ejemplo: http://192.168.1.100:5000
 ```
+Para usar Google o inicio de sesion en Moviles o tablets tener el Ngrok para sincronizarlo con el google la API 
+
+Lo iniciamos en segundo plano
+```
+ngrok http 5000
+```
+Lo dejamos en la terminal de visual o terminal de ngrok en segundo plano funcionando 
+
 
 ### 6. Verificar la base de datos
 
