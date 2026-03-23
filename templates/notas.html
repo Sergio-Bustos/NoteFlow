@@ -12,6 +12,13 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
 </head>
 <body>
+    <!-- Botón hamburguesa -->
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR -->
 <div class="sidebar">
