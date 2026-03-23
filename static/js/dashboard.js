@@ -22,6 +22,13 @@ window.addEventListener('pageshow', function(event) {
         }
     }
 });
+// Boton de hamburguesa funcion
+function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('visible');
+    document.getElementById('hamburger-btn').classList.toggle('hidden');
+}
+
 
 // ========== MODAL ELEGIR FORMATO ==========
 function abrirFormato() {
