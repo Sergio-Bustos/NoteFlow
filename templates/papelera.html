@@ -12,6 +12,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='papelera.css') }}">
 </head>
 <body>
+    <!-- Botón hamburguesa -->
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <!-- Toast container -->
 <div class="toast-container-custom" id="toast-container"></div>
