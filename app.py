@@ -632,6 +632,12 @@ def google_callback():
     finally:
         cerrar_db(cursor, conexion)
 
+#Saltar pagina que pone ngrok por defecto al usar el google 
+@app.after_request
+def skip_ngrok_warning(response):
+    response.headers["ngrok-skip-browser-warning"] = "true"
+    return response
+
 
 # ==============================================================================
 # 5. RECUPERAR CONTRASEÑA
