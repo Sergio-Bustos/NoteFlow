@@ -16,6 +16,12 @@
 </head> <!-- Fin de la sección de encabezado  -->
 
 <body> <!-- Cuerpo principal -->
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <div class="sidebar"> <!-- Barra lateral -->
     <div class="logo">NoteFlow</div> <!-- Logo -->
@@ -51,7 +57,7 @@
     </header>
 
     <section class="bienvenida"> <!-- Sección de bienvenida -->
-        <h2>Hola, 👋{{ usuario.nombre }} </h2> <!-- Título -->
+        <h2>Hola,{{ usuario.Nombres }}👋❤️ </h2> <!-- Título -->
         <p>Tu resumen de NoteFlow:</p> <!-- Texto -->
         <br> <!-- Espacio -->
     </section>
