@@ -557,6 +557,13 @@ def procesar_login():
 # ==============================================================================
 
 def _google_flow(state=None):
+    host = request.host
+
+    if "127.0.0.1" in host or "localhost" in host:
+        redirect_url = "http://127.0.0.1:5000/google/callback"
+    else:
+        redirect_url = f"https://{host}/google/callback"
+
     """Crea y retorna el objeto Flow de Google OAuth configurado."""
     client_config = {
         "web": {
@@ -566,7 +573,7 @@ def _google_flow(state=None):
             "token_uri":                   "https://oauth2.googleapis.com/token",
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
             "client_secret":               os.getenv("GOOGLE_CLIENT_SECRET"),
-            "redirect_uris":               [os.getenv("GOOGLE_REDIRECT_URI")],
+            "redirect_uris":               [redirect_url],
         }
     }
     scopes = [
@@ -577,7 +584,7 @@ def _google_flow(state=None):
     kwargs = {"state": state} if state else {}
     return Flow.from_client_config(
         client_config, scopes=scopes,
-        redirect_uri=os.getenv("GOOGLE_REDIRECT_URI"), **kwargs
+        redirect_uri=redirect_url, **kwargs
     )
 
 
