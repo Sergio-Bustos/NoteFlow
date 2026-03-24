@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteFlow — Pasarela de Pagos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pasarela.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+
+</head>
+<body>
+
+<div class="pasarela-wrapper">
+
+    <!-- TOP -->
+    <div class="pasarela-top">
+        <div class="logo-text">NoteFlow</div>
+        <div class="plan-summary">
+            <div class="plan-label">Plan seleccionado</div>
+            <div class="plan-valor" id="display-plan">Cargando…</div>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="pasarela-body">
+        <h2>Completa tu pago</h2>
+        <p class="sub">Ingresa tus datos para activar tu plan Premium.</p>
+
+        <form id="form-pago" onsubmit="procesarPago(event)">
+            <div class="input-group-custom">
+                <div class="campo input-full">
+                    <label>Nombre completo</label>
+                    <input type="text" id="nombre" placeholder="Juan Pérez" required>
+                </div>
+                <div class="campo input-full">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="correo" placeholder="tu@correo.com" required>
+                </div>
+                <div class="campo input-full">
+                    <label>Número de tarjeta</label>
+                    <input type="text" id="numero-tarjeta" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)">
+                </div>
+                <div class="campo">
+                    <label>Vencimiento</label>
+                    <input type="text" id="vencimiento" placeholder="MM/AA" maxlength="5" oninput="formatExpiry(this)">
+                </div>
+                <div class="campo">
+                    <label>CVV</label>
+                    <input type="password" id="cvv" placeholder="•••" maxlength="4">
+                </div>
+            </div>
+
+            <div class="divider"><span>o paga con</span></div>
+
+            <p class="metodos-label">Método de pago</p>
+            <div class="metodos-grid">
+                <div class="metodo-card" onclick="seleccionarMetodo(this, 'bancolombia')">
+                    <!-- Reemplaza src con {{ url_for('static', filename='imagen1.png') }} -->
+                    <img src="../static/bancolombia.png" alt="Bancolombia" onerror="this.src=''; this.parentElement.querySelector('span').textContent='Bancolombia'">
+                    <span>Bancolombia</span>
+                </div>
+                <div class="metodo-card" onclick="seleccionarMetodo(this, 'nequi')">
+                    <!-- Reemplaza src con {{ url_for('static', filename='imagen2.png') }} -->
+                    <img src="../static/daviplata.png" alt="Nequi" onerror="this.src=''">
+                    <span>Nequi</span>
+                </div>
+                <div class="metodo-card" onclick="seleccionarMetodo(this, 'daviplata')">
+                    <!-- Reemplaza src con {{ url_for('static', filename='imagen3.png') }} -->
+                    <img src="../static/efecty.jfif" alt="Davi Plata" onerror="this.src=''">
+                    <span>Davi Plata</span>
+                </div>
+                <div class="metodo-card" onclick="seleccionarMetodo(this, 'efecty')">
+                    <!-- Reemplaza src con {{ url_for('static', filename='imagen4.png') }} -->
+                    <img src="../static/nequi.png" alt="Efecty" onerror="this.src=''">
+                    <span>Efecty</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-pagar">
+                <i class="fas fa-lock" style="margin-right:8px;"></i>
+                Pagar ahora — <span id="btn-precio">$ …</span>
+            </button>
+        </form>
+
+        <a href="/planes" class="btn-volver">← Cambiar de plan</a>
+
+        <div class="seguridad">
+            <i class="fas fa-shield-alt"></i>
+            Pago 100% seguro · Datos cifrados
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/pasarela.js') }}"></script>
+
+</body>
+</html>

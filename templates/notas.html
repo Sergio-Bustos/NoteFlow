@@ -20,17 +20,28 @@
 <!-- Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-<!-- SIDEBAR -->
+<!-- Overlay -->
 <div class="sidebar">
     <div class="logo">NoteFlow</div>
+ 
     <ul class="menu">
         <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
         <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
         <li class="separator"></li>
-        <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
+        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
         <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
     </ul>
+ 
+    <!-- Botón Mejorar plan — va ANTES del logout para ocupar el espacio libre -->
+    <a href="/planes" class="upgrade-btn">
+        <i class="fas fa-crown"></i>
+        <span>Mejorar plan</span>
+        <small>Desbloquea todo Premium</small>
+    </a>
+ 
+    <!-- Botón cerrar sesión -->
     <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
         <i class="fas fa-sign-out-alt"></i> Cerrar sesión
     </a>

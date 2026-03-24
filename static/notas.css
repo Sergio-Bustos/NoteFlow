@@ -1,5 +1,5 @@
 /* ============================================================================
-   notas.css â€” NoteFlow
+   notas.css  NoteFlow
    Estilos especÃ­ficos de la pÃ¡gina Mis Notas (notas.html).
    Depende de dashboard.css para variables de tema, sidebar y layout base.
    OrganizaciÃ³n:
@@ -15,6 +15,7 @@
      10. Responsive
      11. Grid Notas
      12. Estado vacío — sin notas
+     13. Planes
    ============================================================================ */
 
 
@@ -920,39 +921,77 @@ body.tema-oscuro .sin-resultados p         { color: rgba(255,255,255,0.35); }
    10. RESPONSIVE
    ============================================================================ */
 
-   /* Botón hamburguesa — solo visible en móvil */
+/* ============================================================
+   HAMBURGER 
+   ============================================================ */
+   
 .hamburger-btn {
     display: none;
     position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1100;
+    top: 14px;
+    left: 14px;
+    z-index: 1050;
     background: var(--color-principal);
     color: white;
     border: none;
     border-radius: 8px;
-    width: 42px;
-    height: 42px;
-    font-size: 1.2rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
     cursor: pointer;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
     transition: background 0.2s;
 }
 .hamburger-btn:hover { background: #4340c0; }
+.hamburger-btn.hidden { display: none !important; }
 
-/* Overlay oscuro detrás del menú */
 .sidebar-overlay {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.48);
     z-index: 999;
 }
 .sidebar-overlay.visible { display: block; }
 
-.hamburger-btn.hidden { display: none; }
+@media (max-width: 768px) {
+    .hamburger-btn { display: flex; }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -270px;
+        width: 250px;
+        height: 100vh;
+        z-index: 1000;
+        transition: left 0.28s ease;
+        overflow-y: auto;
+        padding-top: 20px;
+    }
+
+    .sidebar.open { left: 0; }
+
+    .main {
+        margin-left: 0;
+        padding: 16px;
+        padding-top: 68px;
+    }
+
+    .stats             { flex-direction: column; }
+    .grid              { grid-template-columns: 1fr; }
+    header             { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .filtros-grid.col2 { grid-template-columns: 1fr; }
+    .tipo-opciones     { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .nota-papelera    { flex-direction: column; }
+    .nota-acciones    { flex-direction: row; width: 100%; }
+    .btn-restaurar,
+    .btn-eliminar-def { flex: 1; justify-content: center; }
+}
 
 @media (max-width: 768px) {
     /* Mostrar botón hamburguesa */
@@ -1270,3 +1309,58 @@ body.tema-oscuro .estado-vacio-sub {
     opacity: .85;
     color: #fff;
 }
+
+
+/* ============================================================
+   13. PLANES
+   ============================================================ */
+.upgrade-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin: 0 16px 12px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, #7f87b3, #c1b0f0);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 4px 14px rgba(22, 6, 240, 0.35);
+    text-align: center;
+    cursor: pointer;
+}
+ 
+.upgrade-btn i {
+    font-size: 18px;
+    color: #1e1b4b;
+    margin-bottom: 1px;
+}
+ 
+.upgrade-btn span {
+    font-size: 13px;
+    font-weight: 800;
+    color: #1e1b4b;
+    line-height: 1.1;
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;
+}
+ 
+.upgrade-btn small {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(30,27,75,0.65);
+    line-height: 1;
+    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;
+}
+ 
+.upgrade-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 8px 22px rgba(0, 38, 255, 0.45);
+    text-decoration: none;
+}
+ 
+/* Ajuste sidebar para que el upgrade quede entre menú y logout */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+}
+ 

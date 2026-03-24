@@ -1,0 +1,257 @@
+       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #4340a0 0%, #51368f 50%, #8b5cf6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+        }
+
+        .pasarela-wrapper {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+            width: 100%;
+            max-width: 520px;
+            overflow: hidden;
+        }
+
+        /* ── HEADER DE LA PASARELA ── */
+        .pasarela-top {
+            background: linear-gradient(135deg, #4340a0, #8b5cf6);
+            padding: 28px 32px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pasarela-top .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .plan-summary {
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 8px 16px;
+            text-align: right;
+        }
+
+        .plan-summary .plan-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.72);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .plan-summary .plan-valor {
+            font-size: 18px;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+
+        /* ── CONTENIDO ── */
+        .pasarela-body {
+            padding: 30px 32px 36px;
+        }
+
+        .pasarela-body h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e1b4b;
+            margin-bottom: 6px;
+        }
+
+        .pasarela-body p.sub {
+            font-size: 13px;
+            color: #9ca3af;
+            margin-bottom: 24px;
+        }
+
+        /* Inputs */
+        .input-group-custom {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .input-full { grid-column: 1 / -1; }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .campo label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .campo input {
+            padding: 12px 14px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1e1b4b;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            outline: none;
+        }
+
+        .campo input:focus {
+            border-color: #5452d3;
+            box-shadow: 0 0 0 3px rgba(84,82,211,0.12);
+        }
+
+        .campo input::placeholder { color: #c4b5fd; }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 22px 0 18px;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #f3f4f6;
+        }
+
+        .divider span {
+            font-size: 12px;
+            color: #9ca3af;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* Métodos de pago */
+        .metodos-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metodos-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .metodo-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-align: center;
+            user-select: none;
+            position: relative;
+        }
+
+        .metodo-card:hover {
+            border-color: #5452d3;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(84,82,211,0.15);
+        }
+
+        .metodo-card.selected {
+            border-color: #5452d3;
+            background: #f5f3ff;
+        }
+
+        .metodo-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 8px; right: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #5452d3;
+        }
+
+        .metodo-card img {
+            width: 56px;
+            height: 42px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 8px;
+        }
+
+        .metodo-card span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        /* Botón pagar */
+        .btn-pagar {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4340a0, #8b5cf6);
+            color: #fff;
+            font-weight: 800;
+            font-size: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-pagar:hover {
+            background: linear-gradient(135deg, #3730a3, #7c3aed);
+            transform: scale(1.02);
+            box-shadow: 0 8px 28px rgba(84,82,211,0.35);
+        }
+
+        .btn-volver {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            font-size: 13px;
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .btn-volver:hover { color: #5452d3; }
+
+        /* Seguridad */
+        .seguridad {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #d1d5db;
+        }
+
+        .seguridad i { color: #a7f3d0; }
+
+        @media (max-width: 480px) {
+            .pasarela-top { padding: 22px 22px 18px; flex-direction: column; align-items: flex-start; gap: 12px; }
+            .pasarela-body { padding: 24px 22px 28px; }
+            .input-group-custom { grid-template-columns: 1fr; }
+            .metodos-grid { grid-template-columns: repeat(2, 1fr); }
+        }

@@ -2233,6 +2233,107 @@ def guardar_nota_mixta():
         cerrar_db(cursor, conexion)
 
 
+
+
+# ==============================================================================
+# 18. PLANES PREMIUM
+# ==============================================================================
+
+@app.route("/planes")
+@login_required
+def planes():
+    """Landing page que muestra los planes de suscripción Premium."""
+    return render_template("planes.html")
+
+
+# ==============================================================================
+# 19. PASARELA DE PAGOS
+# ==============================================================================
+
+@app.route("/pasarela")
+@login_required
+def pasarela():
+    """
+    Página de pasarela de pagos.
+    Recibe por query params:
+        plan    — quincenal | mensual | anual
+        precio  — precio en COP (sin puntos)
+    """
+    plan   = request.args.get("plan",   "mensual")
+    precio = request.args.get("precio", "24900")
+
+    # Validación básica — solo planes reconocidos
+    planes_validos = {
+        "quincenal": "14900",
+        "mensual":   "24900",
+        "anual":     "199900",
+    }
+    if plan not in planes_validos:
+        plan = "mensual"
+    # Usa el precio canónico del servidor, ignora lo que venga en la URL
+    precio = planes_validos[plan]
+
+    return render_template("pasarela.html", plan=plan, precio=precio)
+
+
+@app.route("/procesar-pago", methods=["POST"])
+@login_required
+def procesar_pago():
+    """
+    Endpoint para procesar el pago.
+    Por ahora registra la intención en sesión.
+    Aquí conectarás tu pasarela real (Wompi, PayU, Epayco, etc.).
+
+    Recibe JSON o form:
+        plan         — quincenal | mensual | anual
+        precio       — int en COP
+        metodo       — bancolombia | nequi | daviplata | efecty
+        nombre       — str
+        correo       — str
+    """
+    user_id = session["usuario_id"]
+    datos   = request.get_json(silent=True) or request.form
+
+    plan   = datos.get("plan",   "mensual")
+    precio = datos.get("precio", "24900")
+    metodo = datos.get("metodo", "")
+    nombre = datos.get("nombre", "").strip()
+    correo = datos.get("correo", "").strip()
+
+    if not all([plan, metodo, nombre, correo]):
+        return jsonify({"error": "Faltan datos del pago"}), 400
+
+    # ─── TODO: Integrar aquí tu SDK de pasarela real ───────────────
+    # Ejemplo con Wompi:
+    #   response = wompi.crear_transaccion(monto=precio, moneda="COP", ...)
+    #   if response.ok: ...
+    # ───────────────────────────────────────────────────────────────
+
+    # Por ahora: simula aprobación y guarda en sesión
+    from datetime import datetime, timedelta
+    duraciones = {"quincenal": 15, "mensual": 30, "anual": 365}
+    dias       = duraciones.get(plan, 30)
+    expira     = datetime.now() + timedelta(days=dias)
+
+    session["plan_premium"]        = plan
+    session["plan_premium_expira"] = expira.isoformat()
+    session.modified               = True
+
+    # Aquí también podrías guardar en la BD:
+    # cursor.execute("""
+    #     UPDATE public."Cuentas"
+    #     SET "Plan" = %s, "Plan_expira" = %s
+    #     WHERE "ID_Cuenta" = %s
+    # """, (plan, expira, user_id))
+
+    return jsonify({
+        "success": True,
+        "mensaje": f"Plan {plan} activado hasta {expira.strftime('%d/%m/%Y')}",
+        "redirect": "/dashboard",
+    }), 200
+
+
+
 # # ==============================================================================
 # # PUNTO DE ENTRADA
 # # ==============================================================================
@@ -2240,8 +2341,10 @@ def guardar_nota_mixta():
 # if __name__ == "__main__":
 #     app.run(port=5000)
 
+
+
 # ==============================================================================
-# 18. MODELOS SQLALCHEMY — Solo para Docker
+# 19. MODELOS SQLALCHEMY — Solo para Docker
 #     Descomentar cuando se use con SQLAlchemy en lugar de psycopg2 directo.
 # ==============================================================================
 

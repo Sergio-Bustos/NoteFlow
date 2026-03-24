@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteFlow Premium — Planes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='planes.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="planes-header">
+        <a href="/dashboard" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Volver al inicio
+        </a>
+        <div class="badge-premium">✦ NoteFlow Premium</div>
+        <h1>Lleva tus notas al<br><span>siguiente nivel</span></h1>
+        <p>Desbloquea edición avanzada de imágenes, audio y video en todas tus notas.</p>
+    </div>
+
+    <!-- VIDEO DE FUNCIONALIDADES -->
+    <div class="video-section">
+        <div class="video-wrapper" id="video-container">
+            <!--
+                ════════════════════════════════════════════
+                REEMPLAZAR ESTE BLOQUE con etiqueta <video>:
+
+                <video controls poster="tu_thumbnail.jpg">
+                    <source src="tu_video.mp4" type="video/mp4">
+                </video>
+
+                Pero como usamos flask seria:
+                <video controls>
+                    <source src="{{ url_for('static', filename='videos/demo_premium.mp4') }}" type="video/mp4">
+                </video>
+                ════════════════════════════════════════════
+            -->
+            <div class="video-placeholder">
+                <i class="fas fa-play-circle"></i>
+                <p>Video de las funcionalides premium ... Prontamente </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHIPS: LO QUE DESBLOQUEA -->
+    <div class="unlock-section">
+        <h2>¿Qué desbloqueas con Premium?</h2>
+        <div class="unlock-chips">
+            <div class="unlock-chip"><i class="fas fa-image"></i> Editor avanzado de imágenes</div>
+            <div class="unlock-chip"><i class="fas fa-microphone"></i> Editor básico de audio</div>
+            <div class="unlock-chip"><i class="fas fa-video"></i> Editor básico de video</div>
+            <div class="unlock-chip"><i class="fas fa-star"></i> Prioridad en soporte</div>
+        </div>
+    </div>
+
+    <!-- PLANES -->
+    <div class="planes-grid">
+
+        <!-- QUINCENAL -->
+        <div class="plan-card">
+            <div class="plan-icon quincenal"><i class="fas fa-bolt"></i></div>
+            <div class="plan-name">Quincenal</div>
+            <div class="plan-duration">15 días de acceso</div>
+            <div class="plan-price">
+                <span class="currency">$</span><span class="amount">14.900</span>
+                <span class="period">COP / 15 días</span>
+            </div>
+            <hr class="plan-divider">
+            <ul class="plan-features">
+                <li><i class="fas fa-check-circle"></i> Editor avanzado de imágenes</li>
+                <li><i class="fas fa-check-circle"></i> Editor básico de audio</li>
+                <li><i class="fas fa-check-circle"></i> Editor básico de video</li>
+                <li><i class="fas fa-check-circle"></i> Válido por 15 días</li>
+            </ul>
+            <a href="/pasarela?plan=quincenal&precio=14900" class="btn-plan default">Elegir Quincenal</a>
+        </div>
+
+        <!-- MENSUAL — popular -->
+        <div class="plan-card popular">
+            <div class="popular-badge">⭐ Más popular</div>
+            <div class="plan-icon mensual"><i class="fas fa-crown"></i></div>
+            <div class="plan-name">Mensual</div>
+            <div class="plan-duration">30 días de acceso</div>
+            <div class="plan-price">
+                <span class="currency">$</span><span class="amount">24.900</span>
+                <span class="period">COP / mes</span>
+            </div>
+            <hr class="plan-divider">
+            <ul class="plan-features">
+                <li><i class="fas fa-check-circle"></i> Todo lo del plan Quincenal</li>
+                <li><i class="fas fa-check-circle"></i> 30 días completos de acceso</li>
+                <li class="gold"><i class="fas fa-star"></i> Soporte prioritario</li>
+                <li class="gold"><i class="fas fa-star"></i> Acceso a nuevas funciones beta</li>
+            </ul>
+            <a href="/pasarela?plan=mensual&precio=24900" class="btn-plan gold">Elegir Mensual</a>
+        </div>
+
+        <!-- ANUAL -->
+        <div class="plan-card">
+            <div class="plan-icon anual"><i class="fas fa-gem"></i></div>
+            <div class="plan-name">Anual</div>
+            <div class="plan-duration">365 días de acceso</div>
+            <div class="plan-price">
+                <span class="currency">$</span><span class="amount">199.900</span>
+                <span class="period">COP / año · ahorra 33%</span>
+            </div>
+            <hr class="plan-divider">
+            <ul class="plan-features">
+                <li><i class="fas fa-check-circle"></i> Todo lo del plan Mensual</li>
+                <li><i class="fas fa-check-circle"></i> 365 días de acceso garantizado</li>
+                <li class="gold"><i class="fas fa-star"></i> Descuento exclusivo anual</li>
+                <li class="gold"><i class="fas fa-star"></i> Funciones premium anticipadas</li>
+            </ul>
+            <a href="/pasarela?plan=anual&precio=199900" class="btn-plan default">Elegir Anual</a>
+        </div>
+
+    </div>
+    <section id="resenas">
+    <div class="section-label">Clientes</div>
+    <h2>Lo que dicen de nosotros</h2>
+    <div class="reviews-grid" id="reviewsGrid">
+        <p class="loading">Cargando reseñas...</p>
+    </div>
+    </section>
+    <!-- FOOTER -->
+    <div class="planes-footer">
+        <p>Todos los precios en pesos colombianos (COP) · IVA incluido<br>
+        ¿Tienes dudas? <a href="https://wa.me/573136194040?text=Hola,%20me%20interesa%20saber%20más%20acerca%20de%20los%20planes%20NoteFlow.">Contáctanos</a></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/review.js') }}"></script>
+
+</body>
+</html>

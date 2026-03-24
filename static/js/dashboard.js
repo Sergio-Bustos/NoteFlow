@@ -24,9 +24,13 @@ window.addEventListener('pageshow', function(event) {
 });
 // Boton de hamburguesa funcion
 function toggleSidebar() {
-    document.querySelector('.sidebar').classList.toggle('open');
-    document.getElementById('sidebar-overlay').classList.toggle('visible');
-    document.getElementById('hamburger-btn').classList.toggle('hidden');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const hambBtn = document.getElementById('hamburger-btn');
+
+    const isOpen = sidebar.classList.toggle('open');
+    overlay.classList.toggle('visible', isOpen);
+    hambBtn.classList.toggle('hidden', isOpen);
 }
 
 
