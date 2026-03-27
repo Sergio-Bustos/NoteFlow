@@ -177,9 +177,11 @@
             text-align: center;
             padding: 70px 20px;
             color: var(--color-texto-secundario, #aaa);
+
         }
         .papelera-vacia i { font-size: 4rem; margin-bottom: 18px; display: block; opacity: 0.35; }
         .papelera-vacia p { font-size: 1.05rem; font-weight: 500; }
+
 
         /* â”€â”€ Toast container â”€â”€ */
         .toast-container-custom {
