@@ -181,6 +181,80 @@ def limpiar_datos_formulario(datos, campos):
     return {campo: datos.get(campo, "").strip() for campo in campos}
 
 
+
+def construir_email_html(titulo: str, cuerpo_html: str) -> str:
+    """
+    Genera el HTML completo de un correo con branding NoteFlow.
+    
+    Parámetros:
+        titulo      — Título principal del correo (ej. "Tu código de verificación")
+        cuerpo_html — Contenido interno en HTML (párrafos, código, botones, etc.)
+    """
+    return f"""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>{titulo}</title>
+    </head>
+    <body style="margin:0;padding:0;background-color:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;">
+
+      <!-- Wrapper -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 0;">
+        <tr>
+          <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0"
+                   style="background:#ffffff;border-radius:12px;overflow:hidden;
+                          box-shadow:0 4px 20px rgba(0,0,0,0.08);max-width:600px;width:100%;">
+
+              <!-- HEADER con logo -->
+              <tr>
+                <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);
+                           padding:32px 40px;text-align:center;">
+                  <!-- Si tienes el logo en /static/img/logo.png, referencia la URL pública -->
+                  <!-- <img src="https://tudominio.com/static/img/logo.png" alt="NoteFlow" height="48"> -->
+                  <h1 style="color:#ffffff;margin:0;font-size:28px;font-weight:700;
+                             letter-spacing:-0.5px;">📝 NoteFlow</h1>
+                  <p style="color:rgba(255,255,255,0.8);margin:6px 0 0;font-size:13px;">
+                    Tu espacio para organizar ideas
+                  </p>
+                </td>
+              </tr>
+
+              <!-- CUERPO -->
+              <tr>
+                <td style="padding:40px 48px;">
+                  <h2 style="color:#1e1b4b;font-size:22px;margin:0 0 16px;font-weight:600;">
+                    {titulo}
+                  </h2>
+                  {cuerpo_html}
+                </td>
+              </tr>
+
+              <!-- FOOTER -->
+              <tr>
+                <td style="background:#f8f7ff;border-top:1px solid #e5e7eb;
+                           padding:24px 48px;text-align:center;">
+                  <p style="color:#6b7280;font-size:12px;margin:0 0 6px;">
+                    Este correo fue enviado por <strong>NoteFlow</strong>.
+                    Si no realizaste esta acción, puedes ignorarlo.
+                  </p>
+                  <p style="color:#9ca3af;font-size:11px;margin:0;">
+                    © {datetime.now().year} NoteFlow · Todos los derechos reservados
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+
+    </body>
+    </html>
+    """
+
 def allowed_file(filename):
     """Verifica si la extensión del archivo es válida para fotos de perfil."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS_FOTO
@@ -330,14 +404,26 @@ def procesar_registro():
             "expira":     expira.isoformat(),
         }
 
+        # DESPUÉS
         msg      = Message(subject="Tu código de verificación NoteFlow", recipients=[correo])
-        msg.body = (
-            f"Hola {nombres},\n\n"
-            f"Tu código de verificación para NoteFlow es:\n\n"
-            f"    {codigo}\n\n"
-            f"Este código expira en 15 minutos.\n\n"
-            f"Si no fuiste tú, ignora este correo.\n\n"
-            f"Equipo NoteFlow"
+        msg.body = f"Hola {nombres}, tu código de verificación es: {codigo}. Expira en 15 minutos."
+        msg.html = construir_email_html(
+            titulo=f"Hola {nombres}, verifica tu cuenta 👋",
+            cuerpo_html=f"""
+            <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                Gracias por registrarte en NoteFlow. Usa el siguiente código
+                para completar tu registro:
+            </p>
+            <div style="background:#f3f0ff;border:2px dashed #7c3aed;border-radius:10px;
+                        padding:20px;text-align:center;margin:0 0 24px;">
+                <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#4f46e5;">
+                    {codigo}
+                </span>
+            </div>
+            <p style="color:#6b7280;font-size:13px;margin:0;">
+                ⏰ Este código expira en <strong>15 minutos</strong>.
+            </p>
+            """
         )
 
         try:
@@ -459,13 +545,23 @@ def reenviar_codigo():
     session.modified = True
 
     msg      = Message(subject="Tu nuevo código de verificación NoteFlow", recipients=[pendiente["correo"]])
-    msg.body = (
-        f"Hola {pendiente['nombres']},\n\n"
-        f"Tu nuevo código de verificación para NoteFlow es:\n\n"
-        f"    {codigo}\n\n"
-        f"Este código expira en 15 minutos.\n\n"
-        f"Si no fuiste tú, ignora este correo.\n\n"
-        f"Equipo NoteFlow"
+    msg.body = f"Tu nuevo código es: {codigo}. Expira en 15 minutos."
+    msg.html = construir_email_html(
+        titulo="Nuevo código de verificación",
+        cuerpo_html=f"""
+        <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
+            Hola <strong>{pendiente['nombres']}</strong>, aquí está tu nuevo código:
+        </p>
+        <div style="background:#f3f0ff;border:2px dashed #7c3aed;border-radius:10px;
+                    padding:20px;text-align:center;margin:0 0 24px;">
+            <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#4f46e5;">
+                {codigo}
+            </span>
+        </div>
+        <p style="color:#6b7280;font-size:13px;margin:0;">
+            ⏰ Expira en <strong>15 minutos</strong>.
+        </p>
+        """
     )
 
     try:
@@ -694,15 +790,31 @@ def procesar_olvide_contrasena():
         conexion.commit()
 
         reset_url = url_for("mostrar_restablecer_contrasena", token=token, _external=True)
-        msg       = Message("Restablecimiento de Contraseña NoteFlow", recipients=[correo])
-        msg.body  = (
-            f"Hola {usuario_nombre},\n\n"
-            f"Has solicitado restablecer tu contraseña para NoteFlow.\n\n"
-            f"Haz clic en el siguiente enlace para completar el proceso:\n\n"
-            f"{reset_url}\n\n"
-            f"Este enlace expirará en 1 hora.\n\n"
-            f"Si no solicitaste este cambio, ignora este correo.\n\n"
-            f"Equipo NoteFlow"
+        msg      = Message("Restablecimiento de Contraseña NoteFlow", recipients=[correo])
+        msg.body = f"Hola {usuario_nombre}, restablece tu contraseña aquí: {reset_url}"
+        msg.html = construir_email_html(
+            titulo="¿Olvidaste tu contraseña?",
+            cuerpo_html=f"""
+            <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                Hola <strong>{usuario_nombre}</strong>, recibimos una solicitud para
+                restablecer la contraseña de tu cuenta NoteFlow.
+            </p>
+            <div style="text-align:center;margin:0 0 28px;">
+                <a href="{reset_url}"
+                style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                        color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;
+                        font-weight:600;font-size:15px;">
+                    🔑 Restablecer contraseña
+                </a>
+            </div>
+            <p style="color:#6b7280;font-size:13px;margin:0 0 8px;">
+                ⏰ Este enlace expira en <strong>1 hora</strong>.
+            </p>
+            <p style="color:#9ca3af;font-size:12px;margin:0;">
+                Si no solicitaste este cambio, puedes ignorar este correo.
+                Tu contraseña no será modificada.
+            </p>
+            """
         )
 
         try:
