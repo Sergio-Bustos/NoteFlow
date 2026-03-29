@@ -244,11 +244,13 @@
                 return '<span class="nota-tag">#' + t + '</span>';
               }).join('')
             : '';
-        var colorCarpeta = _colorDeCarpeta(nota.carpeta);
-        var franjaStyle  = colorCarpeta ? 'border-left:4px solid ' + colorCarpeta + ';' : '';
+        var colorCarpeta = _colorDeCarpeta(nota.carpeta) || '#1abc9c';
+        var colorFormato = fmt.color;
+        var franjaStyle  = 'border-left:4px solid ' + colorFormato + ';';
         var carpetaHtml  = nota.carpeta
-            ? '<span class="nota-carpeta-badge" style="background:' + colorCarpeta + '22;color:' + colorCarpeta + ';">' +
-                  '<i class="fas fa-folder" style="color:' + colorCarpeta + ';"></i> ' + nota.carpeta +
+            ? '<span class="nota-carpeta-badge" style="background:' + colorCarpeta + '22;color:' + colorCarpeta + '; display: inline-flex; align-items: center; gap: 5px; border-radius: 6px; padding: 2px 6px;">' +
+                  '<i class="fas fa-folder" style="color:' + colorCarpeta + ';"></i> <span style="font-size: 0.8rem;">' + nota.carpeta + '</span>' +
+                  '<i class="fas fa-times" onclick="quitarNotaDeCarpeta(' + nota.id + ',\'' + nota.carpeta.replace(/'/g, "\\'") + '\', event)" style="cursor: pointer; opacity: 0.7; margin-left: 2px" title="Sacar de carpeta" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7"></i>' +
               '</span>'
             : '';
 
@@ -382,6 +384,7 @@
     function _buildCarpetaCard(c) {
         return (
             '<div class="carpeta-card" data-id="' + c.id + '" ' +
+                'ondblclick="verNotasDeCarpeta(' + c.id + ',\'' + c.nombre.replace(/'/g, "\\'") + '\',event)" ' +
                 'ondragover="onDragOverCarpeta(event)" ' +
                 'ondragleave="onDragLeaveCarpeta(event)" ' +
                 'ondrop="onDropEnCarpeta(event,' + c.id + ')">' +
@@ -545,6 +548,56 @@
         })
         .catch(function() { mostrarToast('Error de conexión', 'error'); });
     }
+
+    /* ===========================================================
+       QUITAR NOTA DE CARPETA (Sacar de Carpeta)
+       =========================================================== */
+    async function quitarNotaDeCarpeta(notaId, carpetaNombre, event) {
+        if (event) event.stopPropagation();
+        try {
+            var r = await fetch('/api/notas/' + notaId + '/carpeta', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ carpeta_id: null })
+            });
+            var data = await r.json();
+            if (data.success) {
+                mostrarToast('Nota sacada de la carpeta correctamente', 'exito');
+                var card = document.querySelector('.nota-card[data-id="' + notaId + '"]');
+                if (card) {
+                    var isInsidePanel = card.closest('.panel-notas-carpeta');
+                    if (isInsidePanel) {
+                        card.style.transition = 'opacity 0.3s, transform 0.3s';
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        setTimeout(function() { card.remove(); }, 300);
+                        
+                        // Opcional: descontar 1 del total de la carpeta visualmente
+                        var carpetaMeta = isInsidePanel.previousElementSibling;
+                        if (carpetaMeta && carpetaMeta.classList.contains('carpeta-card')) {
+                            var meta = carpetaMeta.querySelector('.carpeta-meta i.fa-file-alt');
+                            if (meta) {
+                                var txtWrapper = meta.parentElement;
+                                var match = txtWrapper.textContent.match(/(\d+)/);
+                                if (match) {
+                                    var n = Math.max(0, parseInt(match[1], 10) - 1);
+                                    txtWrapper.innerHTML = '<i class="fas fa-file-alt"></i> ' + n + ' nota' + (n !== 1 ? 's' : '');
+                                }
+                            }
+                        }
+                    } else {
+                        var badge = card.querySelector('.nota-carpeta-badge');
+                        if (badge) badge.remove();
+                    }
+                }
+            } else {
+                mostrarToast(data.error || 'Error al sacar la nota', 'error');
+            }
+        } catch (e) {
+            mostrarToast('Error de conexión', 'error');
+        }
+    }
+    window.quitarNotaDeCarpeta = quitarNotaDeCarpeta;
 
     /* ===========================================================
        MODAL CREAR / EDITAR CARPETA
@@ -753,7 +806,7 @@
             .then(function(data) {
                 if (data.success) {
                     _notasDisponibles = data.notas.filter(function(n) {
-                        return !n.carpeta || n.carpeta !== carpetaNombre;
+                        return !n.carpeta; // Solo notas sin carpeta
                     });
                     renderizarListaNotasModal(_notasDisponibles);
                 } else {
@@ -1073,8 +1126,21 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
-        cargarNotasRecientes();
         cargarCarpetasEnSelect();
+
+        var params = new URLSearchParams(window.location.search);
+        var carpetaUrl = params.get('carpeta');
+
+        if (carpetaUrl) {
+            // Dar tiempo para que cargarCarpetasEnSelect llene las opciones
+            setTimeout(function() {
+                var sel = document.getElementById('nota-carpeta');
+                if (sel) sel.value = carpetaUrl;
+                buscarNotas();
+            }, 350);
+        } else {
+            cargarNotasRecientes();
+        }
     });
 
     window.addEventListener('pageshow', function(event) {

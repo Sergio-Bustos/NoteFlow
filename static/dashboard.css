@@ -300,6 +300,15 @@ header {
     flex-direction: column;
 }
 
+/* Colores por Formato de Nota */
+.nota-card.format-texto { border-left-color: #5452d3; }
+.nota-card.format-imagen { border-left-color: #27ae60; }
+.nota-card.format-audio { border-left-color: #e74c3c; }
+.nota-card.format-video { border-left-color: #2980b9; }
+.nota-card.format-dibujo { border-left-color: #f39c12; }
+.nota-card.format-mixta { border-left-color: #8e44ad; }
+.nota-card.format- { border-left-color: #888; } /* default cuando el formato viene vacio */
+
 .nota-card h4 { margin-top: 0; margin-bottom: 5px; }
 
 .nota-card .description {

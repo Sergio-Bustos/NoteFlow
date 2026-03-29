@@ -994,7 +994,7 @@ def dashboard():
         notas_papelera = cursor.fetchone()["total"]
 
         cursor.execute("""
-            SELECT "ID_Nota", "Titulo", "Descripcion", "Fecha_deedicion"
+            SELECT "ID_Nota", "Titulo", "Descripcion", "Fecha_deedicion", "Formato"
             FROM public."Notas"
             WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'activa'
             ORDER BY "Fecha_deedicion" DESC NULLS LAST
@@ -1010,6 +1010,7 @@ def dashboard():
                 "Titulo":         nota.get("Titulo"),
                 "Descripcion":    nota.get("Descripcion"),
                 "Fecha_deedicion":nota.get("Fecha_deedicion"),
+                "Formato":        nota.get("Formato") or "",
                 "Etiquetas":      obtener_etiquetas_nota(nota_id, cursor),
                 "Has_Adjuntos":   verificar_adjuntos_nota(nota_id, cursor),
                 "tipo":           "nota",

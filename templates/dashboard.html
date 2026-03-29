@@ -111,7 +111,7 @@
             {% for item in notas_recientes %} <!-- Ciclo por cada item reciente (nota o carpeta) -->
             
             {% if item.tipo == 'nota' %} <!-- Si es una nota -->
-            <div class="nota-card" data-note-id="{{ item.ID_Nota }}"> <!-- Tarjeta de nota -->
+            <div class="nota-card format-{{ item.Formato|lower }}" data-note-id="{{ item.ID_Nota }}"> <!-- Tarjeta de nota -->
 
                 <div class="card-header"> <!-- Encabezado de la tarjeta -->
                     <span class="visibility-indicator">
@@ -161,7 +161,7 @@
                 <div class="card-footer"> <!-- Pie de la tarjeta -->
                     <small><i class="fas fa-clock"></i> Editada: {{ item.Fecha_edicion.strftime('%d/%m/%Y') if item.Fecha_edicion else 'Sin fecha' }}</small>
 
-                    <a href="/notas?carpeta={{ item.ID_Carpeta }}" class="view-btn">Ver Carpeta</a> <!-- Enlace -->
+                    <a href="/notas?carpeta={{ item.Nombre_carpeta|urlencode }}" class="view-btn">Ver Carpeta</a> <!-- Enlace -->
                 </div>
             </div>
             {% endif %}
