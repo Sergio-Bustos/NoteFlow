@@ -17,6 +17,14 @@
     <i class="fas fa-bars"></i>
 </button>
 
+<!-- Barra superior móvil: foto + nombre a la derecha -->
+<div class="mobile-topbar">
+    <a href="{{ url_for('perfil') }}" class="mobile-topbar-user">
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto">
+        <span>{{ usuario.Nombres }}</span>
+    </a>
+</div>
+
 <!-- Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
@@ -29,6 +37,7 @@
         <li><a href="/notas" class="active"><i class="fas fa-list-ul"></i> Mis notas</a></li>
         <li class="separator"></li>
         <li><a href="#" onclick="abrirFormato(); return false;"><i class="fas fa-plus-circle"></i> Crear nota</a></li>
+        <li><a href="#" onclick="abrirModalCrearCarpeta(); return false;"><i class="fas fa-folder-plus"></i> Crear carpeta</a></li>
         <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
         <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
@@ -53,9 +62,12 @@
         <div class="bienvenida">
             <h2><i class="fas fa-sticky-note" style="color:var(--color-principal);"></i> Mis Notas</h2>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;">
+        <div class="header-acciones">
             <button class="btn-busqueda-inteligente" onclick="abrirModal()">
-                <i class="fas fa-search"></i> Realiza la busqueda
+                <i class="fas fa-search"></i> <span class="btn-texto">Buscar notas</span>
+            </button>
+            <button class="btn-nueva-carpeta" onclick="abrirModalCrearCarpeta()">
+                <i class="fas fa-folder-plus"></i> <span class="btn-texto">Nueva carpeta</span>
             </button>
             <a href="{{ url_for('perfil') }}" class="usuario-info">
                 <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto">

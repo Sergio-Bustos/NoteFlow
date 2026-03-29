@@ -653,12 +653,14 @@ def procesar_login():
 # ==============================================================================
 
 def _google_flow(state=None):
-    host = request.host
+    host = request.headers.get("X-Forwarded-Host") or request.host
 
     if "127.0.0.1" in host or "localhost" in host:
         redirect_url = "http://127.0.0.1:5000/google/callback"
     else:
-        redirect_url = f"https://{host}/google/callback"
+        redirect_url = "https://sterigmatic-shirlee-mollifiable.ngrok-free.dev/google/callback"
+    
+    
 
     """Crea y retorna el objeto Flow de Google OAuth configurado."""
     client_config = {
@@ -1010,7 +1012,44 @@ def dashboard():
                 "Fecha_deedicion":nota.get("Fecha_deedicion"),
                 "Etiquetas":      obtener_etiquetas_nota(nota_id, cursor),
                 "Has_Adjuntos":   verificar_adjuntos_nota(nota_id, cursor),
+                "tipo":           "nota",
             })
+
+        # Obtener carpetas recientes (limit 6, ordenadas por fecha de edición)
+        cursor.execute("""
+            SELECT c."ID_Carpeta", c."Nombre_carpeta",
+                   COALESCE(c."Fecha_edicion", c."Fecha_creacion") AS "Fecha_edicion",
+                   COUNT(n."ID_Nota") AS total_notas
+            FROM public."Carpetas" c
+            LEFT JOIN public."Notas" n ON n."ID_Carpeta" = c."ID_Carpeta" AND n."Estado" = 'Activa'
+            WHERE c."ID_Cuenta" = %s
+            GROUP BY c."ID_Carpeta", c."Nombre_carpeta", c."Fecha_edicion", c."Fecha_creacion"
+            ORDER BY COALESCE(c."Fecha_edicion", c."Fecha_creacion") DESC NULLS LAST
+            LIMIT 6
+        """, (user_id,))
+        carpetas_raw = cursor.fetchall()
+
+        carpetas_recientes = []
+        for carpeta in carpetas_raw:
+            carpetas_recientes.append({
+                "ID_Carpeta":     carpeta["ID_Carpeta"],
+                "Nombre_carpeta": carpeta["Nombre_carpeta"],
+                "Fecha_edicion": carpeta.get("Fecha_edicion"),
+                "total_notas":   carpeta["total_notas"],
+                "tipo":          "carpeta",
+            })
+
+        # Carpetas primero (max 3) por fecha desc, luego notas (max 3) por fecha desc
+        from datetime import date as _date
+        def _fecha_segura(val):
+            if val is None:
+                return _date.min
+            if hasattr(val, "date"):
+                return val.date()
+            return val
+        carpetas_recientes.sort(key=lambda x: _fecha_segura(x.get("Fecha_edicion")),  reverse=True)
+        notas_recientes.sort(   key=lambda x: _fecha_segura(x.get("Fecha_deedicion")), reverse=True)
+        recientes = carpetas_recientes[:3] + notas_recientes[:3]
 
         return render_template(
             "dashboard.html",
@@ -1018,7 +1057,7 @@ def dashboard():
             total_notas=total_notas,
             total_carpetas=total_carpetas,
             notas_papelera=notas_papelera,
-            notas_recientes=notas_recientes,
+            notas_recientes=recientes,
         )
 
     except Exception as e:
@@ -1433,6 +1472,90 @@ def api_mis_notas():
     finally:
         cerrar_db(cursor, conexion)
 
+
+# ==============================================================================
+# 9.2.2 API Mis Notas y Carpetas (ordenado: carpetas primero, luego notas)
+# ==============================================================================
+@app.route("/api/mis-notas-y-carpetas")
+@login_required
+def api_mis_notas_y_carpetas():
+    """
+    Devuelve carpetas y notas activas del usuario ordenadas.
+    Primero carpetas (por fecha de edición), luego notas (por fecha de edición).
+    """
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+
+        # Obtener carpetas
+        cursor.execute("""
+            SELECT
+                c."ID_Carpeta",
+                c."Nombre_carpeta",
+                c."Fecha_creacion",
+                c."Fecha_edicion",
+                COUNT(n."ID_Nota") AS total_notas
+            FROM public."Carpetas" c
+            LEFT JOIN public."Notas" n ON n."ID_Carpeta" = c."ID_Carpeta" AND n."Estado" = 'Activa'
+            WHERE c."ID_Cuenta" = %s
+            GROUP BY c."ID_Carpeta", c."Nombre_carpeta", c."Fecha_creacion", c."Fecha_edicion"
+            ORDER BY c."Fecha_edicion" DESC NULLS LAST
+        """, (user_id,))
+        carpetas_raw = cursor.fetchall()
+
+        carpetas = [{
+            "id":          c["ID_Carpeta"],
+            "nombre":      c["Nombre_carpeta"],
+            "creacion":    str(c["Fecha_creacion"]) if c["Fecha_creacion"] else "",
+            "edicion":     str(c["Fecha_edicion"]) if c["Fecha_edicion"] else "",
+            "total_notas": c["total_notas"],
+            "tipo":        "carpeta",
+        } for c in carpetas_raw]
+
+        # Obtener notas ordenadas
+        cursor.execute("""
+            SELECT
+                n."ID_Nota",
+                n."Titulo",
+                n."Descripcion",
+                n."Formato",
+                n."Fecha_decreacion",
+                n."Fecha_deedicion",
+                c."Nombre_carpeta"
+            FROM public."Notas" n
+            LEFT JOIN public."Carpetas" c ON n."ID_Carpeta" = c."ID_Carpeta"
+            WHERE n."ID_Cuenta" = %s AND n."Estado" = 'Activa'
+            ORDER BY n."Fecha_deedicion" DESC NULLS LAST
+        """, (user_id,))
+        notas_raw = cursor.fetchall()
+
+        notas = []
+        for n in notas_raw:
+            etiquetas_nota = obtener_etiquetas_nota(n["ID_Nota"], cursor)
+            notas.append({
+                "id":          n["ID_Nota"],
+                "titulo":      n["Titulo"],
+                "descripcion": n["Descripcion"],
+                "formato":     n["Formato"],
+                "creacion":    str(n["Fecha_decreacion"]),
+                "edicion":     str(n["Fecha_deedicion"]),
+                "carpeta":     n["Nombre_carpeta"],
+                "etiquetas":   [e["Nombre_etiqueta"] for e in etiquetas_nota],
+                "tipo":        "nota",
+            })
+
+        return jsonify({"success": True, "carpetas": carpetas, "notas": notas}), 200
+
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Error al obtener notas y carpetas"}), 500
+
+    finally:
+        cerrar_db(cursor, conexion)
+
 # ==============================================================================
 # 9.3 Notas Ruta eliminar papelera
 # ==============================================================================
@@ -1465,6 +1588,295 @@ def mover_a_papelera(nota_id):
 
     finally:
         cerrar_db(cursor, conexion)        
+
+# ==============================================================================
+# 9.4 API Mis Carpetas en mis notas para mostrar el filtro de carpetas dinámicamente
+# ==============================================================================
+
+@app.route("/api/mis-carpetas")
+@login_required
+def api_mis_carpetas():
+    """Devuelve las carpetas del usuario con filtros opcionales."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+
+        q         = request.args.get("q",         "").strip()
+        orden     = request.args.get("orden",     "az").strip()
+        min_notas = request.args.get("min_notas", "").strip()
+
+        # Detectar si la tabla tiene columnas de fecha
+        cursor.execute("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'Carpetas'
+        """)
+        cols_carpeta = [r["column_name"] for r in cursor.fetchall()]
+        tiene_fechas = "Fecha_creacion" in cols_carpeta and "Fecha_edicion" in cols_carpeta
+
+        if tiene_fechas:
+            select_fechas = 'c."Fecha_creacion", c."Fecha_edicion",'
+            group_fechas  = ', c."Fecha_creacion", c."Fecha_edicion"'
+        else:
+            select_fechas = ''
+            group_fechas  = ''
+
+        sql = f"""
+            SELECT
+                c."ID_Carpeta",
+                c."Nombre_carpeta",
+                {select_fechas}
+                COUNT(n."ID_Nota") AS total_notas
+            FROM public."Carpetas" c
+            LEFT JOIN public."Notas" n
+                ON n."ID_Carpeta" = c."ID_Carpeta" AND n."Estado" = 'Activa'
+            WHERE c."ID_Cuenta" = %s
+        """
+        params = [user_id]
+
+        if q:
+            sql    += ' AND LOWER(c."Nombre_carpeta") LIKE %s'
+            params += [f"%{q.lower()}%"]
+
+        sql += f' GROUP BY c."ID_Carpeta", c."Nombre_carpeta"{group_fechas}'
+
+        if min_notas:
+            try:
+                sql += ' HAVING COUNT(n."ID_Nota") >= %s'
+                params += [int(min_notas)]
+            except ValueError:
+                pass
+
+        if tiene_fechas:
+            ordenes = {
+                "reciente":      'c."Fecha_edicion" DESC',
+                "antiguo":       'c."Fecha_edicion" ASC',
+                "creacion_desc": 'c."Fecha_creacion" DESC',
+                "creacion_asc":  'c."Fecha_creacion" ASC',
+                "az":            'c."Nombre_carpeta" ASC',
+                "za":            'c."Nombre_carpeta" DESC',
+            }
+        else:
+            ordenes = {
+                "reciente":      'c."Nombre_carpeta" ASC',
+                "antiguo":       'c."Nombre_carpeta" ASC',
+                "creacion_desc": 'c."Nombre_carpeta" ASC',
+                "creacion_asc":  'c."Nombre_carpeta" ASC',
+                "az":            'c."Nombre_carpeta" ASC',
+                "za":            'c."Nombre_carpeta" DESC',
+            }
+        sql += f' ORDER BY {ordenes.get(orden, ordenes["az"])}'
+
+        cursor.execute(sql, params)
+        filas = cursor.fetchall()
+
+        carpetas = [{
+            "id":          f["ID_Carpeta"],
+            "nombre":      f["Nombre_carpeta"],
+            "total_notas": f["total_notas"],
+            "creacion":    str(f.get("Fecha_creacion", "")),
+            "edicion":     str(f.get("Fecha_edicion",  "")),
+        } for f in filas]
+
+        return jsonify({"success": True, "carpetas": carpetas}), 200
+
+    except Exception:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Error al obtener carpetas"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+# ==============================================================================
+# 9.5 Asignar / quitar carpeta de una nota (drag & drop y modal agregar notas)
+# ==============================================================================
+
+@app.route("/api/notas/<int:nota_id>/carpeta", methods=["PUT"])
+@login_required
+def api_asignar_carpeta_nota(nota_id):
+    """
+    Asigna o desasigna una carpeta a una nota del usuario.
+    Body JSON:
+        carpeta_id — int | null   (null = quitar carpeta)
+    """
+    user_id    = session["usuario_id"]
+    data       = request.get_json(silent=True) or {}
+    carpeta_id = data.get("carpeta_id")   # puede ser None para quitar
+
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+
+        # Verificar que la nota le pertenece al usuario
+        cursor.execute(
+            'SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota"=%s AND "ID_Cuenta"=%s AND "Estado"=\'Activa\'',
+            (nota_id, user_id)
+        )
+        if not cursor.fetchone():
+            return jsonify({"success": False, "error": "Nota no encontrada"}), 404
+
+        # Si se pasa carpeta_id, verificar que también pertenece al usuario
+        if carpeta_id is not None:
+            cursor.execute(
+                'SELECT "ID_Carpeta" FROM public."Carpetas" WHERE "ID_Carpeta"=%s AND "ID_Cuenta"=%s',
+                (carpeta_id, user_id)
+            )
+            if not cursor.fetchone():
+                return jsonify({"success": False, "error": "Carpeta no encontrada"}), 404
+
+        cursor.execute(
+            'UPDATE public."Notas" SET "ID_Carpeta"=%s, "Fecha_deedicion"=%s WHERE "ID_Nota"=%s',
+            (carpeta_id, datetime.now(), nota_id)
+        )
+        conexion.commit()
+        return jsonify({"success": True}), 200
+
+    except Exception:
+        if conexion: conexion.rollback()
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Error al asignar carpeta"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+@app.route("/api/carpetas", methods=["POST"])
+@login_required
+def api_crear_carpeta():
+    """Crea una nueva carpeta para el usuario."""
+    user_id = session["usuario_id"]
+    data    = request.get_json(silent=True) or {}
+    nombre  = (data.get("nombre") or "").strip()[:60]
+    if not nombre:
+        return jsonify({"success": False, "error": "El nombre no puede estar vacío"}), 400
+
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+
+        # Verificar duplicado
+        cursor.execute(
+            'SELECT 1 FROM public."Carpetas" WHERE "ID_Cuenta"=%s AND LOWER("Nombre_carpeta")=LOWER(%s)',
+            (user_id, nombre)
+        )
+        if cursor.fetchone():
+            return jsonify({"success": False, "error": "Ya tienes una carpeta con ese nombre"}), 409
+
+        # Obtener columnas reales de la tabla para insertar correctamente
+        cursor.execute("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'Carpetas'
+        """)
+        columnas = [r["column_name"] for r in cursor.fetchall()]
+        print("COLUMNAS CARPETAS:", columnas)
+
+        ahora = datetime.now()
+
+        # Construir INSERT dinámicamente según columnas disponibles
+        cols   = ['"ID_Cuenta"', '"Nombre_carpeta"']
+        vals   = [user_id, nombre]
+
+        if "Fecha_creacion" in columnas:
+            cols.append('"Fecha_creacion"'); vals.append(ahora)
+        if "Fecha_edicion" in columnas:
+            cols.append('"Fecha_edicion"');  vals.append(ahora)
+        if "Estado" in columnas:
+            cols.append('"Estado"');          vals.append("Activa")
+
+        placeholders = ", ".join(["%s"] * len(vals))
+        sql = f'INSERT INTO public."Carpetas" ({", ".join(cols)}) VALUES ({placeholders}) RETURNING "ID_Carpeta"'
+        print("SQL INSERT:", sql)
+        print("VALORES:", vals)
+
+        cursor.execute(sql, vals)
+        nuevo_id = cursor.fetchone()["ID_Carpeta"]
+        conexion.commit()
+        return jsonify({"success": True, "id": nuevo_id, "nombre": nombre}), 201
+
+    except Exception as e:
+        if conexion: conexion.rollback()
+        import traceback; traceback.print_exc()
+        return jsonify({"error": f"Error al crear la carpeta: {str(e)}"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+@app.route("/api/carpetas/<int:carpeta_id>", methods=["PUT"])
+@login_required
+def api_editar_carpeta(carpeta_id):
+    """Renombra una carpeta del usuario."""
+    user_id = session["usuario_id"]
+    data    = request.get_json(silent=True) or {}
+    nombre  = (data.get("nombre") or "").strip()[:60]
+    if not nombre:
+        return jsonify({"success": False, "error": "El nombre no puede estar vacío"}), 400
+
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+
+        cursor.execute(
+            'SELECT 1 FROM public."Carpetas" WHERE "ID_Carpeta"=%s AND "ID_Cuenta"=%s',
+            (carpeta_id, user_id)
+        )
+        if not cursor.fetchone():
+            return jsonify({"success": False, "error": "Carpeta no encontrada"}), 404
+
+        cursor.execute(
+            'UPDATE public."Carpetas" SET "Nombre_carpeta"=%s, "Fecha_edicion"=%s WHERE "ID_Carpeta"=%s',
+            (nombre, datetime.now(), carpeta_id)
+        )
+        conexion.commit()
+        return jsonify({"success": True}), 200
+
+    except Exception:
+        if conexion: conexion.rollback()
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Error al editar la carpeta"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+@app.route("/api/carpetas/<int:carpeta_id>", methods=["DELETE"])
+@login_required
+def api_eliminar_carpeta(carpeta_id):
+    """Elimina una carpeta (las notas quedan sin carpeta)."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+
+        cursor.execute(
+            'SELECT 1 FROM public."Carpetas" WHERE "ID_Carpeta"=%s AND "ID_Cuenta"=%s',
+            (carpeta_id, user_id)
+        )
+        if not cursor.fetchone():
+            return jsonify({"success": False, "error": "Carpeta no encontrada"}), 404
+
+        # Desasociar notas
+        cursor.execute(
+            'UPDATE public."Notas" SET "ID_Carpeta"=NULL WHERE "ID_Carpeta"=%s',
+            (carpeta_id,)
+        )
+        cursor.execute('DELETE FROM public."Carpetas" WHERE "ID_Carpeta"=%s', (carpeta_id,))
+        conexion.commit()
+        return jsonify({"success": True}), 200
+
+    except Exception:
+        if conexion: conexion.rollback()
+        import traceback; traceback.print_exc()
+        return jsonify({"error": "Error al eliminar la carpeta"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
 
 
 # ==============================================================================
@@ -2486,7 +2898,9 @@ class Carpetas(db.Model):
     ID_Carpeta     = db.Column(db.Integer, primary_key=True)
     Nombre_carpeta = db.Column(db.Text, nullable=False)
     ID_Cuenta      = db.Column(db.Integer, db.ForeignKey("Cuentas.ID_Cuenta"), nullable=False)
-    Estado         = db.Column(db.Text, nullable=False)
+    Estado         = db.Column(db.Text, nullable=True, default="Activa")
+    Fecha_creacion = db.Column(db.DateTime, nullable=True)
+    Fecha_edicion  = db.Column(db.DateTime, nullable=True)
     notas          = db.relationship("Notas", backref="carpeta", lazy=True)
 
 class Notas(db.Model):

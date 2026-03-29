@@ -21,7 +21,15 @@
     <i class="fas fa-bars"></i>
 </button>
 
-<!-- Overlay oscuro (faltaba esto) -->
+<!-- Barra superior móvil: foto + nombre a la derecha -->
+<div class="mobile-topbar">
+    <a href="{{ url_for('perfil') }}" class="mobile-topbar-user">
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto">
+        <span>{{ usuario.Nombres }}</span>
+    </a>
+</div>
+
+<!-- Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <div class="sidebar">
@@ -94,34 +102,36 @@
         </div>
     </section>
 
-    <section class="recientes"> <!-- Sección notas recientes -->
-        <h2><i class="fas fa-history"></i> Notas recientes</h2>
+    <section class="recientes"> <!-- Sección notas y carpetas recientes -->
+        <h2><i class="fas fa-history"></i> Recientes</h2>
 
-        {% if notas_recientes %} <!-- Si hay notas recientes -->
+        {% if notas_recientes %} <!-- Si hay notas o carpetas recientes -->
         <div class="grid"> <!-- Contenedor de tarjetas -->
 
-            {% for nota in notas_recientes %} <!-- Ciclo por cada nota reciente -->
-            <div class="nota-card" data-note-id="{{ nota.ID_Nota }}"> <!-- Tarjeta de nota -->
+            {% for item in notas_recientes %} <!-- Ciclo por cada item reciente (nota o carpeta) -->
+            
+            {% if item.tipo == 'nota' %} <!-- Si es una nota -->
+            <div class="nota-card" data-note-id="{{ item.ID_Nota }}"> <!-- Tarjeta de nota -->
 
                 <div class="card-header"> <!-- Encabezado de la tarjeta -->
                     <span class="visibility-indicator">
                         <i class="fas fa-lock" title="Privada (solo para mí)"></i>
                     </span>
 
-                    {% if nota.Has_Adjuntos %} <!-- Si la nota tiene archivos adjuntos -->
+                    {% if item.Has_Adjuntos %} <!-- Si la nota tiene archivos adjuntos -->
                         <span class="attachment-indicator" title="Contiene archivaos adjuntos">
                             <i class="fas fa-paperclip"></i>
                         </span>
                     {% endif %}
                 </div>
 
-                <h4>{{ nota.Titulo }}</h4> <!-- Título de la nota -->
+                <h4>{{ item.Titulo }}</h4> <!-- Título de la nota -->
 
-                <p class="description">{{ nota.Descripcion|truncate(120, True) }}</p> <!-- Descripción truncada -->
+                <p class="description">{{ item.Descripcion|truncate(120, True) }}</p> <!-- Descripción truncada -->
 
                 <div class="tags-container"> <!-- Contenedor de etiquetas -->
-                    {% if nota.Etiquetas %}
-                        {% for tag in nota.Etiquetas[:3] %} <!-- Muestra máximo 3 -->
+                    {% if item.Etiquetas %}
+                        {% for tag in item.Etiquetas[:3] %} <!-- Muestra máximo 3 -->
                             <span class="tag-chip">{{ tag.Nombre_etiqueta }}</span>
                         {% endfor %}
                     {% else %}
@@ -130,16 +140,36 @@
                 </div>
 
                 <div class="card-footer"> <!-- Pie de la tarjeta -->
-                    <small><i class="fas fa-clock"></i> Modificada: {{ nota.Fecha_deedicion.strftime('%d/%m/%Y %H:%M') if nota.Fecha_deedicion else 'Sin fecha' }}</small>
+                    <small><i class="fas fa-clock"></i> Modificada: {{ item.Fecha_deedicion.strftime('%d/%m/%Y') if item.Fecha_deedicion else 'Sin fecha' }}</small>
 
-                    <a href="/nota/{{ nota.ID_Nota }}" class="view-btn">Ver Nota</a> <!-- Enlace -->
+                    <a href="/nota/{{ item.ID_Nota }}" class="view-btn">Ver Nota</a> <!-- Enlace -->
                 </div>
 
             </div>
+            {% else %} <!-- Si es una carpeta -->
+            <div class="nota-card carpeta-card-reciente" data-folder-id="{{ item.ID_Carpeta }}"> <!-- Tarjeta de carpeta -->
+                <div class="card-header"> <!-- Encabezado de la tarjeta -->
+                    <span class="folder-indicator" title="Carpeta">
+                        <i class="fas fa-folder" style="color: #f39c12;"></i>
+                    </span>
+                </div>
+
+                <h4>{{ item.Nombre_carpeta }}</h4> <!-- Nombre de la carpeta -->
+
+                <p class="description">{{ item.total_notas }} nota{{ 's' if item.total_notas != 1 else '' }}</p> <!-- Cantidad de notas -->
+
+                <div class="card-footer"> <!-- Pie de la tarjeta -->
+                    <small><i class="fas fa-clock"></i> Editada: {{ item.Fecha_edicion.strftime('%d/%m/%Y') if item.Fecha_edicion else 'Sin fecha' }}</small>
+
+                    <a href="/notas?carpeta={{ item.ID_Carpeta }}" class="view-btn">Ver Carpeta</a> <!-- Enlace -->
+                </div>
+            </div>
+            {% endif %}
+            
             {% endfor %}
 
         </div>
-        {% else %} <!-- Si NO hay notas recientes -->
+        {% else %} <!-- Si NO hay notas ni carpetas recientes -->
         <p class="no-results-message">
             No tienes notas activas recientemente. ¡Crea una nueva nota para empezar!
             <a href="#" onclick="abrirFormato(); return false;" style="color: var(--color-principal);">Crear nota</a>

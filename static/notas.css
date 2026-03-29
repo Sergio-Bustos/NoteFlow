@@ -313,29 +313,6 @@
    6. MODAL BÃšSQUEDA INTELIGENTE â€” ESTRUCTURA Y PASOS
    ============================================================================ */
 
-/* BotÃ³n de apertura en el header */
-.btn-busqueda-inteligente {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--color-principal);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 9px 18px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.02em;
-    box-shadow: 0 3px 10px rgba(84, 82, 211, 0.25);
-    transition: background 0.2s, box-shadow 0.2s, transform 0.12s;
-}
-
-.btn-busqueda-inteligente:hover {
-    background: #3f3db8;
-    box-shadow: 0 5px 16px rgba(84, 82, 211, 0.35);
-    transform: translateY(-1px);
-}
 
 /* Backdrop */
 .modal-backdrop-busqueda {
@@ -921,107 +898,6 @@ body.tema-oscuro .sin-resultados p         { color: rgba(255,255,255,0.35); }
    10. RESPONSIVE
    ============================================================================ */
 
-/* ============================================================
-   HAMBURGER 
-   ============================================================ */
-   
-.hamburger-btn {
-    display: none;
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 1050;
-    background: var(--color-principal);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-    transition: background 0.2s;
-}
-.hamburger-btn:hover { background: #4340c0; }
-.hamburger-btn.hidden { display: none !important; }
-
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.48);
-    z-index: 999;
-}
-.sidebar-overlay.visible { display: block; }
-
-@media (max-width: 768px) {
-    .hamburger-btn { display: flex; }
-
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: -270px;
-        width: 250px;
-        height: 100vh;
-        z-index: 1000;
-        transition: left 0.28s ease;
-        overflow-y: auto;
-        padding-top: 20px;
-    }
-
-    .sidebar.open { left: 0; }
-
-    .main {
-        margin-left: 0;
-        padding: 16px;
-        padding-top: 68px;
-    }
-
-    .stats             { flex-direction: column; }
-    .grid              { grid-template-columns: 1fr; }
-    header             { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .filtros-grid.col2 { grid-template-columns: 1fr; }
-    .tipo-opciones     { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 600px) {
-    .nota-papelera    { flex-direction: column; }
-    .nota-acciones    { flex-direction: row; width: 100%; }
-    .btn-restaurar,
-    .btn-eliminar-def { flex: 1; justify-content: center; }
-}
-
-@media (max-width: 768px) {
-    /* Mostrar botón hamburguesa */
-    .hamburger-btn { display: flex; }
-
-    /* Sidebar oculta por defecto, desliza desde la izquierda */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: -260px;
-        width: 250px;
-        height: 100vh;
-        z-index: 1000;
-        transition: left 0.3s ease;
-        padding: 20px 0;
-    }
-
-    /* Sidebar visible cuando tiene clase .open */
-    .sidebar.open { left: 0; }
-
-    /* El main ocupa todo el ancho */
-    .main { margin-left: 0; padding: 15px; padding-top: 70px; }
-
-    .stats             { flex-direction: column; }
-    .grid              { grid-template-columns: 1fr; }
-    header             { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .filtros-grid.col2 { grid-template-columns: 1fr; }
-    .tipo-opciones     { grid-template-columns: 1fr; }
-}
-
 
 @media (max-width: 600px) {
     .tipo-opciones,
@@ -1358,9 +1234,531 @@ body.tema-oscuro .estado-vacio-sub {
     text-decoration: none;
 }
  
-/* Ajuste sidebar para que el upgrade quede entre menú y logout */
-.sidebar {
+/* ============================================================
+   14. HEADER ACCIONES — botones + responsive
+   ============================================================ */
+.header-acciones {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto; /* empuja todo a la derecha */
+}
+
+.btn-busqueda-inteligente {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--color-principal);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    box-shadow: 0 3px 10px rgba(84, 82, 211, 0.25);
+    transition: background 0.2s, box-shadow 0.2s, transform 0.12s;
+    white-space: nowrap;
+}
+.btn-busqueda-inteligente:hover {
+    background: #3f3db8;
+    box-shadow: 0 5px 16px rgba(84, 82, 211, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-nueva-carpeta {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: transparent;
+    color: var(--color-principal, #5452d3);
+    border: 2px solid var(--color-principal, #5452d3);
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.2s, color 0.2s, transform 0.12s;
+    white-space: nowrap;
+}
+.btn-nueva-carpeta:hover {
+    background: var(--color-principal, #5452d3);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* En móvil: ocultar usuario-info del header (ya aparece en mobile-topbar) y colapsar botones a íconos */
+@media (max-width: 768px) {
+    header .usuario-info { display: none; }
+    .header-acciones { gap: 8px; margin-left: auto; }
+}
+
+@media (max-width: 600px) {
+    .btn-texto { display: none; }
+    .btn-busqueda-inteligente,
+    .btn-nueva-carpeta {
+        padding: 10px 13px;
+        border-radius: 10px;
+        gap: 0;
+    }
+}
+
+/* ============================================================
+   15. TARJETAS DE CARPETAS
+   ============================================================ */
+#resultados-carpetas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+    padding: 8px 0;
+}
+
+.carpeta-card {
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border, #e0e0e0);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: box-shadow .2s, transform .2s;
+    cursor: default;
+}
+.carpeta-card:hover {
+    box-shadow: 0 4px 18px rgba(0,0,0,.1);
+    transform: translateY(-2px);
+}
+.carpeta-card-icon {
+    font-size: 2rem;
+    color: var(--color-principal, #5452d3);
+    flex-shrink: 0;
+}
+.carpeta-card-info {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    gap: 3px;
+    min-width: 0;
 }
- 
+.carpeta-nombre {
+    font-size: .98rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--texto-principal, #222);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.carpeta-meta {
+    font-size: .76rem;
+    color: var(--texto-secundario, #888);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.carpeta-card-acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.btn-carpeta-accion {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: .8rem;
+    transition: background .2s, color .2s;
+}
+.btn-carpeta-accion.editar {
+    background: rgba(84,82,211,.1);
+    color: var(--color-principal, #5452d3);
+}
+.btn-carpeta-accion.editar:hover {
+    background: var(--color-principal, #5452d3);
+    color: #fff;
+}
+.btn-carpeta-accion.eliminar {
+    background: rgba(231,76,60,.1);
+    color: #e74c3c;
+}
+.btn-carpeta-accion.eliminar:hover {
+    background: #e74c3c;
+    color: #fff;
+}
+
+/* ============================================================
+   16. TOAST NOTIFICACIONES
+   ============================================================ */
+.nf-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #27ae60;
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+    pointer-events: none;
+}
+.nf-toast.nf-toast-error { background: #e74c3c; }
+.nf-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Tema oscuro — tarjetas carpeta */
+body.tema-oscuro .carpeta-card {
+    background: var(--bg-card);
+    border-color: rgba(255,255,255,0.08);
+}
+body.tema-oscuro .carpeta-nombre { color: var(--texto-principal); }
+body.tema-oscuro .btn-nueva-carpeta { border-color: var(--color-principal); color: var(--color-principal); }
+/* ============================================================
+   17. DRAG & DROP — NOTAS HACIA CARPETAS
+   ============================================================ */
+
+/* Handle de arrastre en la nota */
+.nota-drag-handle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-size: .8rem;
+    cursor: grab;
+    border-radius: 4px;
+    transition: color .15s, background .15s;
+    z-index: 2;
+    opacity: 0;
+}
+.nota-card:hover .nota-drag-handle {
+    opacity: 1;
+}
+.nota-drag-handle:active { cursor: grabbing; }
+.nota-drag-handle:hover {
+    color: var(--color-principal, #5452d3);
+    background: rgba(84,82,211,.08);
+}
+
+/* Nota siendo arrastrada */
+.nota-card.nota-arrastrando {
+    opacity: 0.45;
+    transform: scale(0.97);
+    box-shadow: 0 8px 28px rgba(84,82,211,.22);
+    border: 2px dashed var(--color-principal, #5452d3);
+}
+
+/* Carpeta con una nota encima */
+.carpeta-card.drag-sobre {
+    border: 2px dashed var(--color-principal, #5452d3);
+    background: rgba(84,82,211,.07);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 28px rgba(84,82,211,.18);
+}
+.carpeta-card.drag-sobre .carpeta-drop-hint {
+    display: flex;
+}
+
+/* Hint "suelta aquí" visible al arrastrar sobre */
+.carpeta-drop-hint {
+    display: none;
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: rgba(84,82,211,.12);
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--color-principal, #5452d3);
+    font-weight: 700;
+    font-size: .9rem;
+    pointer-events: none;
+    z-index: 5;
+    backdrop-filter: blur(2px);
+}
+.carpeta-card { position: relative; }
+
+/* ============================================================
+   18. BOTÓN AGREGAR NOTAS EN CARPETA
+   ============================================================ */
+.btn-carpeta-accion.agregar {
+    background: rgba(39,174,96,.12);
+    color: #27ae60;
+}
+.btn-carpeta-accion.agregar:hover {
+    background: #27ae60;
+    color: #fff;
+}
+
+/* ============================================================
+   19. MODAL AGREGAR NOTAS A CARPETA
+   ============================================================ */
+.modal-agregar-notas .modal-box-grande {
+    max-width: 520px;
+    width: 94vw;
+    padding: 28px 24px 24px;
+    text-align: left;
+}
+
+.modal-subtitulo {
+    font-size: .85rem;
+    color: var(--texto-secundario, #888);
+    margin: 0 0 16px;
+    text-align: center;
+}
+
+/* Buscador dentro del modal */
+.agregar-notas-buscador {
+    position: relative;
+    margin-bottom: 12px;
+}
+.agregar-notas-buscador i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ccc;
+    font-size: .85rem;
+    pointer-events: none;
+}
+.agregar-notas-buscador input {
+    width: 100%;
+    height: 38px;
+    border: 1.5px solid var(--border, #ddd);
+    border-radius: 9px;
+    background: var(--bg-input, #f7f7fc);
+    color: var(--texto-principal, #222);
+    padding: 0 12px 0 36px;
+    font-size: .88rem;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+}
+.agregar-notas-buscador input:focus {
+    border-color: var(--color-principal, #5452d3);
+    box-shadow: 0 0 0 3px rgba(84,82,211,.1);
+}
+
+/* Lista de notas en el modal */
+.agregar-notas-lista {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1.5px solid var(--border, #e0e0e0);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    background: var(--bg-card, #fff);
+}
+
+/* Spinner cargando */
+.agregar-notas-cargando {
+    padding: 32px 16px;
+    text-align: center;
+    color: #aaa;
+    font-size: .88rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Ítem de nota en la lista */
+.nota-modal-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border, #eee);
+    cursor: pointer;
+    transition: background .15s;
+    user-select: none;
+}
+.nota-modal-item:last-child { border-bottom: none; }
+.nota-modal-item:hover { background: rgba(84,82,211,.05); }
+.nota-modal-item.seleccionada {
+    background: rgba(84,82,211,.09);
+}
+
+.nota-modal-check {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--color-principal, #5452d3);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.nota-modal-icono {
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    background: rgba(84,82,211,.09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.nota-modal-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.nota-modal-titulo {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--texto-principal, #222);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nota-modal-meta {
+    font-size: .75rem;
+    color: #999;
+}
+.nota-modal-formato {
+    background: rgba(84,82,211,.1);
+    color: var(--color-principal, #5452d3);
+    border-radius: 8px;
+    padding: 1px 7px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: .7rem;
+}
+
+/* Estado vacío dentro del modal */
+.agregar-notas-vacio {
+    padding: 40px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.agregar-notas-vacio-img {
+    width: 70px;
+    opacity: .7;
+    margin-bottom: 4px;
+}
+.agregar-notas-vacio-titulo {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #bbb;
+    margin: 0;
+}
+.agregar-notas-vacio-sub {
+    font-size: .82rem;
+    color: #ccc;
+    margin: 0;
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+/* Tema oscuro — modal agregar */
+body.tema-oscuro .agregar-notas-lista {
+    border-color: rgba(255,255,255,.1);
+    background: rgba(255,255,255,.03);
+}
+body.tema-oscuro .nota-modal-item:hover { background: rgba(255,255,255,.05); }
+body.tema-oscuro .nota-modal-item.seleccionada { background: rgba(84,82,211,.20); }
+body.tema-oscuro .nota-modal-titulo { color: #e8e7ff; }
+body.tema-oscuro .nota-modal-meta { color: rgba(255,255,255,.35); }
+body.tema-oscuro .nota-modal-item { border-bottom-color: rgba(255,255,255,.07); }
+body.tema-oscuro .agregar-notas-buscador input {
+    background: rgba(255,255,255,.07);
+    border-color: rgba(255,255,255,.12);
+    color: #e8e7ff;
+}
+body.tema-oscuro .agregar-notas-buscador input:focus {
+    border-color: #7b79e8;
+}
+body.tema-oscuro .carpeta-card.drag-sobre {
+    background: rgba(84,82,211,.15);
+}
+/* ============================================================
+   BADGE DE CARPETA EN TARJETA DE NOTA (con color)
+   ============================================================ */
+.nota-carpeta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: auto;
+    white-space: nowrap;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================================
+   PANEL DE NOTAS DENTRO DE CARPETA (ver notas inline)
+   ============================================================ */
+.panel-notas-carpeta {
+    grid-column: 1 / -1; /* ocupa todo el ancho del grid */
+    background: var(--bg-card, #fff);
+    border: 1.5px dashed var(--color-principal, #5452d3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    animation: fadeInVacio .25s ease forwards;
+}
+
+.panel-carpeta-vacio {
+    text-align: center;
+    color: var(--texto-secundario, #999);
+    font-size: .9rem;
+    padding: 20px;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+body.tema-oscuro .panel-notas-carpeta {
+    background: var(--bg-card);
+    border-color: rgba(84,82,211,.4);
+}
+
+/* ============================================================
+   BOTÓN VER en carpeta-card-acciones
+   ============================================================ */
+.btn-carpeta-accion.ver {
+    background: rgba(84,82,211,.1);
+    color: var(--color-principal, #5452d3);
+}
+.btn-carpeta-accion.ver:hover {
+    background: var(--color-principal, #5452d3);
+    color: #fff;
+}
+
+/* panel-notas-carpeta dentro del grid de #resultados-carpetas */
+#resultados-carpetas .panel-notas-carpeta {
+    grid-column: 1 / -1;
+}

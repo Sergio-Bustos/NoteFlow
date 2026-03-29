@@ -17,6 +17,14 @@
     <i class="fas fa-bars"></i>
 </button>
 
+<!-- Barra superior móvil: foto + nombre a la derecha -->
+<div class="mobile-topbar">
+    <a href="{{ url_for('perfil') }}" class="mobile-topbar-user">
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto">
+        <span>{{ usuario.Nombres }}</span>
+    </a>
+</div>
+
 <!-- Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 

@@ -1,4 +1,4 @@
-        /* â”€â”€ Aviso informativo â”€â”€ */
+/* â”€â”€ Aviso informativo â”€â”€ */
         .aviso-papelera {
             display: flex;
             align-items: center;
@@ -201,107 +201,7 @@
             .btn-restaurar, .btn-eliminar-def { flex: 1; justify-content: center; }
         }
 
-        
-/* ============================================================
-   HAMBURGER
-   ============================================================ */
-.hamburger-btn {
-    display: none;
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 1050;
-    background: var(--color-principal);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    width: 40px;
-    height: 40px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-    transition: background 0.2s;
-}
-.hamburger-btn:hover { background: #4340c0; }
-.hamburger-btn.hidden { display: none !important; }
 
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.48);
-    z-index: 999;
-}
-.sidebar-overlay.visible { display: block; }
-
-@media (max-width: 768px) {
-    .hamburger-btn { display: flex; }
-
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: -270px;
-        width: 250px;
-        height: 100vh;
-        z-index: 1000;
-        transition: left 0.28s ease;
-        overflow-y: auto;
-        padding-top: 20px;
-    }
-
-    .sidebar.open { left: 0; }
-
-    .main {
-        margin-left: 0;
-        padding: 16px;
-        padding-top: 68px;
-    }
-
-    .stats             { flex-direction: column; }
-    .grid              { grid-template-columns: 1fr; }
-    header             { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .filtros-grid.col2 { grid-template-columns: 1fr; }
-    .tipo-opciones     { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 600px) {
-    .nota-papelera    { flex-direction: column; }
-    .nota-acciones    { flex-direction: row; width: 100%; }
-    .btn-restaurar,
-    .btn-eliminar-def { flex: 1; justify-content: center; }
-}
-
-@media (max-width: 768px) {
-    /* Mostrar botón hamburguesa */
-    .hamburger-btn { display: flex; }
-
-    /* Sidebar oculta por defecto, desliza desde la izquierda */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: -260px;
-        width: 250px;
-        height: 100vh;
-        z-index: 1000;
-        transition: left 0.3s ease;
-        padding: 20px 0;
-    }
-
-    /* Sidebar visible cuando tiene clase .open */
-    .sidebar.open { left: 0; }
-
-    /* El main ocupa todo el ancho */
-    .main { margin-left: 0; padding: 15px; padding-top: 70px; }
-
-    .stats             { flex-direction: column; }
-    .grid              { grid-template-columns: 1fr; }
-    header             { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .filtros-grid.col2 { grid-template-columns: 1fr; }
-    .tipo-opciones     { grid-template-columns: 1fr; }
-}
-        
 /* PLANES */
 .upgrade-btn {
     display: flex;
@@ -352,4 +252,3 @@
     display: flex;
     flex-direction: column;
 }
- 
