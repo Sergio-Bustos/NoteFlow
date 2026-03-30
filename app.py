@@ -1779,8 +1779,11 @@ def api_crear_carpeta():
         ahora = datetime.now()
 
         # Construir INSERT dinámicamente según columnas disponibles
-        cols   = ['"ID_Cuenta"', '"Nombre_carpeta"']
-        vals   = [user_id, nombre]
+        cursor.execute('SELECT COALESCE(MAX("ID_Carpeta"), 0) + 1 AS nuevo_id FROM public."Carpetas"')
+        nuevo_id = cursor.fetchone()["nuevo_id"]
+
+        cols = ['"ID_Carpeta"', '"ID_Cuenta"', '"Nombre_carpeta"']
+        vals = [nuevo_id, user_id, nombre]
 
         if "Fecha_creacion" in columnas:
             cols.append('"Fecha_creacion"'); vals.append(ahora)
@@ -1791,8 +1794,6 @@ def api_crear_carpeta():
 
         placeholders = ", ".join(["%s"] * len(vals))
         sql = f'INSERT INTO public."Carpetas" ({", ".join(cols)}) VALUES ({placeholders}) RETURNING "ID_Carpeta"'
-        print("SQL INSERT:", sql)
-        print("VALORES:", vals)
 
         cursor.execute(sql, vals)
         nuevo_id = cursor.fetchone()["ID_Carpeta"]
