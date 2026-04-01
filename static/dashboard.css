@@ -68,6 +68,12 @@ body.tema-oscuro {
     color: var(--texto-oscuro);
     font-family: sans-serif;
 }
+body.tema-oscuro .card {
+    background-color: var(--card-oscuro);
+    color: var(--texto-oscuro);
+    border: 1px solid var(--border-oscuro);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
 body.tema-oscuro .sidebar               { background-color: var(--sidebar-oscuro); border-right: 1px solid var(--border-oscuro); }
 body.tema-oscuro .nota-card,
 body.tema-oscuro .stats .card           { background-color: var(--card-oscuro); color: var(--texto-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
