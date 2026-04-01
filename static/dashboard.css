@@ -72,6 +72,7 @@ body.tema-oscuro {
 body.tema-oscuro .sidebar               { background-color: var(--sidebar-oscuro); border-right: 1px solid var(--border-oscuro); }
 body.tema-oscuro .nota-card,
 body.tema-oscuro .stats .card           { background-color: var(--card-oscuro); color: var(--texto-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+body.tema-oscuro .card:hover            { transform: scale(1.05); transition: all 0.3s ease;}
 body.tema-oscuro header                 { border-bottom: 1px solid var(--border-oscuro); }
 body.tema-oscuro .usuario-info          { color: var(--texto-oscuro); }
 body.tema-oscuro .bienvenida h2,

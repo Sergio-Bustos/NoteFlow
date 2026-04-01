@@ -1428,7 +1428,7 @@ body.tema-oscuro .carpeta-card {
     border-color: rgba(255,255,255,0.08);
 }
 body.tema-oscuro .carpeta-nombre { color: var(--texto-principal); }
-body.tema-oscuro .btn-nueva-carpeta { border-color: var(--color-principal); color: var(--color-principal); }
+body.tema-oscuro .btn-nueva-carpeta { border-color: var(--color-principal);  }
 /* ============================================================
    17. DRAG & DROP — NOTAS HACIA CARPETAS
    ============================================================ */
