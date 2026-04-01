@@ -1076,6 +1076,8 @@ body.tema-oscuro .sin-resultados p         { color: rgba(255,255,255,0.35); }
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+    margin-top: auto; /* Empuja las etiquetas al fondo */
+    padding-top: 10px;
 }
 .nota-tag {
     font-size: .75rem;
@@ -1087,30 +1089,58 @@ body.tema-oscuro .sin-resultados p         { color: rgba(255,255,255,0.35); }
 .nota-footer {
     font-size: .75rem;
     color: var(--texto-secundario, #999);
-    margin-top: auto;
+    margin-top: 4px; /* Pequeño espacio bajo las etiquetas */
 }
 
-/* ---- Tarjeta "Ver todas" ---- */
+
+/* ---- Tarjeta "Ver todas" (Más sólida y presente) ---- */
 .ver-todas-card {
-    border: 2px dashed var(--color-principal, #5452d3);
-    border-radius: 12px;
+    background: var(--bg-card, #fff);
+    border: 2.5px dashed var(--color-principal, #5452d3);
+    border-radius: 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 24px;
+    gap: 12px;
+    padding: 30px 20px;
     cursor: pointer;
     color: var(--color-principal, #5452d3);
-    font-weight: 600;
+    font-weight: 700;
     font-size: .95rem;
-    transition: background .2s;
+    transition: all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-align: center;
+    min-height: 180px;
+    box-shadow: 0 4px 15px rgba(84, 82, 211, 0.08);
 }
+
 .ver-todas-card:hover {
-    background: var(--color-principal-light, #f0f0ff);
+    background: #fbfbff;
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(84, 82, 211, 0.2);
 }
+
 .ver-todas-card i {
-    font-size: 1.6rem;
+    font-size: 2.2rem;
+    color: var(--color-principal);
+    margin-bottom: 4px;
+    transition: transform 0.25s ease;
+}
+
+.ver-todas-card:hover i {
+    transform: scale(1.1);
+}
+
+body.tema-oscuro .ver-todas-card {
+    background: var(--card-oscuro, #2d2d2d);
+    border-color: rgba(155, 153, 245, 0.3);
+    color: #9b99f5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.tema-oscuro .ver-todas-card:hover {
+    background: rgba(84, 82, 211, 0.12);
+    border-color: #9b99f5;
 }
 
 /* ============================================================================
@@ -1310,30 +1340,42 @@ body.tema-oscuro .estado-vacio-sub {
    ============================================================ */
 #resultados-carpetas {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
     padding: 8px 0;
 }
 
 .carpeta-card {
     background: var(--bg-card, #fff);
     border: 1px solid var(--border, #e0e0e0);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 18px 16px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
-    transition: box-shadow .2s, transform .2s;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: default;
+    position: relative;
+    min-height: 160px;
+    text-align: center;
+    animation: nf-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 .carpeta-card:hover {
-    box-shadow: 0 4px 18px rgba(0,0,0,.1);
-    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+    transform: translateY(-5px) scale(1.02);
 }
 .carpeta-card-icon {
-    font-size: 2rem;
+    font-size: 2.8rem;
     color: var(--color-principal, #5452d3);
     flex-shrink: 0;
+    margin-bottom: 2px;
+    transition: transform 0.3s ease;
+}
+
+
+.carpeta-card:hover .carpeta-card-icon {
+    transform: scale(1.1) rotate(-3deg);
 }
 .carpeta-card-info {
     flex: 1;
@@ -1358,12 +1400,58 @@ body.tema-oscuro .estado-vacio-sub {
     align-items: center;
     gap: 5px;
 }
+
 .carpeta-card-acciones {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: auto;
+    padding-top: 15px;
+    border-top: 1px solid var(--border, rgba(0,0,0,0.05));
 }
+
+/* PANEL DE EXPANSIÓN DE CARPETA (NUEVO) */
+.panel-notas-carpeta {
+    grid-column: 1 / -1; /* Ocupa todo el ancho del grid */
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 20px;
+    margin: -10px 0 20px 0;
+    border: 1px solid var(--border, rgba(0,0,0,0.08));
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    animation: nf-slide-down 0.3s ease-out;
+    position: relative;
+    z-index: 10;
+}
+
+.panel-notas-carpeta::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 40px;
+    width: 2px;
+    height: 20px;
+    background: var(--color-principal, #5452d3);
+    opacity: 0.3;
+}
+
+.panel-carpeta-vacio {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 30px;
+    color: var(--texto-secundario, #888);
+    font-style: italic;
+}
+
+@keyframes nf-slide-down {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .btn-carpeta-accion {
     width: 30px;
     height: 30px;
@@ -1424,11 +1512,28 @@ body.tema-oscuro .estado-vacio-sub {
 
 /* Tema oscuro — tarjetas carpeta */
 body.tema-oscuro .carpeta-card {
-    background: var(--bg-card);
-    border-color: rgba(255,255,255,0.08);
+    background: var(--card-oscuro);
+    animation: nf-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
-body.tema-oscuro .carpeta-nombre { color: var(--texto-principal); }
-body.tema-oscuro .btn-nueva-carpeta { border-color: var(--color-principal);  }
+body.tema-oscuro .carpeta-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.tema-oscuro .carpeta-nombre { color: #ffffff !important; }
+body.tema-oscuro .carpeta-meta { color: #94a3b8 !important; }
+
+/* Animación base para nota-card */
+.nota-card {
+    animation: nf-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nota-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+}
 /* ============================================================
    17. DRAG & DROP — NOTAS HACIA CARPETAS
    ============================================================ */
@@ -1762,3 +1867,148 @@ body.tema-oscuro .panel-notas-carpeta {
 #resultados-carpetas .panel-notas-carpeta {
     grid-column: 1 / -1;
 }
+
+/* ── ANIMACIONES PARA MODALES ── */
+@keyframes modalBoxEnter {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes modalOverlayFade {
+    from { background: rgba(0,0,0,0); }
+    to { background: rgba(0,0,0,0.6); }
+}
+
+.modal-overlay {
+    backdrop-filter: blur(8px);
+    transition: backdrop-filter 0.3s ease;
+    animation: modalOverlayFade 0.3s ease forwards;
+}
+
+.modal-box {
+    animation: modalBoxEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
+    position: relative;
+    background: #ffffff; /* Fallback */
+}
+
+/* Estilo para el nuevo input de carpeta */
+.modal-input-folder {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid #edeff5;
+    font-size: 1rem;
+    margin-bottom: 24px;
+    background: #f8fafc;
+    color: #1e293b;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.modal-input-folder:focus {
+    border-color: var(--color-principal, #5452d3);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(84, 82, 211, 0.15), 0 4px 12px rgba(0,0,0,0.05);
+    transform: translateY(-1px);
+}
+
+.modal-icono {
+    background: rgba(84, 82, 211, 0.1);
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    font-size: 1.8rem;
+    color: var(--color-principal, #5452d3) !important;
+}
+
+/* Botones con micro-animación */
+.btn-modal-cancelar, .btn-modal-salir {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-modal-cancelar:hover {
+    transform: translateY(-2px);
+    background: #f1f5f9;
+}
+
+.btn-modal-salir:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 15px rgba(84, 82, 211, 0.3);
+}
+
+/* ── TEMA OSCURO - MODALES Y FIXES ── */
+body.tema-oscuro .modal-box {
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 25px 70px rgba(0,0,0,0.5);
+    color: #f1f5f9;
+}
+
+body.tema-oscuro .modal-input-folder {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+body.tema-oscuro .modal-input-folder:focus {
+    background: #1e293b;
+    border-color: var(--color-principal, #5452d3);
+    box-shadow: 0 0 0 4px rgba(84, 82, 211, 0.25);
+}
+
+body.tema-oscuro .modal-icono {
+    background: rgba(84, 82, 211, 0.2);
+}
+
+body.tema-oscuro .modal-box h3 {
+    color: #f8fafc;
+}
+
+body.tema-oscuro .modal-box p {
+    color: #94a3b8;
+}
+
+body.tema-oscuro .btn-modal-cancelar {
+    border-color: #334155;
+    color: #94a3b8 !important;
+}
+
+body.tema-oscuro .btn-modal-cancelar:hover {
+    background: #334155;
+    color: #f1f5f9 !important;
+}
+
+body.tema-oscuro .modal-overlay {
+    background: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* Fix para Bootstrap en modo oscuro */
+body.tema-oscuro .modal-content {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+body.tema-oscuro .modal-header,
+body.tema-oscuro .modal-footer {
+    border-color: rgba(255,255,255,0.05) !important;
+}
+
+body.tema-oscuro .modal-title {
+    color: #fff !important;
+}
+
+body.tema-oscuro .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+

@@ -1,18 +1,30 @@
 /* ============================================================
-   NOTEFLOW  dashboard.css
-   OrganizaciÃ³n:
-   1. Variables y Reset
-   2. Temas (claro / oscuro)
-   3. SIDEBAR
-   4. LAYOUT GENERAL (main, header, usuario-info)
-   5. DASHBOARD.HTML â€” Bienvenida, Stats, Notas recientes
-   6. NOTAS.HTML â€” BÃºsqueda inteligente
-   7. PAPELERA.HTML â€” Lista de notas eliminadas
-   8. MODAL ELEGIR FORMATO (compartido)
-   9. Responsive
-   10. Planes mejor que gratis
+   0. ANIMACIONES GLOBALES
    ============================================================ */
+@keyframes nf-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
 
+@keyframes nf-slide-up {
+    from { opacity: 0; transform: translateY(25px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nf-slide-in-left {
+    from { opacity: 0; transform: translateX(-35px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes nf-pop-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* Aplicación global suave al body */
+body {
+    animation: nf-fade-in 0.6s ease-out;
+}
 
 /* ============================================================
    1. VARIABLES Y RESET
@@ -173,6 +185,7 @@ body.tema-oscuro .logout-modal .btn-close:hover {
     color: white;
     padding: 20px 0;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    animation: nf-slide-in-left 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .logo {
@@ -181,6 +194,11 @@ body.tema-oscuro .logout-modal .btn-close:hover {
     font-weight: bold;
     margin-bottom: 30px;
     color: white;
+    cursor: default;
+    transition: transform 0.3s ease;
+}
+.logo:hover {
+    transform: scale(1.05) rotate(-2deg);
 }
 
 .menu {
@@ -193,12 +211,14 @@ body.tema-oscuro .logout-modal .btn-close:hover {
     padding: 12px 20px;
     color: #ecf0f1;
     text-decoration: none;
-    transition: background-color 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu li a:hover,
 .menu li a.active {
     background-color: rgba(255,255,255,0.1);
+    transform: translateX(5px);
+    border-radius: 0 4px 4px 0;
     border-left: 5px solid var(--color-principal);
     padding-left: 15px;
 }
@@ -211,33 +231,76 @@ body.tema-oscuro .logout-modal .btn-close:hover {
 }
 
 .logout-btn {
-    display: block;
-    text-align: center;
-    margin: 30px 20px 0;
-    padding: 10px 0;
-    background-color: var(--color-peligro);
-    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 40px 18px 15px;
+    padding: 12px 16px;
+    background-color: rgba(231, 76, 60, 0.1); /* Rojo muy suave / transparente */
+    color: #ff6b6b;
     text-decoration: none;
-    border-radius: 5px;
-    transition: background-color 0.2s;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: 1.5px solid rgba(231, 76, 60, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
 }
-.logout-btn:hover { background-color: #c0392b; }
+
+.logout-btn i {
+    transition: transform 0.3s ease;
+}
+
+.logout-btn:hover {
+    background-color: #e74c3c;
+    color: #fff;
+    border-color: #e74c3c;
+    box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+    transform: translateY(-2px);
+}
+
+.logout-btn:hover i {
+    transform: translateX(4px);
+}
+
+/* Tema oscuro — logout */
+body.tema-oscuro .logout-btn {
+    background-color: rgba(231, 76, 60, 0.08);
+    border-color: rgba(231, 76, 60, 0.15);
+    color: #ff5252;
+}
+
+body.tema-oscuro .logout-btn:hover {
+    background-color: #d32f2f;
+    color: #fff;
+    border-color: #d32f2f;
+    box-shadow: 0 10px 25px rgba(211, 47, 47, 0.4);
+}
+
 
 
 /* ============================================================
    4. LAYOUT GENERAL
    ============================================================ */
 .main {
+    flex: 1;
     margin-left: 250px;
     padding: 30px;
+    min-height: 100vh;
+    animation: nf-fade-in 0.8s ease-out forwards;
 }
+
+body.tema-claro .main { background-color: var(--bg-claro); }
+body.tema-oscuro .main { background-color: var(--bg-oscuro); }
 
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 20px;
     margin-bottom: 30px;
+    padding-bottom: 20px;
+    animation: nf-slide-up 0.6s ease-out 0.2s backwards;
 }
 
 .usuario-info {
@@ -430,7 +493,7 @@ body.tema-oscuro .carpeta-card-reciente .card-footer {
 }
 .btn-busqueda-inteligente:hover { background: #4340c0; }
 
-/* Ãrea de resultados */
+/* Ã rea de resultados */
 #area-resultados { display: none; }
 #area-resultados.visible { display: block; }
 
@@ -1270,6 +1333,12 @@ body.tema-oscuro .mobile-topbar-user { color: var(--texto-oscuro); }
     box-shadow: 0 4px 14px rgba(22, 6, 240, 0.35);
     text-align: center;
     cursor: pointer;
+    animation: nf-pop-in 0.8s ease-out 0.5s backwards;
+}
+
+.upgrade-btn:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(22, 6, 240, 0.45);
 }
  
 .upgrade-btn i {

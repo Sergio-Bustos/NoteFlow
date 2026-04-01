@@ -177,21 +177,28 @@
 
     <!-- ══ BARRA INFERIOR ══ -->
     <div class="barra-inferior">
+        <input type="hidden" id="editNotaId" value="{{ nota.ID_Nota if edit_mode else '' }}">
+        <input type="hidden" id="editVideoUrl" value="{{ adjuntos[0].Ruta_archivo if edit_mode and adjuntos else '' }}">
+
         <input type="text" class="input-titulo" id="inputTitulo"
-               placeholder="Título de tu nota de video..." maxlength="100">
+               placeholder="Título de tu nota de video..." maxlength="100"
+               value="{{ nota.Titulo if edit_mode else '' }}">
         <input type="text" class="input-titulo" id="inputDescripcion"
                placeholder="Descripción breve (opcional)..." maxlength="200"
-               style="flex:1.5;">
+               style="flex:1.5;"
+               value="{{ nota.Descripcion if edit_mode else '' }}">
         <input type="text" class="input-titulo" id="inputEtiquetas"
                placeholder="Etiquetas: tutorial, clase, ..." maxlength="200"
-               style="flex:1.2;">
+               style="flex:1.2;"
+               value="{{ etiquetas if edit_mode else '' }}">
         <span class="estado-guardado" id="estadoGuardado">
             <i class="fas fa-check-circle"></i> Guardado
         </span>
         <button class="btn-accion-video btn-guardar" id="btnGuardarBottom">
-            <i class="fas fa-floppy-disk"></i> Guardar nota
+            <i class="fas fa-floppy-disk"></i> {{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}
         </button>
     </div>
+
 
 </div><!-- /panel -->
 

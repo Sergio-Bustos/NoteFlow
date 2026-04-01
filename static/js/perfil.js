@@ -95,8 +95,13 @@
                 mostrarToast(data.mensaje, 'success');
                 document.getElementById('foto-perfil').src = data.nueva_foto;
                 document.getElementById('preview-foto').style.display = 'none';
-                // Mostrar botón eliminar ahora que hay foto
-                document.getElementById('btn-eliminar-foto').style.display = '';
+                
+                // Reiniciar y mostrar botón eliminar ahora que hay una nueva foto propia
+                const btnEliminar = document.getElementById('btn-eliminar-foto');
+                btnEliminar.disabled = false;
+                btnEliminar.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar foto de perfil';
+                btnEliminar.style.display = '';
+                
                 this.reset();
             } else {
                 mostrarToast(data.error || 'Error al subir la foto', 'error');

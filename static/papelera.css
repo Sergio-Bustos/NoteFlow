@@ -1,4 +1,30 @@
-/* â”€â”€ Aviso informativo â”€â”€ */
+/* ── ANIMACIONES ── */
+@keyframes nf-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes nf-slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes nf-pop-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+body {
+    animation: nf-fade-in 0.5s ease-out;
+}
+
+.papelera-header {
+    animation: nf-slide-up 0.6s ease-out backwards;
+}
+
+.aviso-papelera {
+    animation: nf-fade-in 0.8s ease-out 0.2s backwards;
+}
+
+/* ── Aviso informativo ── */
         .aviso-papelera {
             display: flex;
             align-items: center;
@@ -71,8 +97,9 @@
             padding: 18px 20px;
             margin-bottom: 14px;
             opacity: 0.82;
-            transition: opacity 0.2s, box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             filter: grayscale(20%);
+            animation: nf-pop-in 0.5s ease-out backwards;
         }
         .nota-papelera:hover {
             opacity: 1;
@@ -252,3 +279,85 @@
     display: flex;
     flex-direction: column;
 }
+
+/* ── TEMA OSCURO PARA PAPELERA ── */
+body.tema-oscuro {
+    background-color: var(--bg-oscuro, #1a1a1a);
+    color: var(--texto-oscuro, #e0e0e0);
+}
+
+body.tema-oscuro .main { background-color: var(--bg-oscuro, #1a1a1a); }
+
+body.tema-oscuro .aviso-papelera {
+    background: rgba(243, 156, 18, 0.08);
+    border-left-color: #f39c12;
+    color: #ffcc80;
+}
+
+body.tema-oscuro .nota-papelera {
+    background: var(--card-oscuro, #2d2d2d);
+    border-color: var(--border-oscuro, #404040);
+    opacity: 0.9;
+}
+
+body.tema-oscuro .nota-titulo {
+    color: #eeeeee;
+}
+
+body.tema-oscuro .nota-descripcion {
+    color: #aaaaaa;
+}
+
+body.tema-oscuro .nota-meta,
+body.tema-oscuro .nota-meta span {
+    color: #888888;
+}
+
+body.tema-oscuro .formato-badge {
+    background: rgba(84, 82, 211, 0.22);
+    color: #9b99f5;
+}
+
+/* Modales en oscuro (Bootstrap y personalizados) */
+body.tema-oscuro .modal-content {
+    background: #242435;
+    color: #e0e0e0;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+body.tema-oscuro .modal-header,
+body.tema-oscuro .modal-footer {
+    border-color: rgba(255,255,255,0.08);
+}
+
+body.tema-oscuro .modal-title {
+    color: #fff !important;
+}
+
+body.tema-oscuro .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+body.tema-oscuro .papelera-vacia {
+    color: #555;
+}
+
+/* Botones de acción en oscuro */
+body.tema-oscuro .btn-restaurar {
+    background: rgba(46, 204, 113, 0.12);
+    color: #4cd184;
+}
+body.tema-oscuro .btn-restaurar:hover {
+    background: #2ecc71;
+    color: #fff;
+}
+
+body.tema-oscuro .btn-eliminar-def {
+    background: rgba(231, 76, 60, 0.12);
+    color: #ff6b6b;
+}
+body.tema-oscuro .btn-eliminar-def:hover {
+    background: #e74c3c;
+    color: #fff;
+}

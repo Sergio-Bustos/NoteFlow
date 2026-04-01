@@ -30,5 +30,3 @@ ENV FLASK_RUN_HOST=0.0.0.0
 #Y ya finalmente usamos el comando para ejecutar la aplicacion de flask
 
 CMD ["flask", "run"]
-
-

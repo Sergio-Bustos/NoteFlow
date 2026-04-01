@@ -402,25 +402,29 @@ async function guardarNota() {
         return;
     }
 
+    const editId   = document.getElementById('editNotaId')?.value;
+    const isUpdate = !!editId;
+    const url      = isUpdate ? `/actualizar-nota-mixta/${editId}` : '/guardar-nota-mixta';
+
     const fd = new FormData();
     fd.append('titulo',      titulo);
     fd.append('descripcion', descripcion || `Nota mixta: ${titulo}`);
     fd.append('contenido',   tieneTexto ? textoHTML : '');
     fd.append('etiquetas',   etiquetas);
 
-    archivos.imagenes.forEach(({ file }) => fd.append('imagenes', file, file.name));
-    archivos.audios.forEach(  ({ file }) => fd.append('audios',   file, file.name));
-    archivos.videos.forEach(  ({ file }) => fd.append('videos',   file, file.name));
+    archivos.imagenes.forEach(({ file }) => fd.append('archivos', file, file.name));
+    archivos.audios.forEach(  ({ file }) => fd.append('archivos',   file, file.name));
+    archivos.videos.forEach(  ({ file }) => fd.append('archivos',   file, file.name));
 
     // Deshabilitar botones guardar
     const btns = ['btnGuardarTop', 'btnGuardarBottom'].map(id => document.getElementById(id)).filter(Boolean);
     btns.forEach(b => {
         b.disabled  = true;
-        b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (isUpdate ? 'Actualizando...' : 'Guardando...');
     });
 
     try {
-        const resp = await fetch('/guardar-nota-mixta', { method: 'POST', body: fd });
+        const resp = await fetch(url, { method: 'POST', body: fd });
 
         let data;
         try { data = await resp.json(); }
@@ -429,21 +433,35 @@ async function guardarNota() {
         if (!resp.ok || !data.success) throw new Error(data.error || `Error HTTP ${resp.status}`);
 
         notaGuardada = true;
-        mostrarToast('¡Nota mixta guardada correctamente!', 'success');
-        setTimeout(() => { window.location.href = data.redirect || '/notas'; }, 1200);
+        mostrarToast(data.mensaje || '¡Nota mixta guardada correctamente!', 'success');
+        
+        if (!isUpdate && data.redirect) {
+            setTimeout(() => { window.location.href = data.redirect; }, 1200);
+        } else {
+            // Si es update, podemos quedarnos o ir a /notas. El usuario preferira quedarse o ver el label de guardado.
+            const est = document.getElementById('estadoGuardado');
+            if (est) {
+                est.classList.add('visible');
+                setTimeout(() => est.classList.remove('visible'), 3000);
+            }
+        }
 
     } catch (err) {
         console.error('guardarNota mixta:', err);
         mostrarToast(err.message || 'Error de conexión al servidor', 'error');
+    } finally {
         btns.forEach(b => {
-            b.disabled  = false;
-            b.innerHTML = '<i class="fas fa-save"></i> Guardar';
+            if (b) {
+                b.disabled  = false;
+                const isBottom = b.id === 'btnGuardarBottom';
+                b.innerHTML = isBottom 
+                    ? `<i class="fas fa-save"></i> ${isUpdate ? 'ACTUALIZAR NOTA' : 'GUARDAR NOTA'}`
+                    : `<i class="fas fa-save"></i> ${isUpdate ? 'Actualizar' : 'Guardar'}`;
+            }
         });
-        // Restaurar texto del botón bottom
-        const bottom = document.getElementById('btnGuardarBottom');
-        if (bottom) bottom.innerHTML = '<i class="fas fa-save"></i> GUARDAR NOTA';
     }
 }
+
 
 // Conectar botones
 document.getElementById('btnGuardarTop')?.addEventListener('click',    guardarNota);

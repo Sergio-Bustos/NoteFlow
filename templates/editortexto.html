@@ -67,28 +67,32 @@
     <!-- ÁREA DE ESCRITURA -->
     <div id="cuerpo-nota"
          contenteditable="true"
-         placeholder="Escribe tu nota aquí..."></div>
+         placeholder="Escribe tu nota aquí...">{{ nota.Contenido|safe if edit_mode else '' }}</div>
 
     <!-- BOTTOM BAR -->
     <div class="bottom-bar">
+        <!-- Input oculto para saber si estamos editando -->
+        <input type="hidden" id="editNotaId" value="{{ nota.ID_Nota if edit_mode else '' }}">
+        
         <div class="campo-meta titulo-campo">
             <label>Título</label>
-            <input type="text" id="inputTitulo" placeholder="Título de la nota" maxlength="100">
+            <input type="text" id="inputTitulo" placeholder="Título de la nota" maxlength="100" value="{{ nota.Titulo if edit_mode else '' }}">
         </div>
         <div class="campo-meta">
             <label>Descripción</label>
-            <input type="text" id="inputDescripcion" placeholder="Breve descripción..." maxlength="200">
+            <input type="text" id="inputDescripcion" placeholder="Breve descripción..." maxlength="200" value="{{ nota.Descripcion if edit_mode else '' }}">
         </div>
         <div class="campo-meta">
             <label>Etiquetas</label>
-            <input type="text" id="inputEtiquetas" placeholder="trabajo, ideas, urgente...">
+            <input type="text" id="inputEtiquetas" placeholder="trabajo, ideas, urgente..." value="{{ etiquetas if edit_mode else '' }}">
         </div>
         <button class="btn-guardar-bottom" onclick="guardarNota()">
-            <i class="fas fa-save"></i> GUARDAR NOTA
+            <i class="fas fa-save"></i> {{ 'ACTUALIZAR NOTA' if edit_mode else 'GUARDAR NOTA' }}
         </button>
     </div>
 
 </div>
+
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>

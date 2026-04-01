@@ -99,7 +99,28 @@ function mostrarInterfazVideo(file) {
     actualizarInfoArchivo(file);
 }
 
+// RESTAURACIÓN PARA EDICIÓN
+async function restaurarVideoExistente() {
+    const url = document.getElementById('editVideoUrl')?.value;
+    if (!url) return;
+    
+    try {
+        const response = await fetch('/static/' + url);
+        const blob = await response.blob();
+        const filename = url.split('/').pop();
+        const file = new File([blob], filename, { type: blob.type });
+        cargarVideo(file);
+        // Evitar el modal de "salir sin guardar" justo al abrir
+        notaGuardada = true; 
+    } catch (e) {
+        console.error("Error al restaurar video:", e);
+    }
+}
+
+setTimeout(restaurarVideoExistente, 500);
+
 function habilitarControles() {
+
     btnPlay.disabled       = false;
     btnDetener.disabled    = false;
     btnIrInicio.disabled   = false;
@@ -228,11 +249,20 @@ async function iniciarGrabacion() {
         grabacionOverlay.style.display = 'flex';
         camaraPreview.srcObject        = streamCamara;
 
-        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-            ? 'video/webm;codecs=vp9'
-            : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
-                ? 'video/webm;codecs=vp8'
-                : 'video/webm';
+        // Selección de formato compatible
+        const types = [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm',
+            'video/mp4'
+        ];
+        let mimeType = '';
+        for (const type of types) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                mimeType = type;
+                break;
+            }
+        }
 
         mediaRecorder = new MediaRecorder(streamCamara, { mimeType });
         mediaRecorder.ondataavailable = (e) => {
@@ -241,7 +271,7 @@ async function iniciarGrabacion() {
         mediaRecorder.onstop = () => {
             streamCamara.getTracks().forEach(t => t.stop());
             camaraPreview.srcObject = null;
-            const blob = new Blob(trozosGrabacion, { type: 'video/webm' });
+            const blob = new Blob(trozosGrabacion, { type: mediaRecorder.mimeType || 'video/webm' });
             if (blob.size > 2 * 1024 * 1024 * 1024) {
                 mostrarToast('La grabación supera el límite de 2 GB', 'error');
                 videoPlaceholder.style.display = 'flex';
@@ -252,8 +282,9 @@ async function iniciarGrabacion() {
             archivoOriginal = file;
         };
 
-        mediaRecorder.start(200);
+        mediaRecorder.start(1000); // Guardamos en trozos de 1 segundo
         segundosGrab = 0;
+        timerGrabEl.textContent = "0:00";
         btnGrabarCam.classList.add('grabando');
         iconGrabarCam.className = 'fas fa-stop';
 
@@ -272,13 +303,24 @@ async function iniciarGrabacion() {
 
 function pararGrabacion() {
     if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
-    mediaRecorder.stop();
-    clearInterval(intervalTimer);
+    
+    try {
+        mediaRecorder.stop();
+    } catch (e) {
+        console.error("Error al detener recorder:", e);
+    }
+
+    if (intervalTimer) clearInterval(intervalTimer);
+    
     grabacionOverlay.style.display = 'none';
     camaraPreview.style.display    = 'none';
     btnGrabarCam.classList.remove('grabando');
     iconGrabarCam.className = 'fas fa-video';
-    mostrarToast('Grabación finalizada');
+    
+    // Si no se capturaron trozos por error, restauramos el placeholder
+    if (trozosGrabacion.length === 0) {
+        videoPlaceholder.style.display = 'flex';
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -350,6 +392,10 @@ async function guardarNota() {
         b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
     });
 
+    const editId   = document.getElementById('editNotaId')?.value;
+    const isUpdate = !!editId;
+    const url      = isUpdate ? `/actualizar-nota-video/${editId}` : '/guardar-nota-video';
+
     const formData = new FormData();
     formData.append('titulo',      titulo);
     formData.append('descripcion', descripcion);
@@ -357,7 +403,7 @@ async function guardarNota() {
     formData.append('video',       archivoOriginal, archivoOriginal.name);
 
     try {
-        const resp = await fetch('/guardar-nota-video', { method: 'POST', body: formData });
+        const resp = await fetch(url, { method: 'POST', body: formData });
 
         let data;
         try { data = await resp.json(); }
@@ -366,7 +412,7 @@ async function guardarNota() {
         if (!resp.ok || !data.success) throw new Error(data.error || `Error HTTP ${resp.status}`);
 
         notaGuardada = true;
-        mostrarToast('¡Nota de video guardada correctamente!', 'success');
+        mostrarToast(data.mensaje || '¡Nota de video guardada correctamente!', 'success');
 
         const est = document.getElementById('estadoGuardado');
         if (est) {
@@ -381,12 +427,16 @@ async function guardarNota() {
     } catch (err) {
         console.error('guardarNota video:', err);
         mostrarToast(err.message || 'Error de conexión. Inténtalo de nuevo.', 'error');
+    } finally {
         btns.forEach(b => {
-            b.disabled  = false;
-            b.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar nota';
+            if (b) {
+                b.disabled  = false;
+                b.innerHTML = '<i class="fas fa-floppy-disk"></i> ' + (isUpdate ? 'Actualizar nota' : 'Guardar nota');
+            }
         });
     }
 }
+
 
 btnGuardarTop.addEventListener('click',    guardarNota);
 btnGuardarBottom.addEventListener('click', guardarNota);

@@ -197,23 +197,28 @@
 
     <!-- ══ BOTTOM BAR ══ -->
     <div class="bottom-bar">
+        <input type="hidden" id="editNotaId" value="{{ nota.ID_Nota if edit_mode else '' }}">
+
         <div class="campo-meta titulo-campo">
             <label>Título</label>
             <input type="text" id="inputTitulo"
-                   placeholder="Título de la nota" maxlength="100">
+                   placeholder="Título de la nota" maxlength="100"
+                   value="{{ nota.Titulo if edit_mode else '' }}">
         </div>
         <div class="campo-meta">
             <label>Descripción</label>
             <input type="text" id="inputDescripcion"
-                   placeholder="Breve descripción..." maxlength="200">
+                   placeholder="Breve descripción..." maxlength="200"
+                   value="{{ nota.Descripcion if edit_mode else '' }}">
         </div>
         <div class="campo-meta">
             <label>Etiquetas</label>
             <input type="text" id="inputEtiquetas"
-                   placeholder="trabajo, ideas..." maxlength="200">
+                   placeholder="trabajo, ideas..." maxlength="200"
+                   value="{{ etiquetas if edit_mode else '' }}">
         </div>
         <button class="btn-guardar-bottom" id="btnGuardarBottom">
-            <i class="fas fa-save"></i> GUARDAR NOTA
+            <i class="fas fa-save"></i> {{ 'ACTUALIZAR NOTA' if edit_mode else 'GUARDAR NOTA' }}
         </button>
     </div>
 

@@ -104,27 +104,35 @@
 
         <!-- ── Barra inferior ── -->
         <div class="barra-inferior">
+            <!-- Data para edición -->
+            <input type="hidden" id="editNotaId" value="{{ nota.ID_Nota if edit_mode else '' }}">
+            <input type="hidden" id="editImagenUrl" value="{{ adjuntos[0].Ruta_archivo if edit_mode and adjuntos else '' }}">
+
             <!-- Título -->
             <input type="text" class="input-titulo" id="inputTitulo"
                    placeholder="Título de tu nota..." maxlength="100"
+                   value="{{ nota.Titulo if edit_mode else '' }}"
                    style="flex:1.2; min-width:140px;">
 
             <!-- Descripción -->
             <input type="text" class="input-titulo" id="inputDescripcion"
                    placeholder="Descripción breve (opcional)..." maxlength="200"
+                   value="{{ nota.Descripcion if edit_mode else '' }}"
                    style="flex:1.8; min-width:160px;">
 
             <span class="estado-guardado" id="estadoGuardado">
                 <i class="fas fa-check-circle"></i> Guardado
             </span>
             <button class="btn-accion btn-guardar" id="btnGuardar2" style="margin-left:auto;">
-                <i class="fas fa-save"></i> Guardar nota
+                <i class="fas fa-save"></i> {{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}
             </button>
             <!-- Etiquetas -->
             <input type="text" class="input-titulo" id="inputEtiquetas"
                 placeholder="Etiquetas: trabajo, ideas, ..." maxlength="200"
+                value="{{ etiquetas if edit_mode else '' }}"
                 style="flex:1.5; min-width:140px;">
         </div>
+
 
     </div><!-- /panel -->
 

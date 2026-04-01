@@ -99,6 +99,16 @@ imgOriginal.onload = () => {
     actualizarLienzoCompleto();
 };
 
+// RESTAURACIÓN PARA EDICIÓN
+(function cargarImagenExistente() {
+    const url = document.getElementById('editImagenUrl')?.value;
+    if (!url) return;
+    imgOriginal.crossOrigin = "Anonymous";
+    imgOriginal.src = '/static/' + url;
+})();
+
+
+
 // ══════════════════════════════════════════════
 //  FILTROS Y PROCESAMIENTO
 // ══════════════════════════════════════════════
@@ -289,6 +299,10 @@ async function guardarEnBackend() {
     });
 
     canvasBuffer.toBlob(async (blob) => {
+        const editId   = document.getElementById('editNotaId')?.value;
+        const isUpdate = !!editId;
+        const url      = isUpdate ? `/actualizar-nota-imagen/${editId}` : '/guardar-nota-imagen';
+
         const formData = new FormData();
         formData.append('titulo',      titulo);
         formData.append('descripcion', descripcion);
@@ -296,25 +310,29 @@ async function guardarEnBackend() {
         formData.append('imagen',      blob, `${titulo.replace(/\s+/g,'_')}.png`);
 
         try {
-            const resp = await fetch('/guardar-nota-imagen', { method: 'POST', body: formData });
+            const resp = await fetch(url, { method: 'POST', body: formData });
             const data = await resp.json();
             if (data.success) {
                 notaGuardada = true;
-                mostrarToast('Nota guardada correctamente');
+                mostrarToast(data.mensaje || 'Nota guardada correctamente');
                 const est = document.getElementById('estadoGuardado');
-                est.classList.add('visible');
-                setTimeout(() => est.classList.remove('visible'), 3000);
+                if (est) {
+                    est.classList.add('visible');
+                    setTimeout(() => est.classList.remove('visible'), 3000);
+                }
             } else {
                 mostrarToast(data.error || 'Error al guardar');
             }
-        } catch {
+        } catch (err) {
+            console.error(err);
             mostrarToast('Error de conexión');
         } finally {
             btn.disabled  = false;
-            btn.innerHTML = '<i class="fas fa-save"></i> Guardar nota';
+            btn.innerHTML = '<i class="fas fa-save"></i> ' + (isUpdate ? 'Actualizar nota' : 'Guardar nota');
         }
     }, 'image/png');
 }
+
 
 // ══════════════════════════════════════════════
 //  TOAST

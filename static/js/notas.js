@@ -351,11 +351,23 @@
         fetch('/api/mis-notas?' + params.toString())
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success) renderizarNotas(data.notas, false);
-                else mostrarSinResultados('notas');
+                // EXPLICACIÃ“N: Si no estamos buscando una carpeta especÃ­fica, filtrar las que ya estÃ¡n agrupadas
+                if (data.success) {
+                    var tieneCarpeta = params.has('carpeta');
+                    var filtradas = tieneCarpeta 
+                        ? data.notas 
+                        : data.notas.filter(function(n) { return !n.carpeta; });
+                    
+                    if (filtradas.length > 0) renderizarNotas(filtradas, false);
+                    else mostrarSinResultados('notas');
+                } else {
+                    mostrarSinResultados('notas');
+                }
             })
             .catch(function() { mostrarSinResultados('notas'); });
     }
+
+
 
     /* ===========================================================
        BUSCAR CARPETAS
@@ -381,14 +393,27 @@
     /* ===========================================================
        RENDERIZAR TARJETAS DE CARPETAS
        =========================================================== */
-    function _buildCarpetaCard(c) {
+    function _buildCarpetaCard(c, esReciente) {
+        var nombreEscapado = (c.nombre || '').replace(/'/g, "\\'");
+        
+        // Si es la vista de recientes, al hacer clic (single clic) mandan a la vista completa
+        var clickAccion = esReciente 
+            ? 'cargarTodoOrdenado()' 
+            : 'verNotasDeCarpeta(' + c.id + ',\'' + nombreEscapado + '\',event)';
+            
+        var htmlAcciones = esReciente
+            ? '<button class="btn-carpeta-accion ver" onclick="' + clickAccion + '; event.stopPropagation();" title="Ver todas"><i class="fas fa-eye"></i></button>'
+            : '<button class="btn-carpeta-accion ver" onclick="' + clickAccion + '; event.stopPropagation();" title="Ver notas"><i class="fas fa-eye"></i></button>' +
+              '<button class="btn-carpeta-accion agregar" onclick="abrirModalAgregarNotas(' + c.id + ',\'' + nombreEscapado + '\'); event.stopPropagation();" title="Agregar notas"><i class="fas fa-plus"></i></button>' +
+              '<button class="btn-carpeta-accion editar" onclick="abrirModalEditarCarpeta(' + c.id + ',\'' + nombreEscapado + '\'); event.stopPropagation();" title="Editar"><i class="fas fa-pen"></i></button>' +
+              '<button class="btn-carpeta-accion eliminar" onclick="abrirModalEliminarCarpeta(' + c.id + ',\'' + nombreEscapado + '\'); event.stopPropagation();" title="Eliminar"><i class="fas fa-trash-alt"></i></button>';
+
         return (
             '<div class="carpeta-card" data-id="' + c.id + '" ' +
-                'ondblclick="verNotasDeCarpeta(' + c.id + ',\'' + c.nombre.replace(/'/g, "\\'") + '\',event)" ' +
-                'ondragover="onDragOverCarpeta(event)" ' +
-                'ondragleave="onDragLeaveCarpeta(event)" ' +
-                'ondrop="onDropEnCarpeta(event,' + c.id + ')">' +
-                '<div class="carpeta-drop-hint"><i class="fas fa-folder-open"></i> Suelta aquí</div>' +
+                'onclick="' + clickAccion + '" ' +
+                (!esReciente ? 'ondragover="onDragOverCarpeta(event)" ondragleave="onDragLeaveCarpeta(event)" ondrop="onDropEnCarpeta(event,' + c.id + ')"' : '') +
+                '>' +
+                (!esReciente ? '<div class="carpeta-drop-hint"><i class="fas fa-folder-open"></i> Suelta aquí</div>' : '') +
                 '<div class="carpeta-card-icon"><i class="fas fa-folder-open"></i></div>' +
                 '<div class="carpeta-card-info">' +
                     '<h4 class="carpeta-nombre">' + c.nombre + '</h4>' +
@@ -396,14 +421,13 @@
                     '<span class="carpeta-meta"><i class="fas fa-clock"></i> ' + c.edicion + '</span>' +
                 '</div>' +
                 '<div class="carpeta-card-acciones">' +
-                    '<button class="btn-carpeta-accion ver" onclick="verNotasDeCarpeta(' + c.id + ',\'' + c.nombre.replace(/'/g, "\\'") + '\',event)" title="Ver notas"><i class="fas fa-eye"></i></button>' +
-                    '<button class="btn-carpeta-accion agregar" onclick="abrirModalAgregarNotas(' + c.id + ',\'' + c.nombre.replace(/'/g, "\\'") + '\')" title="Agregar notas"><i class="fas fa-plus"></i></button>' +
-                    '<button class="btn-carpeta-accion editar" onclick="abrirModalEditarCarpeta(' + c.id + ',\'' + c.nombre.replace(/'/g, "\\'") + '\')" title="Editar"><i class="fas fa-pen"></i></button>' +
-                    '<button class="btn-carpeta-accion eliminar" onclick="abrirModalEliminarCarpeta(' + c.id + ',\'' + c.nombre.replace(/'/g, "\\'") + '\')" title="Eliminar"><i class="fas fa-trash-alt"></i></button>' +
+                    htmlAcciones +
                 '</div>' +
             '</div>'
         );
     }
+
+
 
     function renderizarCarpetas(carpetas) {
         var area       = document.getElementById('area-resultados');
@@ -428,7 +452,7 @@
 
         sinRes.style.display = 'none';
         contenedor.innerHTML = carpetas.map(function(c) {
-            return _buildCarpetaCard(c);
+            return _buildCarpetaCard(c, false);
         }).join('');
 
         area.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -610,8 +634,7 @@
             '<div class="modal-box">' +
                 '<div class="modal-icono" style="color:var(--color-principal)"><i class="fas fa-folder-plus"></i></div>' +
                 '<h3 id="modalCarpetaTitulo">Crear carpeta</h3>' +
-                '<input id="modalCarpetaNombre" type="text" placeholder="Nombre de la carpeta" maxlength="60" ' +
-                    'style="width:100%;padding:10px 14px;border-radius:8px;border:1.5px solid var(--border,#ddd);font-size:.95rem;margin-bottom:18px;background:var(--bg-input,#f9f9f9);color:var(--texto-principal,#222);outline:none;">' +
+                '<input id="modalCarpetaNombre" class="modal-input-folder" type="text" placeholder="Nombre de la carpeta" maxlength="60">' +
                 '<div class="modal-btns">' +
                     '<button class="btn-modal-cancelar" id="btnCancelarCarpeta">Cancelar</button>' +
                     '<button class="btn-modal-salir" id="btnConfirmarCarpeta" style="background:var(--color-principal,#5452d3);">Crear</button>' +
@@ -952,10 +975,25 @@
                     return;
                 }
 
-                // Carpetas primero (max 3), notas sueltas (max 3)
-                var items = [];
-                carpetas.slice(0, 3).forEach(function(c) { items.push({ tipo: 'carpeta', data: c }); });
-                notasSueltas.slice(0, 3).forEach(function(n) { items.push({ tipo: 'nota', data: n }); });
+                // Combinar carpetas y notas sueltas en una sola lista para el "Recientes"
+                var todos = [];
+                carpetas.forEach(function(c) { 
+                    todos.push({ tipo: 'carpeta', data: c, fecha_raw: c.creacion }); 
+                });
+                notasSueltas.forEach(function(n) { 
+                    todos.push({ tipo: 'nota', data: n, fecha_raw: n.creacion }); 
+                });
+
+                // Ordenar: PRIORIDAD CARPETAS PRIMERO, luego por fecha (más viejo primero para que el nuevo esté a la derecha)
+                todos.sort(function(a, b) {
+                    if (a.tipo !== b.tipo) return a.tipo === 'carpeta' ? -1 : 1;
+                    var dateA = a.fecha_raw ? new Date(a.fecha_raw) : new Date(0);
+                    var dateB = b.fecha_raw ? new Date(b.fecha_raw) : new Date(0);
+                    return dateA - dateB;
+                });
+
+                // Solo tomamos los 3 primeros (los más recientes creados)
+                var items = todos.slice(0, 3);
 
                 renderizarRecientes(items);
             })
@@ -980,24 +1018,13 @@
         contenedor.innerHTML = '';
 
         items.forEach(function(item) {
+            var tmp = document.createElement('div');
             if (item.tipo === 'carpeta') {
-                var c   = item.data;
-                var div = document.createElement('div');
-                div.className = 'nota-card carpeta-card-reciente';
-                div.innerHTML =
-                    '<div class="card-header"><span class="folder-indicator"><i class="fas fa-folder" style="color:#f39c12;"></i></span></div>' +
-                    '<h4>' + c.nombre + '</h4>' +
-                    '<p class="description">' + c.total_notas + ' nota' + (c.total_notas !== 1 ? 's' : '') + '</p>' +
-                    '<div class="card-footer">' +
-                        '<small><i class="fas fa-clock"></i> ' + c.edicion + '</small>' +
-                        '<a href="/notas" class="view-btn" onclick="cargarTodoOrdenado();return false;">Ver todas</a>' +
-                    '</div>';
-                contenedor.appendChild(div);
+                tmp.innerHTML = _buildCarpetaCard(item.data, true);
             } else {
-                var tmp = document.createElement('div');
                 tmp.innerHTML = _buildNotaCard(item.data);
-                contenedor.appendChild(tmp.firstElementChild);
             }
+            contenedor.appendChild(tmp.firstElementChild);
         });
 
         // Botón ver todas
@@ -1020,6 +1047,7 @@
             .then(function(data) {
                 if (!data.success) return;
                 var carpetas     = data.carpetas || [];
+                // FILTRO: Solo notas SIN carpeta. Las demÃ¡s estÃ¡n dentro de sus carpetas.
                 var notasSueltas = (data.notas || []).filter(function(n) { return !n.carpeta; });
 
                 var area             = document.getElementById('area-resultados');
@@ -1029,19 +1057,25 @@
 
                 area.classList.add('visible');
                 sinRes.style.display = 'none';
-                document.getElementById('icono-res').className   = 'fas fa-folder';
-                document.getElementById('label-res').textContent = 'Todo (carpetas y notas)';
+                document.getElementById('icono-res').className   = 'fas fa-layer-group';
+                document.getElementById('label-res').textContent = 'Todas mis notas y carpetas';
                 document.getElementById('badge-res').textContent = carpetas.length + notasSueltas.length;
 
-                // Renderizar carpetas
-                contCarpetas.innerHTML = carpetas.map(function(c) {
-                    return _buildCarpetaCard(c);
+
+                // Limpiar contenedores
+                contCarpetas.innerHTML = '';
+                contNotas.innerHTML    = '';
+
+                // Renderizar todo en el contenedor de notas (el grid principal) para unificar tamaños
+                var htmlCarpetas = carpetas.map(function(c) {
+                    return _buildCarpetaCard(c, false);
                 }).join('');
 
-                // Renderizar notas sueltas
-                contNotas.innerHTML = notasSueltas.map(function(n) {
+                var htmlNotas = notasSueltas.map(function(n) {
                     return _buildNotaCard(n);
                 }).join('');
+
+                contNotas.innerHTML = htmlCarpetas + htmlNotas;
 
                 area.scrollIntoView({ behavior: 'smooth', block: 'start' });
             })
@@ -1175,3 +1209,22 @@
         overlay.classList.toggle('visible', isOpen);
         hambBtn.classList.toggle('hidden', isOpen);
     }
+
+    // ========== EXPOSICIÃ“N GLOBAL (SOLUCIÃ“N "NO SIRVE") ==========
+    window.toggleSidebar              = toggleSidebar;
+    window.abrirFormato                = abrirFormato;
+    window.cerrarFormato               = cerrarFormato;
+    window.verNotasDeCarpeta          = verNotasDeCarpeta;
+    window.cargarTodoOrdenado         = cargarTodoOrdenado;
+    window.abrirModalCrearCarpeta     = abrirModalCrearCarpeta;
+    window.abrirModalEditarCarpeta    = abrirModalEditarCarpeta;
+    window.abrirModalEliminarCarpeta  = abrirModalEliminarCarpeta;
+    window.abrirModalAgregarNotas     = abrirModalAgregarNotas;
+    window.abrirModalEliminarNota     = abrirModalEliminarNota;
+    window.quitarNotaDeCarpeta        = quitarNotaDeCarpeta;
+    window.buscarNotas                 = buscarNotas;
+    window.buscarCarpetas              = buscarCarpetas;
+    window.limpiarNotas                = limpiarNotas;
+    window.limpiarCarpetas             = limpiarCarpetas;
+    window.elegirTipo                 = elegirTipo;
+    window.volver                     = volver;

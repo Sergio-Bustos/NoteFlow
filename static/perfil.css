@@ -1,24 +1,24 @@
-/* ============================================================================
-   perfil.css — NoteFlow
-   Página de perfil de usuario: responsive, temas claro/oscuro.
-   Organización:
-     1.  Variables y Reset
-     2.  Temas claro / oscuro
-     3.  Layout principal
-     4.  Header (botón volver)
-     5.  Cards
-     6.  Títulos de sección
-     7.  Sección perfil — avatar y datos
-     8.  Formularios
-     9.  Botones
-     10. Vista previa de foto
-     11. Badge tema actual
-     12. Toasts
-     13. Modal (cerrar sesión)
-     14. Alertas (legacy)
-     15. Responsive
-   ============================================================================ */
+/* ── ANIMACIONES ── */
+@keyframes nf-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes nf-slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 
+body {
+    animation: nf-fade-in 0.5s ease-out;
+}
+
+.container {
+    animation: nf-slide-up 0.6s ease-out backwards;
+}
+
+.card {
+    animation: nf-slide-up 0.6s ease-out backwards;
+}
 
 /* ============================================================================
    1. VARIABLES Y RESET
@@ -484,6 +484,39 @@ button:disabled { opacity: 0.65; cursor: not-allowed; transform: none !important
 
     .preview-foto img { max-width: 120px; max-height: 120px; }
 }
+
+/* ── TEMA OSCURO - MODALES DE PERFIL ── */
+body.tema-oscuro .modal-content {
+    background-color: var(--card-bg-oscuro) !important;
+    color: var(--text-oscuro) !important;
+    border: 1px solid var(--border-oscuro) !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+body.tema-oscuro .modal-header,
+body.tema-oscuro .modal-footer {
+    border-color: var(--border-oscuro) !important;
+    background-color: transparent !important;
+}
+
+body.tema-oscuro .modal-title {
+    color: #fff !important;
+}
+
+body.tema-oscuro .modal-body {
+    color: #cbd5e1 !important;
+}
+
+body.tema-oscuro .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+body.tema-oscuro .modal-footer .btn-secondary {
+    background-color: #475569 !important;
+    border-color: #475569 !important;
+    color: #fff !important;
+}
+
 
 /* Móvil muy pequeño */
 @media (max-width: 360px) {

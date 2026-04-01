@@ -47,13 +47,17 @@
 
             <!-- Barra inferior: título, descripción, etiquetas, guardar -->
             <div class="barra-inferior">
-                <input type="text" id="inputTitulo"      placeholder="Título de la nota..." maxlength="100">
-                <input type="text" id="inputDescripcion" placeholder="Descripción..." maxlength="200">
-                <input type="text" id="inputEtiquetas"   placeholder="Etiquetas: trabajo, ideas..." maxlength="200">
+                <input type="hidden" id="editNotaId" value="{{ nota.ID_Nota if edit_mode else '' }}">
+                <input type="hidden" id="editImagenUrl" value="{{ adjuntos[0].Ruta_archivo if edit_mode and adjuntos else '' }}">
+
+                <input type="text" id="inputTitulo"      placeholder="Título de la nota..." maxlength="100" value="{{ nota.Titulo if edit_mode else '' }}">
+                <input type="text" id="inputDescripcion" placeholder="Descripción..." maxlength="200" value="{{ nota.Descripcion if edit_mode else '' }}">
+                <input type="text" id="inputEtiquetas"   placeholder="Etiquetas: trabajo, ideas..." maxlength="200" value="{{ etiquetas if edit_mode else '' }}">
                 <button class="btn-guardar-principal" id="btnGuardar" onclick="guardarEnBackend()">
-                    <i class="fas fa-save"></i> Guardar nota
+                    <i class="fas fa-save"></i> {{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}
                 </button>
             </div>
+
         </div>
 
         <!-- PANEL DE CONTROLES -->

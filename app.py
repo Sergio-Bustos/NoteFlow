@@ -2115,7 +2115,7 @@ def vaciar_papelera():
     finally:
         cerrar_db(cursor, conexion)
 # ==============================================================================
-# 11. CREAR NOTAS — Vistas de los editores
+# 11. CREAR Y EDITAR NOTAS — Vistas de los editores
 # ==============================================================================
 
 @app.route("/crear-nota")
@@ -2125,46 +2125,99 @@ def crear_nota():
     return render_template("fasededesarrollo.html")
 
 
+@app.route("/editar-nota/<int:nota_id>")
+@login_required
+def editar_nota(nota_id):
+    """
+    Ruta central para cargar el editor correspondiente a una nota existente.
+    Redirige segÃºn el formato de la nota (texto, imagen, audio, video, mixta, dibujo).
+    """
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+        cursor.execute("""
+            SELECT "ID_Nota", "Titulo", "Descripcion", "Contenido", "Formato", "ID_Carpeta"
+            FROM public."Notas"
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND "Estado" = 'Activa'
+        """, (nota_id, user_id))
+        nota = cursor.fetchone()
+
+        if not nota:
+            return "La nota no existe o no tienes permiso para editarla.", 404
+
+        # Obtener adjuntos si hay (para imagen, audio, video, mixta)
+        cursor.execute('SELECT * FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+        adjuntos = cursor.fetchall()
+        
+        # Obtener etiquetas
+        etiquetas = obtener_etiquetas_nota(nota_id, cursor)
+        etiquetas_str = ", ".join([e["Nombre_etiqueta"] for e in etiquetas])
+
+        formato = (nota["Formato"] or "texto").lower().strip()
+        
+        templates = {
+            "texto":  "editortexto.html",
+            "imagen": "editorimagen.html",
+            "audio":  "editoraudio.html",
+            "video":  "editorvideo.html",
+            "dibujo": "dibujo.html",
+            "mixta":  "editormixta.html"
+        }
+        
+        template = templates.get(formato, "editortexto.html")
+        return render_template(template, nota=nota, adjuntos=adjuntos, etiquetas=etiquetas_str, edit_mode=True)
+
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return f"Error al abrir el editor: {str(e)}", 500
+    finally:
+        cerrar_db(cursor, conexion)
+
+
 @app.route("/crear-nota-texto")
 @login_required
 def crear_nota_texto():
     """Editor de notas de texto enriquecido."""
-    return render_template("editortexto.html")
+    return render_template("editortexto.html", edit_mode=False)
 
 
 @app.route("/crear-nota-imagen")
 @login_required
 def crear_nota_imagen():
     """Editor de notas de imagen."""
-    return render_template("editorimagen.html")
+    return render_template("editorimagen.html", edit_mode=False)
 
 
 @app.route("/bloc-dibujo")
 @login_required
 def bloc_dibujo():
     """Bloc de dibujo libre."""
-    return render_template("dibujo.html")
+    return render_template("dibujo.html", edit_mode=False)
 
 
 @app.route("/crear-nota-audio")
 @login_required
 def crear_nota_audio():
     """Editor de notas de audio."""
-    return render_template("editoraudio.html")
+    return render_template("editoraudio.html", edit_mode=False)
 
 
 @app.route("/crear-nota-video")
 @login_required
 def crear_nota_video():
     """Editor de notas de video."""
-    return render_template("editorvideo.html")
+    return render_template("editorvideo.html", edit_mode=False)
 
 
 @app.route("/crear-nota-mixta")
 @login_required
 def crear_nota_mixta():
     """Editor de notas mixtas (texto + archivos multimedia)."""
-    return render_template("editormixta.html")
+    return render_template("editormixta.html", edit_mode=False)
+
 
 
 # ==============================================================================
@@ -2230,6 +2283,56 @@ def guardar_nota_texto():
 
     finally:
         cerrar_db(cursor, conexion)
+
+
+@app.route("/actualizar-nota-texto/<int:nota_id>", methods=["POST"])
+@login_required
+def actualizar_nota_texto(nota_id):
+    """
+    Actualiza el contenido y metadatos de una nota de texto existente.
+    """
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        titulo      = request.form.get("titulo",      "").strip()
+        descripcion = request.form.get("descripcion", "").strip()
+        contenido   = request.form.get("contenido",   "").strip()
+        etiquetas   = request.form.get("etiquetas",   "").strip()
+
+        if not titulo or not contenido:
+            return jsonify({"error": "El título y contenido son obligatorios"}), 400
+
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+
+        # Verificar propiedad
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "No tienes permiso para editar esta nota"}), 403
+
+        # Actualizar base
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Titulo" = %s, "Descripcion" = %s, "Contenido" = %s, "Fecha_deedicion" = %s
+            WHERE "ID_Nota" = %s
+        """, (titulo, descripcion, contenido, datetime.now(), nota_id))
+
+        # Actualizar etiquetas (borrar y re-insertar para simplicidad)
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
+        if etiquetas:
+            _insertar_etiquetas(etiquetas, nota_id, cursor)
+
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Nota actualizada correctamente", "redirect": "/notas"}), 200
+
+    except Exception as e:
+        if conexion: conexion.rollback()
+        import traceback; traceback.print_exc()
+        return jsonify({"error": f"Error al actualizar: {str(e)}"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
 
 
 # ==============================================================================
@@ -2312,6 +2415,77 @@ def guardar_nota_imagen():
         cerrar_db(cursor, conexion)
 
 
+@app.route("/actualizar-nota-imagen/<int:nota_id>", methods=["POST"])
+@login_required
+def actualizar_nota_imagen(nota_id):
+    """Actualiza una nota de imagen existente."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        titulo        = request.form.get("titulo",      "").strip()
+        descripcion   = request.form.get("descripcion", "").strip()
+        etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        archivo       = request.files.get("imagen")
+
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+
+        # Verificar propiedad
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "No tienes permiso para editar esta nota"}), 403
+
+        # Actualizar base de datos (Metadatos)
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Titulo" = %s, "Descripcion" = %s, "Fecha_deedicion" = %s
+            WHERE "ID_Nota" = %s
+        """, (titulo, descripcion, datetime.now(), nota_id))
+
+        # Si se sube una nueva
+        if archivo and archivo.filename != "":
+            ext = os.path.splitext(archivo.filename)[1].lower()
+            if ext in {".png", ".jpg", ".jpeg", ".webp"}:
+                # 1. Borrar fisica anterior
+                cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+                adj_ant = cursor.fetchone()
+                if adj_ant:
+                    ruta_borrar = os.path.join(os.getcwd(), "static", adj_ant[0])
+                    if os.path.exists(ruta_borrar):
+                        try: os.remove(ruta_borrar)
+                        except: pass
+
+                # 2. Guardar nueva
+                filename      = f"imagen_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                ruta_completa = os.path.join(IMAGEN_UPLOAD_FOLDER, filename)
+                archivo.save(ruta_completa)
+                ruta_db       = f"uploads/imagenes/{filename}"
+
+                # 3. Update BD
+                cursor.execute("""
+                    UPDATE public."Adjuntos" 
+                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                    WHERE "ID_Nota" = %s
+                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+
+        # Etiquetas
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
+        if etiquetas_raw:
+            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Imagen actualizada correctamente", "redirect": "/notas"}), 200
+
+    except Exception as e:
+        if conexion: conexion.rollback()
+        import traceback; traceback.print_exc()
+        return jsonify({"error": f"Error al actualizar imagen: {str(e)}"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+
 # ==============================================================================
 # 14. GUARDAR NOTA DE DIBUJO
 #     Guarda la imagen exportada del bloc de dibujo.
@@ -2390,6 +2564,76 @@ def guardar_nota_dibujo():
 
     finally:
         cerrar_db(cursor, conexion)
+
+
+@app.route("/actualizar-nota-dibujo/<int:nota_id>", methods=["POST"])
+@login_required
+def actualizar_nota_dibujo(nota_id):
+    """Actualiza una nota de dibujo existente."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        titulo        = request.form.get("titulo",      "").strip()
+        descripcion   = request.form.get("descripcion", "").strip()
+        etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        archivo       = request.files.get("imagen")
+
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+
+        # Verificar propiedad
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "No tienes permiso para editar esta nota"}), 403
+
+        # Actualizar base de datos (Metadatos)
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Titulo" = %s, "Descripcion" = %s, "Fecha_deedicion" = %s
+            WHERE "ID_Nota" = %s
+        """, (titulo, descripcion, datetime.now(), nota_id))
+
+        # Si se sube una imagen nueva (el dibujo actualizado)
+        if archivo and archivo.filename != "":
+            ext = os.path.splitext(archivo.filename)[1].lower()
+            if ext in {".png", ".jpg", ".jpeg", ".webp"}:
+                # 1. Buscar adjunto anterior para borrar archivo fisico
+                cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+                adj_ant = cursor.fetchone()
+                if adj_ant:
+                    ruta_borrar = os.path.join(os.getcwd(), "static", adj_ant[0])
+                    if os.path.exists(ruta_borrar):
+                        try: os.remove(ruta_borrar)
+                        except: pass
+
+                # 2. Guardar nueva imagen
+                filename = f"dibujo_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                ruta_completa = os.path.join(DIBUJO_UPLOAD_FOLDER, filename)
+                archivo.save(ruta_completa)
+                ruta_db = f"uploads/dibujos/{filename}"
+
+                # 3. Actualizar adjunto en BD
+                cursor.execute("""
+                    UPDATE public."Adjuntos" 
+                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                    WHERE "ID_Nota" = %s
+                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+
+        # Actualizar etiquetas
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
+        if etiquetas_raw:
+            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Dibujo actualizado correctamente", "redirect": "/notas"}), 200
+
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+
+
 
 
 # ==============================================================================
@@ -2475,13 +2719,71 @@ def guardar_nota_audio():
         return jsonify({"success": True, "mensaje": "Nota de audio guardada correctamente", "nota_id": nota_id, "redirect": "/notas"}), 201
 
     except Exception as e:
-        if conexion:
-            conexion.rollback()
+        if conexion: conexion.rollback()
         import traceback; traceback.print_exc()
         return jsonify({"error": "Error al guardar la nota de audio"}), 500
-
     finally:
         cerrar_db(cursor, conexion)
+
+
+@app.route("/actualizar-nota-audio/<int:nota_id>", methods=["POST"])
+@login_required
+def actualizar_nota_audio(nota_id):
+    """Actualiza una nota de audio existente."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        titulo        = request.form.get("titulo",      "").strip()
+        descripcion   = request.form.get("descripcion", "").strip()
+        etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        archivo       = request.files.get("audio")
+
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "No tienes permiso"}), 403
+
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Titulo" = %s, "Descripcion" = %s, "Fecha_deedicion" = %s
+            WHERE "ID_Nota" = %s
+        """, (titulo, descripcion, datetime.now(), nota_id))
+
+        if archivo and archivo.filename != "":
+            ext = os.path.splitext(archivo.filename)[1].lower()
+            if ext in AUDIO_EXTENSIONES_PERMITIDAS:
+                # Borrar anterior
+                cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+                adj_ant = cursor.fetchone()
+                if adj_ant:
+                    try: os.remove(os.path.join(os.getcwd(), "static", adj_ant[0]))
+                    except: pass
+                
+                filename = f"audio_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                ruta_completa = os.path.join(AUDIO_UPLOAD_FOLDER, filename)
+                archivo.save(ruta_completa)
+                ruta_db = f"uploads/audios/{filename}"
+
+                cursor.execute("""
+                    UPDATE public."Adjuntos" 
+                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                    WHERE "ID_Nota" = %s
+                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
+        if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Audio actualizado", "redirect": "/notas"}), 200
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
 
 
 # ==============================================================================
@@ -2599,6 +2901,74 @@ def guardar_nota_video():
             try: os.remove(ruta_fisica_guardada)
             except: pass
         cerrar_db(cursor, conexion)
+
+
+@app.route("/actualizar-nota-video/<int:nota_id>", methods=["POST"])
+@login_required
+def actualizar_nota_video(nota_id):
+    """Actualiza una nota de video existente."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    ruta_fisica_guardada = None
+    try:
+        titulo        = request.form.get("titulo",      "").strip()
+        descripcion   = request.form.get("descripcion", "").strip()
+        etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        archivo       = request.files.get("video")
+
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "No tienes permiso"}), 403
+
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Titulo" = %s, "Descripcion" = %s, "Fecha_deedicion" = %s
+            WHERE "ID_Nota" = %s
+        """, (titulo, descripcion, datetime.now(), nota_id))
+
+        if archivo and archivo.filename != "":
+            ext = os.path.splitext(archivo.filename)[1].lower()
+            if ext in VIDEO_EXTENSIONES:
+                # Borrar anterior
+                cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+                adj_ant = cursor.fetchone()
+                if adj_ant:
+                    try: os.remove(os.path.join(os.getcwd(), "static", adj_ant[0]))
+                    except: pass
+                
+                filename = f"video_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                ruta_completa = os.path.join(VIDEO_UPLOAD_FOLDER, filename)
+                
+                CHUNK_SIZE = 4 * 1024 * 1024
+                with open(ruta_completa, "wb") as f:
+                    while True:
+                        chunk = archivo.stream.read(CHUNK_SIZE)
+                        if not chunk: break
+                        f.write(chunk)
+                
+                ruta_db = f"uploads/videos/{filename}"
+
+                cursor.execute("""
+                    UPDATE public."Adjuntos" 
+                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                    WHERE "ID_Nota" = %s
+                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
+        if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Video actualizado", "redirect": "/notas"}), 200
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
 
 
 # ==============================================================================
@@ -2757,6 +3127,77 @@ def guardar_nota_mixta():
             except Exception:
                 pass
         cerrar_db(cursor, conexion)
+
+
+@app.route("/actualizar-nota-mixta/<int:nota_id>", methods=["POST"])
+@login_required
+def actualizar_nota_mixta(nota_id):
+    """Actualiza una nota mixta existente."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    archivos_guardados = []
+    try:
+        titulo        = request.form.get("titulo",      "").strip()
+        descripcion   = request.form.get("descripcion", "").strip()
+        contenido     = request.form.get("contenido",   "").strip()
+        etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        nuevos_archivos = request.files.getlist("archivos")
+
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "No tienes permiso"}), 403
+
+        cursor.execute("""
+            UPDATE public."Notas"
+            SET "Titulo" = %s, "Descripcion" = %s, "Contenido" = %s, "Fecha_deedicion" = %s
+            WHERE "ID_Nota" = %s
+        """, (titulo, descripcion, contenido, datetime.now(), nota_id))
+
+        if nuevos_archivos and any(f.filename != "" for f in nuevos_archivos):
+            # En notas mixtas, añadimos los nuevos adjuntos.
+            for archivo in nuevos_archivos:
+                if archivo and archivo.filename != "":
+                    ext = os.path.splitext(archivo.filename)[1].lower()
+                    
+                    # Determinar carpeta según extensión
+                    tipo = "imagenes"
+                    if ext in MIXTA_REGLAS["audios"]["exts"]: tipo = "audios"
+                    if ext in MIXTA_REGLAS["videos"]["exts"]: tipo = "videos"
+                    
+                    carpeta = MIXTA_CARPETAS[tipo]
+                    filename = f"mixta_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                    ruta_completa = os.path.join(carpeta, filename)
+                    archivo.save(ruta_completa)
+                    archivos_guardados.append(ruta_completa)
+                    ruta_db = f"uploads/{tipo}/{filename}"
+
+                    cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
+                    nuevo_id_adj = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (nuevo_id_adj, filename, ext.lstrip("."), ruta_db, nota_id))
+
+
+        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
+        if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+
+        conexion.commit()
+        archivos_guardados.clear()
+        return jsonify({"success": True, "mensaje": "Nota mixta actualizada", "redirect": "/notas"}), 200
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        for ruta in archivos_guardados:
+            try: os.remove(ruta)
+            except: pass
+        cerrar_db(cursor, conexion)
+
 
 
 
@@ -2943,5 +3384,10 @@ class Tipos(db.Model):
     Formato       = db.Column(db.Text, primary_key=True)
 
 with app.app_context():
-    print("ATENCIÓN: CREANDO TABLAS")
-    db.create_all()
+    try:
+        print("Intentando crear tablas en la base de datos (SQLAlchemy)...")
+        db.create_all()
+        print("Tablas verificadas/creadas correctamente.")
+    except Exception as e:
+        print(f"Advertencia: No se pudo conectar a la base de datos para crear tablas: {e}")
+        # No crasheamos la app, dejamos que siga intentando conectarse luego.

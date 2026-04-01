@@ -46,3 +46,32 @@ function cerrarFormato() {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') cerrarFormato();
 });
+
+// ========== INTERACTIVIDAD DE TARJETAS (NUEVO) ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Al cargar el Dashboard, COLOR_PRINCIPAL ya deberÃ­a estar disponible
+    if (window.COLOR_PRINCIPAL) _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
+
+    const cards = document.querySelectorAll('.recientes .nota-card');
+    cards.forEach(card => {
+        card.style.cursor = 'pointer';
+        
+        card.addEventListener('click', function(e) {
+            // Evitar redirigir si se hace clic en un botÃ³n interno
+            if (e.target.closest('.view-btn')) return;
+
+            const noteId = card.getAttribute('data-note-id');
+            const folderId = card.getAttribute('data-folder-id');
+
+            if (noteId) {
+                // Ir al editor de la nota
+                window.location.href = '/editar-nota/' + noteId;
+            } else if (folderId) {
+                // Ir a la vista de notas filtrada por esa carpeta
+                const folderName = card.querySelector('h4').textContent.trim();
+                window.location.href = '/notas?carpeta=' + encodeURIComponent(folderName);
+            }
+        });
+    });
+});
+

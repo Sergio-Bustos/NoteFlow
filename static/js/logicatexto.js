@@ -129,13 +129,16 @@ async function guardarNota() {
     formData.append('contenido',   contenido);
     formData.append('etiquetas',   etiquetas);
 
+    const editId = document.getElementById('editNotaId')?.value;
+    const url    = editId ? `/actualizar-nota-texto/${editId}` : '/guardar-nota-texto';
+
     try {
-        const res  = await fetch('/guardar-nota-texto', { method: 'POST', body: formData });
+        const res  = await fetch(url, { method: 'POST', body: formData });
         const data = await res.json();
 
         if (data.success) {
             notaGuardada = true;
-            mostrarToast('Nota guardada correctamente');
+            mostrarToast(data.mensaje || 'Nota guardada correctamente');
             setTimeout(() => {
                 window.location.href = data.redirect || '/notas';
             }, 1200);
@@ -147,6 +150,7 @@ async function guardarNota() {
         mostrarToast('Error de conexión al servidor');
     }
 }
+
 
 // ========== BOTÓN VOLVER ==========
 document.getElementById('btnVolver').addEventListener('click', function(e) {

@@ -157,6 +157,27 @@ function cargarArchivo(file) {
     reader.readAsArrayBuffer(file);
 }
 
+// RESTAURACIÓN PARA EDICIÓN
+async function restaurarAudioExistente() {
+    const url = document.getElementById('editAudioUrl')?.value;
+    if (!url) return;
+    
+    try {
+        const response = await fetch('/static/' + url);
+        const blob = await response.blob();
+        const filename = url.split('/').pop();
+        const file = new File([blob], filename, { type: blob.type });
+        cargarArchivo(file);
+        // Marcamos como guardada inicialmente para evitar el modal de "salir sin guardar" justo al abrir
+        notaGuardada = true; 
+    } catch (e) {
+        console.error("Error al restaurar audio:", e);
+    }
+}
+
+setTimeout(restaurarAudioExistente, 500);
+
+
 // ══════════════════════════════════════════════════════════════════
 //  MOSTRAR INTERFAZ TRAS CARGAR AUDIO
 // ══════════════════════════════════════════════════════════════════
@@ -581,6 +602,10 @@ async function guardarNota() {
         b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
     });
 
+    const editId   = document.getElementById('editNotaId')?.value;
+    const isUpdate = !!editId;
+    const url      = isUpdate ? `/actualizar-nota-audio/${editId}` : '/guardar-nota-audio';
+
     const formData = new FormData();
     formData.append('titulo',      titulo);
     formData.append('descripcion', descripcion);
@@ -588,27 +613,33 @@ async function guardarNota() {
     formData.append('audio',       archivoOriginal, archivoOriginal.name);
 
     try {
-        const resp = await fetch('/guardar-nota-audio', { method: 'POST', body: formData });
+        const resp = await fetch(url, { method: 'POST', body: formData });
         const data = await resp.json();
 
         if (data.success) {
             notaGuardada = true;
-            mostrarToast('Nota guardada correctamente');
+            mostrarToast(data.mensaje || 'Nota guardada correctamente');
             const est = document.getElementById('estadoGuardado');
-            est.classList.add('visible');
-            setTimeout(() => est.classList.remove('visible'), 3000);
+            if (est) {
+                est.classList.add('visible');
+                setTimeout(() => est.classList.remove('visible'), 3000);
+            }
         } else {
             mostrarToast(data.error || 'Error al guardar');
         }
-    } catch {
+    } catch (err) {
+        console.error(err);
         mostrarToast('Error de conexión');
     } finally {
         btns.forEach(b => {
-            b.disabled  = false;
-            b.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar nota';
+            if (b) {
+                b.disabled  = false;
+                b.innerHTML = '<i class="fas fa-floppy-disk"></i> ' + (isUpdate ? 'Actualizar nota' : 'Guardar nota');
+            }
         });
     }
 }
+
 
 btnGuardarTop.addEventListener('click',    guardarNota);
 btnGuardarBottom.addEventListener('click', guardarNota);

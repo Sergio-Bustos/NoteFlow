@@ -21,8 +21,29 @@ ajustarCanvas();
 window.addEventListener('resize', ajustarCanvas);
 
 /* ──────────────────────────────────────────
+   RESTAURACIÓN DE DIBUJO (Edición)
+   ────────────────────────────────────────── */
+async function cargarDibujoExistente() {
+    const url = document.getElementById('editImagenUrl')?.value;
+    if (!url) return;
+
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = '/static/' + url; 
+    img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        lienzoPristino = false;
+        canvasHint.style.opacity = '0';
+    };
+}
+
+setTimeout(cargarDibujoExistente, 100);
+
+/* ──────────────────────────────────────────
    ESTADO
 ────────────────────────────────────────── */
+// ... (rest of the file starts here)
+
 let dibujando      = false;
 let herramienta    = 'lapiz';
 let xIni = 0, yIni = 0;
@@ -299,39 +320,56 @@ async function guardarNota() {
     }
 
     const btns = [document.getElementById('btnGuardar'), document.getElementById('btnGuardar2')];
-    btns.forEach(b => { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; });
+    btns.forEach(b => { 
+        if (b) {
+            b.disabled = true; 
+            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; 
+        }
+    });
 
     canvas.toBlob(async (blob) => {
+        const editId   = document.getElementById('editNotaId')?.value;
+        const url      = editId ? `/actualizar-nota-dibujo/${editId}` : '/guardar-nota-dibujo';
+
         const formData = new FormData();
         formData.append('titulo',      titulo);
         formData.append('descripcion', descripcion);
         formData.append('etiquetas',   etiquetas);
-        formData.append('formato',     'dibujo');
         formData.append('imagen',      blob, `${titulo.replace(/\s+/g,'_')}.png`);
 
         try {
-            const resp = await fetch('/guardar-nota-dibujo', { method: 'POST', body: formData });
+            const resp = await fetch(url, { method: 'POST', body: formData });
             const data = await resp.json();
 
             if (data.success) {
                 notaGuardada = true;
-                mostrarToast('Nota guardada correctamente');
+                mostrarToast(data.mensaje || 'Nota guardada correctamente');
                 const est = document.getElementById('estadoGuardado');
-                est.classList.add('visible');
-                setTimeout(() => est.classList.remove('visible'), 3000);
+                if (est) {
+                    est.classList.add('visible');
+                    setTimeout(() => est.classList.remove('visible'), 3000);
+                }
             } else {
                 mostrarToast(data.error || 'Error al guardar');
             }
-        } catch {
+        } catch (err) {
+            console.error(err);
             mostrarToast('Error de conexión');
         } finally {
-            btns.forEach(b => { b.disabled = false; b.innerHTML = '<i class="fas fa-save"></i> Guardar nota'; });
+            btns.forEach(b => { 
+                if (b) {
+                    b.disabled = false; 
+                    const isUpdate = !!editId;
+                    b.innerHTML = '<i class="fas fa-save"></i> ' + (isUpdate ? 'Actualizar nota' : 'Guardar nota'); 
+                }
+            });
         }
     }, 'image/png');
 }
 
 document.getElementById('btnGuardar').addEventListener('click',  guardarNota);
 document.getElementById('btnGuardar2').addEventListener('click', guardarNota);
+
 
 /* ──────────────────────────────────────────
    TOAST
