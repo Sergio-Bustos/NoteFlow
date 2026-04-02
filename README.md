@@ -149,7 +149,7 @@ docker-compose up --build
 
 Esto levantará automáticamente el backend (Flask), la base de datos (PostgreSQL) y el panel de administración (pgAdmin).
 
-##4.Dominio de ngrok
+### 4. Dominio de ngrok
 
 Primero asegúrate de estar autenticado con tu cuenta en ese otro equipo.
 Instala Ngrok y luego ejecuta ⚡: 
