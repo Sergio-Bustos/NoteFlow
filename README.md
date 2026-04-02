@@ -114,6 +114,7 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 | Draw.io | Diagramas de casos de uso, flujo y base de datos |
 | SCRUM | Metodología ágil — Backlog, Sprints, Historias de Usuario |
 | Word | Documentación técnica y requerimientos |
+| ngrok | Dominio para uso de telefonos y tablets |
 
 ---
 
@@ -148,14 +149,35 @@ docker-compose up --build
 
 Esto levantará automáticamente el backend (Flask), la base de datos (PostgreSQL) y el panel de administración (pgAdmin).
 
-### 4. Acceder a la aplicación
+###4.Dominio de ngrok
+
+Primero asegúrate de estar autenticado con tu cuenta en ese otro equipo.
+Instala Ngrok y luego ejecuta:
+
+```bash
+ngrok config add-authtoken TU_TOKEN
+```
+Ese token es el que conecta ese computador con tu cuenta (y con ese dominio que ya tienes).
+
+Usa:
+
+```bash
+ngrok http --domain=stergimatic-shirlee-mollifiable.ngrok-free.dev 5000
+```
+
+Eso es lo que evita que cambie.
+Si no pones --domain, Ngrok siempre genera uno aleatorio.
+
+Para usar ngrok tienes que tener si o si docker encendido para que el dominio asignado funcione
+
+### 5. Acceder a la aplicación
 
 | Servicio | URL |
 |----------|-----|
 | 🌐 Aplicación principal | `http://127.0.0.1:5000` |
 | 🗄️ pgAdmin (gestión BD) | `http://localhost:5050` |
 
-### 5. Acceso en red local
+### 6. Acceso en red local
 
 Para que otros dispositivos en tu red puedan acceder, obtén tu IP local:
 
@@ -182,7 +204,7 @@ ngrok http 5000
 Lo dejamos en la terminal de visual o terminal de ngrok en segundo plano funcionando 
 
 
-### 6. Verificar la base de datos
+### 7. Verificar la base de datos
 
 Asegúrate de que PostgreSQL esté corriendo y de que el puerto `5432` esté expuesto correctamente en Docker. Puedes verificar el estado del contenedor con:
 
