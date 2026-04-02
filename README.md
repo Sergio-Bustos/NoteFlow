@@ -149,15 +149,15 @@ docker-compose up --build
 
 Esto levantará automáticamente el backend (Flask), la base de datos (PostgreSQL) y el panel de administración (pgAdmin).
 
-###4.Dominio de ngrok
+##4.Dominio de ngrok
 
 Primero asegúrate de estar autenticado con tu cuenta en ese otro equipo.
-Instala Ngrok y luego ejecuta:
+Instala Ngrok y luego ejecuta ⚡: 
 
 ```bash
 ngrok config add-authtoken TU_TOKEN
 ```
-Ese token es el que conecta ese computador con tu cuenta (y con ese dominio que ya tienes).
+Ese token es el que conecta ese computador con tu cuenta (y con ese dominio que ya tienes)💻.
 
 Usa:
 
@@ -166,9 +166,9 @@ ngrok http --domain=stergimatic-shirlee-mollifiable.ngrok-free.dev 5000
 ```
 
 Eso es lo que evita que cambie.
-Si no pones --domain, Ngrok siempre genera uno aleatorio.
+Si no pones --domain, Ngrok siempre genera uno aleatorio ✅.
 
-Para usar ngrok tienes que tener si o si docker encendido para que el dominio asignado funcione
+Para usar ngrok tienes que tener si o si docker encendido para que el dominio asignado funcione 🐳.
 
 ### 5. Acceder a la aplicación
 
