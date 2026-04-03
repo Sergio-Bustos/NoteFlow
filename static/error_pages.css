@@ -1,0 +1,97 @@
+/* Páginas de error 404 / 500 — alineadas con la marca NoteFlow */
+.nf-error-page {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    background: linear-gradient(160deg, #f0f2ff 0%, #fafafa 45%, #eef0fb 100%);
+    color: #1e293b;
+    text-align: center;
+}
+
+.nf-error-card {
+    max-width: 420px;
+    background: #fff;
+    border-radius: var(--nf-radius-lg, 14px);
+    box-shadow: var(--nf-shadow-md, 0 4px 24px rgba(15, 23, 42, 0.1));
+    padding: 2.25rem 1.75rem 2rem;
+    border: 1px solid rgba(84, 82, 211, 0.12);
+}
+
+.nf-error-code {
+    font-family: var(--font-display, sans-serif);
+    font-size: clamp(3rem, 12vw, 4rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--nf-color-brand, #5452d3);
+    letter-spacing: -0.04em;
+    margin-bottom: 0.5rem;
+}
+
+.nf-error-page h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    color: #0f172a;
+}
+
+.nf-error-page p {
+    margin: 0 0 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: #64748b;
+}
+
+.nf-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.nf-error-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.25rem;
+    border-radius: var(--nf-radius-sm, 8px);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.nf-error-actions .btn-primary {
+    background: var(--nf-color-brand, #5452d3);
+    color: #fff;
+}
+
+.nf-error-actions .btn-primary:hover {
+    background: var(--nf-color-brand-hover, #4340c0);
+    color: #fff;
+}
+
+.nf-error-actions .btn-ghost {
+    background: transparent;
+    color: var(--nf-color-brand, #5452d3);
+    border: 2px solid rgba(84, 82, 211, 0.35);
+}
+
+.nf-error-actions .btn-ghost:hover {
+    background: rgba(84, 82, 211, 0.08);
+    border-color: var(--nf-color-brand, #5452d3);
+}
+
+.nf-error-brand {
+    margin-top: 2rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.nf-error-brand strong {
+    color: #64748b;
+    font-weight: 600;
+}

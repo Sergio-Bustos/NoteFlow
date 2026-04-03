@@ -51,7 +51,7 @@ body {
 }
 
 body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family: var(--font-sans, "Inter", system-ui, sans-serif);
     line-height: 1.6;
     min-height: 100vh;
 }

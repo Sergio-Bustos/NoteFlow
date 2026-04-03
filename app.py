@@ -135,6 +135,17 @@ def archivo_demasiado_grande(e):
     """El archivo supera el MAX_CONTENT_LENGTH configurado (2 GB)."""
     return jsonify({"error": "El archivo supera el límite de 2 GB"}), 413
 
+
+@app.errorhandler(404)
+def pagina_no_encontrada(e):
+    return render_template("errors/404.html"), 404
+
+
+@app.errorhandler(500)
+def error_interno_servidor(e):
+    return render_template("errors/500.html"), 500
+
+
 # ==============================================================================
 # UTILIDADES Y DECORADORES
 # ==============================================================================

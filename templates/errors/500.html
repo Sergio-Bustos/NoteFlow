@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Error del servidor | NoteFlow</title>
+    {% include 'partials/head_design.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='error_pages.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+</head>
+<body class="nf-error-page">
+    <div class="nf-error-card">
+        <div class="nf-error-code">500</div>
+        <h1>Algo salió mal</h1>
+        <p>Hubo un error en el servidor. Intenta de nuevo en unos minutos. Si el problema continúa, contacta al equipo.</p>
+        <div class="nf-error-actions">
+            <a href="{{ url_for('inicio') }}" class="btn-primary">Ir al inicio</a>
+            <a href="javascript:history.back()" class="btn-ghost">Volver atrás</a>
+        </div>
+    </div>
+    <p class="nf-error-brand"><strong>NoteFlow</strong> — tu espacio para ideas y notas</p>
+</body>
+</html>

@@ -3,7 +3,7 @@
     margin: 0;                                /* Quita todos los márgenes predeterminados */
     padding: 0;                               /* Quita todos los rellenos predeterminados */
     box-sizing: border-box;                   /* Hace que el tamaño incluya borde y padding */
-    font-family: "Poppins", "Segoe UI", Tahoma, sans-serif;  /* Tipo de letra general */
+    font-family: var(--font-sans, "Inter", system-ui, sans-serif);
 }
 
 body {
