@@ -255,7 +255,7 @@
             : '';
 
         return (
-            '<div class="nota-card" data-id="' + nota.id + '" draggable="true" ' +
+            '<div class="nota-card" data-id="' + nota.id + '" data-carpeta="' + (nota.carpeta || '') + '" draggable="true" ' +
                     'ondragstart="onDragStartNota(event,' + nota.id + ')" ' +
                     'ondragend="onDragEndNota(event)" ' +
                     'onclick="window.location.href=\'/editar-nota/' + nota.id + '\'" ' +
@@ -499,7 +499,119 @@
     /* ===========================================================
        DRAG & DROP — NOTAS → CARPETAS
        =========================================================== */
-    var _notaArrastrandoId = null;
+    var _notaArrastrandoId     = null;
+    var _notaArrastrandoCarpeta = null; // carpeta actual de la nota que se arrastra
+
+    // ── Zona flotante para sacar nota de carpeta ──────────────────
+    (function crearZonaSacar() {
+        var zona = document.createElement('div');
+        zona.id        = 'zona-sacar-carpeta';
+        zona.className = 'zona-sacar-carpeta';
+        zona.innerHTML = '<i class="fas fa-folder-minus"></i><span>Soltar aquí para sacar de la carpeta</span>';
+        document.body.appendChild(zona);
+
+        zona.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            zona.classList.add('activa');
+        });
+        zona.addEventListener('dragleave', function(e) {
+            if (!zona.contains(e.relatedTarget)) {
+                zona.classList.remove('activa');
+            }
+        });
+        zona.addEventListener('drop', function(e) {
+            e.preventDefault();
+            zona.classList.remove('activa');
+            var notaId = _notaArrastrandoId || parseInt(e.dataTransfer.getData('text/plain'), 10);
+            if (!notaId) return;
+
+            fetch('/api/notas/' + notaId + '/carpeta', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ carpeta_id: null })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    mostrarToast('Nota sacada de la carpeta', 'exito');
+                    var notaCard = document.querySelector('.nota-card[data-id="' + notaId + '"]');
+                    if (notaCard) {
+                        // 1) Guardar datos de la nota para reconstruirla
+                        var notaDataClone = {
+                            id:          notaId,
+                            titulo:      notaCard.querySelector('.nota-titulo')  ? notaCard.querySelector('.nota-titulo').textContent  : 'Sin título',
+                            descripcion: notaCard.querySelector('.nota-descripcion') ? notaCard.querySelector('.nota-descripcion').textContent : '',
+                            formato:     (notaCard.querySelector('.nota-formato-badge') ? notaCard.querySelector('.nota-formato-badge').textContent : 'texto').trim(),
+                            carpeta:     null,   // ya no tiene carpeta
+                            etiquetas:   Array.from(notaCard.querySelectorAll('.nota-tag')).map(function(t) { return t.textContent.replace('#','').trim(); }),
+                            edicion:     notaCard.querySelector('.nota-footer span') ? notaCard.querySelector('.nota-footer span').textContent.replace('','').trim() : ''
+                        };
+
+                        // 2) Actualizar contador de la carpeta en el panel
+                        var panel = notaCard.closest('.panel-notas-carpeta');
+                        if (panel) {
+                            var carpetaCard = panel.previousElementSibling;
+                            if (carpetaCard && carpetaCard.classList.contains('carpeta-card')) {
+                                var meta = carpetaCard.querySelector('.carpeta-meta i.fa-file-alt');
+                                if (meta) {
+                                    var txt = meta.parentElement;
+                                    var match = txt.textContent.match(/(\d+)/);
+                                    if (match) {
+                                        var n = Math.max(0, parseInt(match[1], 10) - 1);
+                                        txt.innerHTML = '<i class="fas fa-file-alt"></i> ' + n + ' nota' + (n !== 1 ? 's' : '');
+                                    }
+                                }
+                            }
+                        }
+
+                        // 3) Animar salida de la nota del panel / grid
+                        notaCard.style.transition = 'opacity 0.3s, transform 0.3s';
+                        notaCard.style.opacity    = '0';
+                        notaCard.style.transform  = 'scale(0.9)';
+
+                        setTimeout(function() {
+                            notaCard.remove();
+
+                            // 4) Inyectar la nota de vuelta en el grid principal como nota suelta
+                            var contNotas = document.getElementById('resultados-notas');
+                            if (contNotas) {
+                                var tmp = document.createElement('div');
+                                tmp.innerHTML = _buildNotaCard(notaDataClone);
+                                var nuevaCard = tmp.firstElementChild;
+                                // Quitamos carpeta badge y actualizamos data-carpeta
+                                nuevaCard.dataset.carpeta = '';
+                                var badge = nuevaCard.querySelector('.nota-carpeta-badge');
+                                if (badge) badge.remove();
+
+                                // Insertar al FINAL del contenedor (detrás de las notas existentes)
+                                contNotas.appendChild(nuevaCard);
+
+                                // Animación de entrada
+                                nuevaCard.style.opacity   = '0';
+                                nuevaCard.style.transform = 'scale(0.93) translateY(-8px)';
+                                nuevaCard.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+                                requestAnimationFrame(function() {
+                                    requestAnimationFrame(function() {
+                                        nuevaCard.style.opacity   = '1';
+                                        nuevaCard.style.transform = 'scale(1) translateY(0)';
+                                    });
+                                });
+                            }
+                        }, 320);
+                    }
+                } else {
+                    mostrarToast(data.error || 'Error al sacar la nota', 'error');
+                }
+            })
+            .catch(function() { mostrarToast('Error de conexión', 'error'); });
+        });
+    })();
+
+    function _mostrarZonaSacar(mostrar) {
+        var zona = document.getElementById('zona-sacar-carpeta');
+        if (zona) zona.classList.toggle('visible', mostrar);
+    }
 
     function onDragStartNota(event, notaId) {
         _notaArrastrandoId = notaId;
@@ -507,7 +619,14 @@
         event.dataTransfer.setData('text/plain', String(notaId));
         setTimeout(function() {
             var card = document.querySelector('.nota-card[data-id="' + notaId + '"]');
-            if (card) card.classList.add('nota-arrastrando');
+            if (card) {
+                card.classList.add('nota-arrastrando');
+                _notaArrastrandoCarpeta = card.dataset.carpeta || '';
+                // Mostrar zona de sacar solo si la nota está en una carpeta
+                if (_notaArrastrandoCarpeta) {
+                    _mostrarZonaSacar(true);
+                }
+            }
         }, 0);
     }
 
@@ -518,13 +637,25 @@
         document.querySelectorAll('.carpeta-card.drag-sobre').forEach(function(el) {
             el.classList.remove('drag-sobre');
         });
-        _notaArrastrandoId = null;
+        _mostrarZonaSacar(false);
+        var zona = document.getElementById('zona-sacar-carpeta');
+        if (zona) zona.classList.remove('activa');
+        _notaArrastrandoId      = null;
+        _notaArrastrandoCarpeta = null;
     }
 
     function onDragOverCarpeta(event) {
         event.preventDefault();
+        // Obtener el id de la carpeta sobre la que se está arrastrando
+        var carpetaCard = event.currentTarget;
+        var carpetaId   = carpetaCard.dataset.id;
+        // Si la nota ya pertenece a esta carpeta, indicar que no se puede soltar
+        if (_notaArrastrandoCarpeta && carpetaId && _notaArrastrandoCarpeta === carpetaCard.querySelector('.carpeta-nombre') && false) {
+            event.dataTransfer.dropEffect = 'none';
+            return;
+        }
         event.dataTransfer.dropEffect = 'move';
-        event.currentTarget.classList.add('drag-sobre');
+        carpetaCard.classList.add('drag-sobre');
     }
 
     function onDragLeaveCarpeta(event) {
@@ -541,6 +672,18 @@
 
         var notaId = _notaArrastrandoId || parseInt(event.dataTransfer.getData('text/plain'), 10);
         if (!notaId) return;
+
+        // Verificar si la nota ya está en esta carpeta
+        var notaCard = document.querySelector('.nota-card[data-id="' + notaId + '"]');
+        if (notaCard) {
+            var carpetaCardEl = document.querySelector('.carpeta-card[data-id="' + carpetaId + '"]');
+            var nombreCarpeta = carpetaCardEl ? (carpetaCardEl.querySelector('.carpeta-nombre') || {}).textContent : null;
+            var carpetaActual = notaCard.dataset.carpeta || '';
+            if (nombreCarpeta && carpetaActual && carpetaActual.trim() === nombreCarpeta.trim()) {
+                mostrarToast('La nota ya está en esta carpeta', 'error');
+                return;
+            }
+        }
 
         fetch('/api/notas/' + notaId + '/carpeta', {
             method: 'PUT',
@@ -559,7 +702,6 @@
                         metaNotas.innerHTML = '<i class="fas fa-file-alt"></i> ' + n + ' nota' + (n !== 1 ? 's' : '');
                     }
                 }
-                var notaCard = document.querySelector('.nota-card[data-id="' + notaId + '"]');
                 if (notaCard) {
                     notaCard.style.transition = 'opacity 0.3s, transform 0.3s';
                     notaCard.style.opacity    = '0';
@@ -828,8 +970,18 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
+                    // Excluir notas que ya están dentro de ESTA carpeta
                     _notasDisponibles = data.notas.filter(function(n) {
-                        return !n.carpeta; // Solo notas sin carpeta
+                        // Si la nota pertenece a la misma carpeta que se está editando, excluirla
+                        if (n.carpeta) {
+                            // Buscar el nombre de la carpeta destino
+                            var carpetaCard = document.querySelector('.carpeta-card[data-id="' + _carpetaAgregarId + '"]');
+                            var nombreCarpetaDestino = carpetaCard
+                                ? (carpetaCard.querySelector('.carpeta-nombre') || {}).textContent || ''
+                                : _carpetaAgregarNombre;
+                            return n.carpeta.trim() !== nombreCarpetaDestino.trim();
+                        }
+                        return true; // notas sin carpeta siempre se incluyen
                     });
                     renderizarListaNotasModal(_notasDisponibles);
                 } else {

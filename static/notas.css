@@ -2012,3 +2012,71 @@ body.tema-oscuro .btn-close {
 }
 
 
+/* ============================================================================
+   DRAG & DROP — ZONA SACAR NOTA DE CARPETA
+   ============================================================================ */
+
+/* Zona flotante que aparece al arrastrar una nota que tiene carpeta */
+.zona-sacar-carpeta {
+    position: fixed;
+    bottom: -120px;              /* oculta fuera de pantalla por defecto */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 32px;
+    border-radius: 50px;
+    background: rgba(231, 76, 60, 0.92);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    box-shadow: 0 8px 32px rgba(231, 76, 60, 0.40);
+    border: 2px dashed rgba(255, 255, 255, 0.5);
+    z-index: 9999;
+    pointer-events: none;       /* invisible al inicio */
+    transition: bottom 0.35s cubic-bezier(0.34, 1.26, 0.64, 1),
+                background 0.2s,
+                box-shadow 0.2s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.zona-sacar-carpeta i { font-size: 1.2rem; }
+
+/* Visible: sube desde abajo */
+.zona-sacar-carpeta.visible {
+    bottom: 32px;
+    pointer-events: all;
+}
+
+/* Estado activo (dragover) */
+.zona-sacar-carpeta.activa {
+    background: rgba(192, 57, 43, 1);
+    box-shadow: 0 12px 40px rgba(231, 76, 60, 0.60);
+    border-color: rgba(255, 255, 255, 0.85);
+    transform: translateX(-50%) scale(1.05);
+}
+
+/* Feedback visual en la carta de carpeta al arrastrar sobre ella */
+.carpeta-card.drag-sobre {
+    border-color: var(--color-principal, #5452d3) !important;
+    box-shadow: 0 0 0 3px rgba(84, 82, 211, 0.25), 0 8px 24px rgba(84, 82, 211, 0.15) !important;
+}
+
+/* Nota que se está arrastrando */
+.nota-card.nota-arrastrando {
+    opacity: 0.45;
+    transform: scale(0.97);
+    box-shadow: none !important;
+}
+
+/* Tema oscuro para zona sacar */
+body.tema-oscuro .zona-sacar-carpeta {
+    background: rgba(192, 57, 43, 0.95);
+}
+
+body.tema-oscuro .zona-sacar-carpeta.activa {
+    background: rgba(231, 76, 60, 1);
+}
+
