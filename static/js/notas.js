@@ -397,13 +397,14 @@
         var nombreEscapado = (c.nombre || '').replace(/'/g, "\\'");
         
         // Si es la vista de recientes, al hacer clic (single clic) mandan a la vista completa
+        // DESPUÉS
         var clickAccion = esReciente 
             ? 'cargarTodoOrdenado()' 
-            : 'verNotasDeCarpeta(' + c.id + ',\'' + nombreEscapado + '\',event)';
-            
+            : 'window.location.href=\'/notas?carpeta=\' + encodeURIComponent(\'' + nombreEscapado + '\')';
+
         var htmlAcciones = esReciente
-            ? '<button class="btn-carpeta-accion ver" onclick="' + clickAccion + '; event.stopPropagation();" title="Ver todas"><i class="fas fa-eye"></i></button>'
-            : '<button class="btn-carpeta-accion ver" onclick="' + clickAccion + '; event.stopPropagation();" title="Ver notas"><i class="fas fa-eye"></i></button>' +
+            ? '<button class="btn-carpeta-accion ver" onclick="window.location.href=\'/notas?carpeta=\' + encodeURIComponent(\'' + nombreEscapado + '\'); event.stopPropagation();" title="Ver notas"><i class="fas fa-eye"></i></button>'
+            : '<button class="btn-carpeta-accion ver" onclick="window.location.href=\'/notas?carpeta=\' + encodeURIComponent(\'' + nombreEscapado + '\'); event.stopPropagation();" title="Ver notas"><i class="fas fa-eye"></i></button>' +
               '<button class="btn-carpeta-accion agregar" onclick="abrirModalAgregarNotas(' + c.id + ',\'' + nombreEscapado + '\'); event.stopPropagation();" title="Agregar notas"><i class="fas fa-plus"></i></button>' +
               '<button class="btn-carpeta-accion editar" onclick="abrirModalEditarCarpeta(' + c.id + ',\'' + nombreEscapado + '\'); event.stopPropagation();" title="Editar"><i class="fas fa-pen"></i></button>' +
               '<button class="btn-carpeta-accion eliminar" onclick="abrirModalEliminarCarpeta(' + c.id + ',\'' + nombreEscapado + '\'); event.stopPropagation();" title="Eliminar"><i class="fas fa-trash-alt"></i></button>';
@@ -1379,4 +1380,4 @@
     window.limpiarNotas                = limpiarNotas;
     window.limpiarCarpetas             = limpiarCarpetas;
     window.elegirTipo                 = elegirTipo;
-    window.volver                     = volver;
+    window.volver                     = volver;

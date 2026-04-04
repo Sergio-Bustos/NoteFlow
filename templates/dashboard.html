@@ -13,6 +13,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> <!-- Link a bootstrap -->
     <!-- Hoja de estilos CSS personalizada del dashboard -->
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='notas.css') }}">
 </head> <!-- Fin de la sección de encabezado  -->
 
 <body>
@@ -106,71 +107,107 @@
     <section class="recientes"> <!-- Sección notas y carpetas recientes -->
         <h2><i class="fas fa-history"></i> Recientes</h2>
 
-        {% if notas_recientes %} <!-- Si hay notas o carpetas recientes -->
-        <div class="grid"> <!-- Contenedor de tarjetas -->
+        {% if notas_recientes %}
+        <div class="dashboard-grid"> <!-- Grid unificado de notas y carpetas recientes -->
 
-            {% for item in notas_recientes %} <!-- Ciclo por cada item reciente (nota o carpeta) -->
-            
-            {% if item.tipo == 'nota' %} <!-- Si es una nota -->
-            <div class="nota-card format-{{ item.Formato|lower }}" data-note-id="{{ item.ID_Nota }}"> <!-- Tarjeta de nota -->
+            {% for item in notas_recientes %}
 
-                <div class="card-header"> <!-- Encabezado de la tarjeta -->
-                    <span class="visibility-indicator">
-                        <i class="fas fa-lock" title="Privada (solo para mí)"></i>
-                    </span>
+            {% if item.tipo == 'nota' %}
+            <!-- ── TARJETA DE NOTA (mismo estilo que Mis Notas) ── -->
 
-                    {% if item.Has_Adjuntos %} <!-- Si la nota tiene archivos adjuntos -->
-                        <span class="attachment-indicator" title="Contiene archivaos adjuntos">
+            {# Valores por defecto — evitan error si el formato no coincide #}
+            {% set fmt_icon = 'fas fa-file-alt' %}
+            {% set fmt_color = '#888' %}
+            {% if item.Formato|lower == 'texto' %}
+                {% set fmt_icon = 'fas fa-align-left' %}
+                {% set fmt_color = '#5452d3' %}
+            {% elif item.Formato|lower == 'imagen' %}
+                {% set fmt_icon = 'fas fa-image' %}
+                {% set fmt_color = '#27ae60' %}
+            {% elif item.Formato|lower == 'audio' %}
+                {% set fmt_icon = 'fas fa-microphone' %}
+                {% set fmt_color = '#e74c3c' %}
+            {% elif item.Formato|lower == 'video' %}
+                {% set fmt_icon = 'fas fa-video' %}
+                {% set fmt_color = '#2980b9' %}
+            {% elif item.Formato|lower == 'dibujo' %}
+                {% set fmt_icon = 'fas fa-paint-brush' %}
+                {% set fmt_color = '#f39c12' %}
+            {% elif item.Formato|lower == 'mixta' %}
+                {% set fmt_icon = 'fas fa-layer-group' %}
+                {% set fmt_color = '#8e44ad' %}
+            {% endif %}
+
+            <div class="nota-card"
+                 data-note-id="{{ item.ID_Nota }}"
+                 onclick="window.location.href='/editar-nota/{{ item.ID_Nota }}'"
+                 style="border-left: 4px solid {{ fmt_color }}; cursor: pointer;">
+
+                <div class="nota-card-header">
+                    <i class="{{ fmt_icon }}" style="color: {{ fmt_color }}; font-size: 1.2rem;"></i>
+                    <span class="nota-formato-badge">{{ item.Formato }}</span>
+                    {% if item.Has_Adjuntos %}
+                        <span style="margin-left:auto; color: var(--color-principal); font-size:.85rem;" title="Tiene adjuntos">
                             <i class="fas fa-paperclip"></i>
                         </span>
                     {% endif %}
                 </div>
 
-                <h4>{{ item.Titulo }}</h4> <!-- Título de la nota -->
+                <h4 class="nota-titulo">{{ item.Titulo }}</h4>
 
-                <p class="description">{{ item.Descripcion|truncate(120, True) }}</p> <!-- Descripción truncada -->
+                <p class="nota-descripcion">{{ item.Descripcion|truncate(120, True) if item.Descripcion else '' }}</p>
 
-                <div class="tags-container"> <!-- Contenedor de etiquetas -->
+                <div class="nota-tags">
                     {% if item.Etiquetas %}
-                        {% for tag in item.Etiquetas[:3] %} <!-- Muestra máximo 3 -->
-                            <span class="tag-chip">{{ tag.Nombre_etiqueta }}</span>
+                        {% for tag in item.Etiquetas[:3] %}
+                            <span class="nota-tag">#{{ tag.Nombre_etiqueta }}</span>
                         {% endfor %}
-                    {% else %}
-                        <span class="tag-chip no-tag">Sin etiquetas</span> <!-- Sin etiquetas -->
                     {% endif %}
                 </div>
 
-                <div class="card-footer"> <!-- Pie de la tarjeta -->
-                    <small><i class="fas fa-clock"></i> Modificada: {{ item.Fecha_deedicion.strftime('%d/%m/%Y') if item.Fecha_deedicion else 'Sin fecha' }}</small>
+                <div class="nota-footer">
+                    <span><i class="fas fa-clock"></i> {{ item.Fecha_deedicion.strftime('%d/%m/%Y') if item.Fecha_deedicion else 'Sin fecha' }}</span>
+                    <a href="/editar-nota/{{ item.ID_Nota }}" class="btn-carpeta-accion ver" onclick="event.stopPropagation()" title="Ver nota"><i class="fas fa-eye"></i></a>
+                </div>
+            </div>
 
-                    <a href="/nota/{{ item.ID_Nota }}" class="view-btn">Ver Nota</a> <!-- Enlace -->
+            {% else %}
+            <!-- ── TARJETA DE CARPETA (mismo estilo que Mis Notas) ── -->
+            <div class="carpeta-card"
+                 data-folder-id="{{ item.ID_Carpeta }}"
+                 onclick="window.location.href='/notas?carpeta={{ item.Nombre_carpeta|urlencode }}'">
+
+                <div class="carpeta-card-icon">
+                    <i class="fas fa-folder-open"></i>
                 </div>
 
-            </div>
-            {% else %} <!-- Si es una carpeta -->
-            <div class="nota-card carpeta-card-reciente" data-folder-id="{{ item.ID_Carpeta }}"> <!-- Tarjeta de carpeta -->
-                <div class="card-header"> <!-- Encabezado de la tarjeta -->
-                    <span class="folder-indicator" title="Carpeta">
-                        <i class="fas fa-folder" style="color: #f39c12;"></i>
+                <div class="carpeta-card-info">
+                    <h4 class="carpeta-nombre">{{ item.Nombre_carpeta }}</h4>
+                    <span class="carpeta-meta">
+                        <i class="fas fa-file-alt"></i>
+                        {{ item.total_notas }} nota{{ 's' if item.total_notas != 1 else '' }}
+                    </span>
+                    <span class="carpeta-meta">
+                        <i class="fas fa-clock"></i>
+                        {{ item.Fecha_edicion.strftime('%d/%m/%Y') if item.Fecha_edicion else 'Sin fecha' }}
                     </span>
                 </div>
 
-                <h4>{{ item.Nombre_carpeta }}</h4> <!-- Nombre de la carpeta -->
-
-                <p class="description">{{ item.total_notas }} nota{{ 's' if item.total_notas != 1 else '' }}</p> <!-- Cantidad de notas -->
-
-                <div class="card-footer"> <!-- Pie de la tarjeta -->
-                    <small><i class="fas fa-clock"></i> Editada: {{ item.Fecha_edicion.strftime('%d/%m/%Y') if item.Fecha_edicion else 'Sin fecha' }}</small>
-
-                    <a href="/notas?carpeta={{ item.Nombre_carpeta|urlencode }}" class="view-btn">Ver Carpeta</a> <!-- Enlace -->
+                <div class="carpeta-card-acciones">
+                    <a href="/notas?carpeta={{ item.Nombre_carpeta|urlencode }}"
+                       class="btn-carpeta-accion ver"
+                       onclick="event.stopPropagation()"
+                       title="Ver carpeta">
+                        <i class="fas fa-eye"></i>
+                    </a>
                 </div>
             </div>
             {% endif %}
-            
+
             {% endfor %}
 
         </div>
-        {% else %} <!-- Si NO hay notas ni carpetas recientes -->
+        {% else %}
         <p class="no-results-message">
             No tienes notas activas recientemente. ¡Crea una nueva nota para empezar!
             <a href="#" onclick="abrirFormato(); return false;" style="color: var(--color-principal);">Crear nota</a>
@@ -232,7 +269,7 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="color: #fff; font-weight: 500;">
                     <i class="fas fa-times"></i> Cancelar
                 </button>
-                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger" style="color: #fff; font-weight: 500;">
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-cerrar-sesion" style="background-color: var(--color-principal); color: #fff; font-weight: 500; border: none;">
                     <i class="fas fa-sign-out-alt"></i> Sí, cerrar sesión
                 </a>
             </div>

@@ -412,9 +412,10 @@ async function guardarNota() {
     fd.append('contenido',   tieneTexto ? textoHTML : '');
     fd.append('etiquetas',   etiquetas);
 
-    archivos.imagenes.forEach(({ file }) => fd.append('archivos', file, file.name));
-    archivos.audios.forEach(  ({ file }) => fd.append('archivos',   file, file.name));
-    archivos.videos.forEach(  ({ file }) => fd.append('archivos',   file, file.name));
+    // Cada tipo con su propia key — el backend las espera separadas
+    archivos.imagenes.forEach(({ file }) => fd.append('imagenes', file, file.name));
+    archivos.audios.forEach(  ({ file }) => fd.append('audios',   file, file.name));
+    archivos.videos.forEach(  ({ file }) => fd.append('videos',   file, file.name));
 
     // Deshabilitar botones guardar
     const btns = ['btnGuardarTop', 'btnGuardarBottom'].map(id => document.getElementById(id)).filter(Boolean);
@@ -545,3 +546,75 @@ function formatBytes(bytes) {
     if (bytes < 1024 ** 3)   return (bytes / 1024 ** 2).toFixed(1) + ' MB';
     return (bytes / 1024 ** 3).toFixed(2) + ' GB';
 }
+
+// ══════════════════════════════════════════════════════════════════
+//  CARGAR NOTA EN MODO EDICIÓN
+// ══════════════════════════════════════════════════════════════════
+(function cargarModoEdicion() {
+    const editId = document.getElementById('editNotaId')?.value;
+    if (!editId) return; // modo crear, no hacer nada
+
+    // Cargar contenido de texto desde el backend
+    fetch(`/api/nota-mixta/${editId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+
+            // 1. Cargar texto HTML en el editor
+            if (data.contenido) {
+                document.getElementById('cuerpo-nota').innerHTML = data.contenido;
+            }
+
+            // 2. Cargar adjuntos existentes (imágenes, audios, videos)
+            if (data.adjuntos && data.adjuntos.length > 0) {
+                data.adjuntos.forEach(adj => {
+                    const url  = `/static/${adj.ruta}`;
+                    const tipo = adj.tipo; // 'imagen', 'audio', 'video'
+
+                    if (tipo === 'imagen') {
+                        // Mostrar preview de imagen ya guardada
+                        const grid = document.getElementById('gridImagenes');
+                        const card = document.createElement('div');
+                        card.className = 'preview-card preview-existente';
+                        card.dataset.adjId = adj.id;
+                        card.innerHTML = `
+                            <img src="${url}" alt="${adj.nombre}">
+                            <div class="nombre-prev">${adj.nombre}</div>
+                            <span class="badge-guardado"><i class="fas fa-check"></i> Guardado</span>
+                        `;
+                        grid.appendChild(card);
+
+                    } else if (tipo === 'audio') {
+                        // Mostrar item de audio ya guardado
+                        const lista = document.getElementById('listaAudios');
+                        const item  = document.createElement('div');
+                        item.className = 'archivo-item existente';
+                        item.dataset.adjId = adj.id;
+                        item.innerHTML = `
+                            <i class="fas fa-music"></i>
+                            <span class="nombre-arch">${adj.nombre}</span>
+                            <audio controls src="${url}" style="flex:1;min-width:0;"></audio>
+                            <span class="badge-guardado"><i class="fas fa-check"></i> Guardado</span>
+                        `;
+                        lista.appendChild(item);
+
+                    } else if (tipo === 'video') {
+                        // Mostrar item de video ya guardado
+                        const lista = document.getElementById('listaVideos');
+                        const item  = document.createElement('div');
+                        item.className = 'archivo-item existente';
+                        item.dataset.adjId = adj.id;
+                        item.innerHTML = `
+                            <i class="fas fa-video"></i>
+                            <span class="nombre-arch">${adj.nombre}</span>
+                            <video controls src="${url}" style="max-width:100%;max-height:200px;"></video>
+                            <span class="badge-guardado"><i class="fas fa-check"></i> Guardado</span>
+                        `;
+                        lista.appendChild(item);
+                    }
+                });
+                actualizarChips();
+            }
+        })
+        .catch(err => console.error('Error cargando nota mixta:', err));
+})();

@@ -2987,6 +2987,67 @@ def actualizar_nota_video(nota_id):
 #     Combina texto HTML con archivos de imagen, audio y/o video.
 #     Cada archivo genera un registro en Adjuntos con su formato real.
 # ==============================================================================
+# ==============================================================================
+# API NOTA MIXTA — Devuelve contenido y adjuntos para cargar en el editor
+# ==============================================================================
+@app.route("/api/nota-mixta/<int:nota_id>")
+@login_required
+def api_nota_mixta(nota_id):
+    """Devuelve el contenido y adjuntos de una nota mixta para cargar en el editor."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor   = conexion.cursor()
+
+        cursor.execute("""
+            SELECT "Contenido" FROM public."Notas"
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND "Estado" = 'Activa'
+        """, (nota_id, user_id))
+        nota = cursor.fetchone()
+        if not nota:
+            return jsonify({"success": False, "error": "Nota no encontrada"}), 404
+
+        cursor.execute("""
+            SELECT "ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo"
+            FROM public."Adjuntos"
+            WHERE "ID_Nota" = %s
+        """, (nota_id,))
+        adjuntos_raw = cursor.fetchall()
+
+        TIPOS_IMAGEN = {'png','jpg','jpeg','gif','webp','svg','pntg','wmf'}
+        TIPOS_AUDIO  = {'mp3','aac','ogg','wav','flac','wma','m4a','webm'}
+        TIPOS_VIDEO  = {'mp4','mkv','wmv','mov','avi'}
+
+        adjuntos = []
+        for adj in adjuntos_raw:
+            fmt = (adj["Formato"] or "").lower().strip(".")
+            if fmt in TIPOS_IMAGEN:   tipo = "imagen"
+            elif fmt in TIPOS_AUDIO:  tipo = "audio"
+            elif fmt in TIPOS_VIDEO:  tipo = "video"
+            else:                     tipo = "otro"
+
+            adjuntos.append({
+                "id":      adj["ID_Adjunto"],
+                "nombre":  adj["Nombre_archivo"],
+                "formato": fmt,
+                "ruta":    adj["Ruta_archivo"],
+                "tipo":    tipo,
+            })
+
+        return jsonify({
+            "success":   True,
+            "contenido": nota["Contenido"] or "",
+            "adjuntos":  adjuntos,
+        }), 200
+
+    except Exception:
+        import traceback; traceback.print_exc()
+        return jsonify({"success": False, "error": "Error al cargar la nota"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
 
 @app.route("/guardar-nota-mixta", methods=["POST"])
 @login_required
@@ -3401,4 +3462,4 @@ with app.app_context():
         print("Tablas verificadas/creadas correctamente.")
     except Exception as e:
         print(f"Advertencia: No se pudo conectar a la base de datos para crear tablas: {e}")
-        # No crasheamos la app, dejamos que siga intentando conectarse luego.
+        # No crasheamos la app, dejamos que siga intentando conectarse luego.

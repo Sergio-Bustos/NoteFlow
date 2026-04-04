@@ -69,6 +69,7 @@ body.tema-claro {
 }
 body.tema-claro .sidebar                { background-color: var(--sidebar-claro); }
 body.tema-claro .nota-card,
+body.tema-claro .carpeta-card,
 body.tema-claro .stats .card            { background-color: var(--card-claro); color: var(--texto-claro); }
 body.tema-claro header                  { border-bottom: 1px solid var(--border-claro); }
 body.tema-claro .usuario-info           { color: var(--texto-claro); }
@@ -89,6 +90,7 @@ body.tema-oscuro .card {
 }
 body.tema-oscuro .sidebar               { background-color: var(--sidebar-oscuro); border-right: 1px solid var(--border-oscuro); }
 body.tema-oscuro .nota-card,
+body.tema-oscuro .carpeta-card,
 body.tema-oscuro .stats .card           { background-color: var(--card-oscuro); color: var(--texto-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
 /*Animacion a las cartas*/
 body.tema-oscuro .card:hover            { transform: scale(1.05); transition: all 0.3s ease;}
@@ -96,7 +98,7 @@ body.tema-oscuro header                 { border-bottom: 1px solid var(--border-
 body.tema-oscuro .usuario-info          { color: var(--texto-oscuro); }
 body.tema-oscuro .bienvenida h2,
 body.tema-oscuro .recientes h2          { color: var(--texto-oscuro); }
-body.tema-oscuro .nota-card h4          { color: var(--texto-oscuro); }
+body.tema-oscuro .nota-card .nota-titulo { color: var(--texto-oscuro); }
 body.tema-oscuro .description           { color: #95a5a6 !important; }
 body.tema-oscuro .card-footer           { border-top-color: var(--border-oscuro); }
 body.tema-oscuro .card-footer small     { color: #7f8c8d; }
@@ -355,121 +357,42 @@ header {
 /* Notas recientes */
 .recientes h2 { margin-bottom: 20px; }
 
-.grid {
+/* Grid unificado del dashboard (notas + carpetas recientes) */
+.dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 20px;
 }
 
-/* Tarjeta de nota */
-.nota-card {
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border-left: 5px solid var(--color-principal);
-    display: flex;
-    flex-direction: column;
-}
-
-/* Colores por Formato de Nota */
-.nota-card.format-texto { border-left-color: #5452d3; }
-.nota-card.format-imagen { border-left-color: #27ae60; }
-.nota-card.format-audio { border-left-color: #e74c3c; }
-.nota-card.format-video { border-left-color: #2980b9; }
-.nota-card.format-dibujo { border-left-color: #f39c12; }
-.nota-card.format-mixta { border-left-color: #8e44ad; }
-.nota-card.format- { border-left-color: #888; } /* default cuando el formato viene vacio */
-
-.nota-card h4 { margin-top: 0; margin-bottom: 5px; }
-
-.nota-card .description {
-    font-size: 0.9em;
-    color: #7f8c8d;
-    flex-grow: 1;
-    margin-bottom: 10px;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-.visibility-indicator i { font-size: 1.1em; margin-right: 5px; }
-.fa-lock  { color: var(--color-peligro); }
-.fa-globe { color: var(--color-exito); }
-.attachment-indicator i { color: var(--color-principal); }
-.folder-indicator i { font-size: 1.1em; }
-
-/* Tarjeta de carpeta en recientes (estilo similar a nota-card) */
-.carpeta-card-reciente {
-    border-left: 5px solid #f39c12 !important;
-}
-.carpeta-card-reciente .folder-indicator i {
-    color: #f39c12;
-}
-.carpeta-card-reciente h4 {
-    margin-top: 0;
-    margin-bottom: 5px;
-    color: var(--texto-claro);
-}
-body.tema-oscuro .carpeta-card-reciente h4 {
-    color: var(--texto-oscuro);
-}
-.carpeta-card-reciente .card-footer {
-    margin-top: auto;
-    padding-top: 10px;
-    border-top: 1px solid rgba(0,0,0,0.1);
-}
-body.tema-oscuro .carpeta-card-reciente .card-footer {
-    border-top-color: rgba(255,255,255,0.1);
-}
-
-.tags-container {
-    margin-bottom: 15px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-.tag-chip {
-    background-color: #f1c40f;
-    color: #2c3e50;
-    font-size: 0.75em;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-weight: bold;
-}
-
-.tag-chip.no-tag {
-    background-color: #95a5a6;
-    color: white;
-    font-style: italic;
-}
-
-.card-footer {
+/* nota-footer en el dashboard: fila con fecha + botón */
+.recientes .nota-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid;
-    padding-top: 10px;
     margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    font-size: .75rem;
+    color: var(--texto-secundario, #999);
 }
 
-.card-footer small { color: #95a5a6; font-size: 0.8em; }
+body.tema-oscuro .recientes .nota-footer {
+    border-top-color: rgba(255,255,255,0.08);
+}
 
-.view-btn {
-    background-color: var(--color-principal);
-    color: white;
+/* btn-carpeta-accion.ver en el dashboard */
+.recientes .btn-carpeta-accion.ver {
+    background: rgba(84,82,211,.1);
+    color: var(--color-principal, #5452d3);
     text-decoration: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 0.9em;
-    transition: background-color 0.2s;
 }
-.view-btn:hover { background-color: #4400ff; }
+.recientes .btn-carpeta-accion.ver:hover {
+    background: var(--color-principal, #5452d3);
+    color: #fff;
+}
 
 .no-results-message { color: #95a5a6; font-style: italic; }
+
 
 
 /* ============================================================
