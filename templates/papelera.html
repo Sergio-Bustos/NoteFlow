@@ -230,21 +230,19 @@
 <div class="modal fade" id="modalRestaurar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="border-bottom: 2px solid #2ecc71;">
-                <h5 class="modal-title" style="color:#27ae60; font-weight:700;">
+            <div class="modal-header">
+                <h5 class="modal-title">
                     <i class="fas fa-undo"></i> Restaurar nota
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+            <div class="modal-body">
                 ¿Deseas restaurar la nota <strong id="modal-restaurar-titulo"></strong>?
                 Volverá a aparecer en tu lista de notas activas.
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#fff !important;">Cancelar</button>
-                <button type="button" id="btn-confirmar-restaurar"
-                        class="btn" style="background:#2ecc71; color:#fff; font-weight:600;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-confirmar-restaurar" class="btn btn-success">
                     <i class="fas fa-undo"></i> Sí, restaurar
                 </button>
             </div>
@@ -259,13 +257,13 @@
 <div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="border-bottom: 2px solid #e74c3c;">
-                <h5 class="modal-title" style="color:#e74c3c; font-weight:700;">
+            <div class="modal-header">
+                <h5 class="modal-title">
                     <i class="fas fa-exclamation-triangle"></i> Eliminar definitivamente
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+            <div class="modal-body">
                 ¿Estás seguro de que deseas eliminar <strong id="modal-eliminar-titulo"></strong> de forma permanente?
                 <br><br>
                 <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
@@ -274,10 +272,8 @@
                 </span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#fff !important;">Cancelar</button>
-                <button type="button" id="btn-confirmar-eliminar"
-                        class="btn btn-danger" style="color:#fff !important; font-weight:600;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-confirmar-eliminar" class="btn btn-danger">
                     <i class="fas fa-trash-alt"></i> Sí, eliminar definitivamente
                 </button>
             </div>
@@ -292,13 +288,13 @@
 <div class="modal fade" id="modalVaciar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="border-bottom: 2px solid #e74c3c;">
-                <h5 class="modal-title" style="color:#e74c3c; font-weight:700;">
+            <div class="modal-header">
+                <h5 class="modal-title">
                     <i class="fas fa-bomb"></i> Vaciar papelera
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+            <div class="modal-body">
                 ¿Estás seguro de que deseas eliminar <strong>todas las notas</strong> de la papelera de forma permanente?
                 <br><br>
                 <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
@@ -307,11 +303,8 @@
                 </span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#fff !important;">Cancelar</button>
-                <button type="button" id="btn-confirmar-vaciar"
-                        class="btn btn-danger" style="color:#fff !important; font-weight:600;"
-                        onclick="vaciarPapelera()">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-confirmar-vaciar" class="btn btn-danger" onclick="vaciarPapelera()">
                     <i class="fas fa-bomb"></i> Sí, vaciar todo
                 </button>
             </div>
@@ -322,8 +315,8 @@
 
 <!-- ============================================================
      MODAL: Cerrar sesión
-============================================================ -->
-<div class="modal fade logout-modal" id="logoutModal" tabindex="-1" aria-hidden="true">
+ ============================================================ -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -332,12 +325,14 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">¿Estás seguro de que quieres cerrar sesión?</div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas cerrar sesión? Perderás acceso temporal a tus notas.
+            </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#fff !important;">Cancelar</button>
-                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger"
-                   style="color:#fff !important;">
+                <button type="button" class="btn btn-cancel-custom" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-logout-confirm">
                     <i class="fas fa-sign-out-alt"></i> Cerrar sesión
                 </a>
             </div>

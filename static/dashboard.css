@@ -172,10 +172,155 @@ body.tema-oscuro .logout-modal .btn-close {
     opacity: 0.8;
 }
 
-body.tema-oscuro .logout-modal .btn-close:hover {
+body.tema-oscuro .btn-close:hover {
     opacity: 1;
 }
 
+body.tema-oscuro .modal-footer .btn-secondary {
+    background-color: #4a4a4a;
+    border-color: #555;
+    color: #fff;
+}
+
+/* ============================================================
+   MODALES WOW (SISTEMA PREMIUM DEFINITIVO)
+   ============================================================ */
+
+/* ── ANIMACIONES DE ENTRADA ── */
+@keyframes modalPop {
+    0% { opacity: 0; transform: scale(0.92) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-content {
+    animation: modalPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── CONTENEDOR PRINCIPAL ── */
+.modal-content {
+    border: none !important;
+    border-radius: 24px !important;
+    overflow: hidden !important;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.25) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* ── CABECERA CON PERSONALIDAD ── */
+.modal-header {
+    padding: 24px 32px !important;
+    border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+    position: relative;
+}
+
+/* Línea de acento superior según el tipo de modal (opcional si es danger) */
+.modal-header::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 5px;
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.modal-title {
+    font-weight: 800 !important;
+    font-size: 1.2rem !important;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-title i {
+    font-size: 1.3rem;
+    color: #dc2626;
+}
+
+/* ── CUERPO ESPACIADO ── */
+.modal-body {
+    padding: 32px !important;
+    font-size: 1.1rem !important;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+/* ── PIE DE ACCIONES ── */
+.modal-footer {
+    padding: 20px 32px 28px !important;
+    border-top: 1px solid rgba(0,0,0,0.05) !important;
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+}
+
+/* ── BOTONES PREMIUM DEFINITIVOS ── */
+.modal-footer .btn {
+    padding: 14px 28px !important;
+    border-radius: 16px !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-footer .btn:hover {
+    transform: translateY(-3px) scale(1.02);
+}
+
+/* Botón Peligro (Neon Red) */
+.modal-footer .btn-danger,
+.modal-footer .btn-logout-confirm {
+    background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.25) !important;
+}
+
+.modal-footer .btn-danger:hover,
+.modal-footer .btn-logout-confirm:hover {
+    box-shadow: 0 12px 25px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* Botón Cancelar */
+.modal-footer .btn-secondary,
+.modal-footer .btn-cancel-custom {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #e2e8f0 !important;
+}
+
+/* ── MODO OSCURO (PROFESIONAL) ── */
+body.tema-oscuro .modal-content {
+    background-color: #0f172a !important; /* Slate 900 Deep */
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+body.tema-oscuro .modal-header,
+body.tema-oscuro .modal-footer {
+    background-color: rgba(30, 41, 59, 0.5) !important;
+    border-color: rgba(255,255,255,0.06) !important;
+}
+
+body.tema-oscuro .modal-title { color: #ffffff !important; }
+body.tema-oscuro .modal-body { color: #cbd5e1 !important; }
+
+body.tema-oscuro .modal-footer .btn-secondary,
+body.tema-oscuro .modal-footer .btn-cancel-custom {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+body.tema-oscuro .btn-close {
+    filter: invert(1) brightness(200%);
+}
 
 /* ============================================================
    3. SIDEBAR

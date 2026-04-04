@@ -144,13 +144,13 @@
 <div class="modal fade" id="modalEliminarFoto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="border-bottom:2px solid #e74c3c;">
-                <h5 class="modal-title" style="color:#e74c3c; font-weight:700;">
+            <div class="modal-header">
+                <h5 class="modal-title">
                     <i class="fas fa-exclamation-triangle"></i> Eliminar foto de perfil
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="font-size:0.97rem; padding:20px;">
+            <div class="modal-body">
                 ¿Estás seguro de que deseas eliminar tu foto de perfil?
                 <br><br>
                 <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
@@ -159,10 +159,8 @@
                 </span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#fff !important;">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar-foto"
-                        style="color:#fff !important; font-weight:600;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar-foto">
                     <i class="fas fa-trash-alt"></i> Sí, eliminar foto
                 </button>
             </div>
@@ -175,23 +173,21 @@
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="background-color:#f8f9fa; border-bottom:2px solid #dee2e6;">
-                <h5 class="modal-title" style="color:#212529; font-weight:600;">
+            <div class="modal-header">
+                <h5 class="modal-title">
                     <i class="fas fa-sign-out-alt"></i> Confirmar Cierre de Sesión
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="color:#495057; font-size:16px; padding:20px;">
-                ¿Estás seguro de que deseas cerrar sesión en NoteFlow?
+            <div class="modal-body">
+                ¿Estás seguro de que deseas cerrar sesión? Perderás acceso temporal a tus notas.
             </div>
-            <div class="modal-footer" style="background-color:#f8f9fa; border-top:1px solid #dee2e6;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#fff; font-weight:500;">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel-custom" data-bs-dismiss="modal">
                     <i class="fas fa-times"></i> Cancelar
                 </button>
-                <a href="/perfil/cerrar-sesion" class="btn btn-danger"
-                   style="color:#fff; font-weight:500;">
-                    <i class="fas fa-sign-out-alt"></i> Sí, cerrar sesión
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-logout-confirm">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
                 </a>
             </div>
         </div>

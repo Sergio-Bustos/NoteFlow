@@ -253,24 +253,24 @@
 </div>
 
 <!-- Modal de Confirmación para Cerrar Sesión -->
-<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                <h5 class="modal-title" id="logoutModalLabel" style="color: #212529; font-weight: 600;">
+            <div class="modal-header">
+                <h5 class="modal-title">
                     <i class="fas fa-sign-out-alt"></i> Confirmar Cierre de Sesión
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="color: #495057; font-size: 16px; padding: 20px;">
-                ¿Estás seguro de que deseas cerrar sesión?
+            <div class="modal-body">
+                ¿Estás seguro de que deseas cerrar sesión? Perderás acceso temporal a tus notas.
             </div>
-            <div class="modal-footer" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6;">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="color: #fff; font-weight: 500;">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel-custom" data-bs-dismiss="modal">
                     <i class="fas fa-times"></i> Cancelar
                 </button>
-                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-cerrar-sesion" style="background-color: var(--color-principal); color: #fff; font-weight: 500; border: none;">
-                    <i class="fas fa-sign-out-alt"></i> Sí, cerrar sesión
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-logout-confirm">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
                 </a>
             </div>
         </div>
