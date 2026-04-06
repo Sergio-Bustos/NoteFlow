@@ -1,8 +1,8 @@
-<!DOCTYPE html><!--Declaración del tipo de documento HTML5-->
-<html lang="es"><!--Elemento raíz del documento, idioma español-->
-<head><!--Inicio de la sección de metadatos del documento-->
-    <meta charset="UTF-8"><!--Define la codificación de caracteres UTF-8 para soportar caracteres especiales-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Configuración responsive para que se adapte a diferentes dispositivos-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% include 'partials/head_design.html' %}
     <title>Editor de Audio — NoteFlow</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
@@ -15,6 +15,7 @@
 <!-- ENCABEZADO -->
 <div class="app-header">
     <div class="app-titulo">
+        <i class="fas fa-waveform-lines"></i>
         Editor de audio
     </div>
     <a href="/notas" class="btn-volver" id="btnVolver">
@@ -25,32 +26,68 @@
 <!-- PANEL PRINCIPAL -->
 <div class="panel">
 
-    <!-- ══ TOOLBAR ══ -->
+    <!-- ══ TOOLBAR FILA 1 ══ -->
     <div class="toolbar">
 
         <!-- Controles de transporte -->
         <div class="transport-group">
-            <button class="btn-transport" id="btnRetroceder" title="Retroceder 5s">
+            <button class="btn-transport" id="btnRetroceder" title="Retroceder 5s" data-tip="Retroceder 5s">
                 <i class="fas fa-backward-step"></i>
             </button>
-            <button class="btn-transport btn-play" id="btnPlay" title="Reproducir / Pausar" disabled>
+            <button class="btn-transport btn-play" id="btnPlay" title="Reproducir / Pausar" disabled data-tip="Reproducir">
                 <i class="fas fa-play" id="iconPlay"></i>
             </button>
-            <button class="btn-transport" id="btnDetener" title="Detener" disabled>
+            <button class="btn-transport" id="btnDetener" title="Detener" disabled data-tip="Detener">
                 <i class="fas fa-stop"></i>
             </button>
-            <button class="btn-transport" id="btnIrInicio" title="Ir al inicio">
+            <button class="btn-transport" id="btnIrInicio" title="Ir al inicio" data-tip="Al inicio">
                 <i class="fas fa-backward-fast"></i>
             </button>
-            <button class="btn-transport" id="btnIrFin" title="Ir al final">
+            <button class="btn-transport" id="btnIrFin" title="Ir al final" data-tip="Al final">
                 <i class="fas fa-forward-fast"></i>
             </button>
-            <button class="btn-transport btn-record" id="btnGrabar" title="Grabar desde micrófono">
+            <button class="btn-transport btn-record" id="btnGrabar" title="Grabar desde micrófono" data-tip="Grabar">
                 <i class="fas fa-circle" id="iconGrabar"></i>
             </button>
         </div>
 
-        <!-- Separador -->
+        <div class="toolbar-sep"></div>
+
+        <!-- Loop -->
+        <button class="btn-loop" id="btnLoop" data-tip="Repetir en bucle">
+            <i class="fas fa-repeat"></i> Loop
+        </button>
+
+        <!-- Velocidad -->
+        <div class="velocidad-wrap" data-tip="Velocidad">
+            <label><i class="fas fa-gauge-high"></i></label>
+            <select id="selectVelocidad" title="Velocidad de reproducción">
+                <option value="0.5">0.5×</option>
+                <option value="0.75">0.75×</option>
+                <option value="1" selected>1×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+            </select>
+        </div>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Marcador -->
+        <button class="btn-marcador" id="btnMarcador" data-tip="Agregar marcador">
+            <i class="fas fa-flag"></i> Marcar
+        </button>
+
+        <!-- Efectos toggle -->
+        <button class="btn-toggle-efectos" id="btnToggleEfectos" data-tip="Efectos de audio">
+            <i class="fas fa-sliders"></i> Efectos
+        </button>
+
+        <!-- Exportar -->
+        <button class="btn-exportar" id="btnExportar" data-tip="Descargar audio">
+            <i class="fas fa-download"></i> Exportar
+        </button>
+
         <div class="toolbar-sep"></div>
 
         <!-- Acciones -->
@@ -65,7 +102,39 @@
                 <i class="fas fa-floppy-disk"></i> Guardar nota
             </button>
         </div>
-    </div><!-- /toolbar -->
+    </div><!-- /toolbar fila 1 -->
+
+    <!-- ══ TOOLBAR FILA 2 — región / recorte ══ -->
+    <div class="toolbar-row2" id="toolbarRow2">
+        <span style="font-size:11px; font-weight:800; color:#7c5cbf; text-transform:uppercase; letter-spacing:1px;">
+            <i class="fas fa-scissors" style="margin-right:4px;"></i>Recortar 
+        </span>
+        <div class="region-info" id="regionInfo">
+            <i class="fas fa-arrows-left-right"></i>
+            <span id="regionTexto">Sin selección</span>
+            <button class="btn-recortar" id="btnRecortarRegion">
+                <i class="fas fa-scissors"></i> Recortar aquí
+            </button>
+            <button class="btn-recortar" id="btnBorrarRegion" style="background:rgba(231,76,60,0.15); color:#e88; border:none;">
+                <i class="fas fa-times"></i> Quitar
+            </button>
+        </div>
+        <span style="font-size:10px; color:#6a4f9e; font-weight:600; margin-left:4px;">
+            Shift + arrastrar en la onda para seleccionar
+        </span>
+    </div>
+
+    <!-- ══ PANEL DE EFECTOS ══ -->
+    <div class="efectos-panel" id="efectosPanel">
+        <span class="efecto-title"><i class="fas fa-magic" style="margin-right:4px;"></i>Efectos de audio</span>
+        <button class="efecto-btn" id="efEco"        data-tip="Eco suave"><i class="fas fa-water"></i> Eco</button>
+        <button class="efecto-btn" id="efBass"       data-tip="Refuerza graves"><i class="fas fa-volume-high"></i> Bass Boost</button>
+        <button class="efecto-btn" id="efReverb"     data-tip="Reverberación de sala"><i class="fas fa-dungeon"></i> Reverb</button>
+        <button class="efecto-btn" id="efNormalize"  data-tip="Normalizar volumen"><i class="fas fa-arrows-up-down"></i> Normalizar</button>
+        <button class="efecto-btn" id="efRuido"      data-tip="Suprimir silencio / ruido bajo"><i class="fas fa-wave-square"></i> Gate</button>
+        <button class="efecto-btn" id="efPitch"      data-tip="Subir tono +2 semitonos"><i class="fas fa-arrow-trend-up"></i> Pitch +</button>
+        <button class="efecto-btn" id="efPitchDown"  data-tip="Bajar tono -2 semitonos"><i class="fas fa-arrow-trend-down"></i> Pitch −</button>
+    </div>
 
     <!-- ══ ZONA DE ONDA ══ -->
     <div class="zona-onda" id="zonaOnda">
@@ -97,14 +166,46 @@
             <div class="playhead" id="playhead"></div>
             <div class="region-sel" id="regionSel" style="display:none;"></div>
             <div class="track-label" id="trackLabel"></div>
+            <!-- Marcadores se insertan aquí dinámicamente -->
         </div>
 
+        <!-- Visualizador en tiempo real -->
+        <canvas id="vizCanvas"></canvas>
+
+        <!-- Espectro de frecuencias -->
+        <canvas id="spectroCanvas"></canvas>
+
     </div><!-- /zona-onda -->
+
+    <!-- ══ SEEK BAR ══ -->
+    <div class="seek-bar-wrap" id="seekBarWrap">
+        <span class="seek-tiempo" id="seekActual">0:00</span>
+        <div class="seek-track" id="seekTrack">
+            <div class="seek-fill" id="seekFill"></div>
+            <div class="seek-thumb" id="seekThumb"></div>
+        </div>
+        <span class="seek-tiempo" id="seekTotal">0:00</span>
+    </div>
+
+    <!-- ══ ESTADÍSTICAS EXTRA ══ -->
+    <div class="stats-extra" id="statsExtra">
+        <div class="stat-pill"><i class="fas fa-waveform"></i> <span id="statCanales">—</span></div>
+        <div class="stat-pill"><i class="fas fa-clock"></i> <span id="statDuracion">—</span></div>
+        <div class="stat-pill"><i class="fas fa-hdd"></i> <span id="statPeso">—</span></div>
+        <div class="stat-pill"><i class="fas fa-file-audio"></i> <span id="statFormato">—</span></div>
+        <div class="stat-pill"><i class="fas fa-chart-bar"></i> <span id="statBitrate">—</span></div>
+        <div class="stat-pill" id="statEfectosActivos" style="display:none; color:#b39ddb; border-color:rgba(124,77,255,0.4);">
+            <i class="fas fa-magic"></i> <span id="txtEfectosActivos">0 efectos</span>
+        </div>
+    </div>
+
+    <!-- ══ MARCADORES LIST ══ -->
+    <div class="marcadores-list" id="marcadoresList"></div>
 
     <!-- ══ PANEL INFERIOR: volumen + info ══ -->
     <div class="panel-inferior">
 
-        <!-- Barra de volumen estilo Windows -->
+        <!-- Barra de volumen -->
         <div class="volumen-zona">
             <div class="volumen-header">
                 <i class="fas fa-volume-high" id="iconVolumen"></i>
@@ -171,12 +272,13 @@
         </button>
     </div>
 
-
 </div><!-- /panel -->
 
 <!-- BARRA DE GRABACIÓN ACTIVA -->
 <div class="barra-grabacion" id="barraGrabacion" style="display:none;">
-    <div class="grabacion-pulso"></div>
+    <div class="grab-onda-mini">
+        <span></span><span></span><span></span><span></span><span></span>
+    </div>
     <span class="grabacion-texto">Grabando... <strong id="timerGrabacion">0:00</strong></span>
     <button class="btn-stop-rec" id="btnDetenerGrabacion">
         <i class="fas fa-stop"></i> Detener grabación

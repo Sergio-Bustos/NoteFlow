@@ -1,151 +1,379 @@
-<!DOCTYPE html><!--Declaración del tipo de documento HTML5-->
-<html lang="es"><!--Elemento raíz del documento, idioma español-->
-<head><!--Inicio de la sección de metadatos del documento-->
-    <meta charset="UTF-8"><!--Define la codificación de caracteres UTF-8 para soportar caracteres especiales-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!--Configuración responsive para que se adapte a diferentes dispositivos-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% include 'partials/head_design.html' %}
     <title>Editor de Imagen — NoteFlow</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/estilosimagen.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
 </head>
 <body>
 
-<div class="contenedor-editor">
+<!-- ENCABEZADO EXTERNO -->
+<div class="app-header">
+    <div class="app-titulo">
+        <i class="fas fa-image"></i> Editor de imagen
+    </div>
+    <a href="/notas" class="btn-volver-ext" id="btnVolver">
+        <i class="fas fa-arrow-left"></i> Mis notas
+    </a>
+</div>
 
-    <!-- HEADER -->
-    <header>
-        <div class="header-izq">
-            <a href="/notas" class="btn-volver" id="btnVolver">
-                <i class="fas fa-arrow-left"></i> Mis notas
-            </a>
-            <h1>Editor de Imagen <span>NoteFlow</span></h1>
+<!-- PANEL PRINCIPAL -->
+<div class="panel">
+
+    <!-- ══ TOOLBAR FILA 1 ══ -->
+    <div class="toolbar">
+        <!-- Herramientas básicas -->
+        <div class="tool-group">
+            <button class="btn-tool activo" id="btnHerPincel" data-tip="Pincel (P)" title="Pincel">
+                <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn-tool" id="btnHerBorrador" data-tip="Borrador (E)" title="Borrador">
+                <i class="fas fa-eraser"></i>
+            </button>
+            <button class="btn-tool" id="btnHerLinea" data-tip="Línea (L)" title="Línea recta">
+                <i class="fas fa-minus"></i>
+            </button>
+            <button class="btn-tool" id="btnHerRect" data-tip="Rectángulo (R)" title="Rectángulo">
+                <i class="far fa-square"></i>
+            </button>
+            <button class="btn-tool" id="btnHerCirculo" data-tip="Círculo (C)" title="Círculo/Elipse">
+                <i class="far fa-circle"></i>
+            </button>
+            <button class="btn-tool" id="btnHerTexto" data-tip="Texto (T)" title="Insertar texto">
+                <i class="fas fa-font"></i>
+            </button>
+            <button class="btn-tool" id="btnHerCuentagotas" data-tip="Cuentagotas (I)" title="Cuentagotas">
+                <i class="fas fa-eye-dropper"></i>
+            </button>
         </div>
-        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <span class="estado-guardado" id="estadoGuardado">
-                <i class="fas fa-check-circle"></i> Guardado
-            </span>
-            <label class="btn-cargar-foto" for="upload-input">
-                <i class="fas fa-upload"></i> Cargar imagen
-            </label>
-            <input type="file" id="upload-input" accept="image/*">
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Zoom -->
+        <button class="btn-tool" id="btnZoomIn"  data-tip="Zoom + (Ctrl++)" title="Zoom In"><i class="fas fa-magnifying-glass-plus"></i></button>
+        <button class="btn-tool" id="btnZoomOut" data-tip="Zoom − (Ctrl+−)" title="Zoom Out"><i class="fas fa-magnifying-glass-minus"></i></button>
+        <button class="btn-tool" id="btnZoom100" data-tip="100%" title="100%"><span style="font-size:9px;font-weight:900;">100%</span></button>
+        <button class="btn-tool" id="btnZoomFit" data-tip="Ajustar" title="Ajustar a ventana"><i class="fas fa-expand-arrows-alt"></i></button>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Transformar -->
+        <button class="btn-tool" id="btnRotarDer" data-tip="Rotar 90° (Shift+R)" title="Rotar 90°"><i class="fas fa-rotate-right"></i></button>
+        <button class="btn-tool" id="btnRotarIzq" data-tip="Rotar −90°" title="Rotar -90°"><i class="fas fa-rotate-left"></i></button>
+        <button class="btn-tool" id="btnFlipH"    data-tip="Voltear horizontal (H)" title="Voltear horizontal"><i class="fas fa-left-right"></i></button>
+        <button class="btn-tool" id="btnFlipV"    data-tip="Voltear vertical (V)" title="Voltear vertical"><i class="fas fa-up-down"></i></button>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Deshacer/Rehacer -->
+        <button class="btn-tool" id="btnDeshacer" data-tip="Deshacer (Ctrl+Z)" title="Deshacer" disabled><i class="fas fa-rotate-left"></i> <span style="font-size:9px;">Z</span></button>
+        <button class="btn-tool" id="btnRehacer"  data-tip="Rehacer (Ctrl+Y)"  title="Rehacer"  disabled><i class="fas fa-rotate-right"></i> <span style="font-size:9px;">Y</span></button>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Toggles de paneles -->
+        <button class="btn-tool" id="btnToggleFiltros"  data-tip="Ajustes" title="Mostrar ajustes"><i class="fas fa-sliders"></i></button>
+        <button class="btn-tool" id="btnToggleEfectos"  data-tip="Efectos" title="Mostrar efectos"><i class="fas fa-wand-magic-sparkles"></i></button>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Acciones -->
+        <label class="btn-accion cargar" for="upload-input" data-tip="Cargar imagen">
+            <i class="fas fa-upload"></i> Cargar
+        </label>
+        <input type="file" id="upload-input" accept="image/*" style="display:none;">
+
+        <button class="btn-accion descargar" id="btnDescargar" data-tip="Descargar resultado">
+            <i class="fas fa-download"></i> Descargar
+        </button>
+
+        <button class="btn-accion guardar" id="btnGuardar">
+            <i class="fas fa-floppy-disk"></i>
+            {{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}
+        </button>
+    </div>
+
+    <!-- ══ TOOLBAR FILA 2 ══ -->
+    <div class="toolbar-row2">
+        <span class="toolbar-row2-label"><i class="fas fa-paintbrush" style="margin-right:4px;"></i>Pincel</span>
+
+        <!-- Color primario / secundario -->
+        <div style="display:flex; align-items:center; gap:5px;">
+            <input type="color" id="colorPrimario" class="color-picker" value="#7c4dff" title="Color primario">
+            <input type="color" id="colorFondo"    class="color-picker" value="#ffffff" title="Color de fondo/borrador" style="width:28px; height:22px; opacity:0.7;">
         </div>
-    </header>
 
-    <!-- LAYOUT -->
-    <div class="layout-edicion">
+        <!-- Grosor -->
+        <div class="select-mini">
+            <label>Grosor</label>
+            <input type="range" id="grosorPincel" min="1" max="60" value="5" style="width:80px; accent-color:var(--morado-vivo); cursor:pointer;">
+            <span id="grosorValor" style="font-size:11px; font-weight:900; color:var(--morado-vivo); min-width:22px;">5</span>
+        </div>
 
-        <!-- CANVAS + BARRA INFERIOR -->
-        <div class="canvas-wrap">
+        <!-- Opacidad -->
+        <div class="select-mini">
+            <label>Opacidad</label>
+            <input type="range" id="opacidadPincel" min="5" max="100" value="100" style="width:70px; accent-color:var(--morado-vivo); cursor:pointer;">
+            <span id="opacidadValor" style="font-size:11px; font-weight:900; color:var(--morado-vivo); min-width:30px;">100%</span>
+        </div>
+
+        <!-- Punta -->
+        <div class="select-mini" data-tip="Tipo de punta">
+            <label>Punta</label>
+            <select id="selectPunta">
+                <option value="round">Redonda</option>
+                <option value="square">Cuadrada</option>
+                <option value="butt">Plana</option>
+            </select>
+        </div>
+
+        <!-- Fuente (solo texto) -->
+        <div class="select-mini" id="wrapFuente" style="display:none;" data-tip="Fuente de texto">
+            <label><i class="fas fa-font"></i></label>
+            <select id="selectFuente">
+                <option value="Nunito">Nunito</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Courier New">Courier</option>
+                <option value="Impact">Impact</option>
+                <option value="Caveat">Caveat</option>
+            </select>
+        </div>
+
+        <!-- Paleta rápida -->
+        <div id="paletaRapida" style="display:flex; gap:5px; align-items:center; margin-left:4px;">
+            <div class="paleta-color" style="background:#7c4dff;" data-color="#7c4dff" title="Morado"></div>
+            <div class="paleta-color" style="background:#ef4444;" data-color="#ef4444" title="Rojo"></div>
+            <div class="paleta-color" style="background:#10b981;" data-color="#10b981" title="Verde"></div>
+            <div class="paleta-color" style="background:#3b82f6;" data-color="#3b82f6" title="Azul"></div>
+            <div class="paleta-color" style="background:#f59e0b;" data-color="#f59e0b" title="Amarillo"></div>
+            <div class="paleta-color" style="background:#ec4899;" data-color="#ec4899" title="Rosa"></div>
+            <div class="paleta-color" style="background:#06b6d4;" data-color="#06b6d4" title="Cyan"></div>
+            <div class="paleta-color" style="background:#1a1a2e;" data-color="#1a1a2e" title="Negro"></div>
+            <div class="paleta-color" style="background:#fff; border:1.5px solid #d1c4e9;" data-color="#ffffff" title="Blanco"></div>
+        </div>
+    </div>
+
+    <!-- ══ PANEL AJUSTES (colapsable) ══ -->
+    <div class="filtros-panel" id="filtrosPanel">
+        <span class="efecto-title" style="color:var(--morado-medio);"><i class="fas fa-sliders" style="margin-right:5px;"></i>Ajustes de imagen</span>
+
+        <div class="filtro-grupo">
+            <label>Brillo <span id="valBrillo">100</span>%</label>
+            <input type="range" class="filtro-slider filter-slider" id="brightness" min="0" max="200" value="100">
+        </div>
+        <div class="filtro-grupo">
+            <label>Contraste <span id="valContraste">100</span>%</label>
+            <input type="range" class="filtro-slider filter-slider" id="contrast" min="0" max="200" value="100">
+        </div>
+        <div class="filtro-grupo">
+            <label>Saturación <span id="valSaturacion">100</span>%</label>
+            <input type="range" class="filtro-slider filter-slider" id="saturation" min="0" max="200" value="100">
+        </div>
+        <div class="filtro-grupo">
+            <label>Grises <span id="valGrises">0</span>%</label>
+            <input type="range" class="filtro-slider filter-slider" id="grayscale" min="0" max="100" value="0">
+        </div>
+        <div class="filtro-grupo">
+            <label>Tono <span id="valTono">0</span>°</label>
+            <input type="range" class="filtro-slider filter-slider" id="hueRotate" min="-180" max="180" value="0">
+        </div>
+        <div class="filtro-grupo">
+            <label>Blur <span id="valBlur">0</span>px</label>
+            <input type="range" class="filtro-slider filter-slider" id="blur" min="0" max="20" value="0">
+        </div>
+        <div class="filtro-grupo">
+            <label>Sepia <span id="valSepia">0</span>%</label>
+            <input type="range" class="filtro-slider filter-slider" id="sepia" min="0" max="100" value="0">
+        </div>
+        <div class="filtro-grupo">
+            <label>Invertir <span id="valInvertir">0</span>%</label>
+            <input type="range" class="filtro-slider filter-slider" id="invert" min="0" max="100" value="0">
+        </div>
+
+        <button class="efecto-btn" id="btnResetFiltros" style="margin-top:4px;">
+            <i class="fas fa-rotate-left"></i> Resetear ajustes
+        </button>
+    </div>
+
+    <!-- ══ PANEL EFECTOS PREDEFINIDOS ══ -->
+    <div class="efectos-panel" id="efectosPanel">
+        <span class="efecto-title"><i class="fas fa-wand-magic-sparkles" style="margin-right:5px;"></i>Efectos rápidos</span>
+        <button class="efecto-btn" id="efVibrante" data-tip="Saturación +50, contraste +20"><i class="fas fa-bolt"></i> Vibrante</button>
+        <button class="efecto-btn" id="efVintage"  data-tip="Sepia + tono cálido"><i class="fas fa-camera-retro"></i> Vintage</button>
+        <button class="efecto-btn" id="efFrio"     data-tip="Tono azul frío"><i class="fas fa-snowflake"></i> Frío</button>
+        <button class="efecto-btn" id="efCalido"   data-tip="Tono cálido dorado"><i class="fas fa-sun"></i> Cálido</button>
+        <button class="efecto-btn" id="efDramatico" data-tip="Alto contraste dramático"><i class="fas fa-circle-half-stroke"></i> Dramático</button>
+        <button class="efecto-btn" id="efSoft"     data-tip="Suave y difuminado"><i class="fas fa-cloud"></i> Soft</button>
+        <button class="efecto-btn" id="efNeon"     data-tip="Colores neón saturados"><i class="fas fa-star"></i> Neón</button>
+        <button class="efecto-btn" id="efMorado"   data-tip="Overlay púrpura NoteFlow"><i class="fas fa-paint-brush"></i> Púrpura</button>
+        <button class="efecto-btn" id="efNoir"     data-tip="Blanco y negro intenso"><i class="fas fa-film"></i> Noir</button>
+        <button class="efecto-btn" id="efFade"     data-tip="Efecto fade decolorado"><i class="fas fa-ghost"></i> Fade</button>
+    </div>
+
+    <!-- ══ ZONA DE TRABAJO ══ -->
+    <div class="zona-trabajo">
+
+        <!-- Canvas principal -->
+        <div class="canvas-zona">
             <div class="canvas-container" id="canvasContainer">
                 <div class="canvas-placeholder" id="canvasPlaceholder">
-                    <i class="fas fa-image"></i>
-                    <span>Carga una imagen para empezar</span>
+                    <div class="placeholder-icono-img"><i class="fas fa-image"></i></div>
+                    <p class="placeholder-titulo">Sin imagen cargada</p>
+                    <p class="placeholder-sub">Carga una imagen para comenzar a editarla</p>
+                    <div class="placeholder-btns">
+                        <label class="btn-placeholder" for="upload-input">
+                            <i class="fas fa-upload"></i> Cargar imagen
+                        </label>
+                    </div>
                 </div>
                 <canvas id="canvasVisible"></canvas>
             </div>
 
-            <!-- Barra inferior: título, descripción, etiquetas, guardar -->
-            <div class="barra-inferior">
-                <input type="hidden" id="editNotaId" value="{{ nota.ID_Nota if edit_mode else '' }}">
-                <input type="hidden" id="editImagenUrl" value="{{ adjuntos[0].Ruta_archivo if edit_mode and adjuntos else '' }}">
-
-                <input type="text" id="inputTitulo"      placeholder="Título de la nota..." maxlength="100" value="{{ nota.Titulo if edit_mode else '' }}">
-                <input type="text" id="inputDescripcion" placeholder="Descripción..." maxlength="200" value="{{ nota.Descripcion if edit_mode else '' }}">
-                <input type="text" id="inputEtiquetas"   placeholder="Etiquetas: trabajo, ideas..." maxlength="200" value="{{ etiquetas if edit_mode else '' }}">
-                <button class="btn-guardar-principal" id="btnGuardar" onclick="guardarEnBackend()">
-                    <i class="fas fa-save"></i> {{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}
-                </button>
+            <!-- Barra de coordenadas -->
+            <div class="coord-bar" id="coordBar">
+                <div class="coord-item">X: <span id="coordX">0</span></div>
+                <div class="coord-item">Y: <span id="coordY">0</span></div>
+                <div class="coord-item">Color: <span id="coordColor" style="padding:2px 8px; border-radius:4px; background:#7c4dff; color:#fff; font-size:9px;">—</span></div>
+                <div class="coord-item" style="margin-left:auto;">Zoom: <span id="coordZoom">100</span>%</div>
+                <div class="coord-item">Herramienta: <span id="coordHerr">Pincel</span></div>
             </div>
 
+            <!-- Stats -->
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-pill"><i class="fas fa-expand-arrows-alt"></i> <span id="statDim">—</span></div>
+                <div class="stat-pill"><i class="fas fa-hdd"></i> <span id="statPeso">—</span></div>
+                <div class="stat-pill"><i class="fas fa-file-image"></i> <span id="statFmt">—</span></div>
+                <div class="stat-pill" id="statEfectosWrap" style="display:none; color:var(--morado-vivo);">
+                    <i class="fas fa-wand-magic-sparkles"></i> <span id="statEfectos">—</span>
+                </div>
+                <div class="stat-pill" id="statTrazosWrap" style="display:none;">
+                    <i class="fas fa-pen"></i> <span id="statTrazos">0 trazos</span>
+                </div>
+            </div>
         </div>
 
-        <!-- PANEL DE CONTROLES -->
-        <div class="panel-controles">
+        <!-- Panel lateral -->
+        <div class="panel-lateral">
 
-            <!-- Filtros -->
-            <div class="sub-panel">
-                <h3><i class="fas fa-sliders-h"></i> Filtros</h3>
-                <div class="grupo-control">
-                    <label>Brillo</label>
-                    <input type="range" class="filter-slider" id="brightness" min="0" max="200" value="100">
+            <!-- Herramientas de dibujo -->
+            <div class="lateral-seccion">
+                <div class="lateral-titulo"><i class="fas fa-toolbox"></i> Herramientas</div>
+                <div class="herramientas-grid">
+                    <button class="btn-herramienta activo" id="latPincel"      data-tip="Pincel"    title="Pincel"><i class="fas fa-pen"></i></button>
+                    <button class="btn-herramienta"        id="latBorrador"    data-tip="Borrador"  title="Borrador"><i class="fas fa-eraser"></i></button>
+                    <button class="btn-herramienta"        id="latLinea"       data-tip="Línea"     title="Línea"><i class="fas fa-minus"></i></button>
+                    <button class="btn-herramienta"        id="latRect"        data-tip="Rectángulo" title="Rectángulo"><i class="far fa-square"></i></button>
+                    <button class="btn-herramienta"        id="latCirculo"     data-tip="Círculo"   title="Círculo"><i class="far fa-circle"></i></button>
+                    <button class="btn-herramienta"        id="latTexto"       data-tip="Texto"     title="Texto"><i class="fas fa-font"></i></button>
+                    <button class="btn-herramienta"        id="latGota"        data-tip="Cuentagotas" title="Cuentagotas"><i class="fas fa-eye-dropper"></i></button>
+                    <button class="btn-herramienta"        id="latLimpiar"     data-tip="Borrar trazos" title="Borrar trazos" style="color:#ef4444;"><i class="fas fa-trash-alt"></i></button>
                 </div>
-                <div class="grupo-control">
-                    <label>Contraste</label>
-                    <input type="range" class="filter-slider" id="contrast" min="0" max="200" value="100">
+
+                <!-- Color -->
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <input type="color" id="colorLateral" class="color-picker" value="#7c4dff" title="Color de pincel">
+                    <div id="paletaLateral" style="display:flex; gap:4px; flex-wrap:wrap;">
+                        <div class="paleta-color" style="background:#7c4dff;" data-color="#7c4dff"></div>
+                        <div class="paleta-color" style="background:#ef4444;" data-color="#ef4444"></div>
+                        <div class="paleta-color" style="background:#10b981;" data-color="#10b981"></div>
+                        <div class="paleta-color" style="background:#3b82f6;" data-color="#3b82f6"></div>
+                        <div class="paleta-color" style="background:#f59e0b;" data-color="#f59e0b"></div>
+                        <div class="paleta-color" style="background:#ec4899;" data-color="#ec4899"></div>
+                        <div class="paleta-color" style="background:#1a1a2e;" data-color="#1a1a2e"></div>
+                        <div class="paleta-color" style="background:#fff; border:1.5px solid #d1c4e9;" data-color="#ffffff"></div>
+                    </div>
                 </div>
-                <div class="grupo-control">
-                    <label>Saturación</label>
-                    <input type="range" class="filter-slider" id="saturation" min="0" max="200" value="100">
+
+                <!-- Grosor lateral -->
+                <div class="grosor-wrap">
+                    <div class="grosor-preview"><div class="grosor-dot" id="grosortDot" style="width:4px;height:4px;"></div></div>
+                    <input type="range" id="grosorLateral" class="grosor-slider" min="1" max="60" value="5">
+                    <span style="font-size:11px;font-weight:900;color:var(--morado-vivo);min-width:22px;" id="grosorLateralVal">5px</span>
                 </div>
-                <div class="grupo-control">
-                    <label>Grises</label>
-                    <input type="range" class="filter-slider" id="grayscale" min="0" max="100" value="0">
+            </div>
+
+            <!-- Historial -->
+            <div class="lateral-seccion">
+                <div class="lateral-titulo"><i class="fas fa-clock-rotate-left"></i> Historial</div>
+                <div class="historial-btns">
+                    <button class="btn-hist" id="latDeshacer" disabled><i class="fas fa-rotate-left"></i> Deshacer</button>
+                    <button class="btn-hist" id="latRehacer"  disabled><i class="fas fa-rotate-right"></i> Rehacer</button>
                 </div>
-                <button onclick="toggleFiltroMorado()" id="btnFiltroMorado" class="btn-panel full">
-                    <i class="fas fa-paint-brush"></i> Filtro Púrpura
-                </button>
             </div>
 
             <!-- Transformar -->
-            <div class="sub-panel">
-                <h3><i class="fas fa-sync-alt"></i> Transformar</h3>
-                <div class="botones-fila">
-                    <button onclick="ajustarZoom(0.1)"  class="btn-panel" title="Zoom In"><i class="fas fa-search-plus"></i></button>
-                    <button onclick="ajustarZoom(-0.1)" class="btn-panel" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
-                    <button onclick="rotar(90)"         class="btn-panel" title="Rotar 90°"><i class="fas fa-redo"></i> 90°</button>
-                    <button onclick="rotar(-90)"        class="btn-panel" title="Rotar -90°"><i class="fas fa-undo"></i> 90°</button>
+            <div class="lateral-seccion">
+                <div class="lateral-titulo"><i class="fas fa-arrows-rotate"></i> Transformar</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button class="btn-lateral" id="latRotDer"><i class="fas fa-rotate-right"></i> +90°</button>
+                    <button class="btn-lateral" id="latRotIzq"><i class="fas fa-rotate-left"></i> -90°</button>
+                    <button class="btn-lateral" id="latFlipH"><i class="fas fa-left-right"></i> Horizontal</button>
+                    <button class="btn-lateral" id="latFlipV"><i class="fas fa-up-down"></i> Vertical</button>
                 </div>
-            </div>
-
-            <!-- Pincel -->
-            <div class="sub-panel">
-                <h3><i class="fas fa-pen"></i> Pincel</h3>
-                <div class="controles-pincel">
-                    <input type="color" id="colorPincel" value="#8b5cf6">
-                    <input type="range" id="grosorPincel" min="1" max="25" value="5" style="flex:1;">
-                </div>
-                <button onclick="limpiarDibujo()" class="btn-panel full danger" style="margin-top:10px;">
-                    <i class="fas fa-eraser"></i> Borrar trazos
-                </button>
             </div>
 
             <!-- Acciones -->
-            <div class="sub-panel">
-                <h3><i class="fas fa-download"></i> Acciones</h3>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <button onclick="descargarResultado()" class="btn-panel full amarillo">
-                        <i class="fas fa-download"></i> Descargar imagen
-                    </button>
-                    <button onclick="resetearTodo()" class="btn-panel full">
-                        <i class="fas fa-trash-alt"></i> Resetear todo
-                    </button>
-                </div>
+            <div class="lateral-seccion">
+                <div class="lateral-titulo"><i class="fas fa-ellipsis"></i> Acciones</div>
+                <button class="btn-lateral amarillo" id="latDescargar"><i class="fas fa-download"></i> Descargar imagen</button>
+                <button class="btn-lateral danger"   id="latLimpiarTodo"><i class="fas fa-trash-alt"></i> Borrar trazos</button>
+                <button class="btn-lateral"          id="latResetear"><i class="fas fa-rotate-left"></i> Resetear todo</button>
             </div>
 
-        </div>
+        </div><!-- /panel-lateral -->
+    </div><!-- /zona-trabajo -->
+
+    <!-- ══ BARRA INFERIOR ══ -->
+    <div class="barra-inferior">
+        <input type="hidden" id="editNotaId"    value="{{ nota.ID_Nota if edit_mode else '' }}">
+        <input type="hidden" id="editImagenUrl" value="{{ adjuntos[0].Ruta_archivo if edit_mode and adjuntos else '' }}">
+
+        <input type="text" class="input-nota" id="inputTitulo"
+               placeholder="Título de tu nota de imagen..." maxlength="100"
+               value="{{ nota.Titulo if edit_mode else '' }}">
+        <input type="text" class="input-nota" id="inputDescripcion"
+               placeholder="Descripción breve (opcional)..." maxlength="200"
+               style="flex:1.5;"
+               value="{{ nota.Descripcion if edit_mode else '' }}">
+        <input type="text" class="input-nota" id="inputEtiquetas"
+               placeholder="Etiquetas: diseño, foto, ..." maxlength="200"
+               style="flex:1.2;"
+               value="{{ etiquetas if edit_mode else '' }}">
+        <span class="estado-guardado" id="estadoGuardado">
+            <i class="fas fa-check-circle"></i> Guardado
+        </span>
+        <button class="btn-accion guardar" id="btnGuardarBottom">
+            <i class="fas fa-floppy-disk"></i>
+            {{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}
+        </button>
     </div>
-</div>
 
-<!-- Canvas oculto para procesamiento -->
-<canvas id="canvasBuffer" style="display:none;"></canvas>
+</div><!-- /panel -->
 
-<!-- Modal salida sin guardar -->
+<!-- MODAL SALIDA SIN GUARDAR -->
 <div class="modal-overlay" id="modalSalida">
     <div class="modal-box">
         <div class="modal-icono"><i class="fas fa-exclamation-triangle"></i></div>
         <h3>¿Salir sin guardar?</h3>
-        <p>Tienes cambios sin guardar. Si sales ahora, <strong>se perderán.</strong></p>
+        <p>Tienes cambios sin guardar. Si sales ahora, <strong>se perderá todo el trabajo.</strong></p>
         <div class="modal-btns">
             <button class="btn-modal-cancelar" id="btnModalCancelar">Seguir editando</button>
-            <button class="btn-modal-salir" id="btnModalSalir">Sí, salir</button>
+            <button class="btn-modal-salir"    id="btnModalSalir">Sí, salir</button>
         </div>
     </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toastImagen"></div>
+<!-- Canvas oculto para procesamiento final -->
+<canvas id="canvasBuffer" style="display:none;"></canvas>
+
+<!-- TOAST -->
+<div class="toast-img" id="toastImagen"></div>
 
 <script src="{{ url_for('static', filename='js/logicaimagen.js') }}"></script>
 </body>

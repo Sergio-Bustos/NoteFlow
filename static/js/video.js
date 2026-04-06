@@ -11,43 +11,87 @@ let streamCamara     = null;
 let intervalTimer    = null;
 let segundosGrab     = 0;
 
+// Loop
+let loopActivo = false;
+
+// Velocidad
+let velocidadActual = 1.0;
+
+// Marcadores  [{tiempo, label}]
+let marcadores = [];
+let marcadorContador = 1;
+
+// Filtros activos (CSS filter string)
+const filtrosActivos = new Set();
+let espejoActivo = false;
+
+// Región de tiempo
+let regionStart = null;
+let regionEnd   = null;
+
 // ══════════════════════════════════════════════════════════════════
 //  REFERENCIAS DOM
 // ══════════════════════════════════════════════════════════════════
-const videoPlayer       = document.getElementById('videoPlayer');
-const camaraPreview     = document.getElementById('camaraPreview');
-const videoPlaceholder  = document.getElementById('videoPlaceholder');
-const grabacionOverlay  = document.getElementById('grabacionOverlay');
-const progresoWrap      = document.getElementById('progresoWrap');
-const progresoFill      = document.getElementById('progresoFill');
-const progresoThumb     = document.getElementById('progresoThumb');
-const progresoTrack     = document.getElementById('progresoTrack');
-const tiempoActualEl    = document.getElementById('tiempoActual');
-const tiempoDuracionEl  = document.getElementById('tiempoDuracion');
-const btnPlay           = document.getElementById('btnPlay');
-const btnDetener        = document.getElementById('btnDetener');
-const btnRetroceder     = document.getElementById('btnRetroceder');
-const btnIrInicio       = document.getElementById('btnIrInicio');
-const btnIrFin          = document.getElementById('btnIrFin');
-const btnGrabarCam      = document.getElementById('btnGrabarCam');
-const btnFullscreen     = document.getElementById('btnFullscreen');
-const btnEmpezarGrabar  = document.getElementById('btnEmpezarGrabar');
-const btnDetenerGrab    = document.getElementById('btnDetenerGrabacion');
-const iconPlay          = document.getElementById('iconPlay');
-const iconGrabarCam     = document.getElementById('iconGrabarCam');
-const timerGrabEl       = document.getElementById('timerGrabacion');
-const inputVideo        = document.getElementById('inputVideo');
-const sliderVolumen     = document.getElementById('sliderVolumen');
-const valVolumen        = document.getElementById('valVolumen');
-const iconVolumen       = document.getElementById('iconVolumen');
-const infoDatos         = document.getElementById('infoDatos');
-const infoNada          = document.getElementById('infoNada');
-const datoDuracion      = document.getElementById('datoDuracion');
-const datoPeso          = document.getElementById('datoPeso');
-const datoFormato       = document.getElementById('datoFormato');
-const datoResolucion    = document.getElementById('datoResolucion');
-const btnGuardarTop     = document.getElementById('btnGuardarTop');
-const btnGuardarBottom  = document.getElementById('btnGuardarBottom');
+const videoPlayer          = document.getElementById('videoPlayer');
+const camaraPreview        = document.getElementById('camaraPreview');
+const videoPlaceholder     = document.getElementById('videoPlaceholder');
+const grabacionOverlay     = document.getElementById('grabacionOverlay');
+
+// Seek bar pro
+const seekProWrap          = document.getElementById('seekProWrap');
+const seekProFill          = document.getElementById('seekProFill');
+const seekProThumb         = document.getElementById('seekProThumb');
+const seekProTrack         = document.getElementById('seekProTrack');
+const seekProActual        = document.getElementById('seekProActual');
+const seekProTotal         = document.getElementById('seekProTotal');
+
+const btnPlay              = document.getElementById('btnPlay');
+const btnDetener           = document.getElementById('btnDetener');
+const btnRetroceder        = document.getElementById('btnRetroceder');
+const btnIrInicio          = document.getElementById('btnIrInicio');
+const btnIrFin             = document.getElementById('btnIrFin');
+const btnGrabarCam         = document.getElementById('btnGrabarCam');
+const btnFullscreen        = document.getElementById('btnFullscreen');
+const btnEmpezarGrabar     = document.getElementById('btnEmpezarGrabar');
+const btnDetenerGrab       = document.getElementById('btnDetenerGrabacion');
+const iconPlay             = document.getElementById('iconPlay');
+const iconGrabarCam        = document.getElementById('iconGrabarCam');
+const timerGrabEl          = document.getElementById('timerGrabacion');
+const inputVideo           = document.getElementById('inputVideo');
+const sliderVolumen        = document.getElementById('sliderVolumen');
+const valVolumen           = document.getElementById('valVolumen');
+const iconVolumen          = document.getElementById('iconVolumen');
+const infoDatos            = document.getElementById('infoDatos');
+const infoNada             = document.getElementById('infoNada');
+const datoDuracion         = document.getElementById('datoDuracion');
+const datoPeso             = document.getElementById('datoPeso');
+const datoFormato          = document.getElementById('datoFormato');
+const datoResolucion       = document.getElementById('datoResolucion');
+const datoTiempoActual     = document.getElementById('datoTiempoActual');
+const btnGuardarTop        = document.getElementById('btnGuardarTop');
+const btnGuardarBottom     = document.getElementById('btnGuardarBottom');
+const btnLoop              = document.getElementById('btnLoop');
+const selectVelocidad      = document.getElementById('selectVelocidad');
+const selectZoom           = document.getElementById('selectZoom');
+const btnMarcador          = document.getElementById('btnMarcador');
+const btnToggleEfectos     = document.getElementById('btnToggleEfectos');
+const efectosVideoPanel    = document.getElementById('efectosVideoPanel');
+const btnCaptura           = document.getElementById('btnCaptura');
+const btnExportar          = document.getElementById('btnExportar');
+const capturaCanvas        = document.getElementById('capturaCanvas');
+const statsExtra           = document.getElementById('statsExtra');
+const statDuracion         = document.getElementById('statDuracion');
+const statPeso             = document.getElementById('statPeso');
+const statFormato          = document.getElementById('statFormato');
+const statResolucion       = document.getElementById('statResolucion');
+const statFiltrosWrap      = document.getElementById('statFiltrosWrap');
+const statFiltros          = document.getElementById('statFiltros');
+const statMarcsWrap        = document.getElementById('statMarcsWrap');
+const statMarcs            = document.getElementById('statMarcs');
+const marcadoresTimeline   = document.getElementById('marcadoresTimeline');
+const marcadoresListVideo  = document.getElementById('marcadoresListVideo');
+const regionVideoInfo      = document.getElementById('regionVideoInfo');
+const regionVideoTexto     = document.getElementById('regionVideoTexto');
 
 // ══════════════════════════════════════════════════════════════════
 //  CARGA DE ARCHIVO
@@ -83,7 +127,7 @@ function cargarVideo(file) {
     videoPlayer.load();
 
     mostrarInterfazVideo(file);
-    mostrarToast('Video cargado correctamente');
+    mostrarToast('Video cargado correctamente 🎬');
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -94,58 +138,69 @@ function mostrarInterfazVideo(file) {
     camaraPreview.style.display    = 'none';
     grabacionOverlay.style.display = 'none';
     videoPlayer.style.display      = 'block';
-    progresoWrap.style.display     = 'flex';
+
+    seekProWrap.classList.add('visible');
+    statsExtra.classList.add('visible');
+    marcadoresTimeline.classList.remove('hidden');
+
     habilitarControles();
     actualizarInfoArchivo(file);
+    actualizarStatsExtra(file);
 }
 
 // RESTAURACIÓN PARA EDICIÓN
 async function restaurarVideoExistente() {
     const url = document.getElementById('editVideoUrl')?.value;
     if (!url) return;
-    
     try {
         const response = await fetch('/static/' + url);
         const blob = await response.blob();
         const filename = url.split('/').pop();
         const file = new File([blob], filename, { type: blob.type });
         cargarVideo(file);
-        // Evitar el modal de "salir sin guardar" justo al abrir
-        notaGuardada = true; 
+        notaGuardada = true;
     } catch (e) {
         console.error("Error al restaurar video:", e);
     }
 }
-
 setTimeout(restaurarVideoExistente, 500);
 
 function habilitarControles() {
-
     btnPlay.disabled       = false;
     btnDetener.disabled    = false;
     btnIrInicio.disabled   = false;
     btnIrFin.disabled      = false;
     btnFullscreen.disabled = false;
+    btnCaptura.disabled    = false;
 }
 
 // ══════════════════════════════════════════════════════════════════
 //  EVENTOS DEL ELEMENTO <video>
 // ══════════════════════════════════════════════════════════════════
 videoPlayer.addEventListener('loadedmetadata', () => {
-    tiempoDuracionEl.textContent = formatTiempo(videoPlayer.duration);
-    datoDuracion.textContent     = formatTiempo(videoPlayer.duration);
-    datoResolucion.textContent   = `${videoPlayer.videoWidth} × ${videoPlayer.videoHeight}`;
+    const dur = videoPlayer.duration;
+    seekProTotal.textContent  = formatTiempo(dur);
+    datoDuracion.textContent  = formatTiempo(dur);
+    datoResolucion.textContent = `${videoPlayer.videoWidth} × ${videoPlayer.videoHeight}`;
+    statResolucion.textContent = `${videoPlayer.videoWidth}×${videoPlayer.videoHeight}`;
+    statDuracion.textContent   = formatTiempo(dur);
 });
 
 videoPlayer.addEventListener('timeupdate', () => {
     if (!videoPlayer.duration) return;
     const pct = videoPlayer.currentTime / videoPlayer.duration;
-    progresoFill.style.width   = (pct * 100) + '%';
-    progresoThumb.style.left   = (pct * 100) + '%';
-    tiempoActualEl.textContent = formatTiempo(videoPlayer.currentTime);
+    seekProFill.style.width  = (pct * 100) + '%';
+    seekProThumb.style.left  = (pct * 100) + '%';
+    seekProActual.textContent = formatTiempo(videoPlayer.currentTime);
+    datoTiempoActual.textContent = formatTiempo(videoPlayer.currentTime);
 });
 
 videoPlayer.addEventListener('ended', () => {
+    if (loopActivo) {
+        videoPlayer.currentTime = 0;
+        videoPlayer.play();
+        return;
+    }
     iconPlay.className = 'fas fa-play';
     btnPlay.classList.remove('playing');
 });
@@ -190,26 +245,346 @@ btnFullscreen.addEventListener('click', () => {
     else if (videoPlayer.mozRequestFullScreen)    videoPlayer.mozRequestFullScreen();
 });
 
-progresoTrack.addEventListener('click', (e) => {
-    if (!hayVideo || !videoPlayer.duration) return;
-    const rect = progresoTrack.getBoundingClientRect();
-    const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    videoPlayer.currentTime = pct * videoPlayer.duration;
-});
-
+// ══════════════════════════════════════════════════════════════════
+//  SEEK BAR PRO — clic + arrastre + región shift+clic
+// ══════════════════════════════════════════════════════════════════
 let arrastrando = false;
-progresoTrack.addEventListener('mousedown', (e) => {
-    if (!hayVideo || !videoPlayer.duration) return;
-    arrastrando = true;
-    moverProgreso(e);
-});
-window.addEventListener('mousemove', (e) => { if (arrastrando) moverProgreso(e); });
-window.addEventListener('mouseup', () => { arrastrando = false; });
+let regionShiftStart = null;
 
-function moverProgreso(e) {
-    const rect = progresoTrack.getBoundingClientRect();
+seekProTrack.addEventListener('click', (e) => {
+    if (!hayVideo || !videoPlayer.duration) return;
+    if (e.shiftKey) {
+        // Definir región
+        const rect = seekProTrack.getBoundingClientRect();
+        const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const tiempo = pct * videoPlayer.duration;
+        if (regionStart === null) {
+            regionStart = tiempo;
+            regionShiftStart = pct;
+            mostrarToast(`Inicio de región: ${formatTiempo(tiempo)}`);
+        } else {
+            regionEnd = tiempo;
+            if (regionEnd < regionStart) { [regionStart, regionEnd] = [regionEnd, regionStart]; }
+            actualizarRegionVisual();
+            regionVideoInfo.classList.add('visible');
+            regionVideoTexto.textContent = `${formatTiempo(regionStart)} → ${formatTiempo(regionEnd)}`;
+            mostrarToast(`Región: ${formatTiempo(regionStart)} → ${formatTiempo(regionEnd)}`);
+            regionShiftStart = null;
+        }
+        return;
+    }
+    const rect = seekProTrack.getBoundingClientRect();
     const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     videoPlayer.currentTime = pct * videoPlayer.duration;
+});
+
+seekProTrack.addEventListener('mousedown', (e) => {
+    if (!hayVideo || !videoPlayer.duration || e.shiftKey) return;
+    arrastrando = true;
+    moverSeekPro(e);
+});
+window.addEventListener('mousemove', (e) => { if (arrastrando) moverSeekPro(e); });
+window.addEventListener('mouseup',   ()  => { arrastrando = false; });
+
+function moverSeekPro(e) {
+    const rect = seekProTrack.getBoundingClientRect();
+    const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    videoPlayer.currentTime = pct * videoPlayer.duration;
+}
+
+function actualizarRegionVisual() {
+    // Eliminar pines anteriores de región en seekbar
+    seekProTrack.querySelectorAll('.seek-marc-pin').forEach(el => el.remove());
+    if (regionStart === null || regionEnd === null || !videoPlayer.duration) return;
+    const dur = videoPlayer.duration;
+    [regionStart, regionEnd].forEach(t => {
+        const pin = document.createElement('div');
+        pin.className  = 'seek-marc-pin';
+        pin.style.left = ((t / dur) * 100) + '%';
+        seekProTrack.appendChild(pin);
+    });
+}
+
+document.getElementById('btnBorrarRegion')?.addEventListener('click', () => {
+    regionStart = null;
+    regionEnd   = null;
+    regionVideoInfo.classList.remove('visible');
+    seekProTrack.querySelectorAll('.seek-marc-pin').forEach(el => el.remove());
+    mostrarToast('Región eliminada');
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  LOOP
+// ══════════════════════════════════════════════════════════════════
+btnLoop.addEventListener('click', () => {
+    loopActivo = !loopActivo;
+    btnLoop.classList.toggle('activo', loopActivo);
+    videoPlayer.loop = loopActivo;
+    mostrarToast(loopActivo ? 'Loop activado 🔁' : 'Loop desactivado');
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  VELOCIDAD DE REPRODUCCIÓN
+// ══════════════════════════════════════════════════════════════════
+selectVelocidad.addEventListener('change', () => {
+    velocidadActual = parseFloat(selectVelocidad.value);
+    videoPlayer.playbackRate = velocidadActual;
+    mostrarToast(`Velocidad: ${velocidadActual}×`);
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  ZOOM DE VIDEO
+// ══════════════════════════════════════════════════════════════════
+selectZoom.addEventListener('change', () => {
+    videoPlayer.style.objectFit = selectZoom.value;
+    camaraPreview.style.objectFit = selectZoom.value;
+    mostrarToast(`Zoom: ${selectZoom.options[selectZoom.selectedIndex].text}`);
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  MARCADORES
+// ══════════════════════════════════════════════════════════════════
+btnMarcador.addEventListener('click', () => {
+    if (!hayVideo) { mostrarToast('Carga un video primero', 'error'); return; }
+    const tiempo = videoPlayer.currentTime;
+    const label  = `M${marcadorContador++}`;
+    marcadores.push({ tiempo, label });
+    renderizarMarcadores();
+    renderizarListaMarcadores();
+    actualizarStatsExtra();
+    mostrarToast(`Marcador ${label} en ${formatTiempo(tiempo)} 🚩`);
+});
+
+function renderizarMarcadores() {
+    // En timeline debajo del video
+    marcadoresTimeline.innerHTML = '';
+    if (!videoPlayer.duration || marcadores.length === 0) return;
+    const dur = videoPlayer.duration;
+    marcadores.forEach((m, idx) => {
+        const pct = m.tiempo / dur;
+        const pin = document.createElement('div');
+        pin.className      = 'marc-pin';
+        pin.style.left     = (pct * 100) + '%';
+        pin.dataset.label  = m.label;
+        pin.title          = `${m.label}: ${formatTiempo(m.tiempo)}`;
+        pin.addEventListener('click', () => {
+            videoPlayer.currentTime = m.tiempo;
+            mostrarToast(`→ ${m.label}: ${formatTiempo(m.tiempo)}`);
+        });
+        marcadoresTimeline.appendChild(pin);
+    });
+
+    // En seek bar
+    seekProTrack.querySelectorAll('.seek-marc-flag').forEach(el => el.remove());
+    marcadores.forEach(m => {
+        const pct = m.tiempo / dur;
+        const flag = document.createElement('div');
+        flag.className = 'seek-marc-flag';
+        flag.style.cssText = `
+            position:absolute; top:-3px;
+            left:${pct * 100}%;
+            width:2px; height:calc(100% + 6px);
+            background:rgba(255,87,34,0.6);
+            border-radius:2px; pointer-events:none;
+        `;
+        seekProTrack.appendChild(flag);
+    });
+}
+
+function renderizarListaMarcadores() {
+    if (marcadores.length === 0) {
+        marcadoresListVideo.classList.remove('visible');
+        return;
+    }
+    marcadoresListVideo.classList.add('visible');
+    marcadoresListVideo.innerHTML = marcadores.map((m, i) => `
+        <div class="marc-item" onclick="irAMarcador(${i})">
+            <i class="fas fa-flag" style="color:#ff7043; font-size:11px;"></i>
+            <strong>${m.label}</strong>
+            <span style="color:#bf8c7c; font-weight:600; font-size:11px;">${formatTiempo(m.tiempo)}</span>
+            <button class="btn-del-marc" onclick="event.stopPropagation(); eliminarMarcador(${i})" title="Eliminar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function irAMarcador(idx) {
+    if (!hayVideo || idx >= marcadores.length) return;
+    videoPlayer.currentTime = marcadores[idx].tiempo;
+    mostrarToast(`→ ${marcadores[idx].label}: ${formatTiempo(marcadores[idx].tiempo)}`);
+}
+
+function eliminarMarcador(idx) {
+    marcadores.splice(idx, 1);
+    renderizarMarcadores();
+    renderizarListaMarcadores();
+    actualizarStatsExtra();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FILTROS DE VIDEO (CSS filter)
+// ══════════════════════════════════════════════════════════════════
+const mapaFiltros = {
+    efBN:        { css: 'grayscale(100%)', label: 'B&N' },
+    efSepia:     { css: 'sepia(80%)',      label: 'Sepia' },
+    efContraste: { css: 'contrast(150%)', label: 'Contraste+' },
+    efBrillo:    { css: 'brightness(140%)', label: 'Brillo+' },
+    efSaturar:   { css: 'saturate(200%)', label: 'Saturar' },
+    efDesaturar: { css: 'saturate(30%)',  label: 'Desaturar' },
+    efInvertir:  { css: 'invert(100%)',   label: 'Invertir' },
+    efCalido:    { css: 'hue-rotate(-20deg) saturate(130%)', label: 'Cálido' },
+    efFrio:      { css: 'hue-rotate(30deg) saturate(80%)',  label: 'Frío' },
+    efBlur:      { css: 'blur(2px)',      label: 'Blur' },
+    efNitidez:   { css: 'contrast(120%) brightness(105%)', label: 'Nitidez' },
+};
+
+// Espejo se maneja separado (transform)
+document.getElementById('efEspejo').addEventListener('click', (e) => {
+    espejoActivo = !espejoActivo;
+    e.currentTarget.classList.toggle('activo', espejoActivo);
+    aplicarFiltros();
+    actualizarStatsExtra();
+    mostrarToast(espejoActivo ? 'Espejo activado ↔' : 'Espejo desactivado');
+});
+
+Object.entries(mapaFiltros).forEach(([id, cfg]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        if (filtrosActivos.has(id)) {
+            filtrosActivos.delete(id);
+            btn.classList.remove('activo');
+        } else {
+            filtrosActivos.add(id);
+            btn.classList.add('activo');
+        }
+        aplicarFiltros();
+        actualizarStatsExtra();
+        mostrarToast(filtrosActivos.has(id) ? `Filtro aplicado: ${cfg.label}` : `Filtro quitado: ${cfg.label}`);
+    });
+});
+
+function aplicarFiltros() {
+    // Construir CSS filter string
+    let filterStr = [...filtrosActivos].map(id => mapaFiltros[id]?.css).filter(Boolean).join(' ');
+    videoPlayer.style.filter = filterStr;
+    camaraPreview.style.filter = filterStr;
+
+    // Espejo
+    const scaleX = espejoActivo ? -1 : 1;
+    const filterTransform = `scaleX(${scaleX})`;
+    videoPlayer.style.transform   = filterTransform;
+    camaraPreview.style.transform = filterTransform;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  TOGGLE PANEL FILTROS
+// ══════════════════════════════════════════════════════════════════
+btnToggleEfectos.addEventListener('click', () => {
+    efectosVideoPanel.classList.toggle('visible');
+    btnToggleEfectos.classList.toggle('activo');
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  CAPTURA DE FOTOGRAMA
+// ══════════════════════════════════════════════════════════════════
+btnCaptura.addEventListener('click', () => {
+    if (!hayVideo) return;
+    const w = videoPlayer.videoWidth  || 1280;
+    const h = videoPlayer.videoHeight || 720;
+    capturaCanvas.width  = w;
+    capturaCanvas.height = h;
+    const ctx = capturaCanvas.getContext('2d');
+
+    // Aplicar espejo en canvas si está activo
+    if (espejoActivo) {
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoPlayer, -w, 0, w, h);
+        ctx.restore();
+    } else {
+        ctx.drawImage(videoPlayer, 0, 0, w, h);
+    }
+
+    // Aplicar filtros CSS como aproximación en canvas
+    // (el CSS filter ya está en el elemento, la captura toma el frame real)
+
+    capturaCanvas.toBlob(blob => {
+        if (!blob) { mostrarToast('Error al capturar fotograma', 'error'); return; }
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        const titulo = document.getElementById('inputTitulo')?.value.trim() || 'frame_noteflow';
+        a.href     = url;
+        a.download = `${titulo}_${formatTiempoArchivo(videoPlayer.currentTime)}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        mostrarToast('Fotograma capturado y descargado 📷');
+    }, 'image/png');
+});
+
+function formatTiempoArchivo(seg) {
+    const h = Math.floor(seg / 3600);
+    const m = Math.floor((seg % 3600) / 60);
+    const s = Math.floor(seg % 60);
+    return `${String(h).padStart(2,'0')}h${String(m).padStart(2,'0')}m${String(s).padStart(2,'0')}s`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  EXPORTAR (descargar el archivo original)
+// ══════════════════════════════════════════════════════════════════
+btnExportar.addEventListener('click', exportarVideo);
+
+function exportarVideo() {
+    if (!hayVideo || !archivoOriginal) {
+        mostrarToast('No hay video para exportar', 'error');
+        return;
+    }
+    mostrarToast('Preparando descarga...');
+    const url   = URL.createObjectURL(archivoOriginal);
+    const a     = document.createElement('a');
+    const titulo = document.getElementById('inputTitulo')?.value.trim() || 'video_noteflow';
+    const ext   = archivoOriginal.name.split('.').pop();
+    a.href      = url;
+    a.download  = `${titulo}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    mostrarToast('Video exportado ✓');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STATS EXTRA
+// ══════════════════════════════════════════════════════════════════
+function actualizarStatsExtra(file) {
+    if (file) {
+        statPeso.textContent    = formatBytes(file.size);
+        statFormato.textContent = file.name.split('.').pop().toUpperCase();
+    }
+    // Filtros
+    const nFiltros = filtrosActivos.size + (espejoActivo ? 1 : 0);
+    if (nFiltros > 0) {
+        statFiltrosWrap.style.display = 'flex';
+        statFiltros.textContent = `${nFiltros} filtro${nFiltros > 1 ? 's' : ''}`;
+    } else {
+        statFiltrosWrap.style.display = 'none';
+    }
+    // Marcadores
+    if (marcadores.length > 0) {
+        statMarcsWrap.style.display = 'flex';
+        statMarcs.textContent = `${marcadores.length} marcador${marcadores.length > 1 ? 'es' : ''}`;
+    } else {
+        statMarcsWrap.style.display = 'none';
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  INFO DEL ARCHIVO
+// ══════════════════════════════════════════════════════════════════
+function actualizarInfoArchivo(file) {
+    infoNada.style.display  = 'none';
+    infoDatos.style.display = 'flex';
+    datoPeso.textContent    = formatBytes(file.size);
+    datoFormato.textContent = file.name.split('.').pop().toUpperCase();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -249,7 +624,6 @@ async function iniciarGrabacion() {
         grabacionOverlay.style.display = 'flex';
         camaraPreview.srcObject        = streamCamara;
 
-        // Selección de formato compatible
         const types = [
             'video/webm;codecs=vp9,opus',
             'video/webm;codecs=vp8,opus',
@@ -258,10 +632,7 @@ async function iniciarGrabacion() {
         ];
         let mimeType = '';
         for (const type of types) {
-            if (MediaRecorder.isTypeSupported(type)) {
-                mimeType = type;
-                break;
-            }
+            if (MediaRecorder.isTypeSupported(type)) { mimeType = type; break; }
         }
 
         mediaRecorder = new MediaRecorder(streamCamara, { mimeType });
@@ -282,7 +653,7 @@ async function iniciarGrabacion() {
             archivoOriginal = file;
         };
 
-        mediaRecorder.start(1000); // Guardamos en trozos de 1 segundo
+        mediaRecorder.start(1000);
         segundosGrab = 0;
         timerGrabEl.textContent = "0:00";
         btnGrabarCam.classList.add('grabando');
@@ -294,7 +665,7 @@ async function iniciarGrabacion() {
             if (segundosGrab >= 7200) pararGrabacion();
         }, 1000);
 
-        mostrarToast('Grabación de video iniciada');
+        mostrarToast('🔴 Grabación de video iniciada');
     } catch (err) {
         mostrarToast('No se pudo acceder a la cámara/micrófono. Verifica los permisos.', 'error');
         console.error(err);
@@ -303,34 +674,15 @@ async function iniciarGrabacion() {
 
 function pararGrabacion() {
     if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
-    
-    try {
-        mediaRecorder.stop();
-    } catch (e) {
-        console.error("Error al detener recorder:", e);
-    }
-
+    try { mediaRecorder.stop(); } catch (e) { console.error(e); }
     if (intervalTimer) clearInterval(intervalTimer);
-    
     grabacionOverlay.style.display = 'none';
     camaraPreview.style.display    = 'none';
     btnGrabarCam.classList.remove('grabando');
     iconGrabarCam.className = 'fas fa-video';
-    
-    // Si no se capturaron trozos por error, restauramos el placeholder
     if (trozosGrabacion.length === 0) {
         videoPlaceholder.style.display = 'flex';
     }
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  INFO DEL ARCHIVO
-// ══════════════════════════════════════════════════════════════════
-function actualizarInfoArchivo(file) {
-    infoNada.style.display  = 'none';
-    infoDatos.style.display = 'flex';
-    datoPeso.textContent    = formatBytes(file.size);
-    datoFormato.textContent = file.name.split('.').pop().toUpperCase();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -340,9 +692,46 @@ document.addEventListener('keydown', (e) => {
     const tag     = document.activeElement?.tagName;
     const esInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
                     || document.activeElement?.isContentEditable;
-    if (e.key === ' ' && hayVideo && !esInput) { e.preventDefault(); btnPlay.click(); }
-    if (e.key === 'ArrowLeft'  && hayVideo && !esInput) { e.preventDefault(); videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime - 5); }
-    if (e.key === 'ArrowRight' && hayVideo && !esInput) { e.preventDefault(); videoPlayer.currentTime = Math.min(videoPlayer.duration, videoPlayer.currentTime + 5); }
+
+    if (e.key === ' ' && hayVideo && !esInput) {
+        e.preventDefault();
+        btnPlay.click();
+    }
+    if (e.key === 'ArrowLeft' && hayVideo && !esInput) {
+        e.preventDefault();
+        videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime - (e.shiftKey ? 30 : 5));
+    }
+    if (e.key === 'ArrowRight' && hayVideo && !esInput) {
+        e.preventDefault();
+        videoPlayer.currentTime = Math.min(videoPlayer.duration, videoPlayer.currentTime + (e.shiftKey ? 30 : 5));
+    }
+    if (e.key === 'm' && hayVideo && !esInput) {
+        e.preventDefault(); btnMarcador.click();
+    }
+    if (e.key === 'l' && hayVideo && !esInput) {
+        e.preventDefault(); btnLoop.click();
+    }
+    if (e.key === 'f' && hayVideo && !esInput) {
+        e.preventDefault(); btnFullscreen.click();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault(); guardarNota();
+    }
+    // Número 0 → ir al inicio
+    if (e.key === '0' && hayVideo && !esInput) {
+        videoPlayer.currentTime = 0;
+    }
+    // +/- para velocidad
+    if (e.key === '+' && hayVideo && !esInput) {
+        const vals = ['0.25','0.5','0.75','1','1.25','1.5','2'];
+        const idx  = vals.indexOf(selectVelocidad.value);
+        if (idx < vals.length - 1) { selectVelocidad.value = vals[idx + 1]; selectVelocidad.dispatchEvent(new Event('change')); }
+    }
+    if (e.key === '-' && hayVideo && !esInput) {
+        const vals = ['0.25','0.5','0.75','1','1.25','1.5','2'];
+        const idx  = vals.indexOf(selectVelocidad.value);
+        if (idx > 0) { selectVelocidad.value = vals[idx - 1]; selectVelocidad.dispatchEvent(new Event('change')); }
+    }
 });
 
 // ══════════════════════════════════════════════════════════════════
@@ -374,7 +763,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // ══════════════════════════════════════════════════════════════════
-//  GUARDAR NOTA — fetch al backend /guardar-nota-video
+//  GUARDAR NOTA — sin cambios en backend
 // ══════════════════════════════════════════════════════════════════
 async function guardarNota() {
     if (!hayVideo || !archivoOriginal) {
@@ -404,7 +793,6 @@ async function guardarNota() {
 
     try {
         const resp = await fetch(url, { method: 'POST', body: formData });
-
         let data;
         try { data = await resp.json(); }
         catch { throw new Error(`Respuesta inesperada del servidor (HTTP ${resp.status})`); }
@@ -419,11 +807,9 @@ async function guardarNota() {
             est.classList.add('visible');
             setTimeout(() => est.classList.remove('visible'), 3000);
         }
-
         if (data.redirect) {
             setTimeout(() => { window.location.href = data.redirect; }, 1200);
         }
-
     } catch (err) {
         console.error('guardarNota video:', err);
         mostrarToast(err.message || 'Error de conexión. Inténtalo de nuevo.', 'error');
@@ -436,7 +822,6 @@ async function guardarNota() {
         });
     }
 }
-
 
 btnGuardarTop.addEventListener('click',    guardarNota);
 btnGuardarBottom.addEventListener('click', guardarNota);

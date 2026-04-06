@@ -7,6 +7,12 @@ let archivoOriginal = null;
 let sourceNode      = null;
 let gainNode        = null;
 
+// Nodos de efectos
+let ecoNode         = null;
+let convReverbNode  = null;
+let bassFilterNode  = null;
+let pitchNodes      = [];
+
 let reproduciendo   = false;
 let tiempoOffset    = 0;
 let tiempoArranque  = 0;
@@ -17,11 +23,34 @@ let historialRedo   = [];
 let notaGuardada    = false;
 let hayAudio        = false;
 
+// Efectos activos
+const efectosActivos = new Set();
+
+// Velocidad de reproducción
+let velocidadActual = 1.0;
+
+// Loop
+let loopActivo = false;
+
+// Marcadores
+let marcadores = []; // [{tiempo, label}]
+let marcadorContador = 1;
+
+// Región seleccionada
+let regionStart = null;
+let regionEnd   = null;
+let seleccionando = false;
+let selXStart   = 0;
+
 // Grabación
 let mediaRecorder   = null;
 let trozosGrabacion = [];
 let intervalTimer   = null;
 let segundosGrab    = 0;
+
+// Visualizador en tiempo real
+let analyserNode    = null;
+let vizAnimId       = null;
 
 // ══════════════════════════════════════════════════════════════════
 //  REFERENCIAS DOM
@@ -58,6 +87,34 @@ const timerGrabEl      = document.getElementById('timerGrabacion');
 const sliderVolumen    = document.getElementById('sliderVolumen');
 const valVolumen       = document.getElementById('valVolumen');
 const iconVolumen      = document.getElementById('iconVolumen');
+const selectVelocidad  = document.getElementById('selectVelocidad');
+const btnLoop          = document.getElementById('btnLoop');
+const btnMarcador      = document.getElementById('btnMarcador');
+const btnToggleEfectos = document.getElementById('btnToggleEfectos');
+const efectosPanel     = document.getElementById('efectosPanel');
+const regionInfo       = document.getElementById('regionInfo');
+const regionTexto      = document.getElementById('regionTexto');
+const regionSel        = document.getElementById('regionSel');
+const btnRecortarRegion= document.getElementById('btnRecortarRegion');
+const btnBorrarRegion  = document.getElementById('btnBorrarRegion');
+const seekBarWrap      = document.getElementById('seekBarWrap');
+const seekFill         = document.getElementById('seekFill');
+const seekThumb        = document.getElementById('seekThumb');
+const seekActual       = document.getElementById('seekActual');
+const seekTotal        = document.getElementById('seekTotal');
+const seekTrack        = document.getElementById('seekTrack');
+const statsExtra       = document.getElementById('statsExtra');
+const statCanales      = document.getElementById('statCanales');
+const statDuracion     = document.getElementById('statDuracion');
+const statPeso         = document.getElementById('statPeso');
+const statFormato      = document.getElementById('statFormato');
+const statBitrate      = document.getElementById('statBitrate');
+const statEfectosActivos = document.getElementById('statEfectosActivos');
+const txtEfectosActivos  = document.getElementById('txtEfectosActivos');
+const marcadoresList     = document.getElementById('marcadoresList');
+const btnExportar        = document.getElementById('btnExportar');
+const vizCanvas          = document.getElementById('vizCanvas');
+const spectroCanvas      = document.getElementById('spectroCanvas');
 
 let animFrameId = null;
 
@@ -70,6 +127,11 @@ function getAudioCtx() {
         gainNode = audioCtx.createGain();
         gainNode.gain.value = parseInt(sliderVolumen.value) / 100;
         gainNode.connect(audioCtx.destination);
+
+        // Analyser para visualización en tiempo real
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 512;
+        gainNode.connect(analyserNode);
     }
     return audioCtx;
 }
@@ -79,11 +141,7 @@ function getAudioCtx() {
 // ══════════════════════════════════════════════════════════════════
 function actualizarVolumen() {
     const val = parseInt(sliderVolumen.value);
-
-    // Etiqueta
     valVolumen.textContent = val + '%';
-
-    // Icono dinámico
     if (val === 0) {
         iconVolumen.className = 'fas fa-volume-xmark';
     } else if (val < 40) {
@@ -91,19 +149,537 @@ function actualizarVolumen() {
     } else {
         iconVolumen.className = 'fas fa-volume-high';
     }
-
-    // Relleno de la barra (morado progresivo)
     sliderVolumen.style.background =
         `linear-gradient(to right, #7c4dff ${val}%, #d1c4e9 ${val}%)`;
-
-    // Aplicar al GainNode si existe
     if (gainNode) gainNode.gain.value = val / 100;
 }
-
 sliderVolumen.addEventListener('input', actualizarVolumen);
-
-// Inicializar visual
 actualizarVolumen();
+
+// ══════════════════════════════════════════════════════════════════
+//  VELOCIDAD DE REPRODUCCIÓN
+// ══════════════════════════════════════════════════════════════════
+selectVelocidad.addEventListener('change', () => {
+    velocidadActual = parseFloat(selectVelocidad.value);
+    if (reproduciendo) {
+        const estaba = reproduciendo;
+        pausar();
+        if (estaba) play();
+    }
+    mostrarToast(`Velocidad: ${velocidadActual}×`);
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  LOOP
+// ══════════════════════════════════════════════════════════════════
+btnLoop.addEventListener('click', () => {
+    loopActivo = !loopActivo;
+    btnLoop.classList.toggle('activo', loopActivo);
+    mostrarToast(loopActivo ? 'Loop activado 🔁' : 'Loop desactivado');
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  EFECTOS — panel toggle
+// ══════════════════════════════════════════════════════════════════
+btnToggleEfectos.addEventListener('click', () => {
+    efectosPanel.classList.toggle('visible');
+    btnToggleEfectos.classList.toggle('activo');
+});
+
+// Botones de efectos
+const botonesEfecto = {
+    efEco:       { fn: aplicarEco,        label: 'Eco' },
+    efBass:      { fn: aplicarBass,       label: 'Bass Boost' },
+    efReverb:    { fn: aplicarReverb,     label: 'Reverb' },
+    efNormalize: { fn: aplicarNormalize,  label: 'Normalizar' },
+    efRuido:     { fn: aplicarGate,       label: 'Gate' },
+    efPitch:     { fn: () => aplicarPitch(2), label: 'Pitch +' },
+    efPitchDown: { fn: () => aplicarPitch(-2), label: 'Pitch −' },
+};
+
+Object.entries(botonesEfecto).forEach(([id, cfg]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
+        cfg.fn();
+        toggleEfectoActivo(id, btn, cfg.label);
+    });
+});
+
+function toggleEfectoActivo(id, btn, label) {
+    if (efectosActivos.has(id)) {
+        efectosActivos.delete(id);
+        btn.classList.remove('activo');
+    } else {
+        efectosActivos.add(id);
+        btn.classList.add('activo');
+    }
+    actualizarContadorEfectos();
+}
+
+function actualizarContadorEfectos() {
+    const n = efectosActivos.size;
+    if (n > 0) {
+        statEfectosActivos.style.display = 'flex';
+        txtEfectosActivos.textContent = `${n} efecto${n > 1 ? 's' : ''}`;
+    } else {
+        statEfectosActivos.style.display = 'none';
+    }
+}
+
+// ── ECO ──
+function aplicarEco() {
+    if (!audioBuffer) return;
+    guardarHistorial();
+    const ctx = getAudioCtx();
+    const delayTime = 0.3;
+    const decay     = 0.4;
+    const outBuffer = audioCtx.createBuffer(
+        audioBuffer.numberOfChannels,
+        audioBuffer.length + Math.floor(delayTime * audioBuffer.sampleRate * 3),
+        audioBuffer.sampleRate
+    );
+    for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+        const src = audioBuffer.getChannelData(c);
+        const dst = outBuffer.getChannelData(c);
+        const delaySamples = Math.floor(delayTime * audioBuffer.sampleRate);
+        for (let i = 0; i < src.length; i++) dst[i] = src[i];
+        for (let e = 1; e <= 3; e++) {
+            const offset = delaySamples * e;
+            const amp    = Math.pow(decay, e);
+            for (let i = 0; i < src.length && i + offset < dst.length; i++) {
+                dst[i + offset] += src[i] * amp;
+            }
+        }
+    }
+    audioBuffer = outBuffer;
+    dibujarOnda();
+    dibujarRegla();
+    mostrarToast('Eco aplicado');
+}
+
+// ── BASS BOOST ──
+function aplicarBass() {
+    if (!audioBuffer) return;
+    guardarHistorial();
+    const offCtx = new OfflineAudioContext(
+        audioBuffer.numberOfChannels,
+        audioBuffer.length,
+        audioBuffer.sampleRate
+    );
+    const src    = offCtx.createBufferSource();
+    src.buffer   = audioBuffer;
+    const filter = offCtx.createBiquadFilter();
+    filter.type  = 'lowshelf';
+    filter.frequency.value = 150;
+    filter.gain.value      = 10;
+    src.connect(filter);
+    filter.connect(offCtx.destination);
+    src.start();
+    offCtx.startRendering().then(rendered => {
+        audioBuffer = rendered;
+        dibujarOnda();
+        dibujarRegla();
+        mostrarToast('Bass Boost aplicado');
+    });
+}
+
+// ── REVERB ──
+function aplicarReverb() {
+    if (!audioBuffer) return;
+    guardarHistorial();
+    const sr       = audioBuffer.sampleRate;
+    const durSeg   = 2.5;
+    const irLen    = Math.floor(sr * durSeg);
+    const offCtx   = new OfflineAudioContext(audioBuffer.numberOfChannels, audioBuffer.length + irLen, sr);
+    const irBuffer = offCtx.createBuffer(2, irLen, sr);
+    for (let c = 0; c < 2; c++) {
+        const d = irBuffer.getChannelData(c);
+        for (let i = 0; i < irLen; i++) {
+            d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 2.5);
+        }
+    }
+    const convolver   = offCtx.createConvolver();
+    convolver.buffer  = irBuffer;
+    const wetGain  = offCtx.createGain(); wetGain.gain.value  = 0.4;
+    const dryGain  = offCtx.createGain(); dryGain.gain.value  = 0.7;
+    const src      = offCtx.createBufferSource();
+    src.buffer     = audioBuffer;
+    src.connect(dryGain);
+    src.connect(convolver);
+    convolver.connect(wetGain);
+    dryGain.connect(offCtx.destination);
+    wetGain.connect(offCtx.destination);
+    src.start();
+    offCtx.startRendering().then(rendered => {
+        audioBuffer = rendered;
+        dibujarOnda();
+        dibujarRegla();
+        mostrarToast('Reverb aplicado');
+    });
+}
+
+// ── NORMALIZAR ──
+function aplicarNormalize() {
+    if (!audioBuffer) return;
+    guardarHistorial();
+    let max = 0;
+    for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+        const data = audioBuffer.getChannelData(c);
+        for (let i = 0; i < data.length; i++) {
+            if (Math.abs(data[i]) > max) max = Math.abs(data[i]);
+        }
+    }
+    if (max === 0) { mostrarToast('El audio ya está normalizado'); return; }
+    const factor = 0.95 / max;
+    const out = audioCtx ? audioCtx.createBuffer(
+        audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate
+    ) : new AudioBuffer({
+        numberOfChannels: audioBuffer.numberOfChannels,
+        length: audioBuffer.length,
+        sampleRate: audioBuffer.sampleRate
+    });
+    // Usamos OfflineAudioContext para no depender del audioCtx existente
+    const offCtx = new OfflineAudioContext(
+        audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate
+    );
+    const src  = offCtx.createBufferSource();
+    src.buffer = audioBuffer;
+    const gain = offCtx.createGain();
+    gain.gain.value = factor;
+    src.connect(gain);
+    gain.connect(offCtx.destination);
+    src.start();
+    offCtx.startRendering().then(rendered => {
+        audioBuffer = rendered;
+        dibujarOnda();
+        mostrarToast('Audio normalizado ✓');
+    });
+}
+
+// ── GATE (eliminar silencio/ruido bajo) ──
+function aplicarGate() {
+    if (!audioBuffer) return;
+    guardarHistorial();
+    const umbral = 0.03;
+    for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+        const data = audioBuffer.getChannelData(c);
+        for (let i = 0; i < data.length; i++) {
+            if (Math.abs(data[i]) < umbral) data[i] = 0;
+        }
+    }
+    dibujarOnda();
+    mostrarToast('Gate aplicado — ruido bajo suprimido');
+}
+
+// ── PITCH SHIFT (aproximación por velocidad + resample) ──
+function aplicarPitch(semitonos) {
+    if (!audioBuffer) return;
+    guardarHistorial();
+    const ratio     = Math.pow(2, semitonos / 12);
+    const newLength = Math.floor(audioBuffer.length / ratio);
+    const offCtx    = new OfflineAudioContext(
+        audioBuffer.numberOfChannels, newLength, audioBuffer.sampleRate
+    );
+    const src        = offCtx.createBufferSource();
+    src.buffer       = audioBuffer;
+    src.playbackRate.value = ratio;
+    src.connect(offCtx.destination);
+    src.start();
+    offCtx.startRendering().then(rendered => {
+        audioBuffer = rendered;
+        dibujarOnda();
+        dibujarRegla();
+        mostrarToast(`Pitch ${semitonos > 0 ? '+' : ''}${semitonos} semitonos`);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  MARCADORES
+// ══════════════════════════════════════════════════════════════════
+btnMarcador.addEventListener('click', () => {
+    if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
+    const tiempo = tiempoOffset + (reproduciendo ? (audioCtx.currentTime - tiempoArranque) : 0);
+    const label  = `M${marcadorContador++}`;
+    marcadores.push({ tiempo, label });
+    renderizarMarcadores();
+    renderizarListaMarcadores();
+    mostrarToast(`Marcador ${label} en ${formatTiempo(tiempo)}`);
+});
+
+function renderizarMarcadores() {
+    // Quitar anteriores
+    waveformWrap.querySelectorAll('.marcador-punto').forEach(el => el.remove());
+    if (!audioBuffer) return;
+    marcadores.forEach((m, idx) => {
+        const pct = m.tiempo / audioBuffer.duration;
+        const el  = document.createElement('div');
+        el.className   = 'marcador-punto';
+        el.style.left  = (pct * waveCanvas.width) + 'px';
+        el.dataset.label = m.label;
+        el.title       = `${m.label}: ${formatTiempo(m.tiempo)}`;
+        el.addEventListener('click', () => {
+            const estaba = reproduciendo;
+            if (estaba) pausar();
+            tiempoOffset = m.tiempo;
+            actualizarPlayhead();
+            if (estaba) play();
+        });
+        waveformWrap.appendChild(el);
+    });
+}
+
+function renderizarListaMarcadores() {
+    if (marcadores.length === 0) {
+        marcadoresList.classList.remove('visible');
+        return;
+    }
+    marcadoresList.classList.add('visible');
+    marcadoresList.innerHTML = marcadores.map((m, i) => `
+        <div class="marcador-item" onclick="irAMarcador(${i})">
+            <i class="fas fa-flag" style="color:#ff7043; font-size:11px;"></i>
+            <strong>${m.label}</strong>
+            <span style="color:#a1887f; font-weight:600; font-size:11px;">${formatTiempo(m.tiempo)}</span>
+            <button class="btn-del-marc" onclick="event.stopPropagation(); eliminarMarcador(${i})" title="Eliminar marcador">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function irAMarcador(idx) {
+    if (!audioBuffer || idx >= marcadores.length) return;
+    const estaba = reproduciendo;
+    if (estaba) pausar();
+    tiempoOffset = marcadores[idx].tiempo;
+    actualizarPlayhead();
+    if (estaba) play();
+}
+
+function eliminarMarcador(idx) {
+    marcadores.splice(idx, 1);
+    renderizarMarcadores();
+    renderizarListaMarcadores();
+}
+
+function actualizarPlayhead() {
+    if (!audioBuffer) return;
+    const pct = tiempoOffset / audioBuffer.duration;
+    playheadEl.style.left        = (pct * waveCanvas.width) + 'px';
+    datoTiempoActual.textContent = formatTiempo(tiempoOffset);
+    actualizarSeekBar(tiempoOffset);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  REGIÓN / RECORTE
+// ══════════════════════════════════════════════════════════════════
+waveCanvas.addEventListener('mousedown', (e) => {
+    if (!audioBuffer) return;
+    if (e.shiftKey) {
+        seleccionando = true;
+        const rect = waveCanvas.getBoundingClientRect();
+        selXStart  = e.clientX - rect.left;
+        regionStart = (selXStart / waveCanvas.width) * audioBuffer.duration;
+        regionEnd   = regionStart;
+        regionSel.style.display = 'block';
+        regionSel.style.left    = selXStart + 'px';
+        regionSel.style.width   = '0px';
+    }
+});
+
+waveCanvas.addEventListener('mousemove', (e) => {
+    if (!seleccionando || !audioBuffer) return;
+    const rect   = waveCanvas.getBoundingClientRect();
+    const xActual = e.clientX - rect.left;
+    const x0 = Math.min(selXStart, xActual);
+    const x1 = Math.max(selXStart, xActual);
+    regionSel.style.left  = x0 + 'px';
+    regionSel.style.width = (x1 - x0) + 'px';
+    regionStart = (x0 / waveCanvas.width) * audioBuffer.duration;
+    regionEnd   = (x1 / waveCanvas.width) * audioBuffer.duration;
+    actualizarInfoRegion();
+});
+
+waveCanvas.addEventListener('mouseup', () => {
+    if (!seleccionando) return;
+    seleccionando = false;
+    if (regionEnd - regionStart < 0.05) {
+        limpiarRegion();
+    } else {
+        regionInfo.classList.add('visible');
+        actualizarInfoRegion();
+        mostrarToast('Región seleccionada. Puedes recortarla.');
+    }
+});
+
+function actualizarInfoRegion() {
+    if (regionStart == null || regionEnd == null) return;
+    const dur = regionEnd - regionStart;
+    regionTexto.textContent = `${formatTiempo(regionStart)} → ${formatTiempo(regionEnd)}  (${formatTiempo(dur)})`;
+}
+
+function limpiarRegion() {
+    regionStart = null;
+    regionEnd   = null;
+    regionSel.style.display = 'none';
+    regionInfo.classList.remove('visible');
+}
+
+btnBorrarRegion.addEventListener('click', limpiarRegion);
+
+btnRecortarRegion.addEventListener('click', () => {
+    if (!audioBuffer || regionStart == null || regionEnd == null) return;
+    guardarHistorial();
+    const sr      = audioBuffer.sampleRate;
+    const ini     = Math.floor(regionStart * sr);
+    const fin     = Math.floor(regionEnd   * sr);
+    const newLen  = fin - ini;
+    if (newLen <= 0) return;
+
+    const offCtx = new OfflineAudioContext(audioBuffer.numberOfChannels, newLen, sr);
+    const src    = offCtx.createBufferSource();
+    src.buffer   = audioBuffer;
+    src.connect(offCtx.destination);
+    src.start(0, regionStart, regionEnd - regionStart);
+    offCtx.startRendering().then(rendered => {
+        audioBuffer  = rendered;
+        tiempoOffset = 0;
+        limpiarRegion();
+        dibujarOnda();
+        dibujarRegla();
+        actualizarInfoArchivo(archivoOriginal, true);
+        mostrarToast('Audio recortado a la región seleccionada');
+        renderizarMarcadores();
+        actualizarSeekBarTotal();
+    });
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  SEEK BAR (barra de progreso interactiva)
+// ══════════════════════════════════════════════════════════════════
+function actualizarSeekBar(tiempoActual) {
+    if (!audioBuffer) return;
+    const pct = tiempoActual / audioBuffer.duration;
+    seekFill.style.width  = (pct * 100) + '%';
+    seekThumb.style.left  = (pct * 100) + '%';
+    seekActual.textContent = formatTiempo(tiempoActual);
+}
+
+function actualizarSeekBarTotal() {
+    if (!audioBuffer) return;
+    seekTotal.textContent = formatTiempo(audioBuffer.duration);
+}
+
+seekTrack.addEventListener('click', (e) => {
+    if (!audioBuffer) return;
+    const rect  = seekTrack.getBoundingClientRect();
+    const pct   = (e.clientX - rect.left) / rect.width;
+    const estaba = reproduciendo;
+    if (estaba) pausar();
+    tiempoOffset = pct * audioBuffer.duration;
+    actualizarPlayhead();
+    actualizarSeekBar(tiempoOffset);
+    if (estaba) play();
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  EXPORTAR
+// ══════════════════════════════════════════════════════════════════
+btnExportar.addEventListener('click', exportarAudio);
+
+async function exportarAudio() {
+    if (!audioBuffer) { mostrarToast('No hay audio para exportar'); return; }
+    mostrarToast('Preparando exportación WAV...');
+    try {
+        const wav = audioBufferToWav(audioBuffer);
+        const blob = new Blob([wav], { type: 'audio/wav' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        const titulo = document.getElementById('inputTitulo').value.trim() || 'audio_noteflow';
+        a.href     = url;
+        a.download = `${titulo}.wav`;
+        a.click();
+        URL.revokeObjectURL(url);
+        mostrarToast('Audio exportado como WAV ✓');
+    } catch (e) {
+        mostrarToast('Error al exportar el audio');
+        console.error(e);
+    }
+}
+
+// Convierte AudioBuffer a WAV (PCM 16-bit)
+function audioBufferToWav(buffer) {
+    const nCh    = buffer.numberOfChannels;
+    const sr     = buffer.sampleRate;
+    const len    = buffer.length;
+    const result = new Int16Array(len * nCh);
+    for (let ch = 0; ch < nCh; ch++) {
+        const channelData = buffer.getChannelData(ch);
+        for (let i = 0; i < len; i++) {
+            result[i * nCh + ch] = Math.max(-1, Math.min(1, channelData[i])) * 0x7FFF;
+        }
+    }
+    const dataLen  = result.byteLength;
+    const wavBuffer = new ArrayBuffer(44 + dataLen);
+    const view     = new DataView(wavBuffer);
+    const writeStr = (offset, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    };
+    writeStr(0, 'RIFF');
+    view.setUint32(4,  36 + dataLen, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1,  true);
+    view.setUint16(22, nCh, true);
+    view.setUint32(24, sr,  true);
+    view.setUint32(28, sr * nCh * 2, true);
+    view.setUint16(32, nCh * 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, dataLen, true);
+    const dataView = new Int16Array(wavBuffer, 44);
+    dataView.set(result);
+    return wavBuffer;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  VISUALIZADOR EN TIEMPO REAL (barras animadas)
+// ══════════════════════════════════════════════════════════════════
+function iniciarVisualizador() {
+    if (!analyserNode) return;
+    vizCanvas.classList.add('visible');
+    const ctx = vizCanvas.getContext('2d');
+    const buf = new Uint8Array(analyserNode.frequencyBinCount);
+
+    function drawViz() {
+        vizAnimId = requestAnimationFrame(drawViz);
+        analyserNode.getByteFrequencyData(buf);
+        const W = vizCanvas.width  = vizCanvas.offsetWidth;
+        const H = vizCanvas.height = 48;
+        ctx.clearRect(0, 0, W, H);
+        const barW = Math.max(2, (W / buf.length) * 2.5);
+        const step  = Math.floor(buf.length / (W / (barW + 1)));
+        let x = 0;
+        for (let i = 0; i < buf.length; i += step) {
+            const barH = (buf[i] / 255) * H;
+            const hue  = 260 + (buf[i] / 255) * 40;
+            ctx.fillStyle = `hsla(${hue}, 80%, 65%, 0.85)`;
+            ctx.fillRect(x, H - barH, barW, barH);
+            x += barW + 1;
+        }
+    }
+    drawViz();
+}
+
+function detenerVisualizador() {
+    if (vizAnimId) cancelAnimationFrame(vizAnimId);
+    vizAnimId = null;
+    vizCanvas.classList.remove('visible');
+    const ctx = vizCanvas.getContext('2d');
+    ctx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  CARGA DE ARCHIVO
@@ -127,7 +703,6 @@ function cargarArchivo(file) {
         mostrarToast('Formato no permitido. Usa: MP3, AAC, OGG, WAV, FLAC, WMA, M4A');
         return;
     }
-
     if (file.size > 200 * 1024 * 1024) {
         mostrarToast('El archivo supera el límite de 200 MB');
         return;
@@ -143,13 +718,25 @@ function cargarArchivo(file) {
             tiempoOffset = 0;
             hayAudio     = true;
             notaGuardada = false;
+            efectosActivos.clear();
+            actualizarContadorEfectos();
+            document.querySelectorAll('.efecto-btn').forEach(b => b.classList.remove('activo'));
+            marcadores = [];
+            marcadorContador = 1;
+            limpiarRegion();
+            renderizarMarcadores();
+            renderizarListaMarcadores();
 
             mostrarInterfazAudio(file);
             dibujarOnda();
             dibujarRegla();
             actualizarInfoArchivo(file);
+            actualizarStatsExtra(file, buffer);
             habilitarControles();
-            mostrarToast('Audio cargado correctamente');
+            seekBarWrap.classList.add('visible');
+            statsExtra.classList.add('visible');
+            actualizarSeekBarTotal();
+            mostrarToast('Audio cargado correctamente 🎵');
         }).catch(() => {
             mostrarToast('No se pudo decodificar el audio');
         });
@@ -161,22 +748,18 @@ function cargarArchivo(file) {
 async function restaurarAudioExistente() {
     const url = document.getElementById('editAudioUrl')?.value;
     if (!url) return;
-    
     try {
         const response = await fetch('/static/' + url);
-        const blob = await response.blob();
+        const blob     = await response.blob();
         const filename = url.split('/').pop();
-        const file = new File([blob], filename, { type: blob.type });
+        const file     = new File([blob], filename, { type: blob.type });
         cargarArchivo(file);
-        // Marcamos como guardada inicialmente para evitar el modal de "salir sin guardar" justo al abrir
-        notaGuardada = true; 
+        notaGuardada = true;
     } catch (e) {
         console.error("Error al restaurar audio:", e);
     }
 }
-
 setTimeout(restaurarAudioExistente, 500);
-
 
 // ══════════════════════════════════════════════════════════════════
 //  MOSTRAR INTERFAZ TRAS CARGAR AUDIO
@@ -207,12 +790,9 @@ function dibujarOnda() {
     const ctx = waveCanvas.getContext('2d');
 
     ctx.clearRect(0, 0, W, H);
-
-    // Fondo
     ctx.fillStyle = '#f0ecff';
     ctx.fillRect(0, 0, W, H);
 
-    // Cuadrícula sutil
     ctx.strokeStyle = 'rgba(180,160,230,0.25)';
     ctx.lineWidth   = 1;
     for (let y = 0; y <= H; y += H / 4) {
@@ -235,7 +815,6 @@ function dibujarOnda() {
 
         ctx.beginPath();
         ctx.moveTo(0, yBase);
-
         for (let x = 0; x < W; x++) {
             let max = 0;
             const ini = x * paso;
@@ -252,7 +831,6 @@ function dibujarOnda() {
             }
             ctx.lineTo(x, yBase + max * escala);
         }
-
         ctx.closePath();
         ctx.fillStyle = grad;
         ctx.fill();
@@ -277,14 +855,12 @@ function dibujarRegla() {
     const H   = 28;
     const ctx = reglaCanvas.getContext('2d');
     const dur = audioBuffer.duration;
-
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#ede7f6';
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle    = '#5c3ca6';
     ctx.font         = '700 10px Nunito, sans-serif';
     ctx.textBaseline = 'top';
-
     const paso = calcularPasoRegla(dur, W);
     for (let t = 0; t <= dur; t += paso) {
         const x = (t / dur) * W;
@@ -311,18 +887,24 @@ function calcularPasoRegla(dur, W) {
 // ══════════════════════════════════════════════════════════════════
 function animarPlayhead() {
     if (!reproduciendo || !audioBuffer) return;
-
     const elapsed      = audioCtx.currentTime - tiempoArranque;
     const tiempoActual = tiempoOffset + elapsed;
 
     if (tiempoActual >= audioBuffer.duration) {
+        if (loopActivo) {
+            pausar();
+            tiempoOffset = 0;
+            play();
+            return;
+        }
         detener();
         return;
     }
 
     const pct = tiempoActual / audioBuffer.duration;
-    playheadEl.style.left = (pct * waveCanvas.width) + 'px';
+    playheadEl.style.left        = (pct * waveCanvas.width) + 'px';
     datoTiempoActual.textContent = formatTiempo(tiempoActual);
+    actualizarSeekBar(tiempoActual);
     animFrameId = requestAnimationFrame(animarPlayhead);
 }
 
@@ -341,7 +923,8 @@ function play() {
 
     const ctx  = getAudioCtx();
     sourceNode = ctx.createBufferSource();
-    sourceNode.buffer = audioBuffer;
+    sourceNode.buffer         = audioBuffer;
+    sourceNode.playbackRate.value = velocidadActual;
     sourceNode.connect(gainNode);
     sourceNode.start(0, tiempoOffset);
 
@@ -351,6 +934,7 @@ function play() {
     btnPlay.classList.add('playing');
 
     animarPlayhead();
+    iniciarVisualizador();
 
     sourceNode.onended = () => {
         if (reproduciendo) detener();
@@ -359,12 +943,13 @@ function play() {
 
 function pausar() {
     if (!reproduciendo) return;
-    tiempoOffset += audioCtx.currentTime - tiempoArranque;
+    tiempoOffset += (audioCtx.currentTime - tiempoArranque) * velocidadActual;
     sourceNode?.stop();
     reproduciendo      = false;
     cancelAnimationFrame(animFrameId);
     iconPlay.className = 'fas fa-play';
     btnPlay.classList.remove('playing');
+    detenerVisualizador();
 }
 
 function detener() {
@@ -374,6 +959,7 @@ function detener() {
     datoTiempoActual.textContent = formatTiempo(0);
     iconPlay.className           = 'fas fa-play';
     btnPlay.classList.remove('playing');
+    actualizarSeekBar(0);
 }
 
 btnDetener.addEventListener('click', detener);
@@ -382,9 +968,8 @@ btnRetroceder.addEventListener('click', () => {
     const estaba = reproduciendo;
     if (estaba) pausar();
     tiempoOffset = Math.max(0, tiempoOffset - 5);
-    const pct    = audioBuffer ? tiempoOffset / audioBuffer.duration : 0;
-    playheadEl.style.left        = (pct * waveCanvas.width) + 'px';
-    datoTiempoActual.textContent = formatTiempo(tiempoOffset);
+    actualizarPlayhead();
+    actualizarSeekBar(tiempoOffset);
     if (estaba) play();
 });
 
@@ -392,8 +977,8 @@ btnIrInicio.addEventListener('click', () => {
     const estaba = reproduciendo;
     if (estaba) pausar();
     tiempoOffset = 0;
-    playheadEl.style.left        = '0px';
-    datoTiempoActual.textContent = formatTiempo(0);
+    actualizarPlayhead();
+    actualizarSeekBar(0);
     if (estaba) play();
 });
 
@@ -402,21 +987,21 @@ btnIrFin.addEventListener('click', () => {
     const estaba = reproduciendo;
     if (estaba) pausar();
     tiempoOffset = audioBuffer.duration;
-    playheadEl.style.left        = waveCanvas.width + 'px';
-    datoTiempoActual.textContent = formatTiempo(tiempoOffset);
+    actualizarPlayhead();
+    actualizarSeekBar(tiempoOffset);
 });
 
-// Clic en la onda para posicionar el playhead
+// Clic en la onda para posicionar el playhead (sin Shift)
 waveCanvas.addEventListener('click', (e) => {
-    if (!audioBuffer) return;
+    if (!audioBuffer || e.shiftKey) return;
     const rect   = waveCanvas.getBoundingClientRect();
     const x      = e.clientX - rect.left;
     const pct    = x / waveCanvas.width;
     const estaba = reproduciendo;
     if (estaba) pausar();
     tiempoOffset = pct * audioBuffer.duration;
-    playheadEl.style.left        = x + 'px';
-    datoTiempoActual.textContent = formatTiempo(tiempoOffset);
+    actualizarPlayhead();
+    actualizarSeekBar(tiempoOffset);
     if (estaba) play();
 });
 
@@ -430,7 +1015,6 @@ btnGrabar.addEventListener('click', () => {
         iniciarGrabacion();
     }
 });
-
 btnEmpezarGrabar.addEventListener('click', iniciarGrabacion);
 btnDetenerGrab.addEventListener('click',   pararGrabacion);
 
@@ -443,7 +1027,6 @@ async function iniciarGrabacion() {
         mediaRecorder.ondataavailable = (e) => {
             if (e.data.size > 0) trozosGrabacion.push(e.data);
         };
-
         mediaRecorder.onstop = () => {
             stream.getTracks().forEach(t => t.stop());
             const blob = new Blob(trozosGrabacion, { type: 'audio/webm' });
@@ -455,9 +1038,8 @@ async function iniciarGrabacion() {
             cargarArchivo(file);
             archivoOriginal = file;
         };
-
         mediaRecorder.start(100);
-        segundosGrab              = 0;
+        segundosGrab = 0;
         barraGrabacion.style.display = 'flex';
         btnGrabar.classList.add('grabando');
         iconGrabar.className = 'fas fa-square';
@@ -467,8 +1049,7 @@ async function iniciarGrabacion() {
             timerGrabEl.textContent = formatTiempo(segundosGrab);
             if (segundosGrab >= 10800) pararGrabacion();
         }, 1000);
-
-        mostrarToast('Grabación iniciada');
+        mostrarToast('🔴 Grabación iniciada');
     } catch (err) {
         mostrarToast('No se pudo acceder al micrófono');
         console.error(err);
@@ -482,18 +1063,31 @@ function pararGrabacion() {
     barraGrabacion.style.display = 'none';
     btnGrabar.classList.remove('grabando');
     iconGrabar.className = 'fas fa-circle';
-    mostrarToast('Grabación finalizada');
+    mostrarToast('Grabación finalizada ✓');
 }
 
 // ══════════════════════════════════════════════════════════════════
 //  INFO DEL ARCHIVO
 // ══════════════════════════════════════════════════════════════════
-function actualizarInfoArchivo(file) {
+function actualizarInfoArchivo(file, soloTiempo = false) {
     infoNada.style.display  = 'none';
     infoDatos.style.display = 'flex';
+    if (!soloTiempo) {
+        datoPeso.textContent    = formatBytes(file.size);
+        datoFormato.textContent = file.name.split('.').pop().toUpperCase();
+    }
     datoDuracion.textContent = formatTiempo(audioBuffer.duration);
-    datoPeso.textContent     = formatBytes(file.size);
-    datoFormato.textContent  = file.name.split('.').pop().toUpperCase();
+}
+
+function actualizarStatsExtra(file, buffer) {
+    const nCh = buffer.numberOfChannels;
+    statCanales.textContent  = nCh === 1 ? 'Mono' : 'Estéreo';
+    statDuracion.textContent = formatTiempo(buffer.duration);
+    statPeso.textContent     = formatBytes(file.size);
+    statFormato.textContent  = file.name.split('.').pop().toUpperCase();
+    // Bitrate estimado (kbps)
+    const kbps = Math.round((file.size * 8) / buffer.duration / 1000);
+    statBitrate.textContent  = kbps + ' kbps (~)';
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -534,17 +1128,45 @@ btnRehacer.addEventListener('click', () => {
     mostrarToast('Rehacer aplicado');
 });
 
+// ══════════════════════════════════════════════════════════════════
+//  ATAJOS DE TECLADO
+// ══════════════════════════════════════════════════════════════════
 document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); btnDeshacer.click(); }
     if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); btnRehacer.click(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); guardarNota(); }
 
-    // Espacio solo reproduce/pausa si el foco NO está en un campo de texto
-    const tag = document.activeElement?.tagName;
+    const tag     = document.activeElement?.tagName;
     const esInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
                     || document.activeElement?.isContentEditable;
+
     if (e.key === ' ' && hayAudio && !esInput) {
         e.preventDefault();
         btnPlay.click();
+    }
+    // M = marcador
+    if (e.key === 'm' && hayAudio && !esInput) {
+        e.preventDefault();
+        btnMarcador.click();
+    }
+    // L = loop
+    if (e.key === 'l' && hayAudio && !esInput) {
+        e.preventDefault();
+        btnLoop.click();
+    }
+    // Flechas izquierda/derecha: retroceder/adelantar 5s
+    if (e.key === 'ArrowLeft' && hayAudio && !esInput) {
+        e.preventDefault();
+        btnRetroceder.click();
+    }
+    if (e.key === 'ArrowRight' && hayAudio && !esInput) {
+        e.preventDefault();
+        const estaba = reproduciendo;
+        if (estaba) pausar();
+        tiempoOffset = Math.min(audioBuffer.duration, tiempoOffset + 5);
+        actualizarPlayhead();
+        actualizarSeekBar(tiempoOffset);
+        if (estaba) play();
     }
 });
 
@@ -618,7 +1240,7 @@ async function guardarNota() {
 
         if (data.success) {
             notaGuardada = true;
-            mostrarToast(data.mensaje || 'Nota guardada correctamente');
+            mostrarToast(data.mensaje || 'Nota guardada correctamente ✓');
             const est = document.getElementById('estadoGuardado');
             if (est) {
                 est.classList.add('visible');
@@ -640,7 +1262,6 @@ async function guardarNota() {
     }
 }
 
-
 btnGuardarTop.addEventListener('click',    guardarNota);
 btnGuardarBottom.addEventListener('click', guardarNota);
 
@@ -648,6 +1269,7 @@ btnGuardarBottom.addEventListener('click', guardarNota);
 //  UTILIDADES
 // ══════════════════════════════════════════════════════════════════
 function formatTiempo(seg) {
+    seg = Math.max(0, seg);
     const m = Math.floor(seg / 60);
     const s = Math.floor(seg % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
@@ -678,4 +1300,5 @@ window.addEventListener('resize', () => {
     reglaCanvas.width = waveCanvas.width;
     dibujarOnda();
     dibujarRegla();
+    renderizarMarcadores();
 });

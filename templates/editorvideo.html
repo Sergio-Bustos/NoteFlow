@@ -1,6 +1,6 @@
-<!DOCTYPE html><!--Declaración del tipo de documento HTML5-->
-<html lang="es"><!--Elemento raíz del documento, idioma español-->
-<head><!--Inicio de la sección de metadatos del documento-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% include 'partials/head_design.html' %}
@@ -15,7 +15,7 @@
 <!-- ENCABEZADO -->
 <div class="app-header">
     <div class="app-titulo">
-        Editor de video
+        <i class="fas fa-film"></i> Editor de video
     </div>
     <a href="/notas" class="btn-volver" id="btnVolver">
         <i class="fas fa-arrow-left"></i> Mis notas
@@ -25,45 +25,86 @@
 <!-- PANEL PRINCIPAL -->
 <div class="panel">
 
-    <!-- ══ TOOLBAR ══ -->
+    <!-- ══ TOOLBAR FILA 1 ══ -->
     <div class="toolbar">
 
         <!-- Controles de transporte -->
         <div class="transport-group">
-            <button class="btn-transport" id="btnRetroceder" title="Retroceder 10s">
+            <button class="btn-transport" id="btnRetroceder" title="Retroceder 10s" data-tip="−10s">
                 <i class="fas fa-backward-step"></i>
             </button>
-            <button class="btn-transport btn-play" id="btnPlay" title="Reproducir / Pausar" disabled>
+            <button class="btn-transport btn-play" id="btnPlay" title="Reproducir / Pausar" disabled data-tip="Reproducir">
                 <i class="fas fa-play" id="iconPlay"></i>
             </button>
-            <button class="btn-transport" id="btnDetener" title="Detener" disabled>
+            <button class="btn-transport" id="btnDetener" title="Detener" disabled data-tip="Detener">
                 <i class="fas fa-stop"></i>
             </button>
-            <button class="btn-transport" id="btnIrInicio" title="Ir al inicio" disabled>
+            <button class="btn-transport" id="btnIrInicio" title="Ir al inicio" data-tip="Inicio">
                 <i class="fas fa-backward-fast"></i>
             </button>
-            <button class="btn-transport" id="btnIrFin" title="Ir al final" disabled>
+            <button class="btn-transport" id="btnIrFin" title="Ir al final" data-tip="Final">
                 <i class="fas fa-forward-fast"></i>
             </button>
-            <button class="btn-transport btn-record" id="btnGrabarCam" title="Grabar desde cámara">
+            <button class="btn-transport btn-record" id="btnGrabarCam" title="Grabar desde cámara" data-tip="Grabar">
                 <i class="fas fa-video" id="iconGrabarCam"></i>
             </button>
         </div>
 
-        <!-- Separador -->
+        <div class="toolbar-sep"></div>
+
+        <!-- Loop -->
+        <button class="btn-loop" id="btnLoop" data-tip="Repetir en bucle">
+            <i class="fas fa-repeat"></i> Loop
+        </button>
+
+        <!-- Velocidad -->
+        <div class="velocidad-wrap" data-tip="Velocidad">
+            <label><i class="fas fa-gauge-high"></i></label>
+            <select id="selectVelocidad" title="Velocidad de reproducción">
+                <option value="0.25">0.25×</option>
+                <option value="0.5">0.5×</option>
+                <option value="0.75">0.75×</option>
+                <option value="1" selected>1×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+            </select>
+        </div>
+
+        <div class="toolbar-sep"></div>
+
+        <!-- Marcador -->
+        <button class="btn-marcador" id="btnMarcador" data-tip="Agregar marcador (M)">
+            <i class="fas fa-flag"></i> Marcar
+        </button>
+
+        <!-- Efectos toggle -->
+        <button class="btn-toggle-efectos-video" id="btnToggleEfectos" data-tip="Filtros de video">
+            <i class="fas fa-sliders"></i> Filtros
+        </button>
+
+        <!-- Captura de frame -->
+        <button class="btn-captura" id="btnCaptura" disabled data-tip="Capturar fotograma">
+            <i class="fas fa-camera"></i> Capturar
+        </button>
+
+        <!-- Exportar -->
+        <button class="btn-exportar-video" id="btnExportar" data-tip="Descargar video">
+            <i class="fas fa-download"></i> Exportar
+        </button>
+
         <div class="toolbar-sep"></div>
 
         <!-- Pantalla completa -->
-        <button class="btn-transport" id="btnFullscreen" title="Pantalla completa" disabled>
+        <button class="btn-transport" id="btnFullscreen" title="Pantalla completa" disabled data-tip="Pantalla completa">
             <i class="fas fa-expand"></i>
         </button>
 
-        <!-- Separador -->
         <div class="toolbar-sep"></div>
 
         <!-- Acciones -->
         <div class="acciones-group">
-            <label class="btn-accion-video btn-cargar" for="inputVideo" title="Cargar archivo de video">
+            <label class="btn-accion-video btn-cargar" for="inputVideo" title="Cargar archivo de video" data-tip="Cargar">
                 <i class="fas fa-upload"></i> Cargar video
             </label>
             <input type="file" id="inputVideo"
@@ -73,7 +114,57 @@
                 <i class="fas fa-floppy-disk"></i> Guardar nota
             </button>
         </div>
-    </div><!-- /toolbar -->
+    </div><!-- /toolbar fila 1 -->
+
+    <!-- ══ TOOLBAR FILA 2 — opciones extra ══ -->
+    <div class="toolbar-row2" id="toolbarRow2">
+        <span class="toolbar-row2-label">
+            <i class="fas fa-film" style="margin-right:4px;"></i>Opciones
+        </span>
+
+        <!-- Zoom video -->
+        <div class="zoom-wrap" data-tip="Zoom visual">
+            <label><i class="fas fa-magnifying-glass"></i></label>
+            <select id="selectZoom" title="Zoom del video">
+                <option value="contain">Ajustar</option>
+                <option value="cover">Rellenar</option>
+                <option value="fill">Estirar</option>
+            </select>
+        </div>
+
+        <!-- Región de corte (visual) -->
+        <div class="region-video-info" id="regionVideoInfo">
+            <i class="fas fa-scissors"></i>
+            <span id="regionVideoTexto">Sin selección</span>
+            <button class="btn-recortar-video" title="Disponible en versión Premium">
+                <i class="fas fa-crown"></i> Recortar (Premium)
+            </button>
+            <button class="btn-recortar-video" id="btnBorrarRegion" style="background:rgba(231,76,60,0.12); color:#c0392b; cursor:pointer; opacity:1;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <span style="font-size:10px; color:#9c8fc0; font-weight:600;">
+            Shift+clic en la barra para marcar región
+        </span>
+    </div>
+
+    <!-- ══ PANEL DE FILTROS DE VIDEO ══ -->
+    <div class="efectos-video-panel" id="efectosVideoPanel">
+        <span class="efecto-video-title"><i class="fas fa-wand-magic-sparkles" style="margin-right:5px;"></i>Filtros visuales</span>
+        <button class="efecto-video-btn" id="efBN" data-tip="Escala de grises"><i class="fas fa-circle-half-stroke"></i> B&N</button>
+        <button class="efecto-video-btn" id="efSepia" data-tip="Tono sepia cálido"><i class="fas fa-mug-hot"></i> Sepia</button>
+        <button class="efecto-video-btn" id="efContraste" data-tip="Alto contraste"><i class="fas fa-adjust"></i> Contraste+</button>
+        <button class="efecto-video-btn" id="efBrillo" data-tip="Aumentar brillo"><i class="fas fa-sun"></i> Brillo+</button>
+        <button class="efecto-video-btn" id="efSaturar" data-tip="Saturar colores"><i class="fas fa-palette"></i> Saturar</button>
+        <button class="efecto-video-btn" id="efDesaturar" data-tip="Desaturar colores"><i class="fas fa-droplet-slash"></i> Desaturar</button>
+        <button class="efecto-video-btn" id="efInvertir" data-tip="Invertir colores"><i class="fas fa-wand-sparkles"></i> Invertir</button>
+        <button class="efecto-video-btn" id="efCalido" data-tip="Tono cálido"><i class="fas fa-temperature-high"></i> Cálido</button>
+        <button class="efecto-video-btn" id="efFrio" data-tip="Tono frío"><i class="fas fa-snowflake"></i> Frío</button>
+        <button class="efecto-video-btn" id="efEspejo" data-tip="Espejo horizontal"><i class="fas fa-left-right"></i> Espejo</button>
+        <button class="efecto-video-btn" id="efBlur" data-tip="Efecto desenfoque"><i class="fas fa-circle-notch"></i> Blur</button>
+        <button class="efecto-video-btn" id="efNitidez" data-tip="Aumentar nitidez"><i class="fas fa-eye"></i> Nitidez</button>
+    </div>
 
     <!-- ══ ZONA DE VIDEO ══ -->
     <div class="zona-video" id="zonaVideo">
@@ -96,16 +187,13 @@
         </div>
 
         <!-- Reproductor nativo -->
-        <video id="videoPlayer"
-               style="display:none;"
-               preload="metadata">
-        </video>
+        <video id="videoPlayer" style="display:none;" preload="metadata"></video>
+
+        <!-- Canvas de efectos (overlay sobre el video) -->
+        <canvas id="videoEffectCanvas"></canvas>
 
         <!-- Preview de cámara (durante grabación) -->
-        <video id="camaraPreview"
-               style="display:none;"
-               autoplay muted playsinline>
-        </video>
+        <video id="camaraPreview" style="display:none;" autoplay muted playsinline></video>
 
         <!-- Overlay de grabación -->
         <div class="grabacion-overlay" id="grabacionOverlay" style="display:none;">
@@ -120,15 +208,35 @@
 
     </div><!-- /zona-video -->
 
-    <!-- ══ BARRA DE PROGRESO ══ -->
-    <div class="progreso-wrap" id="progresoWrap" style="display:none;">
-        <div class="progreso-tiempo" id="tiempoActual">0:00</div>
-        <div class="progreso-track" id="progresoTrack">
-            <div class="progreso-fill" id="progresoFill"></div>
-            <div class="progreso-thumb" id="progresoThumb"></div>
+    <!-- ══ MARCADORES TIMELINE ══ -->
+    <div class="marcadores-timeline hidden" id="marcadoresTimeline"></div>
+
+    <!-- ══ SEEK BAR PRO ══ -->
+    <div class="seek-pro-wrap" id="seekProWrap">
+        <span class="seek-pro-tiempo" id="seekProActual">0:00</span>
+        <div class="seek-pro-track" id="seekProTrack">
+            <div class="seek-pro-fill" id="seekProFill"></div>
+            <div class="seek-pro-thumb" id="seekProThumb"></div>
         </div>
-        <div class="progreso-tiempo" id="tiempoDuracion">0:00</div>
+        <span class="seek-pro-tiempo" id="seekProTotal">0:00</span>
     </div>
+
+    <!-- ══ STATS EXTRA ══ -->
+    <div class="stats-extra" id="statsExtra">
+        <div class="stat-pill"><i class="fas fa-clock"></i> <span id="statDuracion">—</span></div>
+        <div class="stat-pill"><i class="fas fa-hdd"></i> <span id="statPeso">—</span></div>
+        <div class="stat-pill"><i class="fas fa-file-video"></i> <span id="statFormato">—</span></div>
+        <div class="stat-pill"><i class="fas fa-expand-arrows-alt"></i> <span id="statResolucion">—</span></div>
+        <div class="stat-pill" id="statFiltrosWrap" style="display:none; color:var(--morado-vivo);">
+            <i class="fas fa-wand-magic-sparkles"></i> <span id="statFiltros">0 filtros</span>
+        </div>
+        <div class="stat-pill" id="statMarcsWrap" style="display:none; color:#ff7043;">
+            <i class="fas fa-flag"></i> <span id="statMarcs">0 marcadores</span>
+        </div>
+    </div>
+
+    <!-- ══ LISTA DE MARCADORES ══ -->
+    <div class="marcadores-list-video" id="marcadoresListVideo"></div>
 
     <!-- ══ PANEL INFERIOR: volumen + info ══ -->
     <div class="panel-inferior">
@@ -171,6 +279,10 @@
                     <span class="dato-label">Resolución:</span>
                     <span class="dato-valor" id="datoResolucion">—</span>
                 </div>
+                <div class="dato-item">
+                    <span class="dato-label">Tiempo actual:</span>
+                    <span class="dato-valor" id="datoTiempoActual">0:00</span>
+                </div>
             </div>
         </div>
 
@@ -200,7 +312,6 @@
         </button>
     </div>
 
-
 </div><!-- /panel -->
 
 <!-- MODAL SALIDA SIN GUARDAR -->
@@ -215,6 +326,9 @@
         </div>
     </div>
 </div>
+
+<!-- Canvas oculto para captura de frames -->
+<canvas id="capturaCanvas" style="display:none;"></canvas>
 
 <!-- TOAST -->
 <div class="toast-video" id="toastVideo"></div>
