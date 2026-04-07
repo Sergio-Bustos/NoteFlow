@@ -16,7 +16,10 @@ CREATE TABLE IF NOT EXISTS public."Cuentas" (
     "Color_principal"    TEXT NOT NULL DEFAULT 'Blanco',
     "reset_token"        TEXT,
     "reset_token_expira" TIMESTAMP WITH TIME ZONE,
-    "Foto"               TEXT
+    "Foto"               TEXT,
+    "Es_premium"         BOOLEAN DEFAULT FALSE,
+    "Premium_vence"      TIMESTAMP WITH TIME ZONE,
+    "Plan_premium"       TEXT DEFAULT 'gratis'
 );
 
 -- Tabla: Carpetas

@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 440" width="400" height="440">
+  <defs>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="25%" stop-color="#7DD3FC"/>
+      <stop offset="50%" stop-color="#0EA5E9"/>
+      <stop offset="75%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#F0F9FF"/>
+    </linearGradient>
+    <linearGradient id="ringShine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1"/>
+      <stop offset="40%" stop-color="#7DD3FC" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#0C4A6E"/>
+      <stop offset="40%" stop-color="#0284C7"/>
+      <stop offset="75%" stop-color="#7DD3FC"/>
+      <stop offset="100%" stop-color="#F0F9FF"/>
+    </linearGradient>
+    <radialGradient id="diamondGem" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="40%" stop-color="#BAE6FD"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="strongGlow">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Aura Azulina Lateral -->
+  <g opacity="0.3">
+     <ellipse cx="40" cy="255" rx="30" ry="60" fill="#0EA5E9" filter="url(#strongGlow)">
+        <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" repeatCount="indefinite"/>
+     </ellipse>
+     <ellipse cx="360" cy="255" rx="30" ry="60" fill="#0EA5E9" filter="url(#strongGlow)">
+        <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3s" repeatCount="indefinite"/>
+     </ellipse>
+  </g>
+
+  <!-- Anillo Sombra -->
+  <circle cx="200" cy="255" r="154" fill="none" stroke="#0C4A6E" stroke-width="12" stroke-opacity="0.5" filter="url(#strongGlow)"/>
+
+  <!-- Anillo Principal -->
+  <circle cx="200" cy="255" r="150" fill="none" stroke="url(#ringGrad)" stroke-width="16" filter="url(#glow)">
+    <animateTransform attributeName="transform" type="rotate" from="0 200 255" to="360 200 255" dur="10s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Brillo Anillo -->
+  <circle cx="200" cy="255" r="150" fill="none" stroke="url(#ringShine)" stroke-width="8">
+    <animateTransform attributeName="transform" type="rotate" from="360 200 255" to="0 200 255" dur="7s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- ORNAMENTOS DIAGONALES -->
+  <g filter="url(#glow)">
+    <animateTransform attributeName="transform" type="rotate" from="0 200 255" to="360 200 255" dur="15s" repeatCount="indefinite"/>
+    <path d="M 94 149 L 104 129 L 114 149 L 104 169 Z" fill="url(#diamondGem)" stroke="#FFFFFF" stroke-width="2"/>
+    <path d="M 306 149 L 316 129 L 326 149 L 316 169 Z" fill="url(#diamondGem)" stroke="#FFFFFF" stroke-width="2"/>
+    <path d="M 94 361 L 104 341 L 114 361 L 104 381 Z" fill="url(#diamondGem)" stroke="#FFFFFF" stroke-width="2"/>
+    <path d="M 306 361 L 316 341 L 326 361 L 316 381 Z" fill="url(#diamondGem)" stroke="#FFFFFF" stroke-width="2"/>
+  </g>
+
+  <!-- DIAMANTE CENTRAL INFERIOR ANILLO -->
+  <g filter="url(#glow)">
+    <path d="M 200 380 L 180 405 L 200 430 L 220 405 Z" fill="url(#diamondGem)" stroke="#FFFFFF" stroke-width="3">
+       <animate attributeName="stroke-opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+    </path>
+  </g>
+
+  <!-- ===== ALAS DE CRISTAL GIGANTES ===== -->
+  <g filter="url(#glow)">
+    <path d="M 50 255 L 5 215 L 30 255 L 5 295 L 50 255 Z" fill="url(#crownGrad)" stroke="#FFFFFF" stroke-width="2.5">
+       <animate attributeName="opacity" values="1;0.8;1" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <path d="M 350 255 L 395 215 L 370 255 L 395 295 L 350 255 Z" fill="url(#crownGrad)" stroke="#FFFFFF" stroke-width="2.5">
+       <animate attributeName="opacity" values="1;0.8;1" dur="3s" repeatCount="indefinite"/>
+    </path>
+  </g>
+
+  <!-- ===== CORONA SUPREMA CON DIAMANTE CENTRAL ===== -->
+  <g filter="url(#glow)">
+     <animateTransform attributeName="transform" type="translate" values="0,0; 0,-5; 0,0" dur="3s" repeatCount="indefinite"/>
+     
+     <!-- Cuerpo de la corona -->
+     <path d="M 110 145 L 80 75 L 130 115 L 150 40 L 175 90 L 200 20 L 225 90 L 250 40 L 270 115 L 320 75 L 290 145 Z" 
+           fill="url(#crownGrad)" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+     
+     <!-- DIAMANTE EN EL CENTRO DE LA CORONA (Lo que pediste) -->
+     <path d="M 200 85 L 182 112 L 200 138 L 218 112 Z" fill="url(#diamondGem)" stroke="#FFFFFF" stroke-width="2.5" filter="url(#glow)">
+        <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+     </path>
+     <circle cx="200" cy="112" r="5" fill="#FFFFFF" opacity="0.8">
+        <animate attributeName="opacity" values="0.8;0.2;0.8" dur="2s" repeatCount="indefinite"/>
+     </circle>
+
+     <!-- Banda inferior -->
+     <rect x="110" y="140" width="180" height="22" rx="4" fill="#0EA5E9" stroke="#FFFFFF" stroke-width="2.5"/>
+     
+     <!-- Diamante en la punta superior central -->
+     <path d="M 200 5 L 180 35 L 200 65 L 220 35 Z" fill="url(#diamondGem)" stroke="#FFFFFF" stroke-width="3" filter="url(#glow)"/>
+  </g>
+</svg>

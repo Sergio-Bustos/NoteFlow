@@ -26,8 +26,20 @@
 <!-- Barra superior móvil: foto + nombre a la derecha -->
 <div class="mobile-topbar">
     <a href="{{ url_for('perfil') }}" class="mobile-topbar-user">
-        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto">
-        <span>{{ usuario.Nombres }}</span>
+        {% if session.es_premium %}
+        <div class="avatar-premium-container">
+            <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="user-avatar">
+            <img src="{{ url_for('static', filename='avatar_' + session.plan_premium + '_animated.svg') }}" class="avatar-frame">
+        </div>
+        {% else %}
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="free-user-avatar">
+        {% endif %}
+        <span>
+            {{ usuario.Nombres }}
+            {% if session.es_premium %}
+                <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }}; margin-left: 5px;"></i>
+            {% endif %}
+        </span>
     </a>
 </div>
 
@@ -66,9 +78,20 @@
 
         <!-- Información del usuario -->
         <a href="{{ url_for('perfil') }}" class="usuario-info">
-        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" 
-            alt="Foto de perfil"> <!-- Foto de perfil -->
-            <span><strong>{{ usuario.Nombres }}</strong></span> <!-- Nombre del usuario -->
+        {% if session.es_premium %}
+        <div class="avatar-premium-container">
+            <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="user-avatar">
+            <img src="{{ url_for('static', filename='avatar_' + session.plan_premium + '_animated.svg') }}" class="avatar-frame">
+        </div>
+        {% else %}
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto de perfil" class="free-user-avatar">
+        {% endif %}
+            <span>
+                <strong>{{ usuario.Nombres }}</strong>
+                {% if session.es_premium %}
+                    <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }}; margin-left: 5px;" title="Usuario Premium - Plan {{ session.plan_premium | capitalize }}"></i>
+                {% endif %}
+            </span> <!-- Nombre del usuario -->
             <i class="fas fa-chevron-down profile-dropdown-icon"></i> <!-- Icono adicional -->
         </a>
     </header>
@@ -228,25 +251,29 @@
             <i class="fas fa-align-left" style="color:#5452d3"></i>
             <span>Texto</span>
         </a>
-        <a href="/crear-nota-imagen" class="formato-opcion">
+        <a href="/crear-nota-imagen" class="formato-opcion {% if not session.es_premium %}locked{% endif %}">
             <i class="fas fa-image" style="color:#27ae60"></i>
             <span>Imagen</span>
+            {% if not session.es_premium %}<i class="fas fa-lock premium-lock-tiny"></i>{% endif %}
         </a>
-        <a href="/crear-nota-audio" class="formato-opcion">
+        <a href="/crear-nota-audio" class="formato-opcion {% if not session.es_premium %}locked{% endif %}">
             <i class="fas fa-microphone" style="color:#e74c3c"></i>
             <span>Audio</span>
+            {% if not session.es_premium %}<i class="fas fa-lock premium-lock-tiny"></i>{% endif %}
         </a>
-        <a href="/crear-nota-video" class="formato-opcion">
+        <a href="/crear-nota-video" class="formato-opcion {% if not session.es_premium %}locked{% endif %}">
             <i class="fas fa-video" style="color:#2980b9"></i>
             <span>Video</span>
+            {% if not session.es_premium %}<i class="fas fa-lock premium-lock-tiny"></i>{% endif %}
         </a>
         <a href="/bloc-dibujo" class="formato-opcion">
             <i class="fas fa-paint-brush" style="color:#f39c12"></i>
             <span>Dibujo</span>
         </a>
-        <a href="/crear-nota-mixta" class="formato-opcion">
+        <a href="/crear-nota-mixta" class="formato-opcion {% if not session.es_premium %}locked{% endif %}">
             <i class="fas fa-layer-group" style="color:#8e44ad"></i>
             <span>Mixta</span>
+            {% if not session.es_premium %}<i class="fas fa-lock premium-lock-tiny"></i>{% endif %}
         </a>
     </div>
     <button class="formato-cerrar" onclick="cerrarFormato()">Cancelar</button>

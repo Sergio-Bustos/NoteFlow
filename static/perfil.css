@@ -175,8 +175,45 @@ body.tema-oscuro .tema-actual      { background: #374151; color: #e2e8f0; }
 
 .avatar-container { position: relative; flex-shrink: 0; }
 
-.avatar-container img,
-#foto-perfil {
+/* ── MARCO ANIMADO PERFIL (GRANDE) ── */
+.avatar-container.premium {
+    width: 180px; 
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+body .perfil-info .avatar-container.premium #foto-perfil {
+    width: 73% !important; /* Coincide con el diámetro de 135px en un bloque de 180px */
+    height: 71% !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    position: absolute;
+    top: 58% !important; /* Ajuste centro del anillo */
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 1;
+    border-radius: 50% !important;
+    background: transparent !important;
+}
+
+.avatar-container.premium .avatar-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 110%;
+    pointer-events: none;
+    z-index: 2;
+    transform: translateY(-8%);
+}
+
+.free-user-avatar {
     width: 110px;
     height: 110px;
     object-fit: cover;
@@ -186,7 +223,7 @@ body.tema-oscuro .tema-actual      { background: #374151; color: #e2e8f0; }
     display: block;
 }
 
-#foto-perfil:hover{
+#foto-perfil:hover {
     transform: scale(1.05);
     transition: all 0.3s ease;
 }
@@ -617,4 +654,77 @@ body.tema-oscuro .modal-footer .btn-cancel-custom {
 
 body.tema-oscuro .btn-close {
     filter: invert(1) brightness(200%);
+}
+
+/* ── BADGES DE PLAN ── */
+.premium-badge-text {
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-left: 8px;
+    vertical-align: middle;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.premium-quincenal { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+.premium-mensual  { background: linear-gradient(135deg, #f1c40f, #f39c12); }
+.premium-anual    { background: linear-gradient(135deg, #00d2d3, #01a3a4); }
+
+.free-badge-text {
+    background: #94a3b8;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* ── BLOQUEO PREMIUM ── */
+.premium-lock-notice {
+    background: rgba(243, 156, 18, 0.05);
+    border: 1.5px dashed #f39c12;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    color: #92400e;
+    font-size: 0.88rem;
+    margin-bottom: 5px;
+}
+
+body.tema-oscuro .premium-lock-notice {
+    background: rgba(243, 156, 18, 0.08);
+    color: #fbbf24;
+}
+
+.upgrade-link {
+    color: #f39c12;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+.btn-disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-disabled:hover {
+    background: #f1c40f;
+    color: #fff;
+    border-color: #f1c40f;
+}
+
+body.tema-oscuro .btn-disabled {
+    background: #334155;
+    color: #64748b;
+    border-color: #475569;
 }

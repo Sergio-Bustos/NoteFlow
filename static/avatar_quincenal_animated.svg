@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 440" width="400" height="440">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="55%" r="50%">
+      <stop offset="0%" stop-color="#9333EA" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#1a0030" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0ABFC"/>
+      <stop offset="20%" stop-color="#C084FC"/>
+      <stop offset="50%" stop-color="#7C3AED"/>
+      <stop offset="80%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#E879F9"/>
+    </linearGradient>
+    <linearGradient id="ringGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F5D0FE" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#9333EA" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#F5D0FE" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAE8FF"/>
+      <stop offset="30%" stop-color="#E879F9"/>
+      <stop offset="60%" stop-color="#9333EA"/>
+      <stop offset="100%" stop-color="#6B21A8"/>
+    </linearGradient>
+    <linearGradient id="crownShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#E879F9" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#7C3AED" stop-opacity="0.2"/>
+    </linearGradient>
+    <radialGradient id="gemInner" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="60%" stop-color="#D946EF"/>
+      <stop offset="100%" stop-color="#6B21A8"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="crownGlow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="pulseGlow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- === ANIMACION: Rotacion lenta del anillo + pulso de brillo === -->
+
+  <!-- Anillo sombra -->
+  <circle cx="200" cy="255" r="152" fill="none" stroke="#4C1D95" stroke-width="6" stroke-opacity="0.5" filter="url(#softGlow)">
+    <animate attributeName="stroke-opacity" values="0.5;0.9;0.5" dur="3s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Anillo principal con rotacion animada via dashoffset -->
+  <circle cx="200" cy="255" r="150" fill="none" stroke="url(#ringGrad)" stroke-width="14" filter="url(#glow)">
+    <animateTransform attributeName="transform" type="rotate" from="0 200 255" to="360 200 255" dur="12s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Brillo interior -->
+  <circle cx="200" cy="255" r="150" fill="none" stroke="url(#ringGrad2)" stroke-width="6">
+    <animateTransform attributeName="transform" type="rotate" from="360 200 255" to="0 200 255" dur="8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Anillos finos decorativos -->
+  <circle cx="200" cy="255" r="138" fill="none" stroke="#C084FC" stroke-width="1.5" stroke-opacity="0.6"/>
+  <circle cx="200" cy="255" r="163" fill="none" stroke="#A855F7" stroke-width="1" stroke-opacity="0.4"/>
+
+  <!-- Gemas en el anillo (rotan con el anillo) -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="0 200 255" to="360 200 255" dur="12s" repeatCount="indefinite"/>
+    <circle cx="350" cy="255" r="7" fill="url(#gemInner)" stroke="#E879F9" stroke-width="1.5" filter="url(#glow)"/>
+    <circle cx="50" cy="255" r="7" fill="url(#gemInner)" stroke="#E879F9" stroke-width="1.5" filter="url(#glow)"/>
+    <circle cx="200" cy="405" r="7" fill="url(#gemInner)" stroke="#E879F9" stroke-width="1.5" filter="url(#glow)"/>
+    <circle cx="306" cy="149" r="5.5" fill="url(#gemInner)" stroke="#C084FC" stroke-width="1.5" filter="url(#glow)"/>
+    <circle cx="94" cy="149" r="5.5" fill="url(#gemInner)" stroke="#C084FC" stroke-width="1.5" filter="url(#glow)"/>
+    <circle cx="306" cy="361" r="5.5" fill="url(#gemInner)" stroke="#C084FC" stroke-width="1.5" filter="url(#glow)"/>
+    <circle cx="94" cy="361" r="5.5" fill="url(#gemInner)" stroke="#C084FC" stroke-width="1.5" filter="url(#glow)"/>
+    <circle cx="345" cy="175" r="4" fill="#F0ABFC" stroke="#9333EA" stroke-width="1"/>
+    <circle cx="55" cy="175" r="4" fill="#F0ABFC" stroke="#9333EA" stroke-width="1"/>
+    <circle cx="345" cy="335" r="4" fill="#F0ABFC" stroke="#9333EA" stroke-width="1"/>
+    <circle cx="55" cy="335" r="4" fill="#F0ABFC" stroke="#9333EA" stroke-width="1"/>
+  </g>
+
+  <!-- Volutas laterales con parpadeo suave -->
+  <g opacity="0.8">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="2.5s" repeatCount="indefinite"/>
+    <path d="M 80 200 Q 60 185 70 170 Q 80 155 95 165 Q 85 175 90 185 Z" fill="#9333EA" stroke="#C084FC" stroke-width="1" opacity="0.8"/>
+    <path d="M 80 200 Q 55 195 50 180 Q 45 165 62 160 Q 58 175 70 180 Z" fill="#7C3AED" stroke="#E879F9" stroke-width="1" opacity="0.7"/>
+    <path d="M 320 200 Q 340 185 330 170 Q 320 155 305 165 Q 315 175 310 185 Z" fill="#9333EA" stroke="#C084FC" stroke-width="1" opacity="0.8"/>
+    <path d="M 320 200 Q 345 195 350 180 Q 355 165 338 160 Q 342 175 330 180 Z" fill="#7C3AED" stroke="#E879F9" stroke-width="1" opacity="0.7"/>
+  </g>
+
+  <!-- ===== CORONA ===== -->
+  <g filter="url(#crownGlow)">
+    <animateTransform attributeName="transform" type="translate" values="0,0; 0,-3; 0,0" dur="2s" repeatCount="indefinite"/>
+    <path d="M 118 148 L 118 110 L 148 128 L 175 85 L 200 105 L 225 85 L 252 128 L 282 110 L 282 148 Z"
+          fill="url(#crownGrad)" stroke="#F0ABFC" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M 118 148 L 118 110 L 148 128 L 175 85 L 200 105 L 225 85 L 252 128 L 282 110 L 282 148 Z"
+          fill="url(#crownShine)" opacity="0.5"/>
+
+    <!-- Banda inferior -->
+    <rect x="118" y="140" width="164" height="18" rx="4" fill="#7C3AED" stroke="#C084FC" stroke-width="1.5"/>
+    <rect x="118" y="140" width="164" height="8" rx="4" fill="#E879F9" opacity="0.35"/>
+
+    <!-- Gemas banda -->
+    <ellipse cx="152" cy="149" rx="7" ry="5" fill="url(#gemInner)" stroke="#F0ABFC" stroke-width="1"/>
+    <ellipse cx="200" cy="149" rx="9" ry="6" fill="url(#gemInner)" stroke="#FFFFFF" stroke-width="1.5" filter="url(#glow)"/>
+    <ellipse cx="248" cy="149" rx="7" ry="5" fill="url(#gemInner)" stroke="#F0ABFC" stroke-width="1"/>
+
+    <!-- Punta central + gema -->
+    <polygon points="200,78 190,100 210,100" fill="#9333EA" stroke="#E879F9" stroke-width="1.5"/>
+    <circle cx="200" cy="84" r="10" fill="url(#gemInner)" stroke="#FFFFFF" stroke-width="2" filter="url(#glow)"/>
+    <line x1="200" y1="72" x2="200" y2="78" stroke="#FFFFFF" stroke-width="1.5" opacity="0.9"/>
+    <line x1="192" y1="76" x2="196" y2="80" stroke="#FFFFFF" stroke-width="1" opacity="0.7"/>
+    <line x1="208" y1="76" x2="204" y2="80" stroke="#FFFFFF" stroke-width="1" opacity="0.7"/>
+
+    <!-- Puntas laterales -->
+    <polygon points="175,78 167,95 183,95" fill="#7C3AED" stroke="#C084FC" stroke-width="1.5"/>
+    <circle cx="175" cy="83" r="7" fill="url(#gemInner)" stroke="#E879F9" stroke-width="1.5" filter="url(#glow)"/>
+    <polygon points="225,78 217,95 233,95" fill="#7C3AED" stroke="#C084FC" stroke-width="1.5"/>
+    <circle cx="225" cy="83" r="7" fill="url(#gemInner)" stroke="#E879F9" stroke-width="1.5" filter="url(#glow)"/>
+
+    <!-- Puntas externas -->
+    <polygon points="148,121 140,138 156,138" fill="#9333EA" stroke="#C084FC" stroke-width="1"/>
+    <circle cx="148" cy="125" r="5" fill="#F0ABFC" stroke="#9333EA" stroke-width="1" filter="url(#glow)"/>
+    <polygon points="252,121 244,138 260,138" fill="#9333EA" stroke="#C084FC" stroke-width="1"/>
+    <circle cx="252" cy="125" r="5" fill="#F0ABFC" stroke="#9333EA" stroke-width="1" filter="url(#glow)"/>
+    <polygon points="118,103 110,120 126,120" fill="#7C3AED" stroke="#C084FC" stroke-width="1"/>
+    <polygon points="282,103 274,120 290,120" fill="#7C3AED" stroke="#C084FC" stroke-width="1"/>
+  </g>
+
+  <!-- Destellos en corona con parpadeo -->
+  <path d="M 165 95 L 167 90 L 169 95 L 174 97 L 169 99 L 167 104 L 165 99 L 160 97 Z" fill="#FFFFFF" opacity="0.85" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.85;0.2;0.85" dur="1.8s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 231 95 L 233 90 L 235 95 L 240 97 L 235 99 L 233 104 L 231 99 L 226 97 Z" fill="#FFFFFF" opacity="0.85" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.2;0.85;0.2" dur="1.8s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 196 114 L 197.5 110 L 199 114 L 203 115.5 L 199 117 L 197.5 121 L 196 117 L 192 115.5 Z" fill="#FFFFFF" opacity="0.7" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.7;0.1;0.7" dur="2.2s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Estrellas flotantes con animación -->
+  <path d="M 85 130 L 86.5 126 L 88 130 L 92 131.5 L 88 133 L 86.5 137 L 85 133 L 81 131.5 Z" fill="#E879F9" opacity="0.9" filter="url(#glow)">
+    <animateTransform attributeName="transform" type="translate" values="0,0; 2,-4; 0,0" dur="2.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M 312 130 L 313.5 126 L 315 130 L 319 131.5 L 315 133 L 313.5 137 L 312 133 L 308 131.5 Z" fill="#E879F9" opacity="0.9" filter="url(#glow)">
+    <animateTransform attributeName="transform" type="translate" values="0,0; -2,-4; 0,0" dur="2.5s" begin="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0.9;0.3" dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <circle cx="110" cy="155" r="2.5" fill="#F0ABFC" opacity="0.8" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.8;0.1;0.8" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="290" cy="155" r="2.5" fill="#F0ABFC" opacity="0.8" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.1;0.8;0.1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Particulas extra flotando -->
+  <circle cx="160" cy="75" r="2" fill="#F0ABFC" opacity="0">
+    <animate attributeName="cy" values="75;55;75" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0.7;0" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="240" cy="80" r="1.5" fill="#E879F9" opacity="0">
+    <animate attributeName="cy" values="80;60;80" dur="3.5s" begin="1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0.6;0" dur="3.5s" begin="1s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="130" cy="90" r="1.5" fill="#C084FC" opacity="0">
+    <animate attributeName="cy" values="90;70;90" dur="4s" begin="0.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0.5;0" dur="4s" begin="0.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>

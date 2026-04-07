@@ -28,7 +28,33 @@
 
     function procesarPago(e) {
         e.preventDefault();
-        // Aquí conectas con tu procesador de pagos real
-        alert('¡Pago procesado! Tu plan ' + plan + ' ha sido activado. ¡Bienvenido a NoteFlow Premium!');
-        window.location.href = '/dashboard';
+        
+        const nombre = document.getElementById('nombre').value;
+        const correo = document.getElementById('correo').value;
+        
+        // Llamada al backend para activar el premium
+        fetch('/procesar-pago', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                plan: plan,
+                precio: precio,
+                metodo: metodoSeleccionado || 'tarjeta',
+                nombre: nombre,
+                correo: correo
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('¡Pago procesado con éxito! Bienvenido a NoteFlow Premium.');
+                window.location.href = data.redirect || '/dashboard';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(err => {
+            console.error('Error en pago:', err);
+            alert('Lo sentimos, hubo un error al procesar tu pago.');
+        });
     }

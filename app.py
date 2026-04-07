@@ -528,6 +528,7 @@ def procesar_verificacion():
         session.pop("registro_pendiente", None)
         session["usuario_id"]     = cuenta_id
         session["usuario_nombre"] = pendiente["usuario"]
+        session["es_premium"]     = False  # Nuevas cuentas no son premium por defecto
 
         return jsonify({"success": True, "mensaje": "¡Cuenta creada exitosamente!", "redirect": "/dashboard"}), 201
 
@@ -647,6 +648,29 @@ def procesar_login():
         if login_exitoso:
             session["usuario_id"]     = cuenta["ID_Cuenta"]
             session["usuario_nombre"] = cuenta["Usuario"]
+            
+            # Obtener estado premium real de la BD y verificar si ya expiró
+            cursor_temp = conexion.cursor(cursor_factory=RealDictCursor)
+            cursor_temp.execute('SELECT "Es_premium", "Premium_vence", "Plan_premium" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
+            res_premium = cursor_temp.fetchone()
+            
+            es_p_db = res_premium["Es_premium"] if res_premium else False
+            vence   = res_premium["Premium_vence"] if res_premium else None
+            plan    = res_premium["Plan_premium"] if res_premium else "gratis"
+            
+            # Verificar expiración
+            if es_p_db and vence:
+                ahora = datetime.now(vence.tzinfo) if vence.tzinfo else datetime.now()
+                if ahora > vence:
+                    cursor_temp.execute('UPDATE public."Cuentas" SET "Es_premium" = FALSE, "Plan_premium" = \'gratis\' WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
+                    conexion.commit()
+                    es_p_db = False
+                    plan = "gratis"
+            
+            session["es_premium"] = es_p_db
+            session["plan_premium"] = plan
+            cursor_temp.close()
+            
             return jsonify({"success": True, "mensaje": "Inicio de sesión exitoso", "redirect": "/dashboard"}), 200
 
         return jsonify({"error": "Contraseña incorrecta"}), 401
@@ -970,7 +994,7 @@ def dashboard():
         cursor.execute("""
             SELECT "Nombres",
                    COALESCE(NULLIF(TRIM("Color_principal"), ''), 'Blanco') AS "Color_principal",
-                   "Foto"
+                   "Foto", "Es_premium", "Plan_premium", "Premium_vence"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
@@ -980,11 +1004,35 @@ def dashboard():
             session.clear()
             return redirect(url_for("mostrar_login"))
 
+        # Verificar y actualizar estado premium si expiró
+        es_premium = usuario_row.get("Es_premium", False)
+        vence      = usuario_row.get("Premium_vence")
+        plan       = usuario_row.get("Plan_premium") or "gratis"
+        
+        if es_premium and vence:
+            ahora = datetime.now(vence.tzinfo) if vence.tzinfo else datetime.now()
+            if ahora > vence:
+                cursor.execute("""
+                    UPDATE public."Cuentas"
+                    SET "Es_premium" = FALSE, "Plan_premium" = 'gratis'
+                    WHERE "ID_Cuenta" = %s
+                """, (user_id,))
+                conexion.commit()
+                es_premium = False
+                plan       = "gratis"
+
         usuario = {
             "Nombres":         usuario_row.get("Nombres"),
             "Color_principal": usuario_row.get("Color_principal") or "Blanco",
             "Foto":            usuario_row.get("Foto") or "default_profile.png",
+            "Es_premium":      es_premium,
+            "Plan_premium":    plan
         }
+        
+        colores = {"quincenal": "#a29bfe", "mensual": "#f1c40f", "anual": "#00d2d3"}
+        session["es_premium"]   = es_premium
+        session["plan_premium"] = plan
+        session["premium_color"] = colores.get(plan, "#f1c40f")
 
         cursor.execute("""
             SELECT COUNT(*) AS total FROM public."Notas"
@@ -1098,7 +1146,7 @@ def perfil():
         cursor   = conexion.cursor()
         cursor.execute("""
             SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos",
-                   "Correo", "Telefono", "Foto", "Color_principal"
+                   "Correo", "Telefono", "Foto", "Color_principal", "Es_premium", "Plan_premium"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
@@ -1342,7 +1390,7 @@ def mostrar_notas():
         conexion = conectar_db(dict_cursor=True)
         cursor   = conexion.cursor()
         cursor.execute("""
-            SELECT "Nombres", "Foto", "Color_principal"
+            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium"
             FROM public."Cuentas" WHERE "ID_Cuenta" = %s
         """, (user_id,))
         usuario = cursor.fetchone()
@@ -1915,7 +1963,7 @@ def papelera():
         cursor = conexion.cursor()
 
         cursor.execute("""
-            SELECT "Nombres", "Foto", "Color_principal"
+            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium"
             FROM public."Cuentas" WHERE "ID_Cuenta" = %s
         """, (user_id,))
         usuario = cursor.fetchone()
@@ -2198,7 +2246,9 @@ def crear_nota_texto():
 @app.route("/crear-nota-imagen")
 @login_required
 def crear_nota_imagen():
-    """Editor de notas de imagen."""
+    """Editor de notas de imagen. Solo disponible para usuarios Premium."""
+    if not session.get("es_premium"):
+        return redirect(url_for("planes"))
     return render_template("editorimagen.html", edit_mode=False)
 
 
@@ -2212,21 +2262,27 @@ def bloc_dibujo():
 @app.route("/crear-nota-audio")
 @login_required
 def crear_nota_audio():
-    """Editor de notas de audio."""
+    """Editor de notas de audio. Solo disponible para usuarios Premium."""
+    if not session.get("es_premium"):
+        return redirect(url_for("planes"))
     return render_template("editoraudio.html", edit_mode=False)
 
 
 @app.route("/crear-nota-video")
 @login_required
 def crear_nota_video():
-    """Editor de notas de video."""
+    """Editor de notas de video. Solo disponible para usuarios Premium."""
+    if not session.get("es_premium"):
+        return redirect(url_for("planes"))
     return render_template("editorvideo.html", edit_mode=False)
 
 
 @app.route("/crear-nota-mixta")
 @login_required
 def crear_nota_mixta():
-    """Editor de notas mixtas (texto + archivos multimedia)."""
+    """Editor de notas mixtas. Solo disponible para usuarios Premium."""
+    if not session.get("es_premium"):
+        return redirect(url_for("planes"))
     return render_template("editormixta.html", edit_mode=False)
 
 
@@ -3348,7 +3404,7 @@ def procesar_pago():
     #   if response.ok: ...
     # ───────────────────────────────────────────────────────────────
 
-    # Por ahora: simula aprobación y guarda en sesión
+    # Por ahora: simula aprobación y guarda en sesión y en la BASE DE DATOS
     from datetime import datetime, timedelta
     duraciones = {"quincenal": 15, "mensual": 30, "anual": 365}
     dias       = duraciones.get(plan, 30)
@@ -3356,18 +3412,31 @@ def procesar_pago():
 
     session["plan_premium"]        = plan
     session["plan_premium_expira"] = expira.isoformat()
+    session["es_premium"]          = True
+    colores = {"quincenal": "#a29bfe", "mensual": "#f1c40f", "anual": "#00d2d3"}
+    session["premium_color"]      = colores.get(plan, "#f1c40f")
     session.modified               = True
 
-    # Aquí también podrías guardar en la BD:
-    # cursor.execute("""
-    #     UPDATE public."Cuentas"
-    #     SET "Plan" = %s, "Plan_expira" = %s
-    #     WHERE "ID_Cuenta" = %s
-    # """, (plan, expira, user_id))
+    # Actualizar la BD para que el premium persista
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+        cursor.execute("""
+            UPDATE public."Cuentas"
+            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s
+            WHERE "ID_Cuenta" = %s
+        """, (expira, plan, user_id))
+        conexion.commit()
+    except Exception as e:
+        print(f"Error al guardar premium en BD: {e}")
+    finally:
+        cerrar_db(cursor, conexion)
 
     return jsonify({
         "success": True,
-        "mensaje": f"Plan {plan} activado hasta {expira.strftime('%d/%m/%Y')}",
+        "mensaje": f"Pago con {metodo.capitalize()} verificado. Plan {plan} activado hasta {expira.strftime('%d/%m/%Y')}",
         "redirect": "/dashboard",
     }), 200
 

@@ -31,14 +31,31 @@
         </div>
 
         <div class="perfil-info">
-            <div class="avatar-container">
-                <img id="foto-perfil"
-                    src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}"
-                        alt="Foto de perfil">
+            <div class="avatar-container {% if session.es_premium %}premium{% endif %}">
+                <img id="foto-perfil" src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}"
+                     alt="Foto de perfil" class="free-user-avatar">
+                {% if session.es_premium %}
+                    <img src="{{ url_for('static', filename='avatar_' + session.plan_premium + '_animated.svg') }}" class="avatar-frame">
+                {% endif %}
             </div>
 
             <div class="data">
-                <p><i class="fas fa-user"></i>     <strong>Nombre:</strong>   {{ usuario.Nombres }} {{ usuario.Apellidos }}</p>
+                <p><i class="fas fa-user"></i>     <strong>Nombre:</strong>   {{ usuario.Nombres }} {{ usuario.Apellidos }}
+                    {% if session.es_premium %}
+                        {% set badge_class = 'premium-mensual' %}
+                        {% set badge_text  = 'Premium Mensual' %}
+                        {% if session.plan_premium == 'quincenal' %}
+                            {% set badge_class = 'premium-quincenal' %}
+                            {% set badge_text  = 'Premium Quincenal' %}
+                        {% elif session.plan_premium == 'anual' %}
+                            {% set badge_class = 'premium-anual' %}
+                            {% set badge_text  = 'Premium Anual' %}
+                        {% endif %}
+                        <span class="premium-badge-text {{ badge_class }}"><i class="fas fa-crown"></i> {{ badge_text }}</span>
+                    {% else %}
+                        <span class="free-badge-text"><i class="fas fa-user"></i> Gratuito</span>
+                    {% endif %}
+                </p>
                 <p><i class="fas fa-envelope"></i> <strong>Correo:</strong>   {{ usuario.Correo }}</p>
                 <p><i class="fas fa-at"></i>       <strong>Usuario:</strong>  {{ usuario.Usuario }}</p>
                 <p><i class="fas fa-phone"></i>    <strong>Teléfono:</strong> {{ usuario.Telefono }}</p>
@@ -65,6 +82,7 @@
                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
                 <small class="password-requirements">Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 5MB)</small>
             </div>
+            
             <div class="preview-foto" id="preview-foto" style="display:none;">
                 <p><strong>Vista previa:</strong></p>
                 <img id="preview-img" src="" alt="Vista previa">

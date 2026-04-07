@@ -8,9 +8,6 @@
 venv/
 env/
 
-# Archivos subidos por usuarios
-uploads/
-static/uploads/
 
 # Base de datos local (sqlite no afecta en postgresql)
 *.db
