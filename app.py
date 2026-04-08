@@ -1360,7 +1360,7 @@ def eliminar_foto_perfil():
         return jsonify({
             "success":      True,
             "mensaje":      "Foto de perfil eliminada correctamente",
-            "foto_default": url_for("static", filename="img/default_profile.png"),
+            "foto_default": url_for("static", filename="default_profile.png"),
         }), 200
 
     except Exception as e:
@@ -1587,7 +1587,7 @@ def api_mis_notas_y_carpetas():
                 c."Nombre_carpeta"
             FROM public."Notas" n
             LEFT JOIN public."Carpetas" c ON n."ID_Carpeta" = c."ID_Carpeta"
-            WHERE n."ID_Cuenta" = %s AND n."Estado" = 'Activa'
+            WHERE n."ID_Cuenta" = %s AND n."Estado" = 'Activa' AND n."ID_Carpeta" IS NULL
             ORDER BY n."Fecha_deedicion" DESC NULLS LAST
         """, (user_id,))
         notas_raw = cursor.fetchall()
