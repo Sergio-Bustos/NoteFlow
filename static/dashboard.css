@@ -453,7 +453,12 @@ header {
 .usuario-info {
     display: flex;
     align-items: center;
+    gap: 18px;
     text-decoration: none;
+}
+
+.usuario-info img {
+    margin-right: 0 !important;
 }
 
 .usuario-info .free-user-avatar,
@@ -464,6 +469,12 @@ header {
     margin-right: 10px;
     border: 2px solid var(--color-principal);
     object-fit: cover;
+}
+
+/* Tamaño premium en desktop dashboard */
+.usuario-info .user-avatar {
+    width: 71px;
+    height: 75px;
 }
 
 .profile-dropdown-icon { margin-left: 10px; }
@@ -1310,7 +1321,8 @@ body.tema-oscuro .mobile-topbar {
 .mobile-topbar-user {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 15px;
+    transform: translateY(-3px); /* Un poquito más arriba como pidió */
     text-decoration: none;
     color: #fff;
     font-weight: 600;
@@ -1318,11 +1330,20 @@ body.tema-oscuro .mobile-topbar {
     min-width: 0;
 }
 body.tema-oscuro .mobile-topbar-user { color: var(--texto-oscuro); }
-.mobile-topbar-user img {
-    width: 36px;
-    height: 36px;
+.mobile-topbar-user img.free-user-avatar {
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.5);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.mobile-topbar-user img.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
     object-fit: cover;
     flex-shrink: 0;
 }
@@ -1444,55 +1465,3 @@ body.tema-oscuro .mobile-topbar-user { color: var(--texto-oscuro); }
     flex-direction: column;
 }
 
-/* ── MARCOS ANIMADOS PREMIUM ── */
-.avatar-premium-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 78px; /* Escalado proporcional para que luzca grande */
-    height: 78px;
-    margin-right: 12px;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-.avatar-premium-container img.user-avatar {
-    width: 72% !important; /* Ajuste para el nuevo tamaño */
-    height: 72% !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-    position: absolute;
-    top: 46% !important; 
-    left: 59% !important;
-    transform: translate(-50%, -50%) !important;
-    z-index: 1;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-}
-
-.avatar-premium-container .avatar-frame {
-    position: absolute;
-    top: -10px;
-    left: 7px;
-    width: 100%;
-    height: 110%; 
-    pointer-events: none;
-    z-index: 2;
-    transform: translateY(-8%);
-}
-
-/* Ajustes específicos */
-.mobile-topbar-user .avatar-premium-container {
-    width: 64px;
-    height: 64px;
-    margin-right: 8px;
-}
-
-.profile-header .avatar-premium-container {
-    width: 180px;
-    height: 180px;
-}

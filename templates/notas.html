@@ -86,10 +86,10 @@
                 {% if session.es_premium %}
                 <div class="avatar-premium-container">
                     <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
-                    <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile_cloud.svg') }}" alt="Foto" class="user-avatar">
+                    <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="user-avatar">
                 </div>
                 {% else %}
-                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="free-user-avatar">
+                <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto de perfil" class="free-user-avatar">
                 {% endif %}
                 <span>
                     {{ usuario.Nombres }}
@@ -328,8 +328,7 @@
             <div class="modal-body">¿Estás seguro de que quieres cerrar sesión?</div>
             <div class="modal-footer">
                 <!-- Cancelar: fondo gris, letra blanca (Bootstrap .btn-secondary) -->
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                        style="color:#ffffff !important;">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <!-- Cerrar sesión: fondo rojo, letra blanca -->
                 <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger"
                    style="color:#ffffff !important;">
