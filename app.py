@@ -771,23 +771,41 @@ def google_callback():
             return "Error de conexión con la base de datos", 500
 
         cursor = conexion.cursor()
-        cursor.execute('SELECT "ID_Cuenta", "Es_premium", "Plan_premium", "Avatar_plan" FROM public."Cuentas" WHERE "Correo" = %s', (email,))
+        cursor.execute("""
+            SELECT "ID_Cuenta", "Es_premium", "Plan_premium", "Premium_vence"
+            FROM public."Cuentas" WHERE "Correo" = %s
+        """, (email,))
         row = cursor.fetchone()
 
         if not row:
             return redirect(url_for("cuenta_no_registrada"))
 
-        id_cuenta = int(row[0])
-        es_premium = row[1] if len(row) > 1 else False
-        plan_premium = row[2] if len(row) > 2 else 'gratis'
-        avatar_plan = row[3] if len(row) > 3 else plan_premium
+        id_cuenta    = int(row[0])
+        es_premium   = row[1] if row[1] is not None else False
+        plan_premium = row[2] if row[2] else 'gratis'
+        vence        = row[3]
+
+        # Verificar si el premium expiró
+        if es_premium and vence:
+            ahora = datetime.now(vence.tzinfo) if vence.tzinfo else datetime.now()
+            if ahora > vence:
+                cursor.execute("""
+                    UPDATE public."Cuentas"
+                    SET "Es_premium" = FALSE, "Plan_premium" = 'gratis'
+                    WHERE "ID_Cuenta" = %s
+                """, (id_cuenta,))
+                conexion.commit()
+                es_premium   = False
+                plan_premium = 'gratis'
+
+        colores = {"quincenal": "#a29bfe", "mensual": "#f1c40f", "anual": "#00d2d3"}
 
         session["usuario_id"]     = id_cuenta
         session["usuario_nombre"] = user_info.get("name") or email
         session["es_premium"]     = es_premium
         session["plan_premium"]   = plan_premium
-        session["avatar_plan"]    = avatar_plan if avatar_plan else plan_premium
-        
+        session["premium_color"]  = colores.get(plan_premium, "#f1c40f")
+
         return redirect("/dashboard")
 
     except Exception as e:
@@ -796,12 +814,6 @@ def google_callback():
 
     finally:
         cerrar_db(cursor, conexion)
-
-#Saltar pagina que pone ngrok por defecto al usar el google 
-@app.after_request
-def skip_ngrok_warning(response):
-    response.headers["ngrok-skip-browser-warning"] = "true"
-    return response
 
 
 # ==============================================================================
