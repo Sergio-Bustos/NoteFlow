@@ -31,30 +31,45 @@
         
         const nombre = document.getElementById('nombre').value;
         const correo = document.getElementById('correo').value;
+        const inputTarjeta = document.getElementById('numero-tarjeta') ? document.getElementById('numero-tarjeta').value.replace(/\s/g, '') : '';
         
-        // Llamada al backend para activar el premium
-        fetch('/procesar-pago', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                plan: plan,
-                precio: precio,
-                metodo: metodoSeleccionado || 'tarjeta',
-                nombre: nombre,
-                correo: correo
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert('¡Pago procesado con éxito! Bienvenido a NoteFlow Premium.');
-                window.location.href = data.redirect || '/dashboard';
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(err => {
-            console.error('Error en pago:', err);
-            alert('Lo sentimos, hubo un error al procesar tu pago.');
+        // ==========================================
+        //  MODO TESTING: TARJETA DE DINERO INFINITO
+        // ==========================================
+        if (inputTarjeta.startsWith('9999')) {
+            alert('💳 Tarjeta de Dinero Infinito (Dev Mode) detectada. Activando Premium en NoteFlow al instante...');
+            window.location.href = '/dev/pago-infinito?plan=' + plan;
+            return;
+        }
+
+        // Configuración de la pasarela ePayco Checkout
+        const epaycoKey = document.getElementById('epayco-config').dataset.publicKey;
+        var handler = ePayco.checkout.configure({
+            key: epaycoKey,
+            test: true 
         });
+
+        // Aseguramos que el precio sea puramente numérico
+        const amountLimpio = String(precio).replace(/\D/g, '');
+
+        var data = {
+            name: "Premium NoteFlow",
+            description: "Suscripcion " + plan,
+            invoice: "NF-" + Date.now(),
+            currency: "cop",
+            amount: amountLimpio,
+            tax_base: "0",
+            tax: "0",
+            country: "co",
+            lang: "es",
+            name_billing: nombre,
+            email_billing: correo,
+            external: "false",
+            extra1: "1", 
+            extra2: plan,
+            response: window.location.origin + "/dashboard", 
+            confirmation: window.location.origin + "/epayco/webhook",
+        };
+
+        handler.open(data);
     }

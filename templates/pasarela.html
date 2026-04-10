@@ -38,6 +38,7 @@
                     <label>Correo electrónico</label>
                     <input type="email" id="correo" placeholder="tu@correo.com" required>
                 </div>
+                <!-- Vuelven a estar aquí los inputs de tarjeta -->
                 <div class="campo input-full">
                     <label>Número de tarjeta</label>
                     <input type="text" id="numero-tarjeta" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)">
@@ -52,46 +53,23 @@
                 </div>
             </div>
 
-            <div class="divider"><span>o paga con</span></div>
-
-            <p class="metodos-label">Método de pago</p>
-            <div class="metodos-grid">
-                <div class="metodo-card" onclick="seleccionarMetodo(this, 'bancolombia')">
-                    <!-- Reemplaza src con {{ url_for('static', filename='imagen1.png') }} -->
-                    <img src="../static/bancolombia.png" alt="Bancolombia" onerror="this.src=''; this.parentElement.querySelector('span').textContent='Bancolombia'">
-                    <span>Bancolombia</span>
-                </div>
-                <div class="metodo-card" onclick="seleccionarMetodo(this, 'nequi')">
-                    <!-- Reemplaza src con {{ url_for('static', filename='imagen2.png') }} -->
-                    <img src="../static/daviplata.png" alt="Nequi" onerror="this.src=''">
-                    <span>Nequi</span>
-                </div>
-                <div class="metodo-card" onclick="seleccionarMetodo(this, 'daviplata')">
-                    <!-- Reemplaza src con {{ url_for('static', filename='imagen3.png') }} -->
-                    <img src="../static/efecty.jfif" alt="Davi Plata" onerror="this.src=''">
-                    <span>Davi Plata</span>
-                </div>
-                <div class="metodo-card" onclick="seleccionarMetodo(this, 'efecty')">
-                    <!-- Reemplaza src con {{ url_for('static', filename='imagen4.png') }} -->
-                    <img src="../static/nequi.png" alt="Efecty" onerror="this.src=''">
-                    <span>Efecty</span>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-pagar">
+            <button type="submit" class="btn-pagar" style="margin-top: 24px;">
                 <i class="fas fa-lock" style="margin-right:8px;"></i>
                 Pagar ahora — <span id="btn-precio">$ …</span>
             </button>
         </form>
+        <!-- Key inyectada de forma segura desde el servidor -->
+        <div id="epayco-config" data-public-key="{{ epayco_public_key }}" style="display:none;"></div>
 
         <a href="/planes" class="btn-volver">← Cambiar de plan</a>
 
         <div class="seguridad">
             <i class="fas fa-shield-alt"></i>
-            Pago 100% seguro · Datos cifrados
+            Pago 100% seguro con ePayco
         </div>
     </div>
 </div>
+<script type="text/javascript" src="https://checkout.epayco.co/checkout.js"></script>
 <script src="{{ url_for('static', filename='js/pasarela.js') }}"></script>
 
 </body>

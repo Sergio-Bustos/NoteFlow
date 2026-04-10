@@ -651,13 +651,29 @@ def procesar_login():
             
             # Obtener estado premium real de la BD y verificar si ya expiró
             cursor_temp = conexion.cursor(cursor_factory=RealDictCursor)
-            cursor_temp.execute('SELECT "Es_premium", "Premium_vence", "Plan_premium" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
+            cursor_temp.execute('SELECT "Es_premium", "Premium_vence", "Plan_premium", "Avatar_plan" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
             res_premium = cursor_temp.fetchone()
             
             es_p_db = res_premium["Es_premium"] if res_premium else False
             vence   = res_premium["Premium_vence"] if res_premium else None
             plan    = res_premium["Plan_premium"] if res_premium else "gratis"
+            avatar_plan = res_premium["Avatar_plan"] if res_premium else None
             
+            # Guardar en sesión
+            session["es_premium"]   = es_p_db
+            session["plan_premium"] = plan
+            session["avatar_plan"] = avatar_plan if avatar_plan else plan
+            
+            if es_p_db and vence:
+                if datetime.now() > vence:
+                    session["es_premium"] = False
+                    session["plan_premium"] = "gratis"
+                    session["avatar_plan"] = "ninguno"
+                    # Opcional: actualizar BD si expiró
+                    cursor_temp.execute('UPDATE public."Cuentas" SET "Es_premium" = FALSE WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
+                    conexion.commit()
+            
+            cursor_temp.close()
             # Verificar expiración
             if es_p_db and vence:
                 ahora = datetime.now(vence.tzinfo) if vence.tzinfo else datetime.now()
@@ -755,14 +771,23 @@ def google_callback():
             return "Error de conexión con la base de datos", 500
 
         cursor = conexion.cursor()
-        cursor.execute('SELECT "ID_Cuenta" FROM public."Cuentas" WHERE "Correo" = %s', (email,))
+        cursor.execute('SELECT "ID_Cuenta", "Es_premium", "Plan_premium", "Avatar_plan" FROM public."Cuentas" WHERE "Correo" = %s', (email,))
         row = cursor.fetchone()
 
         if not row:
             return redirect(url_for("cuenta_no_registrada"))
 
-        session["usuario_id"]     = int(row[0])
+        id_cuenta = int(row[0])
+        es_premium = row[1] if len(row) > 1 else False
+        plan_premium = row[2] if len(row) > 2 else 'gratis'
+        avatar_plan = row[3] if len(row) > 3 else plan_premium
+
+        session["usuario_id"]     = id_cuenta
         session["usuario_nombre"] = user_info.get("name") or email
+        session["es_premium"]     = es_premium
+        session["plan_premium"]   = plan_premium
+        session["avatar_plan"]    = avatar_plan if avatar_plan else plan_premium
+        
         return redirect("/dashboard")
 
     except Exception as e:
@@ -974,6 +999,36 @@ def cerrar_sesion_perfil():
     session.clear()
     return redirect(url_for("mostrar_login"))
 # ==============================================================================
+# ROUTE TESTING DEV (Dinero Infinito)
+# ==============================================================================
+@app.route("/dev/pago-infinito")
+@login_required
+def pago_infinito():
+    plan_comprado = request.args.get("plan", "mensual")
+    dias = {"quincenal": 15, "mensual": 30, "anual": 365}.get(plan_comprado, 30)
+    expira = datetime.now() + timedelta(days=dias)
+    user_id = session["usuario_id"]
+    
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+        cursor.execute("""
+            UPDATE public."Cuentas"
+            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s
+            WHERE "ID_Cuenta" = %s
+        """, (expira, plan_comprado, user_id))
+        conexion.commit()
+    except Exception as e:
+        if conexion: conexion.rollback()
+        print(e)
+    finally:
+        cerrar_db(cursor, conexion)
+        
+    return redirect(url_for("dashboard"))
+
+# ==============================================================================
 # 7. DASHBOARD
 # ==============================================================================
 
@@ -1020,6 +1075,37 @@ def dashboard():
                 conexion.commit()
                 es_premium = False
                 plan       = "gratis"
+
+        # =======================================================
+        # VALIDACIÓN INMEDIATA REDIRECT EPAYCO (Para localhost)
+        # =======================================================
+        ref_payco = request.args.get("ref_payco")
+        if ref_payco:
+            try:
+                import requests
+                resp_epayco = requests.get(f"https://secure.epayco.co/validation/v1/reference/{ref_payco}")
+                if resp_epayco.status_code == 200:
+                    data_tx = resp_epayco.json().get("data", {})
+                    # Si fue Aceptada, o si fue Pendiente y estamos en modo prueba
+                    estado = data_tx.get("x_response")
+                    es_prueba = data_tx.get("x_test_request")
+                    # Actualizar a Premium
+                    if estado == "Aceptada" or (estado == "Pendiente" and es_prueba):
+                        plan_comprado = data_tx.get("x_extra2", "mensual")
+                        dias = {"quincenal": 15, "mensual": 30, "anual": 365}.get(plan_comprado, 30)
+                        
+                        expira = datetime.now() + timedelta(days=dias)
+                        
+                        cursor.execute("""
+                            UPDATE public."Cuentas"
+                            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s
+                            WHERE "ID_Cuenta" = %s
+                        """, (expira, plan_comprado, user_id))
+                        conexion.commit()
+                        es_premium = True
+                        plan = plan_comprado
+            except Exception as e:
+                print(f"Error verificando ref_payco en dashboard: {e}")
 
         usuario = {
             "Nombres":         usuario_row.get("Nombres"),
@@ -1144,9 +1230,15 @@ def perfil():
     try:
         conexion = conectar_db(dict_cursor=True)
         cursor   = conexion.cursor()
+
+        # Crear columna Avatar_plan si no existe (migración automática)
+        cursor.execute('ALTER TABLE public."Cuentas" ADD COLUMN IF NOT EXISTS "Avatar_plan" VARCHAR(20)')
+        conexion.commit()
+
         cursor.execute("""
             SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos",
-                   "Correo", "Telefono", "Foto", "Color_principal", "Es_premium", "Plan_premium"
+                   "Correo", "Telefono", "Foto", "Color_principal", "Es_premium", "Plan_premium",
+                   COALESCE("Avatar_plan", "Plan_premium", 'quincenal') AS "Avatar_plan"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
@@ -1162,6 +1254,51 @@ def perfil():
         print(f"Error al cargar perfil: {e}")
         return "Error al cargar el perfil", 500
 
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+@app.route("/perfil/cambiar-avatar", methods=["POST"])
+@login_required
+def cambiar_avatar():
+    """Guarda el marco de avatar elegido por el usuario premium."""
+    data = request.get_json()
+    avatar_plan = data.get("avatar_plan", "quincenal")
+    plan_actual = session.get("plan_premium", "gratis")
+    
+    # Validar que el plan tenga acceso a ese marco
+    permisos = {
+        "quincenal": ["quincenal", "ninguno"],
+        "mensual":   ["quincenal", "mensual", "ninguno"],
+        "anual":     ["quincenal", "mensual", "anual", "ninguno"],
+    }
+    if avatar_plan not in permisos.get(plan_actual, []):
+        return jsonify({"error": "Tu plan no tiene acceso a ese marco."}), 403
+    
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db()
+        cursor   = conexion.cursor()
+        # Intentar actualizar. Si la columna no existe, la creamos.
+        try:
+            cursor.execute("""
+                UPDATE public."Cuentas" SET "Avatar_plan" = %s WHERE "ID_Cuenta" = %s
+            """, (avatar_plan, user_id))
+        except Exception:
+            conexion.rollback()
+            cursor.execute('ALTER TABLE public."Cuentas" ADD COLUMN IF NOT EXISTS "Avatar_plan" VARCHAR(20)')
+            cursor.execute("""
+                UPDATE public."Cuentas" SET "Avatar_plan" = %s WHERE "ID_Cuenta" = %s
+            """, (avatar_plan, user_id))
+        conexion.commit()
+        session["avatar_plan"] = avatar_plan
+        return jsonify({"success": True})
+    except Exception as e:
+        if conexion: conexion.rollback()
+        print(f"Error al cambiar avatar: {e}")
+        return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
 
@@ -3368,7 +3505,12 @@ def pasarela():
     # Usa el precio canónico del servidor, ignora lo que venga en la URL
     precio = planes_validos[plan]
 
-    return render_template("pasarela.html", plan=plan, precio=precio)
+    return render_template(
+        "pasarela.html",
+        plan=plan,
+        precio=precio,
+        epayco_public_key=os.getenv("EPAYCO_PUBLIC_KEY", "")
+    )
 
 
 @app.route("/procesar-pago", methods=["POST"])

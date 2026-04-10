@@ -1,8 +1,9 @@
 /* ══════════════════════════════════════════
-       TOASTS
+       CONFIGURACIÓN Y UTILS
     ══════════════════════════════════════════ */
     function mostrarToast(mensaje, tipo = 'info') {
         const container = document.querySelector('.toast-container-custom');
+        if (!container) return;
 
         const iconos  = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
         const titulos = { success: 'Éxito', error: 'Error', warning: 'Advertencia', info: 'Información' };
@@ -17,22 +18,13 @@
                 <div class="toast-body">
                     <strong>${iconos[tipo]} ${titulos[tipo]}:</strong> ${mensaje}
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                        data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>`;
         container.appendChild(toastEl);
         const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 4000 });
         toast.show();
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     }
-
-
-    /* ══════════════════════════════════════════
-       TEMA (claro / oscuro)
-    ══════════════════════════════════════════ */
-    document.addEventListener('DOMContentLoaded', function () {
-        aplicarTemaVisual(window.COLOR_PRINCIPAL === 'Negro' ? 'oscuro' : 'claro');
-    });
 
     function aplicarTemaVisual(tema) {
         const body  = document.body;
@@ -42,199 +34,269 @@
         if (tema === 'oscuro') {
             body.classList.add('tema-oscuro');
             body.classList.remove('tema-claro');
-            icon.className  = 'fas fa-moon';
-            texto.textContent = 'Tema Oscuro Activo';
+            if (icon) icon.className = 'fas fa-moon';
+            if (texto) texto.textContent = 'Tema Oscuro Activo';
         } else {
             body.classList.add('tema-claro');
             body.classList.remove('tema-oscuro');
-            icon.className  = 'fas fa-sun';
-            texto.textContent = 'Tema Claro Activo';
+            if (icon) icon.className = 'fas fa-sun';
+            if (texto) texto.textContent = 'Tema Claro Activo';
         }
     }
 
+/* ══════════════════════════════════════════
+   INICIALIZACIÓN (DOM READY)
+══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
+    
+    // 1. Aplicar tema inicial
+    aplicarTemaVisual(window.COLOR_PRINCIPAL === 'Negro' ? 'oscuro' : 'claro');
 
-    /* ══════════════════════════════════════════
-       VISTA PREVIA DE FOTO
-    ══════════════════════════════════════════ */
-    document.getElementById('input-foto').addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    // 2. Vista previa de foto
+    const inputFoto = document.getElementById('input-foto');
+    if (inputFoto) {
+        inputFoto.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            mostrarToast('La imagen no debe superar 5MB', 'warning');
-            this.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function (ev) {
-            document.getElementById('preview-img').src = ev.target.result;
-            document.getElementById('preview-foto').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    });
-
-
-    /* ══════════════════════════════════════════
-       SUBIR FOTO
-    ══════════════════════════════════════════ */
-    document.getElementById('form-foto').addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-        const btn = this.querySelector('button[type="submit"]');
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
-
-        try {
-            const resp = await fetch('/perfil/subir-foto', { method: 'POST', body: formData });
-            const data = await resp.json();
-
-            if (data.success) {
-                mostrarToast(data.mensaje, 'success');
-                document.getElementById('foto-perfil').src = data.nueva_foto;
-                document.getElementById('preview-foto').style.display = 'none';
-                
-                // Reiniciar y mostrar botón eliminar ahora que hay una nueva foto propia
-                const btnEliminar = document.getElementById('btn-eliminar-foto');
-                btnEliminar.disabled = false;
-                btnEliminar.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar foto de perfil';
-                btnEliminar.style.display = '';
-                
-                this.reset();
-            } else {
-                mostrarToast(data.error || 'Error al subir la foto', 'error');
+            if (file.size > 5 * 1024 * 1024) {
+                mostrarToast('La imagen no debe superar 5MB', 'warning');
+                this.value = '';
+                return;
             }
-        } catch (err) {
-            mostrarToast('Error de conexión al subir la foto', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-upload"></i> Cargar nueva imagen';
-        }
-    });
 
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                const previewImg = document.getElementById('preview-img');
+                const previewDiv = document.getElementById('preview-foto');
+                if (previewImg) previewImg.src = ev.target.result;
+                if (previewDiv) previewDiv.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
-    /* ══════════════════════════════════════════
-       ELIMINAR FOTO DE PERFIL
-    ══════════════════════════════════════════ */
+    // 3. Subir foto
+    const formFoto = document.getElementById('form-foto');
+    if (formFoto) {
+        formFoto.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
 
-    // 1. Abrir modal de confirmación
-    function confirmarEliminarFoto() {
-        const modal = new bootstrap.Modal(document.getElementById('modalEliminarFoto'));
-        modal.show();
+            try {
+                const resp = await fetch('/perfil/subir-foto', { method: 'POST', body: formData });
+                const data = await resp.json();
+                if (data.success) {
+                    mostrarToast(data.mensaje, 'success');
+                    document.getElementById('foto-perfil').src = data.nueva_foto;
+                    document.getElementById('preview-foto').style.display = 'none';
+                    const btnEliminar = document.getElementById('btn-eliminar-foto');
+                    if (btnEliminar) {
+                        btnEliminar.style.display = 'inline-flex';
+                        btnEliminar.disabled = false;
+                    }
+                    this.reset();
+                } else {
+                    mostrarToast(data.error || 'Error al subir la foto', 'error');
+                }
+            } catch (err) {
+                mostrarToast('Error de conexión', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-upload"></i> Cargar nueva imagen';
+            }
+        });
+    }
 
-        // Clonar botón para evitar listeners duplicados
-        const btnOld = document.getElementById('btn-confirmar-eliminar-foto');
-        const btnNew = btnOld.cloneNode(true);
-        btnOld.parentNode.replaceChild(btnNew, btnOld);
-
-        btnNew.addEventListener('click', async function () {
-            modal.hide();
+    // 4. Confirmar Eliminar Foto (Listener del botón dentro del modal)
+    const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar-foto');
+    if (btnConfirmarEliminar) {
+        btnConfirmarEliminar.addEventListener('click', async function() {
+            // Cerrar modal programáticamente
+            const modalEl = document.getElementById('modalEliminarFoto');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+            
             await ejecutarEliminarFoto();
         });
     }
 
-    // 2. Llamar al backend y actualizar la UI
-    async function ejecutarEliminarFoto() {
-        const btn = document.getElementById('btn-eliminar-foto');
+    // 5. Cambiar Tema
+    const formTema = document.getElementById('form-tema');
+    if (formTema) {
+        formTema.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const temaNuevo = formData.get('tema');
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aplicando...';
+
+            try {
+                const resp = await fetch('/perfil/cambiar-tema', { method: 'POST', body: formData });
+                const data = await resp.json();
+                if (data.success) {
+                    aplicarTemaVisual(temaNuevo);
+                    mostrarToast(data.mensaje, 'success');
+                    document.cookie = `tema=${data.tema_db};path=/;max-age=31536000`;
+                } else {
+                    mostrarToast(data.error || 'Error al cambiar tema', 'error');
+                }
+            } catch (err) {
+                mostrarToast('Error de conexión', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Aplicar Tema';
+            }
+        });
+    }
+
+    // 6. Cambiar Password
+    const formPass = document.getElementById('form-password');
+    if (formPass) {
+        formPass.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const nueva = document.getElementById('password_nueva').value;
+            const confirma = document.getElementById('password_confirmacion').value;
+
+            if (nueva !== confirma) {
+                mostrarToast('Las contraseñas no coinciden', 'warning');
+                return;
+            }
+            if (nueva.length < 6) {
+                mostrarToast('Mínimo 6 caracteres', 'warning');
+                return;
+            }
+
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+            try {
+                const resp = await fetch('/perfil/cambiar-password', { method: 'POST', body: new FormData(this) });
+                const data = await resp.json();
+                if (data.success) {
+                    mostrarToast(data.mensaje, 'success');
+                    this.reset();
+                } else {
+                    mostrarToast(data.error, 'error');
+                }
+            } catch (err) {
+                mostrarToast('Error de conexión', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Contraseña';
+            }
+        });
+    }
+});
+
+/* ══════════════════════════════════════════
+   FUNCIONES GLOBALES
+══════════════════════════════════════════ */
+
+async function ejecutarEliminarFoto() {
+    const btn = document.getElementById('btn-eliminar-foto');
+    if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+    }
 
-        try {
-            const resp = await fetch('/perfil/eliminar-foto', { method: 'POST' });
-            const data = await resp.json();
-
-            if (data.success) {
-                // Actualizar la imagen a la foto por defecto
-                document.getElementById('foto-perfil').src = data.foto_default;
-                // Ocultar el botón eliminar (ya no hay foto propia)
-                btn.style.display = 'none';
-                mostrarToast(data.mensaje, 'success');
-            } else {
-                mostrarToast(data.error || 'Error al eliminar la foto', 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar foto de perfil';
-            }
-        } catch (err) {
-            mostrarToast('Error de conexión', 'error');
+    try {
+        const resp = await fetch('/perfil/eliminar-foto', { method: 'POST' });
+        const data = await resp.json();
+        if (data.success) {
+            document.getElementById('foto-perfil').src = data.foto_default;
+            if (btn) btn.style.display = 'none';
+            mostrarToast(data.mensaje, 'success');
+        } else {
+            mostrarToast(data.error || 'Error', 'error');
+        }
+    } catch (err) {
+        mostrarToast('Error de conexión', 'error');
+    } finally {
+        if (btn && btn.style.display !== 'none') {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar foto de perfil';
         }
     }
+}
 
+// ── SELECTOR DE AVATAR PREMIUM ──
+const COLORES_PLAN = { quincenal: '#a78bfa', mensual: '#fbbf24', anual: '#00d2d3' };
 
-    /* ══════════════════════════════════════════
-       CAMBIAR TEMA
-    ══════════════════════════════════════════ */
-    document.getElementById('form-tema').addEventListener('submit', async function (e) {
-        e.preventDefault();
+window.abrirModalAvatar = function() {
+    const modal = document.getElementById('modalAvatar');
+    if (!modal) return;
+    const inner = modal.querySelector('.modal-avatar-inner');
+    modal.style.display = 'flex';
+    if (inner) {
+        inner.style.animation = 'none';
+        inner.offsetHeight;
+        inner.style.animation = 'modalSlideIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both';
+    }
+};
 
-        const formData  = new FormData(this);
-        const temaNuevo = formData.get('tema');
-        const btn = this.querySelector('button[type="submit"]');
+window.cerrarModalAvatar = function() {
+    const modal = document.getElementById('modalAvatar');
+    if (!modal) return;
+    const inner = modal.querySelector('.modal-avatar-inner');
+    if (inner) {
+        inner.style.animation = 'modalSlideOut 0.22s ease-in both';
+        setTimeout(() => { modal.style.display = 'none'; }, 220);
+    } else {
+        modal.style.display = 'none';
+    }
+};
 
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aplicando...';
+// Cerrar al hacer clic fuera del modal premium
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('modalAvatar');
+    if (modal && e.target === modal) cerrarModalAvatar();
+});
 
-        try {
-            const resp = await fetch('/perfil/cambiar-tema', { method: 'POST', body: formData });
-            const data = await resp.json();
-
-            if (data.success) {
-                aplicarTemaVisual(temaNuevo);
-                mostrarToast(data.mensaje, 'success');
-                document.cookie = `tema=${data.tema_db};path=/;max-age=31536000`;
-            } else {
-                mostrarToast(data.error || 'Error al cambiar tema', 'error');
-            }
-        } catch (err) {
-            mostrarToast('Error de conexión', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-save"></i> Aplicar Tema';
-        }
+window.seleccionarAvatar = function(plan) {
+    document.querySelectorAll('.avatar-card').forEach(el => {
+        el.style.borderColor = 'transparent';
+        el.style.boxShadow = 'none';
     });
+    
+    const opt = document.getElementById('opt-' + plan);
+    if (opt) {
+        const color = COLORES_PLAN[plan] || '#94a3b8';
+        opt.style.borderColor = color;
+        opt.style.boxShadow = `0 0 18px -4px ${color}80`;
+    }
 
-
-    /* ══════════════════════════════════════════
-       CAMBIAR CONTRASEÑA
-    ══════════════════════════════════════════ */
-    document.getElementById('form-password').addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const nueva    = document.getElementById('password_nueva').value;
-        const confirma = document.getElementById('password_confirmacion').value;
-
-        if (nueva !== confirma) {
-            mostrarToast('Las contraseñas nuevas no coinciden', 'warning');
-            return;
-        }
-        if (nueva.length < 6 || nueva.length > 15) {
-            mostrarToast('La contraseña debe tener entre 6 y 15 caracteres', 'warning');
-            return;
-        }
-
-        const formData = new FormData(this);
-        const btn = this.querySelector('button[type="submit"]');
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
-
-        try {
-            const resp = await fetch('/perfil/cambiar-password', { method: 'POST', body: formData });
-            const data = await resp.json();
-
-            if (data.success) {
-                mostrarToast(data.mensaje, 'success');
-                this.reset();
-            } else {
-                mostrarToast(data.error || 'Error al cambiar contraseña', 'error');
+    fetch('/perfil/cambiar-avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_plan: plan })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const frame = document.getElementById('avatar-frame-actual');
+            if (frame) {
+                frame.style.opacity = '0';
+                setTimeout(() => {
+                    if (plan === 'ninguno') {
+                        frame.classList.add('frame-hidden');
+                    } else {
+                        frame.src = `/static/avatar_${plan}_animated.svg?v=${Date.now()}`;
+                        frame.classList.remove('frame-hidden');
+                        setTimeout(() => frame.style.opacity = '1', 50);
+                    }
+                }, 300);
             }
-        } catch (err) {
-            mostrarToast('Error de conexión', 'error');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar Contraseña';
+            cerrarModalAvatar();
+            mostrarToast('¡Marco actualizado!', 'success');
+        } else {
+            alert('Error: ' + data.error);
         }
-    });
+    })
+    .catch(err => console.error("Error:", err));
+};

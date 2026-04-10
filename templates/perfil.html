@@ -31,11 +31,24 @@
         </div>
 
         <div class="perfil-info">
-            <div class="avatar-container {% if session.es_premium %}premium{% endif %}">
-                <img id="foto-perfil" src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}"
-                     alt="Foto de perfil" class="free-user-avatar">
+            <!-- Foto + botón debajo -->
+            <div class="avatar-section">
+                <div class="avatar-container {% if session.es_premium %}premium{% endif %}">
+                    {% if session.es_premium %}
+                        <img id="avatar-frame-actual" 
+                             src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" 
+                             class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+                    {% endif %}
+
+                    <img id="foto-perfil" 
+                         src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'img/default_profile_cloud.svg') }}" 
+                         alt="Foto de perfil"
+                         class="{% if not session.es_premium %}free-user-avatar{% endif %}">
+                </div>
                 {% if session.es_premium %}
-                    <img src="{{ url_for('static', filename='avatar_' + session.plan_premium + '_animated.svg') }}" class="avatar-frame">
+                <button onclick="abrirModalAvatar()" class="btn-cambiar-marco">
+                    <i class="fas fa-magic"></i> Cambiar marco
+                </button>
                 {% endif %}
             </div>
 
@@ -60,13 +73,13 @@
                 <p><i class="fas fa-at"></i>       <strong>Usuario:</strong>  {{ usuario.Usuario }}</p>
                 <p><i class="fas fa-phone"></i>    <strong>Teléfono:</strong> {{ usuario.Telefono }}</p>
 
-                <!-- Botón eliminar foto — solo visible si el usuario tiene foto propia -->
-               {% if usuario.Foto and usuario.Foto not in ['img/default_profile_cloud.svg', 'uploads/profile/default_profile_cloud.svg', '', none] %}
-                <button id="btn-eliminar-foto" class="btn-eliminar-foto" onclick="confirmarEliminarFoto()">
+                <!-- Botón eliminar foto — corregido para usar modal Bootstrap nativo -->
+                {% if usuario.Foto and usuario.Foto not in ['img/default_profile_cloud.svg', 'uploads/profile/default_profile_cloud.svg', '', none] %}
+                <button id="btn-eliminar-foto" class="btn-eliminar-foto" data-bs-toggle="modal" data-bs-target="#modalEliminarFoto">
                     <i class="fas fa-trash-alt"></i> Eliminar foto de perfil
                 </button>
                 {% else %}
-                <button id="btn-eliminar-foto" class="btn-eliminar-foto" style="display:none;" onclick="confirmarEliminarFoto()">
+                <button id="btn-eliminar-foto" class="btn-eliminar-foto" style="display:none;" data-bs-toggle="modal" data-bs-target="#modalEliminarFoto">
                     <i class="fas fa-trash-alt"></i> Eliminar foto de perfil
                 </button>
                 {% endif %}
@@ -74,8 +87,7 @@
         </div>
 
         <!-- ── SUBIR FOTO DE PERFIL ── -->
-        <form id="form-foto" enctype="multipart/form-data"
-              style="margin-top:30px; border-top:1px solid var(--border-claro); padding-top:20px;">
+        <form id="form-foto" enctype="multipart/form-data" class="form-foto-perfil">
             <div class="form-group">
                 <label><i class="fas fa-camera"></i> Cambiar foto de perfil</label>
                 <input type="file" name="foto" id="input-foto"
@@ -158,6 +170,104 @@
 </div><!-- /container -->
 
 
+
+<!-- ── MODAL: Selector de Avatar Premium ── -->
+<div id="modalAvatar" class="modal-avatar-overlay">
+
+    <div class="modal-avatar-inner">
+
+        <!-- Header -->
+        <div class="modal-avatar-header">
+            <h3 class="modal-avatar-title">
+                <i class="fas fa-magic modal-icon-magic"></i> Marco de Avatar
+            </h3>
+            <button onclick="cerrarModalAvatar()" class="btn-close-modal">✕</button>
+        </div>
+        <p class="modal-avatar-description">
+            Elige el marco exclusivo para tu plan premium actual.
+        </p>
+
+        <!-- Grid de 4 avatares -->
+        <div class="avatar-grid">
+
+            <!-- ── NINGUNO (Quitar marco) ── -->
+            <div class="avatar-card" id="opt-ninguno" onclick="seleccionarAvatar('ninguno')">
+                <span class="plan-tag tag-ninguno">Quitar</span>
+                <div class="icon-remove-frame">
+                    <div class="icon-remove-line"></div>
+                </div>
+                <p class="avatar-card-title opt-ninguno-text">Sin Marco</p>
+                <p class="avatar-card-subtitle">Normal</p>
+            </div>
+
+            <!-- ── QUINCENAL (siempre disponible) ── -->
+            <div class="avatar-card" id="opt-quincenal"
+                 onclick="seleccionarAvatar('quincenal')">
+                <span class="plan-tag tag-quincenal">Quincenal</span>
+                <br>
+                <img src="/static/avatar_quincenal_animated.svg" class="avatar-card-img">
+                <p class="avatar-card-title opt-quincenal-text">Plan Quincenal</p>
+                <p class="avatar-card-subtitle">15 días</p>
+            </div>
+
+            <!-- ── MENSUAL ── -->
+            {% if session.plan_premium in ['mensual','anual'] %}
+            <div class="avatar-card" id="opt-mensual"
+                 onclick="seleccionarAvatar('mensual')">
+                <span class="plan-tag tag-mensual">Mensual</span>
+                <br>
+                <img src="/static/avatar_mensual_animated.svg" class="avatar-card-img">
+                <p class="avatar-card-title opt-mensual-text">Plan Mensual</p>
+                <p class="avatar-card-subtitle">30 días</p>
+            </div>
+            {% else %}
+            <div class="avatar-card bloqueado">
+                <span class="plan-tag tag-bloqueada">Mensual</span>
+                <br>
+                <img src="/static/avatar_mensual_animated.svg" class="avatar-card-img grayscale">
+                <p class="avatar-card-title opt-bloqueado-text">Plan Mensual</p>
+                <p class="avatar-card-subtitle opt-bloqueado-sub">Requiere plan mensual</p>
+                <div class="prohibido-icon">
+                    <div class="prohibido-circle"><div class="prohibido-line"></div></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ── ANUAL ── -->
+            {% if session.plan_premium == 'anual' %}
+            <div class="avatar-card" id="opt-anual"
+                 onclick="seleccionarAvatar('anual')">
+                <span class="plan-tag tag-anual">Anual</span>
+                <br>
+                <img src="/static/avatar_anual_animated.svg" class="avatar-card-img">
+                <p class="avatar-card-title opt-anual-text">Plan Anual</p>
+                <p class="avatar-card-subtitle">365 días</p>
+            </div>
+            {% else %}
+            <div class="avatar-card bloqueado">
+                <span class="plan-tag tag-bloqueada">Anual 👑</span>
+                <br>
+                <img src="/static/avatar_anual_animated.svg" class="avatar-card-img grayscale">
+                <p class="avatar-card-title opt-bloqueado-text">Plan Anual</p>
+                <p class="avatar-card-subtitle opt-bloqueado-sub">Requiere plan anual</p>
+                <div class="prohibido-icon">
+                    <div class="prohibido-circle"><div class="prohibido-line"></div></div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Footer info -->
+        <div class="footer-info-modal">
+            <i class="fas fa-crown modal-icon-crown"></i>
+            <span>Tu plan actual: </span>
+            <span class="plan-actual-badge">{{ session.plan_premium }}</span>
+        </div>
+    </div>
+</div>
+
+
 <!-- ── MODAL: Confirmar eliminar foto ── -->
 <div class="modal fade" id="modalEliminarFoto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -171,14 +281,16 @@
             <div class="modal-body">
                 ¿Estás seguro de que deseas eliminar tu foto de perfil?
                 <br><br>
-                <span style="color:#e74c3c; font-size:0.88rem; font-weight:600;">
+                <span class="text-danger-confirm">
                     <i class="fas fa-exclamation-circle"></i>
                     Se reemplazará por la imagen predeterminada. Esta acción no se puede deshacer.
                 </span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar-foto">
+                <button type="button" class="btn btn-cancel-custom" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger-confirm" id="btn-confirmar-eliminar-foto">
                     <i class="fas fa-trash-alt"></i> Sí, eliminar foto
                 </button>
             </div>
@@ -211,6 +323,7 @@
         </div>
     </div>
 </div>
+
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS public."Cuentas" (
     "Foto"               TEXT,
     "Es_premium"         BOOLEAN DEFAULT FALSE,
     "Premium_vence"      TIMESTAMP WITH TIME ZONE,
-    "Plan_premium"       TEXT DEFAULT 'gratis'
+    "Plan_premium"       TEXT DEFAULT 'gratis',
+    "Avatar_plan"        VARCHAR(20) DEFAULT 'quincenal'
 );
 
 -- Tabla: Carpetas
