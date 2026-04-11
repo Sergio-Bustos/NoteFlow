@@ -95,7 +95,14 @@
                 <label><i class="fas fa-camera"></i> Cambiar foto de perfil</label>
                 <input type="file" name="foto" id="input-foto"
                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
-                <small class="password-requirements">Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP (máx. 5MB)</small>
+                <small class="password-requirements">
+                    Formatos permitidos: PNG, JPG, JPEG, GIF, WEBP 
+                    {% if session.es_premium %}
+                        (máx. 100MB)
+                    {% else %}
+                        (máx. 5MB)
+                    {% endif %}
+                </small>
             </div>
             
             <div class="preview-foto" id="preview-foto" style="display:none;">
@@ -330,7 +337,10 @@
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
+<script>
+    window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";
+    window.ES_PREMIUM = {{ 'true' if session.es_premium else 'false' }};
+</script>
 <script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
 </body>
 </html>

@@ -59,8 +59,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const file = e.target.files[0];
             if (!file) return;
 
-            if (file.size > 5 * 1024 * 1024) {
-                mostrarToast('La imagen no debe superar 5MB', 'warning');
+            const maxMB = window.ES_PREMIUM ? 100 : 5;
+            if (file.size > maxMB * 1024 * 1024) {
+                mostrarToast(`La imagen no debe superar ${maxMB}MB`, 'warning');
                 this.value = '';
                 return;
             }

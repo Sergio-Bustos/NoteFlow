@@ -1425,6 +1425,14 @@ def subir_foto():
     if not allowed_file(archivo.filename):
         return jsonify({"error": "Formato no permitido. Usa: PNG, JPG, JPEG, GIF o WEBP"}), 400
 
+    archivo.seek(0, 2)
+    file_size = archivo.tell()
+    archivo.seek(0)
+    
+    max_mb = 100 if session.get("es_premium", False) else 5
+    if file_size > max_mb * 1024 * 1024:
+        return jsonify({"error": f"La foto supera el límite de {max_mb}MB"}), 400
+
     user_id = session["usuario_id"]
     conexion = None
     cursor   = None
