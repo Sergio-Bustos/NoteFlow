@@ -110,20 +110,69 @@
         </span>
     </div>
 
+    <!-- Cabecera global de acciones -->
+    <div class="papelera-acciones-top" style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        {% if notas_papelera or carpetas_papelera %}
+        <button class="btn-vaciar-todo" id="btn-vaciar-todo" onclick="confirmarVaciarTodo()">
+            <i class="fas fa-bomb"></i> Vaciar papelera
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- ── Sección de Carpetas ── -->
+    <div class="papelera-header" id="header-carpetas" style="{% if not carpetas_papelera %}display:none;{% endif %}">
+        <h2>
+            <i class="fas fa-folder"></i>
+            Carpetas eliminadas
+            <span class="badge-total" id="badge-carpetas">{{ carpetas_papelera | length }}</span>
+        </h2>
+    </div>
+
+    <div id="lista-carpetas-papelera" style="margin-bottom: 40px; display: {% if carpetas_papelera %}grid{% else %}none{% endif %}; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        {% for carpeta in carpetas_papelera %}
+        <div class="nota-papelera carpeta-papelera" id="carpeta-{{ carpeta.ID_Carpeta }}" data-id="{{ carpeta.ID_Carpeta }}" style="flex-direction: column; align-items: flex-start; padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px; width: 100%; margin-bottom: 10px;">
+                <div class="icono-nota">
+                    <i class="fas fa-folder-open" style="color:#f39c12;"></i>
+                </div>
+                <div class="nota-info" style="flex: 1;">
+                    <div class="nota-titulo" style="font-size: 1.1rem; font-weight: 600;">
+                        {{ carpeta.Nombre_carpeta }}
+                    </div>
+                    <div class="nota-meta">
+                        <span>
+                            <i class="fas fa-clock"></i>
+                            En papelera desde: {{ carpeta.Fecha_edicion.strftime('%d/%m/%Y') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="nota-acciones" style="width: 100%; justify-content: flex-end; margin-top: 10px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 15px;">
+                <button class="btn-restaurar" 
+                        data-id="{{ carpeta.ID_Carpeta }}" 
+                        data-titulo="{{ carpeta.Nombre_carpeta }}"
+                        onclick="confirmarRestaurarCarpeta(this)">
+                    <i class="fas fa-undo"></i> Restaurar
+                </button>
+                <button class="btn-eliminar-def" 
+                        data-id="{{ carpeta.ID_Carpeta }}" 
+                        data-titulo="{{ carpeta.Nombre_carpeta }}"
+                        onclick="confirmarEliminarCarpeta(this)">
+                    <i class="fas fa-times"></i> Eliminar
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
     <!-- Cabecera sección -->
-    <div class="papelera-header">
+    <div class="papelera-header" id="header-notas" style="{% if not notas_papelera %}display:none;{% endif %}">
         <h2>
             <i class="fas fa-trash-alt"></i>
             Notas eliminadas
             <span class="badge-total" id="badge-total">{{ notas_papelera | length }}</span>
         </h2>
-        <div class="barra-acciones">
-            {% if notas_papelera %}
-            <button class="btn-vaciar-todo" id="btn-vaciar-todo" onclick="confirmarVaciarTodo()">
-                <i class="fas fa-bomb"></i> Vaciar papelera
-            </button>
-            {% endif %}
-        </div>
     </div>
 
     <!-- ── Lista de notas ── -->
@@ -163,6 +212,12 @@
                     {% endif %}
 
                     <div class="nota-meta">
+                        <!-- Carpeta -->
+                        {% if nota.Nombre_carpeta %}
+                        <span class="carpeta-badge-trash" style="background: rgba(243, 156, 18, 0.1); color: #f39c12; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; margin-right: 10px; border: 1px solid rgba(243, 156, 18, 0.2);">
+                            <i class="fas fa-folder"></i> {{ nota.Nombre_carpeta }}
+                        </span>
+                        {% endif %}
 
                         <!-- Formato -->
                         {% if nota.Formato %}

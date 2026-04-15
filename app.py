@@ -27,7 +27,8 @@ load_dotenv()
 # ==============================================================================
 
 # OAuth (desarrollo en HTTP local)
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+if os.getenv("FLASK_ENV") == "development":
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")
@@ -709,8 +710,7 @@ def _google_flow(state=None):
     if "127.0.0.1" in host or "localhost" in host:
         redirect_url = "http://127.0.0.1:5000/google/callback"
     else:
-        redirect_url = "https://sterigmatic-shirlee-mollifiable.ngrok-free.dev/google/callback"
-    
+        redirect_url = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:5000/google/callback")
     
 
     """Crea y retorna el objeto Flow de Google OAuth configurado."""
@@ -1010,35 +1010,6 @@ def cerrar_sesion_perfil():
     """Cierra la sesión desde la página de perfil y redirige al login."""
     session.clear()
     return redirect(url_for("mostrar_login"))
-# ==============================================================================
-# ROUTE TESTING DEV (Dinero Infinito)
-# ==============================================================================
-@app.route("/dev/pago-infinito")
-@login_required
-def pago_infinito():
-    plan_comprado = request.args.get("plan", "mensual")
-    dias = {"quincenal": 15, "mensual": 30, "anual": 365}.get(plan_comprado, 30)
-    expira = datetime.now() + timedelta(days=dias)
-    user_id = session["usuario_id"]
-    
-    conexion = None
-    cursor   = None
-    try:
-        conexion = conectar_db()
-        cursor = conexion.cursor()
-        cursor.execute("""
-            UPDATE public."Cuentas"
-            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s
-            WHERE "ID_Cuenta" = %s
-        """, (expira, plan_comprado, user_id))
-        conexion.commit()
-    except Exception as e:
-        if conexion: conexion.rollback()
-        print(e)
-    finally:
-        cerrar_db(cursor, conexion)
-        
-    return redirect(url_for("dashboard"))
 
 # ==============================================================================
 # 7. DASHBOARD
@@ -1717,7 +1688,7 @@ def api_mis_notas_y_carpetas():
                 COUNT(n."ID_Nota") AS total_notas
             FROM public."Carpetas" c
             LEFT JOIN public."Notas" n ON n."ID_Carpeta" = c."ID_Carpeta" AND n."Estado" = 'Activa'
-            WHERE c."ID_Cuenta" = %s
+            WHERE c."ID_Cuenta" = %s AND c."Estado" = 'Activa'
             GROUP BY c."ID_Carpeta", c."Nombre_carpeta", c."Fecha_creacion", c."Fecha_edicion"
             ORDER BY c."Fecha_edicion" DESC NULLS LAST
         """, (user_id,))
@@ -1849,7 +1820,7 @@ def api_mis_carpetas():
             FROM public."Carpetas" c
             LEFT JOIN public."Notas" n
                 ON n."ID_Carpeta" = c."ID_Carpeta" AND n."Estado" = 'Activa'
-            WHERE c."ID_Cuenta" = %s
+            WHERE c."ID_Cuenta" = %s AND c."Estado" = 'Activa'
         """
         params = [user_id]
 
@@ -2062,10 +2033,10 @@ def api_editar_carpeta(carpeta_id):
         cerrar_db(cursor, conexion)
 
 
-@app.route("/api/carpetas/<int:carpeta_id>", methods=["DELETE"])
+@app.route("/api/carpetas/<int:carpeta_id>", methods=["DELETE", "POST"])
 @login_required
 def api_eliminar_carpeta(carpeta_id):
-    """Elimina una carpeta (las notas quedan sin carpeta)."""
+    """Mueve una carpeta y sus notas a la papelera (eliminación suave)."""
     user_id  = session["usuario_id"]
     conexion = None
     cursor   = None
@@ -2080,14 +2051,20 @@ def api_eliminar_carpeta(carpeta_id):
         if not cursor.fetchone():
             return jsonify({"success": False, "error": "Carpeta no encontrada"}), 404
 
-        # Desasociar notas
+        ahora = datetime.now()
+        # Mover carpeta a papelera
         cursor.execute(
-            'UPDATE public."Notas" SET "ID_Carpeta"=NULL WHERE "ID_Carpeta"=%s',
-            (carpeta_id,)
+            'UPDATE public."Carpetas" SET "Estado"=\'Papelera\', "Fecha_edicion"=%s WHERE "ID_Carpeta"=%s',
+            (ahora, carpeta_id)
         )
-        cursor.execute('DELETE FROM public."Carpetas" WHERE "ID_Carpeta"=%s', (carpeta_id,))
+        # Mover todas las notas de esa carpeta a papelera
+        cursor.execute(
+            'UPDATE public."Notas" SET "Estado"=\'Papelera\', "Fecha_deedicion"=%s WHERE "ID_Carpeta"=%s AND "ID_Cuenta"=%s',
+            (ahora, carpeta_id, user_id)
+        )
+        
         conexion.commit()
-        return jsonify({"success": True}), 200
+        return jsonify({"success": True, "mensaje": "Carpeta y sus notas movidas a la papelera"}), 200
 
     except Exception:
         if conexion: conexion.rollback()
@@ -2154,6 +2131,7 @@ def papelera():
                 fila.get("ID_Nota") if isinstance(fila, dict) else fila[0]
                 for fila in notas_vencidas
             })
+            # 1. Limpieza de notas antiguas
             cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = ANY(%s)', (ids_vencidos,))
             cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids_vencidos,))
             cursor.execute("""
@@ -2163,18 +2141,38 @@ def papelera():
             """, (user_id,))
             conexion.commit()
 
+        # 2. Limpieza de carpetas antiguas
         cursor.execute("""
-            SELECT "ID_Nota", "Titulo", "Descripcion",
-                   "Fecha_deedicion", "Fecha_decreacion", "Formato"
-            FROM public."Notas"
+            DELETE FROM public."Carpetas"
             WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
-            ORDER BY "Fecha_deedicion" DESC NULLS LAST
+              AND "Fecha_edicion" <= (CURRENT_TIMESTAMP - INTERVAL '30 days')
+        """, (user_id,))
+        conexion.commit()
+
+        # Obtener carpetas en papelera
+        cursor.execute("""
+            SELECT "ID_Carpeta", "Nombre_carpeta", "Fecha_edicion", "Fecha_creacion"
+            FROM public."Carpetas"
+            WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+            ORDER BY "Fecha_edicion" DESC NULLS LAST
+        """, (user_id,))
+        carpetas_papelera = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT n."ID_Nota", n."Titulo", n."Descripcion",
+                   n."Fecha_deedicion", n."Fecha_decreacion", n."Formato",
+                   c."Nombre_carpeta"
+            FROM public."Notas" n
+            LEFT JOIN public."Carpetas" c ON c."ID_Carpeta" = n."ID_Carpeta"
+            WHERE n."ID_Cuenta" = %s AND LOWER(n."Estado") = 'papelera'
+            ORDER BY n."Fecha_deedicion" DESC NULLS LAST
         """, (user_id,))
         notas_papelera = cursor.fetchall()
 
         return render_template(
             "papelera.html",
             notas_papelera=notas_papelera,
+            carpetas_papelera=carpetas_papelera,
             usuario=usuario,
             now=datetime.now(),
             timedelta=timedelta,
@@ -2184,6 +2182,42 @@ def papelera():
         import traceback; traceback.print_exc()
         return f"Error al cargar la papelera: {str(e)}", 500
 
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+@app.route("/papelera/restaurar-carpeta/<int:carpeta_id>", methods=["POST"])
+@login_required
+def restaurar_carpeta(carpeta_id):
+    """Restaura una carpeta y sus notas de la papelera."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+
+        # Verificar que la carpeta pertenece al usuario y está en papelera
+        cursor.execute("""
+            SELECT "ID_Carpeta" FROM public."Carpetas"
+            WHERE "ID_Carpeta" = %s AND "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
+        """, (carpeta_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "Carpeta no encontrada"}), 404
+
+        ahora = datetime.now()
+        # Restaurar carpeta
+        cursor.execute('UPDATE public."Carpetas" SET "Estado" = \'Activa\', "Fecha_edicion" = %s WHERE "ID_Carpeta" = %s', (ahora, carpeta_id))
+        
+        # Restaurar notas que pertenezcan a esa carpeta y estén en papelera
+        cursor.execute('UPDATE public."Notas" SET "Estado" = \'Activa\', "Fecha_deedicion" = %s WHERE "ID_Carpeta" = %s AND "Estado" = \'Papelera\'', (ahora, carpeta_id))
+
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Carpeta restaurada correctamente"}), 200
+
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({"error": "Error al restaurar carpeta"}), 500
     finally:
         cerrar_db(cursor, conexion)
 
@@ -2223,6 +2257,55 @@ def restaurar_nota(nota_id):
         print(f"Error al restaurar nota {nota_id}: {e}")
         return jsonify({"error": "Error al restaurar la nota"}), 500
 
+    finally:
+        cerrar_db(cursor, conexion)
+
+
+@app.route("/papelera/eliminar-carpeta/<int:carpeta_id>", methods=["POST"])
+@login_required
+def eliminar_carpeta_definitivo(carpeta_id):
+    """Elimina permanentemente una carpeta y todas sus notas."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        cursor = conexion.cursor()
+
+        # Verificar carpeta
+        cursor.execute('SELECT "ID_Carpeta" FROM public."Carpetas" WHERE "ID_Carpeta"=%s AND "ID_Cuenta"=%s AND "Estado"=\'Papelera\'', (carpeta_id, user_id))
+        if not cursor.fetchone():
+            return jsonify({"error": "Carpeta no encontrada"}), 404
+
+        # Obtener IDs de notas en la carpeta
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Carpeta"=%s', (carpeta_id,))
+        notas = cursor.fetchall()
+        ids_notas = [n["ID_Nota"] for n in notas]
+
+        if ids_notas:
+            # Eliminar archivos físicos
+            cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+            for adj in cursor.fetchall():
+                ruta = adj.get("Ruta_archivo")
+                if ruta:
+                    ruta_completa = os.path.join(BASE_DIR, "static", ruta)
+                    if os.path.exists(ruta_completa):
+                        os.remove(ruta_completa)
+
+            # Eliminar adjuntos, etiquetas y notas
+            cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+            cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+            cursor.execute('DELETE FROM public."Notas" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+
+        # Eliminar carpeta
+        cursor.execute('DELETE FROM public."Carpetas" WHERE "ID_Carpeta"=%s', (carpeta_id,))
+        
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Carpeta y sus notas eliminadas permanentemente"}), 200
+
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({"error": "Error al eliminar carpeta"}), 500
     finally:
         cerrar_db(cursor, conexion)
 
@@ -2282,7 +2365,7 @@ def eliminar_nota_definitivo(nota_id):
 @app.route("/papelera/vaciar", methods=["POST"])
 @login_required
 def vaciar_papelera():
-    """Elimina permanentemente TODAS las notas en papelera del usuario."""
+    """Elimina permanentemente TODAS las notas y carpetas en papelera del usuario."""
     user_id  = session["usuario_id"]
     conexion = None
     cursor   = None
@@ -2292,34 +2375,28 @@ def vaciar_papelera():
             return jsonify({"error": "Error de conexión a la base de datos"}), 500
         cursor = conexion.cursor()
 
-        cursor.execute("""
-            SELECT "ID_Nota" FROM public."Notas"
-            WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
-        """, (user_id,))
-        ids = [f["ID_Nota"] if isinstance(f, dict) else f[0] for f in cursor.fetchall()]
+        # 1. Obtener todas las notas en papelera
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Cuenta" = %s AND LOWER("Estado") = \'papelera\'', (user_id,))
+        ids_notas = [f["ID_Nota"] for f in cursor.fetchall()]
 
-        if not ids:
-            return jsonify({"success": True, "mensaje": "La papelera ya estaba vacía"}), 200
-
-        cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids,))
-        for adj in cursor.fetchall():
-            ruta = adj.get("Ruta_archivo") if isinstance(adj, dict) else adj[0]
-            if ruta:
-                ruta_completa = os.path.join(BASE_DIR, "static", ruta)
-                try:
+        # 2. Eliminar adjuntos y archivos físicos de esas notas
+        if ids_notas:
+            cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+            for adj in cursor.fetchall():
+                ruta = adj.get("Ruta_archivo")
+                if ruta:
+                    ruta_completa = os.path.join(BASE_DIR, "static", ruta)
                     if os.path.exists(ruta_completa):
                         os.remove(ruta_completa)
-                except Exception as e:
-                    print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
+            
+            cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+            cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+            cursor.execute('DELETE FROM public."Notas"           WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
 
-        cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = ANY(%s)', (ids,))
-        cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids,))
-        cursor.execute("""
-            DELETE FROM public."Notas"
-            WHERE "ID_Cuenta" = %s AND LOWER("Estado") = 'papelera'
-        """, (user_id,))
+        # 3. Eliminar carpetas en papelera
+        cursor.execute('DELETE FROM public."Carpetas" WHERE "ID_Cuenta" = %s AND LOWER("Estado") = \'papelera\'', (user_id,))
+
         conexion.commit()
-
         return jsonify({"success": True, "mensaje": "Papelera vaciada correctamente"}), 200
 
     except Exception as e:

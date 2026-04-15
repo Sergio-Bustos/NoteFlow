@@ -298,6 +298,14 @@
         label.textContent = esVistaPrev ? 'Notas recientes' : 'Notas encontradas';
         badge.textContent = notas.length;
 
+        // Mostrar u ocultar botón volver si estamos filtrando por carpeta
+        var btnVolver = document.getElementById('btn-volver-atras');
+        var params = new URLSearchParams(window.location.search);
+        var selectCarpeta = document.getElementById('nota-carpeta');
+        if (btnVolver) {
+            btnVolver.style.display = (params.get('carpeta') || (selectCarpeta && selectCarpeta.value)) ? 'inline-block' : 'none';
+        }
+
         if (notas.length === 0) {
             contenedor.innerHTML = '';
             sinRes.style.display = 'flex';
@@ -366,6 +374,21 @@
             })
             .catch(function() { mostrarSinResultados('notas'); });
     }
+
+    function volverAtrasCarpeta() {
+        // Limpiar el filtro de carpeta
+        var selectCarpeta = document.getElementById('nota-carpeta');
+        if (selectCarpeta) selectCarpeta.value = '';
+        
+        // Quitar el parámetro de la URL sin recargar
+        var url = new URL(window.location);
+        url.searchParams.delete('carpeta');
+        window.history.pushState({}, '', url);
+
+        // Volver a cargar todo
+        cargarTodoOrdenado();
+    }
+    window.volverAtrasCarpeta = volverAtrasCarpeta;
 
 
 
@@ -1230,6 +1253,10 @@
                 document.getElementById('icono-res').className   = 'fas fa-layer-group';
                 document.getElementById('label-res').textContent = 'Todas mis notas y carpetas';
                 document.getElementById('badge-res').textContent = carpetas.length + notasSueltas.length;
+
+                // Ocultar botón volver
+                var btnVolver = document.getElementById('btn-volver-atras');
+                if (btnVolver) btnVolver.style.display = 'none';
 
 
                 // Limpiar contenedores

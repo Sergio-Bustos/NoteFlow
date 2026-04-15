@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: 123456
       POSTGRES_DB: dbnoteflow
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d 

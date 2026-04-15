@@ -31,17 +31,7 @@
         
         const nombre = document.getElementById('nombre').value;
         const correo = document.getElementById('correo').value;
-        const inputTarjeta = document.getElementById('numero-tarjeta') ? document.getElementById('numero-tarjeta').value.replace(/\s/g, '') : '';
         
-        // ==========================================
-        //  MODO TESTING: TARJETA DE DINERO INFINITO
-        // ==========================================
-        if (inputTarjeta.startsWith('9999')) {
-            alert('💳 Tarjeta de Dinero Infinito (Dev Mode) detectada. Activando Premium en NoteFlow al instante...');
-            window.location.href = '/dev/pago-infinito?plan=' + plan;
-            return;
-        }
-
         // Configuración de la pasarela ePayco Checkout
         const epaycoKey = document.getElementById('epayco-config').dataset.publicKey;
         var handler = ePayco.checkout.configure({

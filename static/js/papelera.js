@@ -84,6 +84,25 @@
         });
     }
 
+    function confirmarRestaurarCarpeta(btn) {
+        const id     = btn.dataset.id;
+        const titulo = btn.dataset.titulo;
+
+        document.getElementById('modal-restaurar-titulo').textContent = `la carpeta "${titulo}" y todas sus notas`;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalRestaurar'));
+        modal.show();
+
+        const btnConfirmar = document.getElementById('btn-confirmar-restaurar');
+        const nuevoBtn = btnConfirmar.cloneNode(true);
+        btnConfirmar.parentNode.replaceChild(nuevoBtn, btnConfirmar);
+
+        nuevoBtn.addEventListener('click', async function () {
+            modal.hide();
+            await ejecutarAccionCarpeta(`/papelera/restaurar-carpeta/${id}`, id, 'restaurar');
+        });
+    }
+
 
     /* ──────────────────────────────────────────
        ELIMINAR DEFINITIVAMENTE
@@ -107,6 +126,25 @@
         });
     }
 
+    function confirmarEliminarCarpeta(btn) {
+        const id     = btn.dataset.id;
+        const titulo = btn.dataset.titulo;
+
+        document.getElementById('modal-eliminar-titulo').textContent = `la carpeta "${titulo}" y TODAS sus notas`;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modal.show();
+
+        const btnConfirmar = document.getElementById('btn-confirmar-eliminar');
+        const nuevoBtn = btnConfirmar.cloneNode(true);
+        btnConfirmar.parentNode.replaceChild(nuevoBtn, btnConfirmar);
+
+        nuevoBtn.addEventListener('click', async function () {
+            modal.hide();
+            await ejecutarAccionCarpeta(`/papelera/eliminar-carpeta/${id}`, id, 'eliminar');
+        });
+    }
+
 
     /* ──────────────────────────────────────────
        VACIAR TODA LA PAPELERA
@@ -126,7 +164,7 @@
 
             if (data.success) {
                 document.querySelectorAll('.nota-papelera').forEach(el => el.remove());
-                actualizarBadge(0);
+                actualizarContador();
                 mostrarVacia();
                 mostrarToast('Papelera vaciada correctamente', 'success');
             } else {
@@ -171,23 +209,68 @@
         }
     }
 
+    async function ejecutarAccionCarpeta(url, id, tipo) {
+        try {
+            const resp = await fetch(url, { method: 'POST' });
+            const data = await resp.json();
+
+            if (data.success) {
+                const card = document.getElementById(`carpeta-${id}`);
+                if (card) {
+                    card.style.transition = 'opacity 0.35s, transform 0.35s';
+                    card.style.opacity    = '0';
+                    card.style.transform  = 'scale(0.9)';
+                    setTimeout(() => {
+                        card.remove();
+                        actualizarContador();
+                    }, 360);
+                }
+                const msg = tipo === 'restaurar'
+                    ? 'Carpeta restaurada correctamente'
+                    : 'Carpeta eliminada definitivamente';
+                mostrarToast(msg, 'success');
+            } else {
+                mostrarToast(data.error || 'Error al procesar la acción', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            mostrarToast('Error de conexión', 'error');
+        }
+    }
+
 
     /* ──────────────────────────────────────────
        CONTADOR Y ESTADO VACÍO
     ────────────────────────────────────────── */
     function actualizarContador() {
-        const total = document.querySelectorAll('.nota-papelera').length;
-        actualizarBadge(total);
-        if (total === 0) mostrarVacia();
+        const totalNotas    = document.querySelectorAll('.nota-papelera:not(.carpeta-papelera)').length;
+        const totalCarpetas = document.querySelectorAll('.carpeta-papelera').length;
+        
+        actualizarBadge(totalNotas, totalCarpetas);
+        
+        if (totalNotas === 0 && totalCarpetas === 0) {
+            mostrarVacia();
+        }
+
+        // Ocultar cabeceras si no hay elementos
+        const headCarpetas = document.getElementById('header-carpetas');
+        if (headCarpetas) headCarpetas.style.display = totalCarpetas === 0 ? 'none' : '';
+
+        const headNotas = document.getElementById('header-notas');
+        if (headNotas) headNotas.style.display = totalNotas === 0 ? 'none' : '';
     }
 
-    function actualizarBadge(total) {
-        const badge = document.getElementById('badge-total');
-        if (badge) badge.textContent = total;
+    function actualizarBadge(totalNotas, totalCarpetas) {
+        const badgeNotas = document.getElementById('badge-total');
+        if (badgeNotas) badgeNotas.textContent = totalNotas;
 
-        // Ocultar botón "Vaciar papelera" si no hay notas
+        const badgeCarp = document.getElementById('badge-carpetas');
+        if (badgeCarp) badgeCarp.textContent = totalCarpetas;
+
+        // Ocultar botón "Vaciar papelera" si no hay nada
+        const totalTotal = totalNotas + totalCarpetas;
         const btnVaciar = document.getElementById('btn-vaciar-todo');
-        if (btnVaciar) btnVaciar.style.display = total === 0 ? 'none' : '';
+        if (btnVaciar) btnVaciar.style.display = totalTotal === 0 ? 'none' : '';
     }
 
     function mostrarVacia() {
