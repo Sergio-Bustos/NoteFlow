@@ -168,10 +168,26 @@
                     <input type="text" name="usuario" placeholder="Ej: Notero123" autocomplete="username" required>
 
                     <label>Contraseña</label>
-                    <input type="password" name="contraseña" placeholder="Mínimo 6 caracteres"
-                           autocomplete="new-password" minlength="6" maxlength="15" required>
+                    <input type="password" name="contraseña" id="reg-password"
+                           placeholder="Mínimo 8 caracteres"
+                           autocomplete="new-password" minlength="8" required>
 
-                    <small class="campo-hint">Entre 6 y 15 caracteres</small>
+                    <!-- Barra de fortaleza de contraseña -->
+                    <div class="password-strength-wrapper" id="password-strength-wrapper" style="display:none; margin-top:8px;">
+                        <div style="display:flex; gap:4px; margin-bottom:4px;">
+                            <div class="strength-bar" id="sb1" style="height:5px;flex:1;border-radius:3px;background:#e5e7eb;transition:background .3s;"></div>
+                            <div class="strength-bar" id="sb2" style="height:5px;flex:1;border-radius:3px;background:#e5e7eb;transition:background .3s;"></div>
+                            <div class="strength-bar" id="sb3" style="height:5px;flex:1;border-radius:3px;background:#e5e7eb;transition:background .3s;"></div>
+                            <div class="strength-bar" id="sb4" style="height:5px;flex:1;border-radius:3px;background:#e5e7eb;transition:background .3s;"></div>
+                        </div>
+                        <small id="strength-label" style="font-size:11px;color:#6b7280;"></small>
+                    </div>
+
+                    <label style="margin-top:12px;">Confirmar contraseña</label>
+                    <input type="password" name="confirmar_contrasena" id="reg-password-confirm"
+                           placeholder="Repite tu contraseña"
+                           autocomplete="new-password" minlength="8" required>
+                    <small class="campo-hint" id="confirm-hint" style="color:#ef4444; display:none;">Las contraseñas no coinciden</small>
 
                 </section>
 

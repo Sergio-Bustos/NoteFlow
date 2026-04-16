@@ -54,17 +54,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Crea la tarjeta de reseña
         const card = document.createElement('div');
         card.className = 'review-card';
+        
+        // Estructura segura: solo la imagen y las estrellas van como HTML controlado
         card.innerHTML = `
           <div class="review-header">
-            <img src="${foto}" alt="${nombre}">
+            <img src="${foto}" alt="Usuario">
             <div>
-              <div class="review-name">${nombre}</div>
-              <!-- 5 estrellas fijas para todos los clientes -->
+              <div class="review-name"></div>
               <div class="review-stars">★★★★★</div>
             </div>
           </div>
           <p class="review-comment">"${comentario}"</p>
         `;
+        
+        // Insertar el nombre de forma segura como texto plano
+        card.querySelector('.review-name').textContent = nombre;
 
         // Agrega la tarjeta al grid del DOM
         grid.appendChild(card);

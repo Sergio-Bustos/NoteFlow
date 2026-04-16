@@ -209,8 +209,8 @@ body {
     filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.20));
 }
 
-.columna_izquierda { animation: scrollDown 12s linear infinite; }
-.columna_derecha   { animation: scrollUp   12s linear infinite; }
+.columna_izquierda { animation: scrollDown 10s ease-in-out infinite alternate; }
+.columna_derecha   { animation: scrollUp   10s ease-in-out infinite alternate; }
 
 @keyframes scrollDown {
     from { transform: translateY(-50%); }

@@ -19,6 +19,13 @@ import uuid as _uuid
 import secrets
 import re
 import random
+from flask_talisman import Talisman
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
+import bleach
+import logging
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
@@ -35,10 +42,83 @@ GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")
 
 # Flask
 app = Flask(__name__)
-app.secret_key          = os.getenv("FLASK_SECRET_KEY", "tu_clave_secreta_aqui_cambiala")
-app.static_folder       = "static"
-app.static_url_path     = "/static"
-app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024  # 2 GB — necesario para subir videos
+# Usar una clave secreta segura desde .env, o generar una aleatoria si no existe (no recomendado para producción real pero mejor que un fallback fijo)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
+app.static_folder = "static"
+app.static_url_path = "/static"
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024  # 2 GB
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SECURE"] = False  # Cambiar a True si se usa HTTPS
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# Configuración de Flask-WTF CSRF
+app.config["WTF_CSRF_CHECK_DEFAULT"] = True   # Activar CSRF global
+app.config["WTF_CSRF_HEADERS"] = ["X-CSRFToken", "X-CSRF-Token"]  # Leer token de cabeceras AJAX
+app.config["WTF_CSRF_TIME_LIMIT"] = 3600      # Token válido por 1 hora
+
+# Inicializar CSRF
+csrf = CSRFProtect(app)
+
+# Inicializar Limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+# Configuración de Logging de Seguridad
+security_logger = logging.getLogger('security')
+security_logger.setLevel(logging.INFO)
+_sec_handler = RotatingFileHandler('security_audit.log', maxBytes=1_000_000, backupCount=5)
+_sec_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+security_logger.addHandler(_sec_handler)
+
+# Inicializar Talisman (Seguridad de cabeceras HTTP)
+# Nota: CSP está relajado para permitir la carga de recursos locales y Google OAuth. 
+# En producción se debe ajustar estrictamente.
+csp = {
+    'default-src': '\'self\'',
+    'script-src': [
+        '\'self\'',
+        '\'unsafe-inline\'',
+        'https://accounts.google.com',
+        'https://checkout.epayco.co',
+        'https://secure.epayco.co',
+        'https://ejs.epayco.co',
+        'https://code.jquery.com',
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com'
+    ],
+    'style-src': [
+        '\'self\'',
+        '\'unsafe-inline\'',
+        'https://fonts.googleapis.com',
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com',
+        'https://checkout.epayco.co'
+    ],
+    'img-src': ['\'self\'', 'data:', 'https:', 'http:', 'https://randomuser.me', 'https://*.epayco.co'],
+    'font-src': [
+        '\'self\'', 
+        'https://fonts.gstatic.com', 
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com'
+    ],
+    'connect-src': [
+        '\'self\'',
+        'https://randomuser.me',
+        'https://*.epayco.co',
+        'https://*.epayco.io'
+    ],
+    'frame-src': [
+        '\'self\'', 
+        'https://accounts.google.com', 
+        'https://checkout.epayco.co',
+        'https://secure.epayco.co'
+    ]
+}
+talisman = Talisman(app, content_security_policy=csp, force_https=False)
 
 # Rutas base del servidor
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -137,6 +217,23 @@ def archivo_demasiado_grande(e):
     return jsonify({"error": "El archivo supera el límite de 2 GB"}), 413
 
 
+@app.errorhandler(400)
+def solicitud_invalida(e):
+    """Maneja errores 400, incluyendo fallos de validación CSRF."""
+    descripcion = str(e.description) if hasattr(e, 'description') else str(e)
+    if 'csrf' in descripcion.lower() or 'token' in descripcion.lower():
+        security_logger.warning(f"Fallo de CSRF desde {request.remote_addr}: {descripcion}")
+        return jsonify({"error": "Token de seguridad inválido. Refresca la página e intenta de nuevo."}), 400
+    return jsonify({"error": descripcion}), 400
+
+
+@app.errorhandler(429)
+def demasiadas_solicitudes(e):
+    """Rate limit excedido — devuelve JSON para que el toast lo muestre."""
+    security_logger.warning(f"Rate limit excedido desde {request.remote_addr} en {request.path}")
+    return jsonify({"error": "Demasiados intentos. Por favor espera un momento antes de volver a intentarlo."}), 429
+
+
 @app.errorhandler(404)
 def pagina_no_encontrada(e):
     return render_template("errors/404.html"), 404
@@ -187,6 +284,33 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+def sanitizar_html(html_sucio):
+    """
+    Limpia el HTML permitiendo solo etiquetas seguras para las notas.
+    Previene inyección de scripts (XSS).
+    """
+    if not html_sucio:
+        return ""
+    
+    tags_permitidos = [
+        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 
+        'ul', 'ol', 'li', 'blockquote', 'span', 'div'
+    ]
+    attrs_permitidos = {
+        '*': ['style', 'class'],
+        'a': ['href', 'title']
+    }
+    # Solo permitimos estilos de color y alineación básicos para no romper el diseño
+    styles_permitidos = ['color', 'background-color', 'text-align']
+
+    return bleach.clean(
+        html_sucio, 
+        tags=tags_permitidos, 
+        attributes=attrs_permitidos, 
+        styles=styles_permitidos,
+        strip=True
+    )
 
 def limpiar_datos_formulario(datos, campos):
     """Limpia y retorna un diccionario con los campos del formulario."""
@@ -363,6 +487,7 @@ def cuenta_no_registrada():
 
 
 @app.route("/procesar-registro", methods=["POST"])
+@limiter.limit("5 per minute")
 def procesar_registro():
     """
     Paso 1 del registro: valida los datos, genera un código de 6 dígitos,
@@ -400,6 +525,25 @@ def procesar_registro():
 
         if cursor.fetchone():
             return jsonify({"error": "El usuario o correo ya está registrado en NoteFlow"}), 409
+
+        # Sanitizar entradas de texto si es necesario (nombre/usuario)
+        nombres = bleach.clean(nombres, tags=[], strip=True)
+        apellidos = bleach.clean(apellidos, tags=[], strip=True)
+        usuario = bleach.clean(usuario, tags=[], strip=True)
+        confirmar_contrasena = request.form.get("confirmar_contrasena", "").strip()
+
+        # Validación de coincidencia de contraseñas
+        if contraseña != confirmar_contrasena:
+            return jsonify({"error": "Las contraseñas no coinciden"}), 400
+
+        # Validación estricta de correo electrónico
+        if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", correo):
+            return jsonify({"error": "El formato del correo electrónico no es válido"}), 400
+
+        # Validación de fortaleza de contraseña
+        # Mínimo 8 caracteres, al menos una letra y un número
+        if len(contraseña) < 8 or not re.search(r"[A-Za-z]", contraseña) or not re.search(r"[0-9]", contraseña):
+            return jsonify({"error": "La contraseña debe tener al menos 8 caracteres, incluyendo letras y números"}), 400
 
         codigo = str(random.randint(100000, 999999))
         expira = datetime.now() + timedelta(minutes=15)
@@ -449,6 +593,7 @@ def procesar_registro():
     except Exception as e:
         if conexion:
             conexion.rollback()
+        security_logger.error(f"Error en registro para {request.form.get('correo')}: {str(e)}")
         print(f"Error al iniciar registro: {e}")
         return jsonify({"error": "Error al procesar la solicitud"}), 500
 
@@ -595,6 +740,7 @@ def mostrar_login():
 
 
 @app.route("/procesar-login", methods=["POST"])
+@limiter.limit("10 per minute")
 def procesar_login():
     """
     Valida las credenciales del usuario y abre la sesión.
@@ -647,10 +793,13 @@ def procesar_login():
                     print(f"Error al migrar contraseña: {e}")
 
         if login_exitoso:
+            # Prevenir Session Fixation limpiando la sesión vieja
+            session.clear()
             session["usuario_id"]     = cuenta["ID_Cuenta"]
             session["usuario_nombre"] = cuenta["Usuario"]
+            security_logger.info(f"Login exitoso: {usuario} desde {request.remote_addr}")
             
-            # Obtener estado premium real de la BD y verificar si ya expiró
+            # ... resto del código de premium ...
             cursor_temp = conexion.cursor(cursor_factory=RealDictCursor)
             cursor_temp.execute('SELECT "Es_premium", "Premium_vence", "Plan_premium", "Avatar_plan" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
             res_premium = cursor_temp.fetchone()
@@ -663,33 +812,22 @@ def procesar_login():
             # Guardar en sesión
             session["es_premium"]   = es_p_db
             session["plan_premium"] = plan
-            session["avatar_plan"] = avatar_plan if avatar_plan else plan
+            session["avatar_plan"]  = avatar_plan if avatar_plan else plan
             
-            if es_p_db and vence:
-                if datetime.now() > vence:
-                    session["es_premium"] = False
-                    session["plan_premium"] = "gratis"
-                    session["avatar_plan"] = "ninguno"
-                    # Opcional: actualizar BD si expiró
-                    cursor_temp.execute('UPDATE public."Cuentas" SET "Es_premium" = FALSE WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
-                    conexion.commit()
-            
-            cursor_temp.close()
-            # Verificar expiración
+            # Verificar expiración de forma segura
             if es_p_db and vence:
                 ahora = datetime.now(vence.tzinfo) if vence.tzinfo else datetime.now()
                 if ahora > vence:
-                    cursor_temp.execute('UPDATE public."Cuentas" SET "Es_premium" = FALSE, "Plan_premium" = \'gratis\' WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
+                    cursor_temp.execute('UPDATE public."Cuentas" SET "Es_premium" = FALSE, "Plan_premium" = \'gratis\', "Avatar_plan" = \'ninguno\' WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
                     conexion.commit()
-                    es_p_db = False
-                    plan = "gratis"
+                    session["es_premium"]   = False
+                    session["plan_premium"] = "gratis"
+                    session["avatar_plan"]  = "ninguno"
             
-            session["es_premium"] = es_p_db
-            session["plan_premium"] = plan
             cursor_temp.close()
-            
             return jsonify({"success": True, "mensaje": "Inicio de sesión exitoso", "redirect": "/dashboard"}), 200
 
+        security_logger.warning(f"Intento de login fallido: {usuario} (contraseña incorrecta) desde {request.remote_addr}")
         return jsonify({"error": "Contraseña incorrecta"}), 401
 
     except Exception as e:
@@ -745,6 +883,10 @@ def google_login():
         access_type="offline", include_granted_scopes="true", prompt="consent"
     )
     session["state"] = state
+    # Guardar el code_verifier para PKCE (vulnerabilidad de 'Missing code verifier')
+    if hasattr(flow, 'code_verifier'):
+        session["code_verifier"] = flow.code_verifier
+        
     return redirect(authorization_url)
 
 
@@ -752,7 +894,17 @@ def google_login():
 def google_callback():
     """Procesa la respuesta de Google y abre la sesión si el correo está registrado."""
     flow = _google_flow(state=session.get("state"))
-    flow.fetch_token(authorization_response=request.url)
+    
+    # Restaurar el code_verifier para validar el intercambio de token
+    if "code_verifier" in session:
+        flow.code_verifier = session.get("code_verifier")
+
+    # Asegurar que la URL de respuesta use HTTPS si estamos en ngrok/producción
+    authorization_response = request.url
+    if "https://" in os.getenv("GOOGLE_REDIRECT_URI", "") and authorization_response.startswith("http://"):
+        authorization_response = authorization_response.replace("http://", "https://", 1)
+
+    flow.fetch_token(authorization_response=authorization_response)
 
     user_info = requests.get(
         "https://www.googleapis.com/oauth2/v1/userinfo",
@@ -828,6 +980,7 @@ def mostrar_olvide_contrasena():
 
 
 @app.route("/procesar-olvide-contrasena", methods=["POST"])
+@limiter.limit("3 per minute")
 def procesar_olvide_contrasena():
     """Genera un token de restablecimiento y envía el enlace al correo."""
     conexion = None
@@ -955,6 +1108,10 @@ def procesar_restablecer_contrasena():
     if not token or not nueva_contrasena:
         return jsonify({"error": "Faltan datos obligatorios."}), 400
 
+    # Validación de fortaleza de nueva contraseña
+    if len(nueva_contrasena) < 8 or not re.search(r"[A-Za-z]", nueva_contrasena) or not re.search(r"[0-9]", nueva_contrasena):
+        return jsonify({"error": "La contraseña debe tener al menos 8 caracteres, incluyendo letras y números"}), 400
+
     try:
         conexion = conectar_db()
         if conexion is None:
@@ -976,6 +1133,7 @@ def procesar_restablecer_contrasena():
             WHERE "ID_Cuenta" = %s
         """, (generate_password_hash(nueva_contrasena), row[0]))
         conexion.commit()
+        security_logger.info(f"Contraseña restablecida exitosamente para ID de cuenta: {row[0]}")
 
         return jsonify({
             "success": True,
@@ -986,6 +1144,7 @@ def procesar_restablecer_contrasena():
     except Exception as e:
         if conexion:
             conexion.rollback()
+        security_logger.error(f"Error al restablecer contraseña con token: {str(e)}")
         print(f"Error al restablecer contraseña: {e}")
         return jsonify({"error": "Error interno al procesar la solicitud."}), 500
 
@@ -2543,13 +2702,17 @@ def guardar_nota_texto():
     conexion = None
     cursor   = None
     try:
-        titulo        = request.form.get("titulo",      "").strip() or "Nota sin título"
+        titulo        = bleach.clean(request.form.get("titulo", "").strip() or "Nota sin título", tags=[], strip=True)
         descripcion   = request.form.get("descripcion", "").strip() or f"Nota de texto: {titulo}"
-        contenido     = request.form.get("contenido",   "").strip()
+        contenido     = sanitizar_html(request.form.get("contenido",   "").strip())
         etiquetas_raw = request.form.get("etiquetas",   "").strip()
 
         if not contenido:
             return jsonify({"error": "El contenido de la nota está vacío"}), 400
+
+        # Sanitizar el contenido HTML de la nota para prevenir XSS
+        contenido = sanitizar_html(contenido)
+        titulo = bleach.clean(titulo, tags=[], strip=True) # Título siempre texto plano
 
         conexion = conectar_db()
         if conexion is None:
@@ -2596,13 +2759,17 @@ def actualizar_nota_texto(nota_id):
     conexion = None
     cursor   = None
     try:
-        titulo      = request.form.get("titulo",      "").strip()
-        descripcion = request.form.get("descripcion", "").strip()
-        contenido   = request.form.get("contenido",   "").strip()
-        etiquetas   = request.form.get("etiquetas",   "").strip()
+        titulo        = bleach.clean(request.form.get("titulo", "").strip(), tags=[], strip=True)
+        descripcion   = request.form.get("descripcion", "").strip()
+        contenido     = sanitizar_html(request.form.get("contenido", "").strip())
+        etiquetas     = request.form.get("etiquetas",   "").strip()
 
         if not titulo or not contenido:
             return jsonify({"error": "El título y contenido son obligatorios"}), 400
+
+        # Sanitización centralizada
+        contenido = sanitizar_html(contenido)
+        titulo = bleach.clean(titulo, tags=[], strip=True)
 
         conexion = conectar_db()
         cursor = conexion.cursor()
@@ -3362,10 +3529,10 @@ def guardar_nota_mixta():
     archivos_guardados = []  # para rollback físico si falla la BD
 
     try:
-        titulo        = request.form.get("titulo",      "").strip()
-        descripcion   = request.form.get("descripcion", "").strip()
-        etiquetas_raw = request.form.get("etiquetas",   "").strip()
-        contenido     = request.form.get("contenido",   "").strip()
+        contenido     = sanitizar_html(request.form.get("contenido", "").strip())
+        titulo        = bleach.clean(request.form.get("titulo", "").strip(), tags=[], strip=True)
+        descripcion   = bleach.clean(request.form.get("descripcion", "").strip(), tags=[], strip=True)
+        etiquetas_raw = bleach.clean(request.form.get("etiquetas", "").strip(), tags=[], strip=True)
 
         if not titulo:
             return jsonify({"error": "El título de la nota es obligatorio"}), 400
@@ -3500,9 +3667,9 @@ def actualizar_nota_mixta(nota_id):
     cursor   = None
     archivos_guardados = []
     try:
-        titulo        = request.form.get("titulo",      "").strip()
+        titulo        = bleach.clean(request.form.get("titulo", "").strip(), tags=[], strip=True)
         descripcion   = request.form.get("descripcion", "").strip()
-        contenido     = request.form.get("contenido",   "").strip()
+        contenido     = sanitizar_html(request.form.get("contenido", "").strip())
         etiquetas_raw = request.form.get("etiquetas",   "").strip()
         nuevos_archivos = request.files.getlist("archivos")
 
