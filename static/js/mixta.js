@@ -424,8 +424,10 @@ async function guardarNota() {
         b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (isUpdate ? 'Actualizando...' : 'Guardando...');
     });
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
     try {
-        const resp = await fetch(url, { method: 'POST', body: fd });
+        const resp = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: fd });
 
         let data;
         try { data = await resp.json(); }

@@ -294,21 +294,24 @@ def sanitizar_html(html_sucio):
         return ""
     
     tags_permitidos = [
-        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 
-        'ul', 'ol', 'li', 'blockquote', 'span', 'div'
+        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3',
+        'ul', 'ol', 'li', 'blockquote', 'span', 'div',
+        'font', 's', 'strike', 'b', 'i',  # execCommand genera estas etiquetas
     ]
     attrs_permitidos = {
-        '*': ['style', 'class'],
-        'a': ['href', 'title']
+        '*':    ['style', 'class'],
+        'a':    ['href', 'title'],
+        'font': ['size', 'color', 'face'],  # execCommand('fontSize') genera <font size="N">
     }
-    # Solo permitimos estilos de color y alineación básicos para no romper el diseño
-    styles_permitidos = ['color', 'background-color', 'text-align']
+    styles_permitidos = [
+        'color', 'background-color', 'text-align',
+        'font-size', 'font-weight', 'font-style', 'text-decoration',
+    ]
 
     return bleach.clean(
-        html_sucio, 
-        tags=tags_permitidos, 
-        attributes=attrs_permitidos, 
-        styles=styles_permitidos,
+        html_sucio,
+        tags=tags_permitidos,
+        attributes=attrs_permitidos,
         strip=True
     )
 
@@ -2721,6 +2724,11 @@ def guardar_nota_texto():
         cursor = conexion.cursor()
         hoy    = datetime.now()
 
+        # Garantizar que el formato existe en Tipos (FK requerida)
+        cursor.execute("""
+            INSERT INTO public."Tipos" ("Formato") VALUES ('texto') ON CONFLICT ("Formato") DO NOTHING
+        """)
+
         cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
         nuevo_id = cursor.fetchone()[0]
 
@@ -3854,6 +3862,3 @@ def procesar_pago():
 
 if __name__ == "__main__":
     app.run(port=5000)
-
-
-

@@ -112,6 +112,8 @@ async function guardarNota() {
     const contenido   = document.getElementById('cuerpo-nota').innerHTML;
     const textoPlano  = document.getElementById('cuerpo-nota').innerText.trim();
 
+    console.log('Datos a enviar:', {titulo, descripcion, etiquetas, contenido, textoPlano});
+
     if (!titulo) {
         mostrarToast('Escribe un título para la nota');
         document.getElementById('inputTitulo').focus();
@@ -132,9 +134,15 @@ async function guardarNota() {
     const editId = document.getElementById('editNotaId')?.value;
     const url    = editId ? `/actualizar-nota-texto/${editId}` : '/guardar-nota-texto';
 
+    console.log('URL:', url);
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
     try {
-        const res  = await fetch(url, { method: 'POST', body: formData });
+        const res  = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData });
         const data = await res.json();
+
+        console.log('Respuesta del servidor:', res.status, data);
 
         if (data.success) {
             notaGuardada = true;
@@ -146,7 +154,7 @@ async function guardarNota() {
             mostrarToast(data.error || 'Error al guardar');
         }
     } catch (err) {
-        console.error(err);
+        console.error('Error en fetch:', err);
         mostrarToast('Error de conexión al servidor');
     }
 }
