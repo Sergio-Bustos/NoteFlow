@@ -1231,11 +1231,10 @@ def dashboard():
                 resp_epayco = requests.get(f"https://secure.epayco.co/validation/v1/reference/{ref_payco}")
                 if resp_epayco.status_code == 200:
                     data_tx = resp_epayco.json().get("data", {})
-                    # Si fue Aceptada, o si fue Pendiente y estamos en modo prueba
+                    # Si fue Aceptada
                     estado = data_tx.get("x_response")
-                    es_prueba = data_tx.get("x_test_request")
                     # Actualizar a Premium
-                    if estado == "Aceptada" or (estado == "Pendiente" and es_prueba):
+                    if estado == "Aceptada":
                         plan_comprado = data_tx.get("x_extra2", "mensual")
                         dias = {"quincenal": 15, "mensual": 30, "anual": 365}.get(plan_comprado, 30)
                         

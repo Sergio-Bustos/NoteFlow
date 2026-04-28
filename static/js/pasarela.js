@@ -54,7 +54,7 @@
             lang: "es",
             name_billing: nombre,
             email_billing: correo,
-            external: "false",
+            external: "true",
             extra1: "1", 
             extra2: plan,
             response: window.location.origin + "/dashboard", 
