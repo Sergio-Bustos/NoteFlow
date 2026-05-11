@@ -112,9 +112,12 @@ function cargarVideo(file) {
         return;
     }
 
-    const MAX_BYTES = 2 * 1024 * 1024 * 1024;
-    if (file.size > MAX_BYTES) {
-        mostrarToast('El archivo supera el límite de 2 GB', 'error');
+    // Límite dinámico por plan
+    const limVideo = window.PLAN_LIMITES?.video ?? (2 * 1024 * 1024 * 1024);
+    const nomPlan  = window.PLAN_LIMITES?.nombre ?? 'Gratis';
+    if (file.size > limVideo) {
+        const limite = window.PLAN_LIMITES?.formatBytes(limVideo) ?? '2 GB';
+        mostrarToast(`El archivo supera el límite de ${limite} para el plan ${nomPlan}. Mejora tu plan para subir videos más grandes.`, 'error');
         return;
     }
 
@@ -662,7 +665,11 @@ async function iniciarGrabacion() {
         intervalTimer = setInterval(() => {
             segundosGrab++;
             timerGrabEl.textContent = formatTiempo(segundosGrab);
-            if (segundosGrab >= 7200) pararGrabacion();
+            const maxSeg = window.PLAN_LIMITES?.grabacion ?? 7200;
+            if (segundosGrab >= maxSeg) {
+                pararGrabacion();
+                mostrarToast(`Límite de grabación alcanzado (${window.PLAN_LIMITES?.formatSeg(maxSeg) ?? '2:00:00'}) para el plan ${window.PLAN_LIMITES?.nombre ?? 'Gratis'}.`, 'error');
+            }
         }, 1000);
 
         mostrarToast('🔴 Grabación de video iniciada');

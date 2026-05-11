@@ -207,12 +207,53 @@ body {
     color: var(--morado-oscuro);
     background: #fafaff;
     caret-color: var(--morado-vivo);
+    /* Evitar que el texto se vaya al lado */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 #cuerpo-nota:empty::before {
     content: attr(placeholder);
     color: var(--morado-claro);
     font-style: italic;
     pointer-events: none;
+}
+
+/* Mejora de Viñetas (Listas) */
+#cuerpo-nota ul, #cuerpo-nota ol {
+    padding-left: 35px;
+    margin-bottom: 1em;
+}
+
+#cuerpo-nota li {
+    margin-bottom: 0.5em;
+    list-style-position: outside;
+}
+
+#cuerpo-nota li::marker {
+    color: inherit;
+    font-weight: bold;
+}
+
+/* Estilo del Contador de Caracteres */
+.char-counter-container {
+    padding: 10px 32px;
+    background: #fafaff;
+    border-top: 1.5px solid var(--violeta-suave);
+    text-align: right;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--morado-medio);
+}
+#char-count {
+    color: var(--morado-vivo);
+    font-size: 0.9rem;
+}
+#char-limit {
+    color: var(--morado-claro);
 }
 
 /* ══════════════════════════════════════════

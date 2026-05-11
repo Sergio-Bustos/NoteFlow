@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="/static/estilostexto.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
 
+    <script>
+        window.USER_PLAN = "{{ session.plan_premium or 'gratis' }}";
+    </script>
 </head>
 <body>
 
@@ -91,6 +94,11 @@
         <button class="btn-guardar-bottom" onclick="guardarNota()">
             <i class="fas fa-save"></i> {{ 'ACTUALIZAR NOTA' if edit_mode else 'GUARDAR NOTA' }}
         </button>
+    </div>
+
+    <!-- Contador de caracteres -->
+    <div class="char-counter-container">
+        <span id="char-count">0</span> / <span id="char-limit">0</span> caracteres
     </div>
 
 </div>

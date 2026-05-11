@@ -3,18 +3,18 @@
 //  Patrón idéntico a logicatexto.js + manejo de archivos multimedia
 // ══════════════════════════════════════════════════════════════════
 
-// ── Límites (deben coincidir con el backend) ──────────────────────
+// ── Límites (dinámicos por plan, con fallback a los valores originales) ────────────────────
 const LIMITES = {
     imagen: {
-        maxBytes: 200 * 1024 * 1024,
+        maxBytes: window.PLAN_LIMITES?.imagen ?? (200 * 1024 * 1024),
         exts: new Set(['.jpg','.jpeg','.png','.gif','.webp','.svg','.pntg','.wmf'])
     },
     audio: {
-        maxBytes: 200 * 1024 * 1024,
+        maxBytes: window.PLAN_LIMITES?.audio ?? (200 * 1024 * 1024),
         exts: new Set(['.mp3','.aac','.ogg','.wav','.flac','.wma','.m4a','.webm'])
     },
     video: {
-        maxBytes: 2 * 1024 * 1024 * 1024,
+        maxBytes: window.PLAN_LIMITES?.video ?? (2 * 1024 * 1024 * 1024),
         exts: new Set(['.mp4','.webm','.ogg','.mkv','.wmv','.mov','.avi'])
     },
 };
@@ -107,7 +107,10 @@ function validarArchivo(file, tipo) {
     const lim = LIMITES[tipo];
     const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
     if (!lim.exts.has(ext)) return `Formato no permitido (${ext}) para ${tipo}`;
-    if (file.size > lim.maxBytes) return `"${file.name}" supera el límite de ${formatBytes(lim.maxBytes)}`;
+    if (file.size > lim.maxBytes) {
+        const nomPlan = window.PLAN_LIMITES?.nombre ?? 'Gratis';
+        return `"${file.name}" supera el límite de ${formatBytes(lim.maxBytes)} para el plan ${nomPlan}`;
+    }
     if (file.size === 0)          return `"${file.name}" está vacío`;
     return null;
 }

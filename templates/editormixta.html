@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="/static/mixta.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        window.USER_PLAN = "{{ session.plan_premium or 'gratis' }}";
+    </script>
+    <script src="/static/js/limites_plan.js"></script>
 </head>
 <body>
 
@@ -100,6 +104,10 @@
         <div id="cuerpo-nota"
              contenteditable="true"
              placeholder="Escribe el contenido de texto de tu nota..."></div>
+        
+        <div class="char-counter-container">
+            <span id="char-count">0</span> / <span id="char-limit">0</span> caracteres
+        </div>
     </div>
 
     <!-- ══════════════════════════════

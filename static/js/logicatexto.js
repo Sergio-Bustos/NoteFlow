@@ -1,3 +1,14 @@
+// ========== LÍMITES POR PLAN ==========
+const LIMITES = {
+    'gratis': 5000,
+    'quincenal': 15000,
+    'mensual': 50000,
+    'anual': 250000
+};
+
+const PLAN_ACTUAL = window.USER_PLAN || 'gratis';
+const LIMITE_CARACTERES = LIMITES[PLAN_ACTUAL] || LIMITES['gratis'];
+
 // ========== ESTADO ==========
 let notaGuardada = false;
 let urlDestino   = null;
@@ -21,6 +32,77 @@ window.addEventListener('pageshow', function(e) {
         document.body.classList.toggle('tema-claro',  !esOscuro);
     }
 });
+
+// ========== INICIALIZACIÓN ==========
+document.addEventListener('DOMContentLoaded', () => {
+    const editor = document.getElementById('cuerpo-nota');
+    const limitDisplay = document.getElementById('char-limit');
+    
+    if (limitDisplay) limitDisplay.textContent = LIMITE_CARACTERES.toLocaleString();
+    
+    actualizarContador();
+
+    // Eventos para el contador y límite
+    if (editor) {
+        editor.addEventListener('input', () => {
+            actualizarContador();
+            verificarLimite();
+        });
+
+        // Manejo de pegado (Paste) para quitar fondo negro y estilos extraños
+        editor.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const html = e.clipboardData.getData('text/html');
+            const text = e.clipboardData.getData('text/plain');
+
+            if (html) {
+                // Limpiar el HTML: remover estilos de fondo y colores que vienen de Google/etc
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Remover todos los estilos de fondo y forzar herencia o limpieza
+                const allElements = doc.querySelectorAll('*');
+                allElements.forEach(el => {
+                    el.style.backgroundColor = '';
+                    // Si el color es negro puro y estamos en tema oscuro, quizás queramos dejarlo, 
+                    // pero lo mejor es limpiar el color de fondo totalmente.
+                    if (el.style.color === 'rgb(0, 0, 0)' || el.style.color === '#000000') {
+                        el.style.color = ''; 
+                    }
+                });
+
+                document.execCommand('insertHTML', false, doc.body.innerHTML);
+            } else {
+                document.execCommand('insertText', false, text);
+            }
+            actualizarContador();
+        });
+    }
+});
+
+function actualizarContador() {
+    const editor = document.getElementById('cuerpo-nota');
+    const contador = document.getElementById('char-count');
+    if (!editor || !contador) return;
+
+    const longitud = editor.innerText.length;
+    contador.textContent = longitud.toLocaleString();
+
+    if (longitud > LIMITE_CARACTERES) {
+        contador.style.color = 'var(--rojo)';
+    } else {
+        contador.style.color = 'var(--morado-medio)';
+    }
+}
+
+function verificarLimite() {
+    const editor = document.getElementById('cuerpo-nota');
+    if (!editor) return;
+
+    if (editor.innerText.length > LIMITE_CARACTERES) {
+        mostrarToast(`Has superado el límite de ${LIMITE_CARACTERES} caracteres para tu plan ${PLAN_ACTUAL}.`);
+    }
+}
 
 // ========== MODAL SALIDA SIN GUARDAR ==========
 
@@ -88,20 +170,24 @@ document.addEventListener('click', function(e) {
 function fmt(comando, e) {
     if (e) e.preventDefault();
     document.execCommand(comando, false, null);
-    document.getElementById('cuerpo-nota').focus();
+    const editor = document.getElementById('cuerpo-nota');
+    if (editor) editor.focus();
+    actualizarContador();
 }
 
 function cambiarTamano(valor) {
     if (!valor) return;
     document.execCommand('fontSize', false, valor);
-    document.getElementById('cuerpo-nota').focus();
+    const editor = document.getElementById('cuerpo-nota');
+    if (editor) editor.focus();
 }
 
 function cambiarColor(color) {
     document.execCommand('foreColor', false, color);
     const visual = document.getElementById('colorMuestra');
     if (visual) visual.style.backgroundColor = color;
-    document.getElementById('cuerpo-nota').focus();
+    const editor = document.getElementById('cuerpo-nota');
+    if (editor) editor.focus();
 }
 
 // ========== GUARDAR NOTA ==========
@@ -109,10 +195,11 @@ async function guardarNota() {
     const titulo      = document.getElementById('inputTitulo').value.trim();
     const descripcion = document.getElementById('inputDescripcion').value.trim();
     const etiquetas   = document.getElementById('inputEtiquetas').value.trim();
-    const contenido   = document.getElementById('cuerpo-nota').innerHTML;
-    const textoPlano  = document.getElementById('cuerpo-nota').innerText.trim();
-
-    console.log('Datos a enviar:', {titulo, descripcion, etiquetas, contenido, textoPlano});
+    const cuerpo      = document.getElementById('cuerpo-nota');
+    if (!cuerpo) return;
+    
+    const contenido   = cuerpo.innerHTML;
+    const textoPlano  = cuerpo.innerText.trim();
 
     if (!titulo) {
         mostrarToast('Escribe un título para la nota');
@@ -121,7 +208,13 @@ async function guardarNota() {
     }
     if (!textoPlano) {
         mostrarToast('La nota está vacía');
-        document.getElementById('cuerpo-nota').focus();
+        cuerpo.focus();
+        return;
+    }
+
+    // Verificar límite antes de guardar
+    if (cuerpo.innerText.length > LIMITE_CARACTERES) {
+        mostrarToast(`No puedes guardar la nota porque excede el límite de ${LIMITE_CARACTERES} caracteres de tu plan.`);
         return;
     }
 
@@ -134,15 +227,11 @@ async function guardarNota() {
     const editId = document.getElementById('editNotaId')?.value;
     const url    = editId ? `/actualizar-nota-texto/${editId}` : '/guardar-nota-texto';
 
-    console.log('URL:', url);
-
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     try {
         const res  = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrfToken }, body: formData });
         const data = await res.json();
-
-        console.log('Respuesta del servidor:', res.status, data);
 
         if (data.success) {
             notaGuardada = true;
@@ -161,21 +250,26 @@ async function guardarNota() {
 
 
 // ========== BOTÓN VOLVER ==========
-document.getElementById('btnVolver').addEventListener('click', function(e) {
-    e.preventDefault();
-    const textoPlano = document.getElementById('cuerpo-nota').innerText.trim();
-    if (textoPlano && !notaGuardada) {
-        urlDestino = '/notas';
-        mostrarModal();
-    } else {
-        notaGuardada = true;
-        window.location.href = '/notas';
-    }
-});
+const btnVolver = document.getElementById('btnVolver');
+if (btnVolver) {
+    btnVolver.addEventListener('click', function(e) {
+        e.preventDefault();
+        const editor = document.getElementById('cuerpo-nota');
+        const textoPlano = editor ? editor.innerText.trim() : '';
+        if (textoPlano && !notaGuardada) {
+            urlDestino = '/notas';
+            mostrarModal();
+        } else {
+            notaGuardada = true;
+            window.location.href = '/notas';
+        }
+    });
+}
 
 // ========== ADVERTENCIA AL CERRAR PESTAÑA ==========
 window.addEventListener('beforeunload', function(e) {
-    const textoPlano = document.getElementById('cuerpo-nota').innerText.trim();
+    const editor = document.getElementById('cuerpo-nota');
+    const textoPlano = editor ? editor.innerText.trim() : '';
     if (textoPlano && !notaGuardada) {
         e.preventDefault();
         e.returnValue = '';
@@ -185,6 +279,7 @@ window.addEventListener('beforeunload', function(e) {
 // ========== TOAST ==========
 function mostrarToast(mensaje) {
     const t = document.getElementById('toast');
+    if (!t) return;
     t.textContent = mensaje;
     t.className   = 'toast';
     t.classList.add('show');

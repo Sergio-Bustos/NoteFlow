@@ -1160,7 +1160,7 @@
                     return;
                 }
                 var carpetas     = data.carpetas || [];
-                // Solo notas SIN carpeta en la vista previa — las que tienen carpeta viven dentro de su carpeta
+                // Solo notas SIN carpeta en la vista previa
                 var notasSueltas = (data.notas || []).filter(function(n) { return !n.carpeta; });
 
                 if (carpetas.length === 0 && notasSueltas.length === 0) {
@@ -1169,24 +1169,24 @@
                 }
 
                 // Combinar carpetas y notas sueltas en una sola lista para el "Recientes"
+                // Usamos 'edicion' (fecha de última modificación) para ordenar
                 var todos = [];
-                carpetas.forEach(function(c) { 
-                    todos.push({ tipo: 'carpeta', data: c, fecha_raw: c.creacion }); 
+                carpetas.forEach(function(c) {
+                    todos.push({ tipo: 'carpeta', data: c, fecha_raw: c.edicion || c.creacion });
                 });
-                notasSueltas.forEach(function(n) { 
-                    todos.push({ tipo: 'nota', data: n, fecha_raw: n.creacion }); 
+                notasSueltas.forEach(function(n) {
+                    todos.push({ tipo: 'nota', data: n, fecha_raw: n.edicion || n.creacion });
                 });
 
-                // Ordenar: PRIORIDAD CARPETAS PRIMERO, luego por fecha (más viejo primero para que el nuevo esté a la derecha)
+                // Ordenar: MÁS RECIENTE PRIMERO (descendente por fecha de edición)
                 todos.sort(function(a, b) {
-                    if (a.tipo !== b.tipo) return a.tipo === 'carpeta' ? -1 : 1;
                     var dateA = a.fecha_raw ? new Date(a.fecha_raw) : new Date(0);
                     var dateB = b.fecha_raw ? new Date(b.fecha_raw) : new Date(0);
-                    return dateA - dateB;
+                    return dateB - dateA; // descendente: el más nuevo primero
                 });
 
-                // Solo tomamos los 3 primeros (los más recientes creados)
-                var items = todos.slice(0, 3);
+                // Tomamos los 6 más recientes (más útil que solo 3)
+                var items = todos.slice(0, 6);
 
                 renderizarRecientes(items);
             })

@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/static/estilosaudio.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        window.USER_PLAN = "{{ session.plan_premium or 'gratis' }}";
+    </script>
+    <script src="/static/js/limites_plan.js"></script>
 </head>
 <body>
 

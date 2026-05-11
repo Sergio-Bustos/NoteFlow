@@ -703,8 +703,13 @@ function cargarArchivo(file) {
         mostrarToast('Formato no permitido. Usa: MP3, AAC, OGG, WAV, FLAC, WMA, M4A');
         return;
     }
-    if (file.size > 200 * 1024 * 1024) {
-        mostrarToast('El archivo supera el límite de 200 MB');
+
+    // Límite dinámico por plan
+    const limAudio = window.PLAN_LIMITES?.audio ?? (200 * 1024 * 1024);
+    const nomPlan  = window.PLAN_LIMITES?.nombre ?? 'Gratis';
+    if (file.size > limAudio) {
+        const limite = window.PLAN_LIMITES?.formatBytes(limAudio) ?? '200 MB';
+        mostrarToast(`El archivo supera el límite de ${limite} para el plan ${nomPlan}. Mejora tu plan para subir archivos más grandes.`);
         return;
     }
 
@@ -1047,7 +1052,11 @@ async function iniciarGrabacion() {
         intervalTimer = setInterval(() => {
             segundosGrab++;
             timerGrabEl.textContent = formatTiempo(segundosGrab);
-            if (segundosGrab >= 10800) pararGrabacion();
+            const maxSeg = window.PLAN_LIMITES?.grabacion ?? 10800;
+            if (segundosGrab >= maxSeg) {
+                pararGrabacion();
+                mostrarToast(`Límite de grabación alcanzado (${window.PLAN_LIMITES?.formatSeg(maxSeg) ?? '3:00:00'}) para el plan ${window.PLAN_LIMITES?.nombre ?? 'Gratis'}.`);
+            }
         }, 1000);
         mostrarToast('🔴 Grabación iniciada');
     } catch (err) {

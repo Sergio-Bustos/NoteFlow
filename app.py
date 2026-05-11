@@ -98,7 +98,7 @@ csp = {
         'https://cdnjs.cloudflare.com',
         'https://checkout.epayco.co'
     ],
-    'img-src': ['\'self\'', 'data:', 'https:', 'http:', 'https://randomuser.me', 'https://*.epayco.co'],
+    'img-src': ['\'self\'', 'data:', 'blob:', 'https:', 'http:', 'https://randomuser.me', 'https://*.epayco.co'],
     'font-src': [
         '\'self\'', 
         'https://fonts.gstatic.com', 
@@ -116,7 +116,11 @@ csp = {
         'https://accounts.google.com', 
         'https://checkout.epayco.co',
         'https://secure.epayco.co'
-    ]
+    ],
+    # Permite reproducir video/audio desde blob: (createObjectURL) y data:
+    'media-src': ['\'self\'', 'blob:', 'data:'],
+    # Permite Web Workers y OfflineAudioContext (usado en el editor de audio)
+    'worker-src': ['\'self\'', 'blob:'],
 }
 talisman = Talisman(app, content_security_policy=csp, force_https=False)
 
