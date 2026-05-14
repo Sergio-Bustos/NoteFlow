@@ -26,6 +26,17 @@ let hayAudio        = false;
 // Efectos activos
 const efectosActivos = new Set();
 
+// Nodos de efectos en tiempo real
+let nodoEco        = null;
+let nodoEcoFeed    = null;
+let nodoBass       = null;
+let nodoReverb     = null;
+let nodoReverbWet  = null;
+let nodoReverbDry  = null;
+let nodoNorm       = null;
+let nodoGate       = null;
+let pitchAcumulado = 0;
+
 // Velocidad de reproducción
 let velocidadActual = 1.0;
 
@@ -161,10 +172,9 @@ actualizarVolumen();
 // ══════════════════════════════════════════════════════════════════
 selectVelocidad.addEventListener('change', () => {
     velocidadActual = parseFloat(selectVelocidad.value);
-    if (reproduciendo) {
-        const estaba = reproduciendo;
-        pausar();
-        if (estaba) play();
+    if (sourceNode && reproduciendo) {
+        // Actualizar el rate en tiempo real sin reiniciar
+        sourceNode.playbackRate.value = velocidadActual * Math.pow(2, pitchAcumulado / 12);
     }
     mostrarToast(`Velocidad: ${velocidadActual}×`);
 });
@@ -186,36 +196,123 @@ btnToggleEfectos.addEventListener('click', () => {
     btnToggleEfectos.classList.toggle('activo');
 });
 
-// Botones de efectos
-const botonesEfecto = {
-    efEco:       { fn: aplicarEco,        label: 'Eco' },
-    efBass:      { fn: aplicarBass,       label: 'Bass Boost' },
-    efReverb:    { fn: aplicarReverb,     label: 'Reverb' },
-    efNormalize: { fn: aplicarNormalize,  label: 'Normalizar' },
-    efRuido:     { fn: aplicarGate,       label: 'Gate' },
-    efPitch:     { fn: () => aplicarPitch(2), label: 'Pitch +' },
-    efPitchDown: { fn: () => aplicarPitch(-2), label: 'Pitch −' },
-};
+// ══════════════════════════════════════════════════════════════════
+//  EFECTOS EN TIEMPO REAL
+//  Cadena: sourceNode → cadenaEfectos[] → gainNode → destination
+// ══════════════════════════════════════════════════════════════════
 
-Object.entries(botonesEfecto).forEach(([id, cfg]) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-        if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
-        cfg.fn();
-        toggleEfectoActivo(id, btn, cfg.label);
-    });
-});
+// Crear todos los nodos de efectos ligados al AudioContext
+function crearNodosEfectos() {
+    const ctx = getAudioCtx();
 
-function toggleEfectoActivo(id, btn, label) {
-    if (efectosActivos.has(id)) {
-        efectosActivos.delete(id);
-        btn.classList.remove('activo');
-    } else {
-        efectosActivos.add(id);
-        btn.classList.add('activo');
+    // Eco — Delay con feedback
+    nodoEco     = ctx.createDelay(2.0);
+    nodoEco.delayTime.value = 0.3;
+    nodoEcoFeed = ctx.createGain();
+    nodoEcoFeed.gain.value = 0.35;
+    nodoEco.connect(nodoEcoFeed);
+    nodoEcoFeed.connect(nodoEco); // bucle de feedback
+
+    // Bass Boost — filtro lowshelf
+    nodoBass = ctx.createBiquadFilter();
+    nodoBass.type = 'lowshelf';
+    nodoBass.frequency.value = 150;
+    nodoBass.gain.value = 10;
+
+    // Reverb — convolución con IR sintético
+    nodoReverb    = ctx.createConvolver();
+    nodoReverbWet = ctx.createGain();
+    nodoReverbDry = ctx.createGain();
+    nodoReverbWet.gain.value = 0.45;
+    nodoReverbDry.gain.value = 0.8;
+    const sr     = ctx.sampleRate;
+    const irLen  = Math.floor(sr * 2.5);
+    const irBuf  = ctx.createBuffer(2, irLen, sr);
+    for (let c = 0; c < 2; c++) {
+        const d = irBuf.getChannelData(c);
+        for (let i = 0; i < irLen; i++)
+            d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 2.5);
     }
-    actualizarContadorEfectos();
+    nodoReverb.buffer = irBuf;
+
+    // Normalizar — GainNode que ajusta según pico máximo del buffer
+    nodoNorm = ctx.createGain();
+    nodoNorm.gain.value = 1.0;
+    if (audioBuffer) {
+        let max = 0;
+        for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+            const data = audioBuffer.getChannelData(c);
+            for (let i = 0; i < data.length; i++)
+                if (Math.abs(data[i]) > max) max = Math.abs(data[i]);
+        }
+        if (max > 0) nodoNorm.gain.value = 0.95 / max;
+    }
+
+    // Gate — DynamicsCompressor agresivo simula gate
+    nodoGate = ctx.createDynamicsCompressor();
+    nodoGate.threshold.value = -50;
+    nodoGate.knee.value      = 0;
+    nodoGate.ratio.value     = 20;
+    nodoGate.attack.value    = 0.001;
+    nodoGate.release.value   = 0.1;
+}
+
+// Reconectar toda la cadena de efectos al sourceNode
+function reconectarCadenaEfectos() {
+    if (!sourceNode || !audioBuffer) return;
+    const ctx = getAudioCtx();
+
+    // Desconectar absolutamente todo antes de reconstruir para evitar "caminos fantasmas"
+    [sourceNode, nodoBass, nodoGate, nodoNorm, nodoReverbDry, nodoReverb, nodoReverbWet, nodoEco].forEach(nodo => {
+        if (nodo) {
+            try { nodo.disconnect(); } catch (e) {}
+        }
+    });
+
+    // Ajustar pitch acumulado en el playbackRate actual
+    sourceNode.playbackRate.value = velocidadActual * Math.pow(2, pitchAcumulado / 12);
+
+    // Construir cadena de nodos activos
+    let ultimo = sourceNode;
+
+    // Bass boost
+    if (efectosActivos.has('efBass') && nodoBass) {
+        ultimo.connect(nodoBass);
+        ultimo = nodoBass;
+    }
+
+    // Gate
+    if (efectosActivos.has('efRuido') && nodoGate) {
+        ultimo.connect(nodoGate);
+        ultimo = nodoGate;
+    }
+
+    // Normalizar
+    if (efectosActivos.has('efNormalize') && nodoNorm) {
+        ultimo.connect(nodoNorm);
+        ultimo = nodoNorm;
+    }
+
+    // Reverb (paralelo: dry + wet)
+    if (efectosActivos.has('efReverb') && nodoReverb) {
+        // dry path
+        ultimo.connect(nodoReverbDry);
+        nodoReverbDry.connect(gainNode);
+        // wet path
+        ultimo.connect(nodoReverb);
+        nodoReverb.connect(nodoReverbWet);
+        nodoReverbWet.connect(gainNode);
+        return; // ya conectado a gainNode
+    }
+
+    // Eco (suma al señal principal)
+    if (efectosActivos.has('efEco') && nodoEco) {
+        ultimo.connect(nodoEco);
+        nodoEco.connect(gainNode); // eco va al gain también
+    }
+
+    // Señal principal al gainNode
+    ultimo.connect(gainNode);
 }
 
 function actualizarContadorEfectos() {
@@ -228,171 +325,75 @@ function actualizarContadorEfectos() {
     }
 }
 
-// ── ECO ──
-function aplicarEco() {
-    if (!audioBuffer) return;
-    guardarHistorial();
-    const ctx = getAudioCtx();
-    const delayTime = 0.3;
-    const decay     = 0.4;
-    const outBuffer = audioCtx.createBuffer(
-        audioBuffer.numberOfChannels,
-        audioBuffer.length + Math.floor(delayTime * audioBuffer.sampleRate * 3),
-        audioBuffer.sampleRate
-    );
-    for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
-        const src = audioBuffer.getChannelData(c);
-        const dst = outBuffer.getChannelData(c);
-        const delaySamples = Math.floor(delayTime * audioBuffer.sampleRate);
-        for (let i = 0; i < src.length; i++) dst[i] = src[i];
-        for (let e = 1; e <= 3; e++) {
-            const offset = delaySamples * e;
-            const amp    = Math.pow(decay, e);
-            for (let i = 0; i < src.length && i + offset < dst.length; i++) {
-                dst[i + offset] += src[i] * amp;
-            }
-        }
+function toggleEfectoActivo(id, btn) {
+    if (efectosActivos.has(id)) {
+        efectosActivos.delete(id);
+        btn.classList.remove('activo');
+    } else {
+        efectosActivos.add(id);
+        btn.classList.add('activo');
     }
-    audioBuffer = outBuffer;
-    dibujarOnda();
-    dibujarRegla();
-    mostrarToast('Eco aplicado');
+    actualizarContadorEfectos();
+    // Reconectar cadena en tiempo real si hay reproducción activa
+    if (reproduciendo) reconectarCadenaEfectos();
 }
 
-// ── BASS BOOST ──
-function aplicarBass() {
-    if (!audioBuffer) return;
-    guardarHistorial();
-    const offCtx = new OfflineAudioContext(
-        audioBuffer.numberOfChannels,
-        audioBuffer.length,
-        audioBuffer.sampleRate
-    );
-    const src    = offCtx.createBufferSource();
-    src.buffer   = audioBuffer;
-    const filter = offCtx.createBiquadFilter();
-    filter.type  = 'lowshelf';
-    filter.frequency.value = 150;
-    filter.gain.value      = 10;
-    src.connect(filter);
-    filter.connect(offCtx.destination);
-    src.start();
-    offCtx.startRendering().then(rendered => {
-        audioBuffer = rendered;
-        dibujarOnda();
-        dibujarRegla();
-        mostrarToast('Bass Boost aplicado');
+// Efectos simples que van al toggle directo
+const botonesEfecto = {
+    efEco:       { label: 'Eco' },
+    efBass:      { label: 'Bass Boost' },
+    efReverb:    { label: 'Reverb' },
+    efNormalize: { label: 'Normalizar' },
+    efRuido:     { label: 'Gate' },
+};
+
+Object.entries(botonesEfecto).forEach(([id, cfg]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+        if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
+        toggleEfectoActivo(id, btn);
+        mostrarToast(efectosActivos.has(id) ? `${cfg.label} activado` : `${cfg.label} desactivado`);
     });
-}
+});
 
-// ── REVERB ──
-function aplicarReverb() {
-    if (!audioBuffer) return;
-    guardarHistorial();
-    const sr       = audioBuffer.sampleRate;
-    const durSeg   = 2.5;
-    const irLen    = Math.floor(sr * durSeg);
-    const offCtx   = new OfflineAudioContext(audioBuffer.numberOfChannels, audioBuffer.length + irLen, sr);
-    const irBuffer = offCtx.createBuffer(2, irLen, sr);
-    for (let c = 0; c < 2; c++) {
-        const d = irBuffer.getChannelData(c);
-        for (let i = 0; i < irLen; i++) {
-            d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 2.5);
-        }
+// Pitch acumulativo
+document.getElementById('efPitch')?.addEventListener('click', () => {
+    if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
+    pitchAcumulado += 2;
+    if (reproduciendo) reconectarCadenaEfectos();
+    efectosActivos.add('efPitch');
+    document.getElementById('efPitch').classList.add('activo');
+    actualizarContadorEfectos();
+    mostrarToast(`Pitch: +${pitchAcumulado} semitonos`);
+});
+
+document.getElementById('efPitchDown')?.addEventListener('click', () => {
+    if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
+    pitchAcumulado -= 2;
+    if (pitchAcumulado === 0) {
+        efectosActivos.delete('efPitch');
+        document.getElementById('efPitchDown').classList.remove('activo');
+        document.getElementById('efPitch').classList.remove('activo');
+    } else {
+        efectosActivos.add('efPitch');
     }
-    const convolver   = offCtx.createConvolver();
-    convolver.buffer  = irBuffer;
-    const wetGain  = offCtx.createGain(); wetGain.gain.value  = 0.4;
-    const dryGain  = offCtx.createGain(); dryGain.gain.value  = 0.7;
-    const src      = offCtx.createBufferSource();
-    src.buffer     = audioBuffer;
-    src.connect(dryGain);
-    src.connect(convolver);
-    convolver.connect(wetGain);
-    dryGain.connect(offCtx.destination);
-    wetGain.connect(offCtx.destination);
-    src.start();
-    offCtx.startRendering().then(rendered => {
-        audioBuffer = rendered;
-        dibujarOnda();
-        dibujarRegla();
-        mostrarToast('Reverb aplicado');
-    });
-}
+    if (reproduciendo) reconectarCadenaEfectos();
+    actualizarContadorEfectos();
+    mostrarToast(`Pitch: ${pitchAcumulado} semitonos`);
+});
 
-// ── NORMALIZAR ──
+
+// ── NORMALIZAR (solo actualiza el gain del nodo, no modifica el buffer) ──
 function aplicarNormalize() {
-    if (!audioBuffer) return;
-    guardarHistorial();
+    if (!audioBuffer || !nodoNorm) return;
     let max = 0;
     for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
         const data = audioBuffer.getChannelData(c);
-        for (let i = 0; i < data.length; i++) {
+        for (let i = 0; i < data.length; i++)
             if (Math.abs(data[i]) > max) max = Math.abs(data[i]);
-        }
     }
-    if (max === 0) { mostrarToast('El audio ya está normalizado'); return; }
-    const factor = 0.95 / max;
-    const out = audioCtx ? audioCtx.createBuffer(
-        audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate
-    ) : new AudioBuffer({
-        numberOfChannels: audioBuffer.numberOfChannels,
-        length: audioBuffer.length,
-        sampleRate: audioBuffer.sampleRate
-    });
-    // Usamos OfflineAudioContext para no depender del audioCtx existente
-    const offCtx = new OfflineAudioContext(
-        audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate
-    );
-    const src  = offCtx.createBufferSource();
-    src.buffer = audioBuffer;
-    const gain = offCtx.createGain();
-    gain.gain.value = factor;
-    src.connect(gain);
-    gain.connect(offCtx.destination);
-    src.start();
-    offCtx.startRendering().then(rendered => {
-        audioBuffer = rendered;
-        dibujarOnda();
-        mostrarToast('Audio normalizado ✓');
-    });
-}
-
-// ── GATE (eliminar silencio/ruido bajo) ──
-function aplicarGate() {
-    if (!audioBuffer) return;
-    guardarHistorial();
-    const umbral = 0.03;
-    for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
-        const data = audioBuffer.getChannelData(c);
-        for (let i = 0; i < data.length; i++) {
-            if (Math.abs(data[i]) < umbral) data[i] = 0;
-        }
-    }
-    dibujarOnda();
-    mostrarToast('Gate aplicado — ruido bajo suprimido');
-}
-
-// ── PITCH SHIFT (aproximación por velocidad + resample) ──
-function aplicarPitch(semitonos) {
-    if (!audioBuffer) return;
-    guardarHistorial();
-    const ratio     = Math.pow(2, semitonos / 12);
-    const newLength = Math.floor(audioBuffer.length / ratio);
-    const offCtx    = new OfflineAudioContext(
-        audioBuffer.numberOfChannels, newLength, audioBuffer.sampleRate
-    );
-    const src        = offCtx.createBufferSource();
-    src.buffer       = audioBuffer;
-    src.playbackRate.value = ratio;
-    src.connect(offCtx.destination);
-    src.start();
-    offCtx.startRendering().then(rendered => {
-        audioBuffer = rendered;
-        dibujarOnda();
-        dibujarRegla();
-        mostrarToast(`Pitch ${semitonos > 0 ? '+' : ''}${semitonos} semitonos`);
-    });
+    if (max > 0) nodoNorm.gain.value = 0.95 / max;
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -724,6 +725,10 @@ function cargarArchivo(file) {
             hayAudio     = true;
             notaGuardada = false;
             efectosActivos.clear();
+            pitchAcumulado = 0;
+            // Nullify effect nodes so they are recreated with the new AudioContext/buffer
+            nodoEco = nodoEcoFeed = nodoBass = nodoReverb = null;
+            nodoReverbWet = nodoReverbDry = nodoNorm = nodoGate = null;
             actualizarContadorEfectos();
             document.querySelectorAll('.efecto-btn').forEach(b => b.classList.remove('activo'));
             marcadores = [];
@@ -928,9 +933,17 @@ function play() {
 
     const ctx  = getAudioCtx();
     sourceNode = ctx.createBufferSource();
-    sourceNode.buffer         = audioBuffer;
-    sourceNode.playbackRate.value = velocidadActual;
-    sourceNode.connect(gainNode);
+    sourceNode.buffer             = audioBuffer;
+    sourceNode.playbackRate.value = velocidadActual * Math.pow(2, pitchAcumulado / 12);
+
+    // Inicializar nodos de efectos si aún no existen o el contexto cambió
+    if (!nodoEco || nodoEco.context !== ctx) {
+        crearNodosEfectos();
+    }
+
+    // Conectar la cadena de efectos (o directo al gain si no hay efectos activos)
+    reconectarCadenaEfectos();
+
     sourceNode.start(0, tiempoOffset);
 
     tiempoArranque     = ctx.currentTime;
