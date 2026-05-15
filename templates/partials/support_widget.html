@@ -1,0 +1,39 @@
+<!-- Support Widget Partial -->
+<link rel="stylesheet" href="/static/support.css">
+
+<div class="support-widget-container">
+    <!-- Chat Window -->
+    <div id="support-window" class="support-chat-window">
+        <div class="support-header">
+            <div class="support-avatar">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="support-header-info">
+                <h4>Soporte NoteFlow</h4>
+                <p><i class="fas fa-circle" style="color: #25d366; font-size: 8px;"></i> En línea</p>
+            </div>
+        </div>
+        
+        <div id="support-body" class="support-body">
+            <!-- Welcome Message -->
+            <div class="support-message received">
+                Bienvenido al soporte de NoteFlow. Si tiene alguna duda o reporte de problemas, comuníquese aquí.
+                <span class="support-time">{{ now }}</span>
+            </div>
+        </div>
+        
+        <div class="support-footer">
+            <input type="text" id="support-input" class="support-input" placeholder="Escribe tu mensaje..." autocomplete="off">
+            <button id="support-send" class="support-send-btn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Toggle Button -->
+    <div id="support-btn" class="support-button" title="Soporte WhatsApp">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+</div>
+
+<script src="/static/js/support.js"></script>

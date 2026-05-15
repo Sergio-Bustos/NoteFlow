@@ -73,3 +73,13 @@ CREATE TABLE IF NOT EXISTS public."Adjuntos" (
 CREATE TABLE IF NOT EXISTS public."Tipos" (
     "Formato" TEXT PRIMARY KEY
 );
+
+-- Tabla: Soporte
+CREATE TABLE IF NOT EXISTS public."Soporte" (
+    "ID_Mensaje" SERIAL PRIMARY KEY,
+    "ID_Cuenta" INTEGER NOT NULL REFERENCES public."Cuentas"("ID_Cuenta"),
+    "Mensaje" TEXT NOT NULL,
+    "Remitente" VARCHAR(10) NOT NULL,
+    "Leido" BOOLEAN DEFAULT FALSE,
+    "Fecha" TIMESTAMP DEFAULT NOW()
+);

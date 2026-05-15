@@ -342,5 +342,6 @@
     window.ES_PREMIUM = {{ 'true' if session.es_premium else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/perfil.js') }}"></script>
+    {% include 'partials/support_widget.html' %}
 </body>
 </html>

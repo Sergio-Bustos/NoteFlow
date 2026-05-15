@@ -56,6 +56,9 @@
         <li><a href="/papelera" class="active"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
         <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
+        {% if session.usuario_id == 1 %}
+        <li><a href="/soporte-admin" style="color: #f1c40f;"><i class="fas fa-user-shield"></i> Panel Soporte</a></li>
+        {% endif %}
     </ul>
  
     <!-- Botón Mejorar plan — va ANTES del logout para ocupar el espacio libre -->
@@ -461,5 +464,6 @@
 <script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
 <script src="{{ url_for('static', filename='js/papelera.js') }}"></script>
 
+    {% include 'partials/support_widget.html' %}
 </body>
 </html>

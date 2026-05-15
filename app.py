@@ -1166,6 +1166,9 @@ def procesar_restablecer_contrasena():
 @app.route("/logout")
 def cerrar_sesion():
     """Cierra la sesión y redirige a la página de bienvenida."""
+    usuario_id = session.get("usuario_id")
+    if usuario_id:
+        limpiar_soporte_db(usuario_id)
     session.clear()
     return redirect(url_for("inicio"))
 
@@ -1174,6 +1177,9 @@ def cerrar_sesion():
 @login_required
 def cerrar_sesion_perfil():
     """Cierra la sesión desde la página de perfil y redirige al login."""
+    usuario_id = session.get("usuario_id")
+    if usuario_id:
+        limpiar_soporte_db(usuario_id)
     session.clear()
     return redirect(url_for("mostrar_login"))
 
@@ -1235,9 +1241,7 @@ def dashboard():
                 resp_epayco = requests.get(f"https://secure.epayco.co/validation/v1/reference/{ref_payco}")
                 if resp_epayco.status_code == 200:
                     data_tx = resp_epayco.json().get("data", {})
-                    # Si fue Aceptada
                     estado = data_tx.get("x_response")
-                    # Actualizar a Premium
                     if estado == "Aceptada":
                         plan_comprado = data_tx.get("x_extra2", "mensual")
                         dias = {"quincenal": 15, "mensual": 30, "anual": 365}.get(plan_comprado, 30)
@@ -3859,9 +3863,202 @@ def procesar_pago():
 
 
 
-# # ==============================================================================
-# # PUNTO DE ENTRADA
-# # ==============================================================================
+# ==============================================================================
+# RUTAS DE SOPORTE (Chat Interno)
+# ==============================================================================
+
+@app.route("/api/enviar-soporte", methods=["POST"])
+@login_required
+def enviar_soporte():
+    """Recibe un mensaje de soporte del usuario y lo guarda en la BD."""
+    data = request.get_json()
+    mensaje = data.get("mensaje")
+    usuario_id = session.get("usuario_id")
+    
+    if not mensaje:
+        return jsonify({"error": "Mensaje vacío"}), 400
+        
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de base de datos"}), 500
+        
+    try:
+        cur = conexion.cursor()
+        
+        # Obtener info del usuario para el correo
+        cur.execute("SELECT \"Nombres\", \"Telefono\", \"Correo\" FROM public.\"Cuentas\" WHERE \"ID_Cuenta\" = %s", (usuario_id,))
+        user_info = cur.fetchone()
+        
+        cur.execute("""
+            INSERT INTO public."Soporte" ("ID_Cuenta", "Mensaje", "Remitente")
+            VALUES (%s, %s, %s)
+        """, (usuario_id, mensaje, 'usuario'))
+        conexion.commit()
+        
+        # ENVIAR NOTIFICACIÓN POR CORREO AL ADMIN (ID 1)
+        try:
+            admin_email = "miniyonminerat2@gmail.com" # El correo del administrador
+            msg = Message(
+                subject=f"🔔 Nuevo Mensaje de Soporte: {user_info['Nombres']}",
+                recipients=[admin_email],
+                body=f"Hola Admin,\n\nTienes un nuevo mensaje de soporte en NoteFlow.\n\n"
+                     f"Usuario: {user_info['Nombres']}\n"
+                     f"Correo: {user_info['Correo']}\n"
+                     f"Teléfono: {user_info['Telefono']}\n"
+                     f"Mensaje: {mensaje}\n\n"
+                     f"Puedes responder desde el panel de administración."
+            )
+            mail.send(msg)
+        except Exception as mail_err:
+            print(f"Error al enviar correo de soporte: {mail_err}")
+            
+        cerrar_db(cur, conexion)
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"Error en enviar_soporte: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/soporte-admin")
+@login_required
+def soporte_admin():
+    """Renderiza el panel de administración de soporte (Solo para Admin)."""
+    if session.get("usuario_id") != 1:
+        return redirect(url_for("dashboard"))
+    return render_template("soporte_admin.html")
+
+@app.route("/api/soporte-admin/chats")
+@login_required
+def obtener_chats_admin():
+    """Obtiene la lista de usuarios que han enviado mensajes de soporte."""
+    if session.get("usuario_id") != 1:
+        return jsonify({"error": "No autorizado"}), 403
+        
+    conexion = conectar_db(dict_cursor=True)
+    try:
+        cur = conexion.cursor()
+        # Seleccionar usuarios únicos que tienen mensajes, incluyendo su plan
+        cur.execute("""
+            SELECT DISTINCT ON (s."ID_Cuenta") 
+                c."ID_Cuenta", c."Nombres", c."Foto", c."Plan_premium", s."Mensaje" as "Ultimo_Mensaje", s."Fecha"
+            FROM public."Soporte" s
+            JOIN public."Cuentas" c ON s."ID_Cuenta" = c."ID_Cuenta"
+            ORDER BY s."ID_Cuenta", s."Fecha" DESC
+        """)
+        chats = cur.fetchall()
+        cerrar_db(cur, conexion)
+        return jsonify(chats)
+    except Exception as e:
+        print(f"Error en obtener_chats_admin: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/soporte-admin/mensajes/<int:user_id>")
+@login_required
+def obtener_mensajes_admin(user_id):
+    """Obtiene el historial de chat con un usuario específico."""
+    if session.get("usuario_id") != 1:
+        return jsonify({"error": "No autorizado"}), 403
+        
+    conexion = conectar_db(dict_cursor=True)
+    try:
+        cur = conexion.cursor()
+        cur.execute("""
+            SELECT "Mensaje", "Remitente", "Fecha"
+            FROM public."Soporte"
+            WHERE "ID_Cuenta" = %s
+            ORDER BY "Fecha" ASC
+        """, (user_id,))
+        mensajes = cur.fetchall()
+        for msg in mensajes:
+            msg["Fecha"] = msg["Fecha"].strftime("%H:%M")
+        cerrar_db(cur, conexion)
+        return jsonify(mensajes)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/soporte-admin/responder", methods=["POST"])
+@login_required
+def responder_soporte():
+    """Envía una respuesta de soporte a un usuario."""
+    if session.get("usuario_id") != 1:
+        return jsonify({"error": "No autorizado"}), 403
+        
+    data = request.get_json()
+    user_id = data.get("user_id")
+    mensaje = data.get("mensaje")
+    
+    if not user_id or not mensaje:
+        return jsonify({"error": "Datos incompletos"}), 400
+        
+    conexion = conectar_db()
+    try:
+        cur = conexion.cursor()
+        cur.execute("""
+            INSERT INTO public."Soporte" ("ID_Cuenta", "Mensaje", "Remitente")
+            VALUES (%s, %s, %s)
+        """, (user_id, mensaje, 'soporte'))
+        conexion.commit()
+        cerrar_db(cur, conexion)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/mensajes-soporte")
+@login_required
+def obtener_mensajes_soporte():
+    """Obtiene el historial de chat de soporte para el usuario actual."""
+    usuario_id = session.get("usuario_id")
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de base de datos"}), 500
+        
+    try:
+        cur = conexion.cursor()
+        cur.execute("""
+            SELECT "Mensaje", "Remitente", "Fecha"
+            FROM public."Soporte"
+            WHERE "ID_Cuenta" = %s
+            ORDER BY "Fecha" ASC
+        """, (usuario_id,))
+        mensajes = cur.fetchall()
+        
+        # Formatear la respuesta
+        for msg in mensajes:
+            # Convertir timestamp a string legible
+            msg["Fecha"] = msg["Fecha"].strftime("%H:%M")
+            
+        cerrar_db(cur, conexion)
+        return jsonify(mensajes)
+    except Exception as e:
+        print(f"Error en obtener_mensajes_soporte: {e}")
+        return jsonify({"error": str(e)}), 500
+def limpiar_soporte_db(usuario_id):
+    """Limpia el historial de soporte para un usuario específico."""
+    conexion = conectar_db()
+    if not conexion:
+        return False
+    try:
+        cur = conexion.cursor()
+        cur.execute('DELETE FROM public."Soporte" WHERE "ID_Cuenta" = %s', (usuario_id,))
+        conexion.commit()
+        cerrar_db(cur, conexion)
+        return True
+    except Exception as e:
+        print(f"Error al limpiar soporte: {e}")
+        return False
+
+@app.route("/api/limpiar-soporte", methods=["POST"])
+@login_required
+def api_limpiar_soporte():
+    """Endpoint para limpiar el chat de soporte del usuario actual."""
+    usuario_id = session.get("usuario_id")
+    if limpiar_soporte_db(usuario_id):
+        return jsonify({"success": True, "mensaje": "Chat reiniciado"})
+    else:
+        return jsonify({"error": "No se pudo limpiar el chat"}), 500
+
+# ==============================================================================
+# PUNTO DE ENTRADA
+# ==============================================================================
 
 if __name__ == "__main__":
     app.run(port=5000)
