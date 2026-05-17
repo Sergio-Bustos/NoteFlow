@@ -101,10 +101,11 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 
 | Tecnología | Uso |
 |------------|-----|
-| PostgreSQL 15 | Motor de base de datos relacional |
-| Docker | Contenedorización del backend y la base de datos |
-| Docker Compose | Orquestación de todos los servicios con un solo comando |
-| pgAdmin | Panel visual de administración de la base de datos |
+| Supabase DB | Base de datos relacional (PostgreSQL administrado en la nube con SSL) |
+| Supabase Storage | Almacenamiento seguro en la nube para audios, videos, fotos y dibujos |
+| Docker | Contenedorización del backend (Flask) |
+| Docker Compose | Orquestación de los contenedores locales de la aplicación |
+| Supabase Dashboard | Panel en la nube para la gestión de base de datos y almacenamiento |
 
 ### 🛠️ Herramientas y metodología
 
@@ -147,7 +148,7 @@ Coloca el archivo `.env` en la raíz del proyecto una vez descargado.
 docker-compose up --build
 ```
 
-Esto levantará automáticamente el backend (Flask), la base de datos (PostgreSQL) y el panel de administración (pgAdmin).
+Esto levantará automáticamente el backend local (Flask) contenedorizado en el puerto `5000`, conectándose de forma segura a Supabase.
 
 ### 4. Dominio de ngrok
 
@@ -175,7 +176,7 @@ Para usar ngrok tienes que tener si o si docker encendido para que el dominio as
 | Servicio | URL |
 |----------|-----|
 | 🌐 Aplicación principal | `http://127.0.0.1:5000` |
-| 🗄️ pgAdmin (gestión BD) | `http://localhost:5050` |
+| 🗄️ Consola de Supabase | `https://supabase.com/dashboard` |
 
 ### 6. Acceso en red local
 
@@ -206,11 +207,11 @@ Lo dejamos en la terminal de visual o terminal de ngrok en segundo plano funcion
 
 ### 7. Verificar la base de datos
 
-Asegúrate de que PostgreSQL esté corriendo y de que el puerto `5432` esté expuesto correctamente en Docker. Puedes verificar el estado del contenedor con:
+Asegúrate de que el contenedor de Flask esté corriendo correctamente y de que las credenciales de Supabase en el archivo `.env` estén bien configuradas. Puedes verificar el estado con:
 
 ```bash
 docker ps
-docker logs "nombre-contenedor-db"
+docker logs "noteflow-app"
 ```
 
 ---
