@@ -756,20 +756,71 @@ function cargarArchivo(file) {
 
 // RESTAURACIÓN PARA EDICIÓN
 async function restaurarAudioExistente() {
-    const url = document.getElementById('editAudioUrl')?.value;
-    if (!url) return;
+    const urlInput = document.getElementById('editAudioUrl');
+    if (!urlInput) return;
+    
+    const url = urlInput.value;
+    console.log("[NoteFlow] Intentando restaurar audio desde:", url);
+    
+    if (!url || url.trim() === "") {
+        console.warn("[NoteFlow] No hay URL de audio para restaurar.");
+        return;
+    }
+
     try {
-        const response = await fetch('/static/' + url);
-        const blob     = await response.blob();
-        const filename = url.split('/').pop();
-        const file     = new File([blob], filename, { type: blob.type });
+        // Limpiar la URL de posibles prefijos duplicados y espacios
+        let finalUrl = url.trim();
+        if (url.startsWith('http')) {
+            finalUrl = url;
+        } else {
+            finalUrl = url.startsWith('/') ? url : '/static/' + url;
+        }
+
+        console.log("[NoteFlow] Intentando descargar desde:", finalUrl);
+        
+        // Añadimos credenciales omitidas para evitar bloqueos de CORS si el bucket es público
+        const response = await fetch(finalUrl, {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'omit'
+        });
+
+        if (!response.ok) {
+            const errorMsg = `HTTP ${response.status} - ${response.statusText}`;
+            console.error("[NoteFlow] El servidor respondió con error:", errorMsg);
+            throw new Error(errorMsg);
+        }
+        
+        const blob = await response.blob();
+        console.log("[NoteFlow] Blob recibido correctamente. Tamaño:", blob.size);
+
+        const filename = finalUrl.split('/').pop() || "audio_editado.mp3";
+        const file     = new File([blob], filename, { type: blob.type || 'audio/mpeg' });
+        
+        console.log("[NoteFlow] Cargando archivo en el editor de ondas...");
         cargarArchivo(file);
         notaGuardada = true;
+        
     } catch (e) {
-        console.error("Error al restaurar audio:", e);
+        console.error("[NoteFlow] ERROR DETALLADO AL RESTAURAR:", e.message);
+        
+        // Re-intento automático una sola vez
+        if (!window.restauradoReintento) {
+            window.restauradoReintento = true;
+            console.log("[NoteFlow] Reintentando carga en 2 segundos...");
+            setTimeout(restaurarAudioExistente, 2000);
+        } else {
+            mostrarToast("Error al cargar el audio. Revisa la consola (F12) para más detalles.");
+        }
     }
 }
-setTimeout(restaurarAudioExistente, 500);
+
+// Iniciar restauración cuando el DOM esté listo
+if (document.readyState === 'complete') {
+    restaurarAudioExistente();
+} else {
+    window.addEventListener('load', restaurarAudioExistente);
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  MOSTRAR INTERFAZ TRAS CARGAR AUDIO
@@ -1254,7 +1305,79 @@ async function guardarNota() {
     formData.append('titulo',      titulo);
     formData.append('descripcion', descripcion);
     formData.append('etiquetas',   etiquetas);
-    formData.append('audio',       archivoOriginal, archivoOriginal.name);
+    
+    // Si hubo ediciones o hay efectos activos, renderizamos el buffer final
+    if (audioBuffer) {
+        let bufferParaGuardar = audioBuffer;
+
+        // Si hay efectos activos, hacemos un renderizado offline para "quemar" los efectos en el audio
+        if (efectosActivos.size > 0 || pitchAcumulado !== 0 || velocidadActual !== 1.0) {
+            mostrarToast('Procesando efectos y filtros...');
+            const offlineCtx = new OfflineAudioContext(
+                audioBuffer.numberOfChannels,
+                audioBuffer.length / velocidadActual,
+                audioBuffer.sampleRate
+            );
+
+            const offlineSource = offlineCtx.createBufferSource();
+            offlineSource.buffer = audioBuffer;
+            offlineSource.playbackRate.value = velocidadActual * Math.pow(2, pitchAcumulado / 12);
+
+            let lastNode = offlineSource;
+
+            // Recreamos la cadena de efectos en el contexto offline
+            if (efectosActivos.has('efBass')) {
+                const b = offlineCtx.createBiquadFilter();
+                b.type = 'lowshelf'; b.frequency.value = 150; b.gain.value = 10;
+                lastNode.connect(b); lastNode = b;
+            }
+            if (efectosActivos.has('efRuido')) {
+                const g = offlineCtx.createDynamicsCompressor();
+                g.threshold.value = -50; g.knee.value = 0; g.ratio.value = 20;
+                g.attack.value = 0.001; g.release.value = 0.1;
+                lastNode.connect(g); lastNode = g;
+            }
+            if (efectosActivos.has('efNormalize')) {
+                const n = offlineCtx.createGain();
+                let max = 0;
+                for (let c = 0; c < audioBuffer.numberOfChannels; c++) {
+                    const d = audioBuffer.getChannelData(c);
+                    for (let i = 0; i < d.length; i++) if (Math.abs(d[i]) > max) max = Math.abs(d[i]);
+                }
+                n.gain.value = max > 0 ? 0.95 / max : 1.0;
+                lastNode.connect(n); lastNode = n;
+            }
+            if (efectosActivos.has('efEco')) {
+                const d = offlineCtx.createDelay(2.0); d.delayTime.value = 0.3;
+                const f = offlineCtx.createGain(); f.gain.value = 0.35;
+                d.connect(f); f.connect(d);
+                lastNode.connect(d);
+                const mix = offlineCtx.createGain();
+                lastNode.connect(mix); d.connect(mix);
+                lastNode = mix;
+            }
+            if (efectosActivos.has('efReverb')) {
+                const r = offlineCtx.createConvolver();
+                // Reusamos el buffer de IR si existe
+                if (nodoReverb && nodoReverb.buffer) r.buffer = nodoReverb.buffer;
+                const w = offlineCtx.createGain(); w.gain.value = 0.45;
+                const dr = offlineCtx.createGain(); dr.gain.value = 0.8;
+                lastNode.connect(dr); dr.connect(offlineCtx.destination);
+                lastNode.connect(r); r.connect(w); w.connect(offlineCtx.destination);
+            } else {
+                lastNode.connect(offlineCtx.destination);
+            }
+
+            offlineSource.start(0);
+            bufferParaGuardar = await offlineCtx.startRendering();
+        }
+
+        const wav = audioBufferToWav(bufferParaGuardar);
+        const blob = new Blob([wav], { type: 'audio/wav' });
+        formData.append('audio', blob, (titulo || 'nota') + '.wav');
+    } else {
+        formData.append('audio', archivoOriginal, archivoOriginal.name);
+    }
 
     try {
         const resp = await fetch(url, { method: 'POST', body: formData });

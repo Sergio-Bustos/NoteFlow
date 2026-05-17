@@ -131,7 +131,12 @@
     </section>
 
     <section class="recientes"> <!-- Sección notas y carpetas recientes -->
-        <h2><i class="fas fa-history"></i> Recientes</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2><i class="fas fa-history"></i> Recientes</h2>
+            {% if notas_recientes %}
+            <a href="/notas" class="btn" style="background-color: var(--color-principal); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; font-weight: 600;">Ver todas</a>
+            {% endif %}
+        </div>
 
         {% if notas_recientes %}
         <div class="dashboard-grid"> <!-- Grid unificado de notas y carpetas recientes -->

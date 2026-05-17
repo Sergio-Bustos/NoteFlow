@@ -1,212 +1,563 @@
-/* Admin Support Panel Styles - Refined & Fixed Bubbles */
+/* ============================================================================
+   NoteFlow - soporte_admin.css
+   Estilos premium para el Panel de Control y Soporte del Administrador.
+   Completamente adaptado y sincronizado con el sistema de temas (tema-claro / tema-oscuro).
+   ============================================================================ */
 
 :root {
-    --admin-sidebar-bg: #f8f9fa;
-    --admin-primary: #413fc6;
-    --admin-border: #e0e0e0;
+    --color-principal: #5452d3;
+    --color-secundario: #f39c12;
+    --color-peligro: #e74c3c;
+    
+    /* Configuración por defecto (Claro) */
+    --bg-main: #ecf0f1;
+    --card-bg: #ffffff;
+    --border-claro: #bdc3c7;
+    --text-main: #2c3e50;
+    --admin-sidebar-bg: #fafafa;
     --chat-bg: #e5ddd5;
-    --bg-main: #ffffff;
-    --text-main: #333333;
-    --chat-item-hover: #f0f0f0;
-    --chat-item-active: #e9e8ff;
+    --chat-item-hover: #f2f2f2;
+    --chat-item-active: #e8e7fc;
     --msg-user-bg: #ffffff;
-    --msg-user-text: #333333;
+    --msg-user-text: #2c3e50;
     --msg-soporte-bg: #dcf8c6;
-    --msg-soporte-text: #333333;
+    --msg-soporte-text: #2c3e50;
+    --table-header-bg: #f8f9fa;
+    --table-row-hover: #fcfcff;
+    --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
-/* Dark Mode Variables */
-[data-theme="dark"] {
-    --admin-sidebar-bg: #1a1a1a;
-    --admin-primary: #8b89ff;
-    --admin-border: #333333;
-    --chat-bg: #0b141a;
-    --bg-main: #121212;
+/* --- ADAPTACIÓN AL TEMA OSCURO --- */
+body.tema-oscuro {
+    --bg-main: #1a1a1a;
+    --card-bg: #2d2d2d;
+    --border-claro: #404040;
     --text-main: #e0e0e0;
-    --chat-item-hover: #2a2a2a;
-    --chat-item-active: #32324d;
+    --admin-sidebar-bg: #232323;
+    --chat-bg: #0b141a;
+    --chat-item-hover: #383838;
+    --chat-item-active: #3b3a60;
     --msg-user-bg: #202c33;
     --msg-user-text: #e9edef;
     --msg-soporte-bg: #005c4b;
     --msg-soporte-text: #e9edef;
+    --table-header-bg: #1e1e1e;
+    --table-row-hover: #262626;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
-    background: var(--bg-main);
-    color: var(--text-main);
+/* --- GARANTÍA DE CONTRASTE Y ESTILO EN EL SIDEBAR --- */
+body.tema-claro .sidebar {
+    background-color: var(--color-principal) !important;
+    color: white !important;
+    border-right: none !important;
 }
 
-.admin-layout {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
+body.tema-claro .sidebar .logo {
+    color: white !important;
 }
 
-/* Sidebar */
-.chats-sidebar {
-    width: 350px;
-    background: var(--admin-sidebar-bg);
-    border-right: 1px solid var(--admin-border);
-    display: flex;
-    flex-direction: column;
+body.tema-claro .sidebar .menu li a {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 600 !important;
 }
 
-.sidebar-header {
-    padding: 20px;
-    background: var(--bg-main);
-    border-bottom: 1px solid var(--admin-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+body.tema-claro .sidebar .menu li a:hover,
+body.tema-claro .sidebar .menu li a.active {
+    color: white !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-left: 5px solid var(--color-secundario) !important;
 }
 
-.sidebar-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--admin-primary);
+body.tema-oscuro .sidebar {
+    background-color: #1f1f1f !important;
+    color: var(--text-main) !important;
+    border-right: 1px solid var(--border-claro) !important;
 }
 
-.header-actions-top {
+body.tema-oscuro .sidebar .logo {
+    color: #ffffff !important;
+}
+
+body.tema-oscuro .sidebar .menu li a {
+    color: #95a5a6 !important;
+    font-weight: 600 !important;
+}
+
+body.tema-oscuro .sidebar .menu li a:hover,
+body.tema-oscuro .sidebar .menu li a.active {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-left: 5px solid var(--color-principal) !important;
+}
+
+/* --- TABS NAVIGATION --- */
+.admin-tabs-nav {
     display: flex;
     gap: 15px;
-    align-items: center;
+    border-bottom: 2px solid var(--border-claro);
+    margin-bottom: 25px;
+    padding-bottom: 5px;
 }
 
-.btn-theme-admin {
+.admin-tab-btn {
     background: none;
     border: none;
-    color: var(--text-main);
-    font-size: 1.1rem;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.chats-list {
-    flex: 1;
-    overflow-y: auto;
-}
-
-.chat-item {
-    padding: 15px 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    cursor: pointer;
-    border-bottom: 1px solid var(--admin-border);
-    background: var(--bg-main);
-}
-
-.chat-item:hover {
-    background: var(--chat-item-hover);
-}
-
-.chat-item.active {
-    background: var(--chat-item-active);
-    border-left: 4px solid var(--admin-primary);
-}
-
-.chat-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid var(--admin-border);
-}
-
-.chat-info h4 {
-    margin: 0 0 5px 0;
+    padding: 12px 24px;
     font-size: 1rem;
-}
-
-.chat-info p {
-    margin: 0;
-    font-size: 0.85rem;
-    opacity: 0.6;
-}
-
-/* Main Chat Area */
-.chat-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-main);
-}
-
-.no-chat-selected {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.5;
-}
-
-.active-chat-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.chat-header {
-    padding: 15px 25px;
-    background: var(--bg-main);
-    border-bottom: 1px solid var(--admin-border);
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.name-plan {
+    font-weight: 700;
+    color: #95a5a6;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.plan-badge {
-    font-size: 0.65rem;
-    font-weight: 800;
-    padding: 2px 8px;
-    border-radius: 10px;
+.admin-tab-btn:hover {
+    color: var(--color-principal);
 }
-.plan-badge.premium-anual { background: #f1c40f; color: #000; }
-.plan-badge.premium-mensual { background: #3498db; color: #fff; }
-.plan-badge.premium-quincenal { background: #9b59b6; color: #fff; }
-.plan-badge.premium-gratis { background: #95a5a6; color: #fff; }
+
+.admin-tab-btn.active {
+    color: var(--color-principal);
+}
+
+.admin-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--color-principal);
+    border-radius: 3px;
+}
+
+/* --- TAB CONTENT CONTAINERS --- */
+.admin-tab-content {
+    display: none;
+    animation: fadeInContent 0.25s ease both;
+}
+
+.admin-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeInContent {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- SPLIT LAYOUT (STATS/CUENTAS + CHAT) --- */
+.admin-split-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    height: calc(100vh - 180px);
+}
+
+.admin-panel-left-content {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.admin-panel-right-chat {
+    width: 380px;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+@media (max-width: 1200px) {
+    .admin-split-layout {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+    .admin-panel-left-content {
+        height: auto;
+        overflow: visible;
+        width: 100%;
+    }
+    .admin-panel-right-chat {
+        width: 100%;
+        height: 600px;
+        margin-top: 20px;
+    }
+}
+
+/* --- 6 STATS CARDS GRID --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-claro);
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(84, 82, 211, 0.08);
+}
+
+.stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-card-header .title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.stat-card-header .icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+/* Icon Color Palettes */
+.stat-card-header .icon.bg-blue { background: rgba(52, 152, 219, 0.12); color: #3498db; }
+.stat-card-header .icon.bg-gold { background: rgba(241, 196, 15, 0.12); color: #f1c40f; }
+.stat-card-header .icon.bg-gray { background: rgba(149, 165, 166, 0.12); color: #95a5a6; }
+.stat-card-header .icon.bg-green { background: rgba(46, 204, 113, 0.12); color: #2ecc71; }
+.stat-card-header .icon.bg-purple { background: rgba(155, 89, 182, 0.12); color: #9b59b6; }
+.stat-card-header .icon.bg-orange { background: rgba(230, 126, 34, 0.12); color: #e67e22; }
+
+.stat-card-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 12px 0 4px 0;
+    line-height: 1.1;
+}
+
+.stat-card-sub {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.text-gold { color: #f1c40f !important; }
+.text-green { color: #2ecc71 !important; }
+.text-purple { color: #9b59b6 !important; }
+.text-orange { color: #e67e22 !important; }
+
+/* --- PREMIUM TABLE STYLING --- */
+.premium-table-container {
+    background: var(--card-bg);
+    border: 2px solid var(--border-claro);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th {
+    background: var(--table-header-bg);
+    padding: 16px 18px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7f8c8d;
+    border-bottom: 2px solid var(--border-claro);
+}
+
+.premium-table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-claro);
+    font-size: 0.9rem;
+    color: var(--text-main);
+    vertical-align: middle;
+}
+
+.premium-table tbody tr {
+    transition: background 0.12s;
+}
+
+.premium-table tbody tr:hover {
+    background: var(--table-row-hover);
+}
+
+.user-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-identity img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-claro);
+}
+
+.user-identity .name-username {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-identity .name-username span.fullname {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.user-identity .name-username span.username {
+    font-size: 0.78rem;
+    color: #95a5a6;
+}
+
+.contact-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.contact-details .email {
+    font-weight: 600;
+}
+
+.contact-details .phone {
+    font-size: 0.8rem;
+    color: #95a5a6;
+}
+
+.password-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.password-text {
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.btn-toggle-password {
+    background: none;
+    border: none;
+    color: #95a5a6;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: color 0.15s;
+}
+
+.btn-toggle-password:hover {
+    color: var(--color-principal);
+}
+
+.badge-hashed {
+    background: rgba(39, 174, 96, 0.1);
+    color: #2ecc71;
+    border: 1px solid rgba(39, 174, 96, 0.2);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+.btn-delete-user {
+    background: transparent;
+    border: 1.5px solid var(--color-peligro);
+    color: var(--color-peligro);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-delete-user:hover {
+    background: var(--color-peligro);
+    color: white;
+}
+
+/* --- CHAT INTEGRADO DE SOPORTE (DERECHA) --- */
+.admin-chat-widget {
+    background: var(--card-bg);
+    border: 2px solid var(--border-claro);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.chat-widget-header {
+    padding: 16px 20px;
+    background: var(--card-bg);
+    border-bottom: 2px solid var(--border-claro);
+}
+
+.chat-widget-header h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-principal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-user-select-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.chat-user-select-container label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #95a5a6;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.chat-dropdown-selector {
+    border: 1.5px solid var(--border-claro);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    background: var(--card-bg);
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-dropdown-selector:focus {
+    border-color: var(--color-principal);
+}
+
+/* Chat states */
+.chat-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+    color: #95a5a6;
+}
+
+.chat-empty-state i {
+    font-size: 3rem;
+    color: var(--color-principal);
+    opacity: 0.4;
+    margin-bottom: 12px;
+}
+
+.chat-empty-state h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-main);
+}
+
+.chat-empty-state p {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.chat-active-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.chat-active-user-info {
+    padding: 10px 16px;
+    background: var(--admin-sidebar-bg);
+    border-bottom: 1px solid var(--border-claro);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-active-user-info .chat-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-claro);
+}
+
+.chat-active-user-info .name-plan {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chat-active-user-info .name-plan h4 {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.chat-active-user-info .user-details-wrap span {
+    font-size: 0.74rem;
+}
 
 .admin-chat-body {
     flex: 1;
     background-color: var(--chat-bg);
     background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-    padding: 20px 40px;
+    padding: 15px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
 }
 
-/* Las burbujas de texto */
 .message {
-    max-width: 70%;
-    padding: 10px 15px;
-    border-radius: 12px;
-    font-size: 0.95rem;
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.88rem;
     position: relative;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-    line-height: 1.4;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    line-height: 1.35;
     word-wrap: break-word;
 }
 
-/* Cliente (Izquierda) */
 .message.usuario {
     align-self: flex-start;
     background: var(--msg-user-bg);
@@ -214,7 +565,6 @@ body, html {
     border-top-left-radius: 0;
 }
 
-/* Soporte/Tú (Derecha) */
 .message.soporte {
     align-self: flex-end;
     background: var(--msg-soporte-bg);
@@ -223,41 +573,285 @@ body, html {
 }
 
 .message-time {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     opacity: 0.6;
     display: block;
     text-align: right;
-    margin-top: 5px;
+    margin-top: 3px;
 }
 
 .chat-footer {
-    padding: 15px 25px;
+    padding: 10px 16px;
     background: var(--admin-sidebar-bg);
+    border-top: 1px solid var(--border-claro);
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: center;
 }
 
 #admin-reply-input {
     flex: 1;
-    padding: 12px 20px;
-    border: 1px solid var(--admin-border);
-    border-radius: 25px;
+    padding: 8px 14px;
+    border: 1.5px solid var(--border-claro);
+    border-radius: 20px;
     outline: none;
-    background: var(--bg-main);
+    background: var(--card-bg);
     color: var(--text-main);
+    font-size: 0.88rem;
 }
 
 #admin-send-btn {
-    width: 45px;
-    height: 45px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: var(--admin-primary);
+    background: var(--color-principal);
     color: white;
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
+    transition: background 0.15s;
+}
+
+#admin-send-btn:hover {
+    background: #3f3db8;
+}
+
+.loading-state {
+    padding: 20px;
+    text-align: center;
+    color: #95a5a6;
+    font-size: 0.85rem;
+}
+
+/* ============================================================================
+/* ============================================================================
+   SISTEMA DE CONTRASTE ESTRICTO PARA TEXTOS EN MODO CLARO Y OSCURO
+   ============================================================================ */
+
+/* --- CONFIGURACIONES GLOBALES DE MODO OSCURO (FONDO Y TEXTOS) --- */
+body.tema-oscuro {
+    background-color: #121212 !important;
+    color: #f1f5f9 !important;
+    --border-claro: #3e3e4a;
+}
+
+/* Forzar que todos los elementos de texto legibles adopten el color claro en modo oscuro */
+body.tema-oscuro h1,
+body.tema-oscuro h2,
+body.tema-oscuro h3,
+body.tema-oscuro h4,
+body.tema-oscuro h5,
+body.tema-oscuro h6,
+body.tema-oscuro p,
+body.tema-oscuro label,
+body.tema-oscuro strong,
+body.tema-oscuro th,
+body.tema-oscuro td,
+body.tema-oscuro pre,
+body.tema-oscuro code,
+body.tema-oscuro span:not(.badge-hashed):not(.plan-badge):not(.upgrade-btn *):not(.logout-btn *):not(.sidebar *),
+body.tema-oscuro small:not(.upgrade-btn *),
+body.tema-oscuro li:not(.sidebar *) {
+    color: #f1f5f9 !important;
+}
+
+/* Colores atenuados / secundarios para modo oscuro (mayor elegancia) */
+body.tema-oscuro .text-muted,
+body.tema-oscuro .phone,
+body.tema-oscuro .username,
+body.tema-oscuro .password-text {
+    color: #94a3b8 !important;
+}
+
+/* Cajas y tarjetas en Modo Oscuro */
+body.tema-oscuro .stat-card {
+    background-color: #21212d !important;
+    border-color: #3e3e4a !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.tema-oscuro .premium-table-container {
+    background-color: #21212d !important;
+    border-color: #3e3e4a !important;
+}
+
+body.tema-oscuro .premium-table th {
+    background-color: #1a1a24 !important;
+    border-bottom: 2px solid #3e3e4a !important;
+}
+
+body.tema-oscuro .premium-table td {
+    border-bottom: 1px solid #3e3e4a !important;
+}
+
+body.tema-oscuro .admin-chat-widget {
+    background-color: #21212d !important;
+    border-color: #3e3e4a !important;
+}
+
+body.tema-oscuro .chat-widget-header {
+    background-color: #21212d !important;
+    border-bottom: 2px solid #3e3e4a !important;
+}
+
+body.tema-oscuro .chat-active-user-info {
+    background-color: #1a1a24 !important;
+    border-bottom: 1px solid #3e3e4a !important;
+}
+
+body.tema-oscuro .chat-footer {
+    background-color: #1a1a24 !important;
+    border-top: 1px solid #3e3e4a !important;
+}
+
+/* Modales en Modo Oscuro */
+body.tema-oscuro .modal-content {
+    background-color: #21212d !important;
+    border: 2px solid #3e3e4a !important;
+}
+
+body.tema-oscuro .modal-header {
+    border-bottom: 1px solid #3e3e4a !important;
+}
+
+body.tema-oscuro .modal-footer {
+    border-top: 1px solid #3e3e4a !important;
+}
+
+body.tema-oscuro .act-info-card {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    border-color: #3e3e4a !important;
+}
+
+body.tema-oscuro .act-info-card h6 {
+    color: #a5b4fc !important; /* Índigo para darle acento en modo oscuro */
+}
+
+/* --- CONFIGURACIONES GLOBALES DE MODO CLARO (FONDO Y TEXTOS) --- */
+body.tema-claro {
+    background-color: #ecf0f1 !important;
+    color: #2c3e50 !important;
+    --border-claro: #bdc3c7;
+}
+
+/* Forzar que todos los elementos de texto adopten el color oscuro correcto en modo claro */
+body.tema-claro h1,
+body.tema-claro h2,
+body.tema-claro h3,
+body.tema-claro h4,
+body.tema-claro h5,
+body.tema-claro h6,
+body.tema-claro p,
+body.tema-claro label,
+body.tema-claro strong,
+body.tema-claro th,
+body.tema-claro td,
+body.tema-claro pre,
+body.tema-claro code,
+body.tema-claro span:not(.badge-hashed):not(.plan-badge):not(.upgrade-btn *):not(.logout-btn *):not(.sidebar *),
+body.tema-claro small:not(.upgrade-btn *),
+body.tema-claro li:not(.sidebar *) {
+    color: #2c3e50 !important;
+}
+
+/* Colores atenuados / secundarios para modo claro */
+body.tema-claro .text-muted,
+body.tema-claro .phone,
+body.tema-claro .username {
+    color: #7f8c8d !important;
+}
+
+/* Cajas y tarjetas en Modo Claro */
+body.tema-claro .stat-card {
+    background-color: #ffffff !important;
+    border-color: #bdc3c7 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.tema-claro .premium-table-container {
+    background-color: #ffffff !important;
+    border-color: #bdc3c7 !important;
+}
+
+body.tema-claro .premium-table th {
+    background-color: #f8f9fa !important;
+    border-bottom: 2px solid #bdc3c7 !important;
+}
+
+body.tema-claro .premium-table td {
+    border-bottom: 1px solid #bdc3c7 !important;
+}
+
+body.tema-claro .admin-chat-widget {
+    background-color: #ffffff !important;
+    border-color: #bdc3c7 !important;
+}
+
+body.tema-claro .chat-widget-header {
+    background-color: #ffffff !important;
+    border-bottom: 2px solid #bdc3c7 !important;
+}
+
+body.tema-claro .chat-active-user-info {
+    background-color: #fafafa !important;
+    border-bottom: 1px solid #bdc3c7 !important;
+}
+
+body.tema-claro .chat-footer {
+    background-color: #fafafa !important;
+    border-top: 1px solid #bdc3c7 !important;
+}
+
+/* Modales en Modo Claro */
+body.tema-claro .modal-content {
+    background-color: #ffffff !important;
+    border: 1.5px solid #bdc3c7 !important;
+}
+
+body.tema-claro .modal-header {
+    border-bottom: 1px solid #bdc3c7 !important;
+}
+
+body.tema-claro .modal-footer {
+    border-top: 1px solid #bdc3c7 !important;
+}
+
+body.tema-claro .act-info-card {
+    background-color: #f8f9fa !important;
+    border-color: #bdc3c7 !important;
+}
+
+body.tema-claro .act-info-card h6 {
+    color: #5452d3 !important; /* Color principal en claro */
+}
+
+/* --- ESTILOS COMUNES --- */
+#buscar-nota-usuario {
+    border: 1.5px solid var(--border-claro) !important;
+    background: var(--card-bg) !important;
+    color: var(--text-main) !important;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+#buscar-nota-usuario:focus {
+    border-color: var(--color-principal) !important;
+}
+
+body.tema-oscuro #buscar-nota-usuario::placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+
+body.tema-claro #buscar-nota-usuario::placeholder {
+    color: rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Filtrado de botón cerrar en modales para Tema Oscuro */
+body.tema-oscuro .btn-close {
+    filter: invert(1) grayscale(1) brightness(2) !important;
 }

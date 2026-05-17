@@ -873,6 +873,9 @@
         var nombre = document.getElementById('modalCarpetaNombre').value.trim();
         if (!nombre) { document.getElementById('modalCarpetaNombre').focus(); return; }
 
+        var btn = document.getElementById('btnConfirmarCarpeta');
+        if (btn) btn.disabled = true;
+
         if (_carpetaAccion === 'crear') {
             fetch('/api/carpetas', {
                 method: 'POST',
@@ -890,7 +893,10 @@
                     mostrarToast(data.error || 'Error al crear la carpeta', 'error');
                 }
             })
-            .catch(function() { mostrarToast('Error de conexión', 'error'); });
+            .catch(function() { mostrarToast('Error de conexión', 'error'); })
+            .finally(function() {
+                if (btn) btn.disabled = false;
+            });
         } else {
             fetch('/api/carpetas/' + _carpetaEditarId, {
                 method: 'PUT',
@@ -907,7 +913,10 @@
                     mostrarToast(data.error || 'Error al editar la carpeta', 'error');
                 }
             })
-            .catch(function() { mostrarToast('Error de conexión', 'error'); });
+            .catch(function() { mostrarToast('Error de conexión', 'error'); })
+            .finally(function() {
+                if (btn) btn.disabled = false;
+            });
         }
     }
 
@@ -1129,13 +1138,14 @@
     /* ===========================================================
        CARGAR CARPETAS EN SELECT DEL FILTRO
        =========================================================== */
-    function cargarCarpetasEnSelect() {
-        fetch('/api/mis-carpetas')
+    function cargarCarpetasEnSelect(carpetaParaSeleccionar) {
+        return fetch('/api/mis-carpetas')
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.success) return;
                 var sel = document.getElementById('nota-carpeta');
-                var valorActual = sel.value;
+                if (!sel) return;
+                var valorActual = carpetaParaSeleccionar || sel.value;
                 while (sel.options.length > 1) sel.remove(1);
                 data.carpetas.forEach(function(c) {
                     var opt = document.createElement('option');
@@ -1185,8 +1195,8 @@
                     return dateB - dateA; // descendente: el más nuevo primero
                 });
 
-                // Tomamos los 6 más recientes (más útil que solo 3)
-                var items = todos.slice(0, 6);
+                // Tomamos los 3 más recientes
+                var items = todos.slice(0, 3);
 
                 renderizarRecientes(items);
             })
@@ -1357,20 +1367,34 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
-        cargarCarpetasEnSelect();
 
         var params = new URLSearchParams(window.location.search);
         var carpetaUrl = params.get('carpeta');
 
-        if (carpetaUrl) {
-            // Dar tiempo para que cargarCarpetasEnSelect llene las opciones
-            setTimeout(function() {
+        var promise = cargarCarpetasEnSelect(carpetaUrl);
+        if (promise && typeof promise.then === 'function') {
+            promise.then(function() {
+                if (carpetaUrl) {
+                    buscarNotas();
+                } else {
+                    cargarNotasRecientes();
+                }
+            }).catch(function() {
+                if (carpetaUrl) {
+                    buscarNotas();
+                } else {
+                    cargarNotasRecientes();
+                }
+            });
+        } else {
+            // Fallback en caso de que no devuelva promesa por alguna razón
+            if (carpetaUrl) {
                 var sel = document.getElementById('nota-carpeta');
                 if (sel) sel.value = carpetaUrl;
                 buscarNotas();
-            }, 350);
-        } else {
-            cargarNotasRecientes();
+            } else {
+                cargarNotasRecientes();
+            }
         }
     });
 

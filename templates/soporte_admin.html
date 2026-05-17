@@ -4,65 +4,403 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% include 'partials/head_design.html' %}
-    <title>Panel de Soporte | Admin NoteFlow</title>
+    <title>Panel de Control | NoteFlow Admin</title>
     
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='notas.css') }}">
+    <link rel="stylesheet" href="/static/soporte_admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/soporte_admin.css">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
 </head>
 <body>
 
-<div class="admin-layout">
-    <!-- Sidebar de Chats -->
-    <div class="chats-sidebar">
-        <div class="sidebar-header">
-            <h3><i class="fas fa-headset"></i> Soporte</h3>
-            <div class="header-actions-top">
-                <button id="theme-toggle-admin" class="btn-theme-admin" title="Cambiar tema">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <a href="/dashboard" class="btn-back-home"><i class="fas fa-home"></i></a>
-            </div>
+<!-- Botón hamburguesa -->
+<button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Barra superior móvil: foto + nombre a la derecha -->
+<div class="mobile-topbar">
+    <a href="{{ url_for('perfil') }}" class="mobile-topbar-user">
+        {% if session.es_premium %}
+        <div class="avatar-premium-container">
+            <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="user-avatar">
+            <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
         </div>
-        <div id="chats-list" class="chats-list">
-            <!-- Cargando... -->
-            <div class="loading-state">
-                <i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...
-            </div>
+        {% else %}
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="free-user-avatar">
+        {% endif %}
+        <span>
+            {{ usuario.Nombres }}
+            {% if session.es_premium %}
+                <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }}; margin-left: 5px;"></i>
+            {% endif %}
+        </span>
+    </a>
+</div>
+
+<!-- Overlay de sidebar -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar principal de la app (idéntico al de Mis Notas) -->
+<div class="sidebar">
+    <div class="logo">NoteFlow</div>
+ 
+    <ul class="menu">
+        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Inicio</a></li>
+        <li><a href="/notas"><i class="fas fa-list-ul"></i> Mis notas</a></li>
+        <li class="separator"></li>
+        <li><a href="/papelera"><i class="fas fa-trash-alt"></i> Papelera</a></li>
+        <li class="separator"></li>
+        <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
+        {% if session.usuario_id == 1 %}
+        <li><a href="/soporte-admin" class="active" style="color: #f1c40f;"><i class="fas fa-user-shield"></i> Panel Soporte</a></li>
+        {% endif %}
+    </ul>
+ 
+    <!-- Botón Mejorar plan -->
+    <a href="/planes" class="upgrade-btn">
+        <i class="fas fa-crown"></i>
+        <span>Mejorar plan</span>
+        <small>Desbloquea todo Premium</small>
+    </a>
+ 
+    <!-- Botón cerrar sesión -->
+    <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
+        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+    </a>
+</div>
+
+<!-- CONTENEDOR PRINCIPAL DE ADMINISTRACIÓN -->
+<div class="main">
+    <header> <!-- Encabezado -->
+        <!-- Información del usuario -->
+        <a href="{{ url_for('perfil') }}" class="usuario-info">
+        {% if session.es_premium %}
+        <div class="avatar-premium-container">
+            <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+            <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="user-avatar">
         </div>
+        {% else %}
+        <img src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" alt="Foto" class="free-user-avatar">
+        {% endif %}
+            <span>
+                <strong>{{ usuario.Nombres }}</strong>
+                {% if session.es_premium %}
+                    <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }}; margin-left: 5px;" title="Usuario Premium - Plan {{ session.plan_premium | capitalize }}"></i>
+                {% endif %}
+            </span> <!-- Nombre del usuario -->
+            <i class="fas fa-chevron-down profile-dropdown-icon"></i> <!-- Icono adicional -->
+        </a>
+    </header>
+
+    <section class="bienvenida" style="margin-bottom: 25px;">
+        <h2>
+            <i class="fas fa-user-shield" style="color:var(--color-principal); margin-right: 8px;"></i>Panel de Control
+        </h2>
+        <p>Gestión global de usuarios y soporte técnico en tiempo real.</p>
+    </section>
+
+    <!-- NAVEGACIÓN INTERNA DE SECCIONES (TABS) -->
+    <div class="admin-tabs-nav">
+        <button class="admin-tab-btn active" id="tab-dashboard-btn" onclick="cambiarPestana('dashboard')">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </button>
+        <button class="admin-tab-btn" id="tab-users-btn" onclick="cambiarPestana('users')">
+            <i class="fas fa-users-cog"></i> Cuentas
+        </button>
     </div>
 
-    <!-- Área de Chat -->
-    <div class="chat-main" id="chat-main">
-        <div id="no-chat-selected" class="no-chat-selected">
-            <i class="fas fa-comments"></i>
-            <h3>Selecciona un chat para responder</h3>
-            <p>Aquí aparecerán los mensajes de tus clientes en tiempo real.</p>
-        </div>
-
-        <div id="active-chat" class="active-chat-container" style="display: none;">
-            <div class="chat-header">
-                <div class="user-info">
-                    <img id="active-user-photo" src="/static/default_profile.png" alt="" class="chat-avatar">
-                    <div class="user-details-wrap">
-                        <div class="name-plan">
-                            <h4 id="active-user-name">Usuario</h4>
-                            <span id="active-user-plan" class="plan-badge">Gratis</span>
+    <!-- DISTRIBUCIÓN PRINCIPAL DEL PANEL (Centro: Contenido | Derecha: Chat Soporte) -->
+    <div class="admin-split-layout">
+        
+        <!-- COLUMNA IZQUIERDA: CONTENIDO ACTIVO (DASHBOARD O CUENTAS) -->
+        <div class="admin-panel-left-content">
+            
+            <!-- PESTAÑA: DASHBOARD (ESTADÍSTICAS) -->
+            <div class="admin-tab-content active" id="content-dashboard">
+                <div class="stats-grid">
+                    <!-- Tarjeta 1: Total Registrados -->
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="title">Total Registrados</span>
+                            <i class="fas fa-users icon bg-blue"></i>
                         </div>
-                        <span id="active-user-status"><i class="fas fa-circle"></i> Chat activo</span>
+                        <div class="stat-card-value" id="val-total-registrados">0</div>
+                        <div class="stat-card-sub text-muted">Cuentas creadas en total</div>
+                    </div>
+
+                    <!-- Tarjeta 2: Usuario con plan -->
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="title">Usuario con plan</span>
+                            <i class="fas fa-crown icon bg-gold"></i>
+                        </div>
+                        <div class="stat-card-value" id="val-usuarios-premium">0</div>
+                        <div class="stat-card-sub text-gold">Usuarios premium activos</div>
+                    </div>
+
+                    <!-- Tarjeta 3: Usuarios gratis -->
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="title">Usuarios gratis</span>
+                            <i class="fas fa-user-circle icon bg-gray"></i>
+                        </div>
+                        <div class="stat-card-value" id="val-usuarios-gratis">0</div>
+                        <div class="stat-card-sub text-muted">Cuentas con plan gratuito</div>
+                    </div>
+
+                    <!-- Tarjeta 4: Usuarios activos (30 Días) -->
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="title">Usuarios activos (30 Días)</span>
+                            <i class="fas fa-calendar-check icon bg-green"></i>
+                        </div>
+                        <div class="stat-card-value" id="val-usuarios-activos">0</div>
+                        <div class="stat-card-sub text-green">Actividad registrada en Notas o Soporte</div>
+                    </div>
+
+                    <!-- Tarjeta 5: Ingresos totales -->
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="title">Ingresos totales</span>
+                            <i class="fas fa-wallet icon bg-purple"></i>
+                        </div>
+                        <div class="stat-card-value" id="val-ingresos-totales">$ 0 COP</div>
+                        <div class="stat-card-sub text-purple">Estimación mensual recurrente activa</div>
+                    </div>
+
+                    <!-- Tarjeta 6: Notas creadas -->
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="title">Notas creadas</span>
+                            <i class="fas fa-sticky-note icon bg-orange"></i>
+                        </div>
+                        <div class="stat-card-value" id="val-notas-creadas">0</div>
+                        <div class="stat-card-sub text-orange">Total de notas en el sistema</div>
                     </div>
                 </div>
             </div>
-            
-            <div id="admin-chat-body" class="admin-chat-body">
-                <!-- Mensajes aquí -->
+
+            <!-- PESTAÑA: GESTIÓN DE CUENTAS -->
+            <div class="admin-tab-content" id="content-users">
+                <!-- Barra de búsqueda -->
+                <div class="search-bar-wrapper" style="margin-bottom: 20px;">
+                    <div class="search-input-group" style="border: 2px solid var(--border-claro); border-radius: 50px; padding: 10px 18px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-search" style="color:#95a5a6;"></i>
+                        <input type="text" id="buscar-usuario" placeholder="Buscar usuarios por nombre, correo, usuario o teléfono..." oninput="filtrarUsuarios(this.value)" style="border:none; outline:none; flex:1; background:transparent; color:inherit;">
+                    </div>
+                </div>
+
+                <!-- Tabla de cuentas -->
+                <div class="premium-table-container">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Contacto</th>
+                                <th>Plan</th>
+                                <th>Contraseña</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuarios-lista-tabla">
+                            <!-- Carga dinámica -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="chat-footer">
-                <input type="text" id="admin-reply-input" placeholder="Escribe tu respuesta oficial..." autocomplete="off">
-                <button id="admin-send-btn">
-                    <i class="fas fa-paper-plane"></i>
+        </div>
+
+        <!-- COLUMNA DERECHA: CHAT DE SOPORTE INTEGRADO (SIEMPRE DISPONIBLE A LA DERECHA) -->
+        <div class="admin-panel-right-chat">
+            <div class="admin-chat-widget">
+                
+                <div class="chat-widget-header">
+                    <div class="header-main-title">
+                        <h3><i class="fas fa-comments"></i> Chat Soporte</h3>
+                    </div>
+                    
+                    <!-- Selector de chats activos para cambiar de conversación de forma rápida -->
+                    <div class="chat-user-select-container">
+                        <label for="select-chat-usuario">Conversación:</label>
+                        <select id="select-chat-usuario" class="form-select chat-dropdown-selector" onchange="cambiarChatDeSelector(this.value)">
+                            <option value="">Selecciona un chat activo...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Estado sin conversación seleccionada -->
+                <div id="no-chat-selected" class="chat-empty-state">
+                    <i class="fas fa-comment-dots"></i>
+                    <h4>Sin chat seleccionado</h4>
+                    <p>Elige un usuario del selector superior para iniciar la conversación.</p>
+                </div>
+
+                <!-- Contenedor del chat activo -->
+                <div id="active-chat" class="chat-active-container" style="display: none;">
+                    
+                    <!-- Información del usuario activo -->
+                    <div class="chat-active-user-info">
+                        <img id="active-user-photo" src="/static/default_profile.png" alt="" class="chat-avatar">
+                        <div class="user-details-wrap">
+                            <div class="name-plan">
+                                <h4 id="active-user-name">Usuario</h4>
+                                <span id="active-user-plan" class="plan-badge">Gratis</span>
+                            </div>
+                            <span id="active-user-status"><i class="fas fa-circle"></i> Chat activo</span>
+                        </div>
+                    </div>
+
+                    <!-- Mensajes de chat -->
+                    <div id="admin-chat-body" class="admin-chat-body">
+                        <!-- Mensajes cargados dinámicamente -->
+                    </div>
+
+                    <!-- Pie de chat / Entrada de texto -->
+                    <div class="chat-footer">
+                        <input type="text" id="admin-reply-input" placeholder="Escribe tu respuesta..." autocomplete="off">
+                        <button id="admin-send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Cerrar Sesión -->
+<div class="modal fade logout-modal" id="logoutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-sign-out-alt"></i> Confirmar cierre de sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">¿Estás seguro de que deseas cerrar sesión?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-danger" style="color:#ffffff !important;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Actividad y Detalles del Usuario -->
+<div class="modal fade" id="userActivityModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="activity-modal-title">
+                    <i class="fas fa-user-clock" style="color: var(--color-principal);"></i> Detalles del Usuario
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                
+                <!-- IDENTIDAD Y ENCABEZADO -->
+                <div class="d-flex align-items-center gap-3 pb-3 mb-4 border-bottom">
+                    <div id="act-user-avatar-container" class="avatar-premium-container" style="width: 65px; height: 65px; position: relative; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: transparent;">
+                        <img id="act-user-photo" src="/static/default_profile.png" alt="" class="rounded-circle" style="width: 65px; height: 65px; object-fit: cover; border: 2.5px solid var(--color-principal);">
+                    </div>
+                    <div>
+                        <h4 class="mb-1" id="act-user-fullname" style="font-weight: 800; font-size: 1.3rem;">Nombre Completo</h4>
+                        <p class="text-muted mb-2" id="act-user-username" style="font-size: 0.82rem;">@usuario (ID: 0)</p>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span id="act-user-plan" class="plan-badge premium-gratis">Gratis</span>
+                            <span id="act-user-admin-badge" class="badge-hashed" style="background: rgba(84, 82, 211, 0.1); color: var(--color-principal); border-color: rgba(84, 82, 211, 0.2); font-size: 0.72rem; font-weight: 700; display: inline-block;">Usuario Regular</span>
+                        </div>
+                        
+                        <!-- Botón manual para otorgar privilegios (Solo visible/activo si el admin logueado es ID 1) -->
+                        {% if session.usuario_id == 1 %}
+                        <button id="btn-toggle-admin-privileges" class="btn btn-sm btn-outline-warning mt-3" style="font-weight: 700; font-size: 0.75rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;" onclick="toggleAdminPrivileges()">
+                            <i class="fas fa-user-shield"></i> Otorgar Acceso al Panel
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- CARDS DE CONTACTO Y INFO -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 act-info-card">
+                            <h6 class="text-uppercase text-muted mb-2" style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;"><i class="fas fa-envelope"></i> Contacto</h6>
+                            <p class="mb-1" style="font-size: 0.88rem;"><strong>Correo:</strong> <span id="act-user-email">correo@mail.com</span></p>
+                            <p class="mb-0" style="font-size: 0.88rem;"><strong>Teléfono:</strong> <span id="act-user-phone">+00 0000000</span></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 act-info-card">
+                            <h6 class="text-uppercase text-muted mb-2" style="font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em;"><i class="fas fa-chart-bar"></i> Actividad Global</h6>
+                            <p class="mb-1" style="font-size: 0.88rem;"><strong>Notas creadas:</strong> <span id="act-user-notes-count" class="badge-hashed" style="background:rgba(84,82,211,0.15); color:var(--color-principal); border-color:rgba(84,82,211,0.25);">0</span></p>
+                            <p class="mb-0" style="font-size: 0.88rem;"><strong>Carpetas creadas:</strong> <span id="act-user-folders-count" class="badge-hashed" style="background:rgba(243,156,18,0.15); color:var(--color-secundario); border-color:rgba(243,156,18,0.25);">0</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARPETAS DEL USUARIO -->
+                <div class="mb-4">
+                    <h5 class="mb-3" style="font-weight: 700; font-size: 1rem;"><i class="fas fa-folder-open text-warning me-2"></i> Carpetas Registradas</h5>
+                    <div id="act-folders-list" class="d-flex flex-wrap gap-2">
+                        <!-- Carpetas en forma de chips -->
+                        <span class="text-muted italic" style="font-size: 0.85rem;">El usuario no ha creado ninguna carpeta.</span>
+                    </div>
+                </div>
+
+                <!-- NOTAS DEL USUARIO -->
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0" style="font-weight: 700; font-size: 1rem;"><i class="fas fa-sticky-note text-primary me-2"></i> Notas Creadas en NoteFlow</h5>
+                        <input type="text" id="buscar-nota-usuario" class="form-control form-control-sm" placeholder="Buscar nota..." style="width: 200px; border-radius:8px;" oninput="filtrarNotasUsuario(this.value)">
+                    </div>
+
+                    <div id="act-notes-container" class="d-flex flex-column gap-3">
+                        <!-- Lista de notas del usuario con vista expandible -->
+                        <div class="text-center text-muted py-4">
+                            No se encontraron notas registradas.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación para Eliminar Usuario -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> ¡ATENCIÓN CRÍTICA!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Estás a punto de **eliminar permanentemente** la cuenta de <strong id="delete-modal-user-name"></strong>.</p>
+                <p class="text-danger"><strong>Esta acción es irreversible y realizará lo siguiente:</strong></p>
+                <ul class="text-muted" style="font-size: 0.9rem;">
+                    <li>Eliminará su cuenta e información de perfil.</li>
+                    <li>Eliminará **todas sus notas y carpetas**.</li>
+                    <li>Eliminará **físicamente todos sus archivos multimedia** del bucket de Supabase Storage.</li>
+                    <li>Eliminará todo su historial de mensajes de soporte.</li>
+                </ul>
+                <p class="mb-0">¿Estás absolutamente seguro de que deseas proceder con la eliminación en cascada?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-user-btn">
+                    <i class="fas fa-trash-alt"></i> Sí, eliminar en cascada
                 </button>
             </div>
         </div>
@@ -70,6 +408,11 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Pasar tokens CSRF y datos globales
+    window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";
+    window.CSRF_TOKEN = "{{ session.csrf_token }}";
+</script>
 <script src="/static/js/soporte_admin.js"></script>
 </body>
 </html>

@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import requests
 import os
+import sys
 import uuid as _uuid
 import secrets
 import re
@@ -26,8 +27,14 @@ from flask_wtf.csrf import CSRFProtect
 import bleach
 import logging
 from logging.handlers import RotatingFileHandler
+from supabase import create_client, Client
 
 load_dotenv()
+
+# Inicializar Supabase Client
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==============================================================================
 # CONFIGURACIÓN — OAuth, Flask, Base de datos y Correo
@@ -109,7 +116,8 @@ csp = {
         '\'self\'',
         'https://randomuser.me',
         'https://*.epayco.co',
-        'https://*.epayco.io'
+        'https://*.epayco.io',
+        'https://*.supabase.co'
     ],
     'frame-src': [
         '\'self\'', 
@@ -117,8 +125,8 @@ csp = {
         'https://checkout.epayco.co',
         'https://secure.epayco.co'
     ],
-    # Permite reproducir video/audio desde blob: (createObjectURL) y data:
-    'media-src': ['\'self\'', 'blob:', 'data:'],
+    # Permite reproducir video/audio desde blob:, data: y Supabase
+    'media-src': ['\'self\'', 'blob:', 'data:', 'https://*.supabase.co'],
     # Permite Web Workers y OfflineAudioContext (usado en el editor de audio)
     'worker-src': ['\'self\'', 'blob:'],
 }
@@ -253,14 +261,22 @@ def error_interno_servidor(e):
 # ==============================================================================
 
 def conectar_db(dict_cursor=False):
-    """Crea y devuelve una conexión a PostgreSQL."""
+    """Crea y devuelve una conexión a PostgreSQL (Compatible con Supabase)."""
     try:
+        # Combinamos la configuración básica con el modo SSL requerido para Supabase
+        config = DB_CONFIG.copy()
+        config["sslmode"] = "require"
+        
+        # Si se solicita, usamos RealDictCursor para obtener resultados como diccionarios
         cursor_factory = RealDictCursor if dict_cursor else None
-        conexion = psycopg2.connect(cursor_factory=cursor_factory, **DB_CONFIG)
+        
+        conexion = psycopg2.connect(cursor_factory=cursor_factory, **config)
         conexion.set_client_encoding("UTF8")
         return conexion
-    except psycopg2.Error as e:
-        print(f"ERROR DE CONEXIÓN A POSTGRESQL: {e}")
+    except Exception as e:
+        error_msg = f"CRITICAL: ERROR DE CONEXIÓN A POSTGRESQL: {type(e).__name__}: {e}\n"
+        sys.stderr.write(error_msg)
+        sys.stderr.flush()
         return None
 
 
@@ -277,6 +293,109 @@ def verificar_sesion():
     if "usuario_id" not in session:
         return redirect(url_for("mostrar_login"))
     return None
+
+def es_admin(user_id):
+    """Comprueba de forma segura si un ID de cuenta tiene privilegios administrativos en la base de datos."""
+    if not user_id:
+        return False
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return False
+    try:
+        cur = conexion.cursor()
+        cur.execute('ALTER TABLE public."Cuentas" ADD COLUMN IF NOT EXISTS "Es_admin" BOOLEAN DEFAULT FALSE;')
+        cur.execute('UPDATE public."Cuentas" SET "Es_admin" = TRUE WHERE "ID_Cuenta" = 1;')
+        conexion.commit()
+        
+        cur.execute('SELECT "Es_admin" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+        res = cur.fetchone()
+        cerrar_db(cur, conexion)
+        return bool(res and res.get("Es_admin", False))
+    except Exception as e:
+        print(f"Error en es_admin: {e}")
+        return False
+
+def obtener_proximo_id(tabla, columna):
+    """Busca el ID mÃ¡s pequeño disponible (hueco) en una tabla."""
+    conexion = conectar_db()
+    cursor = conexion.cursor()
+    try:
+        # Busca el primer ID + 1 que no existe en la tabla, o 1 si estÃ¡ vacÃa
+        query = f"""
+            SELECT COALESCE(MIN(t1."{columna}" + 1), 1)
+            FROM public."{tabla}" t1
+            LEFT JOIN public."{tabla}" t2 ON t1."{columna}" + 1 = t2."{columna}"
+            WHERE t2."{columna}" IS NULL
+        """
+        cursor.execute(query)
+        res = cursor.fetchone()[0]
+        # Si el 1 no existe, empezamos por el 1
+        cursor.execute(f'SELECT "{columna}" FROM public."{tabla}" WHERE "{columna}" = 1')
+        if not cursor.fetchone():
+            return 1
+        return res
+    except:
+        return 1
+    finally:
+        cerrar_db(cursor, conexion)
+
+def subir_a_supabase(archivo, carpeta, nombre_archivo):
+    """Sube un archivo a Supabase Storage y retorna la ruta pública."""
+    try:
+        archivo.seek(0)
+        file_data = archivo.read()
+        bucket = "NoteFlow"
+        path = f"{carpeta}/{nombre_archivo}"
+        
+        # Subir archivo
+        supabase_client.storage.from_(bucket).upload(
+            path=path,
+            file=file_data,
+            file_options={"content-type": archivo.content_type}
+        )
+        
+        # Retornar la URL pública
+        res = supabase_client.storage.from_(bucket).get_public_url(path)
+        return res
+    except Exception as e:
+        print(f"Error subiendo a Supabase: {e}")
+        try:
+            buckets = supabase_client.storage.list_buckets()
+            print(f"Buckets disponibles en tu proyecto: {[b.name for b in buckets]}")
+        except Exception as e2:
+            print(f"No se pudieron listar los buckets: {e2}")
+        return None
+
+
+def eliminar_archivo_de_supabase_por_ruta(ruta_publica):
+    """Elimina un archivo del bucket de Supabase dada su URL pública."""
+    if not ruta_publica:
+        return
+    try:
+        if "/public/NoteFlow/" in ruta_publica:
+            path_to_remove = ruta_publica.split("/public/NoteFlow/")[1]
+            if path_to_remove:
+                supabase_client.storage.from_("NoteFlow").remove([path_to_remove])
+                print(f"Archivo eliminado de Supabase con éxito: {path_to_remove}")
+    except Exception as e:
+        print(f"Error al eliminar archivo de Supabase ({ruta_publica}): {e}")
+
+
+# ==============================================================================
+# CONTEXT PROCESSORS (Globales para plantillas)
+# ==============================================================================
+
+@app.context_processor
+def inject_globals():
+    def get_file_url(path):
+        """Retorna la URL correcta: local o de Supabase."""
+        if not path:
+            return url_for('static', filename='default_profile.png')
+        if path.startswith('http'):
+            return path
+        # Fallback para archivos locales antiguos
+        return url_for('static', filename=path)
+    return dict(get_file_url=get_file_url)
 
 
 def login_required(f):
@@ -749,6 +868,8 @@ def mostrar_login():
 @app.route("/procesar-login", methods=["POST"])
 @limiter.limit("10 per minute")
 def procesar_login():
+    sys.stderr.write("INFO: Iniciando proceso de login...\n")
+    sys.stderr.flush()
     """
     Valida las credenciales del usuario y abre la sesión.
     Si la contraseña está en texto plano (cuentas antiguas), la migra a hash.
@@ -1345,9 +1466,12 @@ def dashboard():
             if hasattr(val, "date"):
                 return val.date()
             return val
-        carpetas_recientes.sort(key=lambda x: _fecha_segura(x.get("Fecha_edicion")),  reverse=True)
-        notas_recientes.sort(   key=lambda x: _fecha_segura(x.get("Fecha_deedicion")), reverse=True)
-        recientes = carpetas_recientes[:3] + notas_recientes[:3]
+        todos_recientes = carpetas_recientes + notas_recientes
+        todos_recientes.sort(
+            key=lambda x: _fecha_segura(x.get("Fecha_edicion") if "Fecha_edicion" in x else x.get("Fecha_deedicion")),
+            reverse=True
+        )
+        recientes = todos_recientes[:3]
 
         return render_template(
             "dashboard.html",
@@ -1580,9 +1704,12 @@ def subir_foto():
     try:
         ext              = os.path.splitext(archivo.filename)[1].lower()
         filename         = f"user_{user_id}_{_uuid.uuid4().hex}{ext}"
-        ruta_completa    = os.path.join(PROFILE_UPLOAD_FOLDER, filename)
-        archivo.save(ruta_completa)
-        ruta_db          = f"uploads/profile/{filename}"
+        
+        # SUBIR A SUPABASE en la carpeta 'profile'
+        url_publica = subir_a_supabase(archivo, "profile", filename)
+        
+        if not url_publica:
+            return jsonify({"error": "No se pudo subir la imagen a la nube"}), 500
 
         conexion = conectar_db()
         cursor   = conexion.cursor()
@@ -1590,21 +1717,14 @@ def subir_foto():
         result       = cursor.fetchone()
         foto_anterior = result[0] if result else None
 
-        cursor.execute('UPDATE public."Cuentas" SET "Foto" = %s WHERE "ID_Cuenta" = %s', (ruta_db, user_id))
+        # Guardamos la URL completa en la base de datos
+        cursor.execute('UPDATE public."Cuentas" SET "Foto" = %s WHERE "ID_Cuenta" = %s', (url_publica, user_id))
         conexion.commit()
-
-        if foto_anterior and foto_anterior != "uploads/profile/default_profile.png":
-            try:
-                ruta_ant = os.path.join(BASE_DIR, "static", foto_anterior)
-                if os.path.exists(ruta_ant):
-                    os.remove(ruta_ant)
-            except Exception as e:
-                print(f"No se pudo eliminar foto anterior: {e}")
 
         return jsonify({
             "success":   True,
             "mensaje":   "Foto de perfil actualizada",
-            "nueva_foto": url_for("static", filename=ruta_db),
+            "nueva_foto": url_publica,
         }), 200
 
     except Exception as e:
@@ -1638,18 +1758,6 @@ def eliminar_foto_perfil():
         row = cursor.fetchone()
         if not row:
             return jsonify({"error": "Usuario no encontrado"}), 404
-
-        foto_actual    = row[0] if row else None
-        fotos_default  = {None, "", "img/default_profile.png", "uploads/profile/default_profile.png"}
-
-        if foto_actual and foto_actual not in fotos_default:
-            ruta_fisica = os.path.join(BASE_DIR, "static", foto_actual)
-            try:
-                if os.path.exists(ruta_fisica):
-                    os.remove(ruta_fisica)
-                    print(f"Foto eliminada del servidor: {ruta_fisica}")
-            except Exception as e:
-                print(f"No se pudo eliminar el archivo físico: {e}")
 
         cursor.execute('UPDATE public."Cuentas" SET "Foto" = NULL WHERE "ID_Cuenta" = %s', (user_id,))
         conexion.commit()
@@ -1765,10 +1873,10 @@ def api_mis_notas():
             sql    += ' AND LOWER(n."Formato") = %s'
             params += [formato.lower()]
 
-        # Filtro carpeta
+        # Filtro carpeta (exact match)
         if carpeta:
-            sql    += ' AND LOWER(c."Nombre_carpeta") LIKE %s'
-            params += [f"%{carpeta.lower()}%"]
+            sql    += ' AND c."Nombre_carpeta" = %s'
+            params += [carpeta]
 
         # Filtro fecha desde (creación)
         if desde:
@@ -2116,9 +2224,9 @@ def api_crear_carpeta():
         conexion = conectar_db(dict_cursor=True)
         cursor   = conexion.cursor()
 
-        # Verificar duplicado
+        # Verificar duplicado (solo activas)
         cursor.execute(
-            'SELECT 1 FROM public."Carpetas" WHERE "ID_Cuenta"=%s AND LOWER("Nombre_carpeta")=LOWER(%s)',
+            'SELECT 1 FROM public."Carpetas" WHERE "ID_Cuenta"=%s AND LOWER("Nombre_carpeta")=LOWER(%s) AND "Estado"=\'Activa\'',
             (user_id, nombre)
         )
         if cursor.fetchone():
@@ -2130,7 +2238,6 @@ def api_crear_carpeta():
             WHERE table_schema = 'public' AND table_name = 'Carpetas'
         """)
         columnas = [r["column_name"] for r in cursor.fetchall()]
-        print("COLUMNAS CARPETAS:", columnas)
 
         ahora = datetime.now()
 
@@ -2286,16 +2393,6 @@ def papelera():
         notas_vencidas = cursor.fetchall()
 
         if notas_vencidas:
-            for fila in notas_vencidas:
-                ruta = fila.get("Ruta_archivo") if isinstance(fila, dict) else fila[1]
-                if ruta:
-                    ruta_completa = os.path.join(BASE_DIR, "static", ruta)
-                    try:
-                        if os.path.exists(ruta_completa):
-                            os.remove(ruta_completa)
-                    except Exception as e:
-                        print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
-
             ids_vencidos = list({
                 fila.get("ID_Nota") if isinstance(fila, dict) else fila[0]
                 for fila in notas_vencidas
@@ -2452,14 +2549,22 @@ def eliminar_carpeta_definitivo(carpeta_id):
         ids_notas = [n["ID_Nota"] for n in notas]
 
         if ids_notas:
-            # Eliminar archivos físicos
+            # Obtener rutas de archivos para borrar de Supabase
             cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
-            for adj in cursor.fetchall():
-                ruta = adj.get("Ruta_archivo")
-                if ruta:
-                    ruta_completa = os.path.join(BASE_DIR, "static", ruta)
-                    if os.path.exists(ruta_completa):
-                        os.remove(ruta_completa)
+            rutas = [f["Ruta_archivo"] for f in cursor.fetchall()]
+            
+            if rutas:
+                try:
+                    paths_to_remove = []
+                    for r in rutas:
+                        if "/public/NoteFlow/" in r:
+                            paths_to_remove.append(r.split("/public/NoteFlow/")[1])
+                    
+                    if paths_to_remove:
+                        supabase_client.storage.from_("NoteFlow").remove(paths_to_remove)
+                        print(f"Archivos de la carpeta {carpeta_id} eliminados de Storage: {paths_to_remove}")
+                except Exception as st_err:
+                    print(f"Error borrando de Storage (carpeta {carpeta_id}): {st_err}")
 
             # Eliminar adjuntos, etiquetas y notas
             cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
@@ -2503,23 +2608,30 @@ def eliminar_nota_definitivo(nota_id):
         if not cursor.fetchone():
             return jsonify({"error": "Nota no encontrada o sin permiso para eliminarla"}), 404
 
+        # 1. Obtener rutas de archivos adjuntos para borrar de Storage
         cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
-        for adj in cursor.fetchall():
-            ruta = adj.get("Ruta_archivo") if isinstance(adj, dict) else adj[0]
-            if ruta:
-                ruta_completa = os.path.join(BASE_DIR, "static", ruta)
-                try:
-                    if os.path.exists(ruta_completa):
-                        os.remove(ruta_completa)
-                except Exception as e:
-                    print(f"No se pudo eliminar archivo {ruta_completa}: {e}")
+        rutas = [f["Ruta_archivo"] for f in cursor.fetchall()]
+        
+        if rutas:
+            try:
+                paths_to_remove = []
+                for r in rutas:
+                    if "/public/NoteFlow/" in r:
+                        paths_to_remove.append(r.split("/public/NoteFlow/")[1])
+                
+                if paths_to_remove:
+                    supabase_client.storage.from_("NoteFlow").remove(paths_to_remove)
+                    print(f"Archivos eliminados de Storage para nota {nota_id}: {paths_to_remove}")
+            except Exception as st_err:
+                print(f"Error borrando de Storage (nota {nota_id}): {st_err}")
 
+        # 2. Borrar de la base de datos
         cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = %s', (nota_id,))
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
         cursor.execute('DELETE FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         conexion.commit()
 
-        return jsonify({"success": True, "mensaje": "Nota eliminada definitivamente"}), 200
+        return jsonify({"success": True, "mensaje": "Nota y archivos eliminados definitivamente"}), 200
 
     except Exception as e:
         if conexion:
@@ -2550,14 +2662,25 @@ def vaciar_papelera():
 
         # 2. Eliminar adjuntos y archivos físicos de esas notas
         if ids_notas:
+            # Obtener rutas de archivos para borrar de Supabase
             cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
-            for adj in cursor.fetchall():
-                ruta = adj.get("Ruta_archivo")
-                if ruta:
-                    ruta_completa = os.path.join(BASE_DIR, "static", ruta)
-                    if os.path.exists(ruta_completa):
-                        os.remove(ruta_completa)
+            rutas = [f["Ruta_archivo"] for f in cursor.fetchall()]
             
+            if rutas:
+                try:
+                    # Extraer solo la parte del path relativa al bucket
+                    # Las rutas son: https://.../storage/v1/object/public/NoteFlow/audios/filename
+                    # Necesitamos: audios/filename
+                    paths_to_remove = []
+                    for r in rutas:
+                        if "/public/NoteFlow/" in r:
+                            paths_to_remove.append(r.split("/public/NoteFlow/")[1])
+                    
+                    if paths_to_remove:
+                        supabase_client.storage.from_("NoteFlow").remove(paths_to_remove)
+                except Exception as st_err:
+                    print(f"Error borrando de Storage: {st_err}")
+
             cursor.execute('DELETE FROM public."Adjuntos"        WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
             cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
             cursor.execute('DELETE FROM public."Notas"           WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
@@ -2736,17 +2859,14 @@ def guardar_nota_texto():
             INSERT INTO public."Tipos" ("Formato") VALUES ('texto') ON CONFLICT ("Formato") DO NOTHING
         """)
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
-        nuevo_id = cursor.fetchone()[0]
-
+        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
                  "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
             VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'texto', %s, NULL)
-            RETURNING "ID_Nota"
         """, (nuevo_id, titulo, descripcion, contenido, hoy, hoy, user_id))
-        nota_id = cursor.fetchone()[0]
+        nota_id = nuevo_id
 
         if etiquetas_raw:
             _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
@@ -2823,77 +2943,109 @@ def actualizar_nota_texto(nota_id):
 #     Guarda el archivo PNG/JPG procesado por el editor de canvas.
 # ==============================================================================
 
-@app.route("/guardar-nota-imagen", methods=["POST"])
+@app.route("/guardar-nota-audio", methods=["POST"])
 @login_required
-def guardar_nota_imagen():
-    """
-    Recibe la imagen editada (PNG/JPG) y crea una nota de tipo imagen en la BD.
-
-    Campos:
-        titulo      — str (opcional)
-        descripcion — str (opcional)
-        etiquetas   — str separadas por coma (opcional)
-        imagen      — File (PNG, JPG, JPEG, WEBP)
-    """
+def guardar_nota_audio():
+    """Recibe un archivo de audio y lo guarda en Supabase."""
     user_id  = session["usuario_id"]
     conexion = None
     cursor   = None
     try:
-        titulo        = request.form.get("titulo",      "").strip() or "Imagen sin título"
-        descripcion   = request.form.get("descripcion", "").strip() or f"Nota de imagen: {titulo}"
-        etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        titulo      = request.form.get("titulo", "").strip() or "Audio sin título"
+        descripcion = request.form.get("descripcion", "").strip() or "Nota de audio"
+        archivo     = request.files.get("audio")
+        etiquetas   = request.form.get("etiquetas", "").strip()
 
-        archivo = request.files.get("imagen")
-        if not archivo or archivo.filename == "":
-            return jsonify({"error": "No se recibió ninguna imagen"}), 400
+        if not archivo:
+            return jsonify({"error": "No se recibió el audio"}), 400
 
         ext = os.path.splitext(archivo.filename)[1].lower()
-        if ext not in {".png", ".jpg", ".jpeg", ".webp"}:
-            return jsonify({"error": "Formato de imagen no permitido"}), 400
-
-        filename      = f"imagen_{user_id}_{_uuid.uuid4().hex}{ext}"
-        ruta_completa = os.path.join(IMAGEN_UPLOAD_FOLDER, filename)
-        archivo.save(ruta_completa)
-        ruta_db       = f"uploads/imagenes/{filename}"
+        filename = f"aud_{user_id}_{_uuid.uuid4().hex}{ext}"
+        
+        # SUBIR A SUPABASE
+        url_publica = subir_a_supabase(archivo, "audios", filename)
+        if not url_publica:
+            return jsonify({"error": "Error al subir a Supabase"}), 500
 
         conexion = conectar_db()
-        if conexion is None:
-            return jsonify({"error": "Error de conexión a la base de datos"}), 500
-
         cursor = conexion.cursor()
-        hoy    = datetime.now()
+        hoy = datetime.now()
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
-        nuevo_id = cursor.fetchone()[0]
-
+        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
-                 "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
-            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'imagen', %s, NULL)
-            RETURNING "ID_Nota"
-        """, (nuevo_id, titulo, descripcion, "", hoy, hoy, user_id))
-        nota_id = cursor.fetchone()[0]
+                 "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta")
+            VALUES (%s, %s, %s, '', %s, %s, 'Activa', 'audio', %s)
+        """, (nuevo_id, titulo, descripcion, hoy, hoy, user_id))
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
-        nuevo_id_adj = cursor.fetchone()[0]
         cursor.execute("""
-            INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
-            VALUES (%s, %s, %s, %s, %s)
-        """, (nuevo_id_adj, filename, ext.lstrip("."), ruta_db, nota_id))
+            INSERT INTO public."Adjuntos" ("ID_Nota", "Nombre_archivo", "Ruta_archivo", "Formato")
+            VALUES (%s, %s, %s, 'audio')
+        """, (nuevo_id, filename, url_publica))
 
-        if etiquetas_raw:
-            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+        if etiquetas:
+            _insertar_etiquetas(etiquetas, nuevo_id, cursor)
 
         conexion.commit()
-        return jsonify({"success": True, "mensaje": "Nota de imagen guardada correctamente", "nota_id": nota_id, "redirect": "/notas"}), 201
+        return jsonify({"success": True, "mensaje": "Audio guardado en la nube", "redirect": "/notas"}), 201
 
     except Exception as e:
-        if conexion:
-            conexion.rollback()
-        import traceback; traceback.print_exc()
-        return jsonify({"error": "Error al guardar la nota de imagen"}), 500
+        if conexion: conexion.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cerrar_db(cursor, conexion)
 
+@app.route("/guardar-nota-imagen", methods=["POST"])
+@login_required
+def guardar_nota_imagen():
+    """Recibe la imagen editada y la guarda en Supabase."""
+    user_id  = session["usuario_id"]
+    conexion = None
+    cursor   = None
+    try:
+        titulo      = request.form.get("titulo", "").strip() or "Imagen sin título"
+        descripcion = request.form.get("descripcion", "").strip() or "Nota de imagen"
+        archivo     = request.files.get("imagen")
+        etiquetas   = request.form.get("etiquetas", "").strip()
+
+        if not archivo:
+            return jsonify({"error": "No se recibió la imagen"}), 400
+
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        filename = f"img_{user_id}_{_uuid.uuid4().hex}{ext}"
+        
+        # SUBIR A SUPABASE
+        url_publica = subir_a_supabase(archivo, "imagenes", filename)
+        if not url_publica:
+            return jsonify({"error": "Error al subir a la nube"}), 500
+
+        conexion = conectar_db()
+        cursor = conexion.cursor()
+        hoy = datetime.now()
+
+        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
+        cursor.execute("""
+            INSERT INTO public."Notas"
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
+                 "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta")
+            VALUES (%s, %s, %s, '', %s, %s, 'Activa', 'imagen', %s)
+        """, (nuevo_id, titulo, descripcion, hoy, hoy, user_id))
+
+        cursor.execute("""
+            INSERT INTO public."Adjuntos" ("ID_Nota", "Nombre_archivo", "Ruta_archivo", "Formato")
+            VALUES (%s, %s, %s, 'imagen')
+        """, (nuevo_id, filename, url_publica))
+
+        if etiquetas:
+            _insertar_etiquetas(etiquetas, nuevo_id, cursor)
+
+        conexion.commit()
+        return jsonify({"success": True, "mensaje": "Imagen guardada en Supabase", "redirect": "/notas"}), 201
+
+    except Exception as e:
+        if conexion: conexion.rollback()
+        return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
 
@@ -2930,27 +3082,24 @@ def actualizar_nota_imagen(nota_id):
         if archivo and archivo.filename != "":
             ext = os.path.splitext(archivo.filename)[1].lower()
             if ext in {".png", ".jpg", ".jpeg", ".webp"}:
-                # 1. Borrar fisica anterior
+                # Obtener la ruta del archivo anterior
                 cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
-                adj_ant = cursor.fetchone()
-                if adj_ant:
-                    ruta_borrar = os.path.join(os.getcwd(), "static", adj_ant[0])
-                    if os.path.exists(ruta_borrar):
-                        try: os.remove(ruta_borrar)
-                        except: pass
+                fila_adjunto = cursor.fetchone()
+                old_path = fila_adjunto[0] if (fila_adjunto and fila_adjunto[0]) else None
 
-                # 2. Guardar nueva
-                filename      = f"imagen_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
-                ruta_completa = os.path.join(IMAGEN_UPLOAD_FOLDER, filename)
-                archivo.save(ruta_completa)
-                ruta_db       = f"uploads/imagenes/{filename}"
-
-                # 3. Update BD
-                cursor.execute("""
-                    UPDATE public."Adjuntos" 
-                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
-                    WHERE "ID_Nota" = %s
-                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+                # SUBIR A SUPABASE
+                filename = f"img_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                url_publica = subir_a_supabase(archivo, "imagenes", filename)
+                
+                if url_publica:
+                    cursor.execute("""
+                        UPDATE public."Adjuntos" 
+                        SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                        WHERE "ID_Nota" = %s
+                    """, (filename, ext.lstrip("."), url_publica, nota_id))
+                    
+                    if old_path:
+                        eliminar_archivo_de_supabase_por_ruta(old_path)
 
         # Etiquetas
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
@@ -2969,23 +3118,11 @@ def actualizar_nota_imagen(nota_id):
 
 
 
-# ==============================================================================
-# 14. GUARDAR NOTA DE DIBUJO
-#     Guarda la imagen exportada del bloc de dibujo.
-# ==============================================================================
 
 @app.route("/guardar-nota-dibujo", methods=["POST"])
 @login_required
 def guardar_nota_dibujo():
-    """
-    Recibe la imagen del bloc de dibujo y crea una nota de tipo dibujo en la BD.
-
-    Campos:
-        titulo      — str (opcional)
-        descripcion — str (opcional)
-        etiquetas   — str separadas por coma (opcional)
-        imagen      — File (PNG, JPG, JPEG, WEBP)
-    """
+    """Recibe la imagen base64 o blob del canvas y crea la nota de dibujo."""
     user_id  = session["usuario_id"]
     conexion = None
     cursor   = None
@@ -2993,61 +3130,49 @@ def guardar_nota_dibujo():
         titulo        = request.form.get("titulo",      "").strip() or "Dibujo sin título"
         descripcion   = request.form.get("descripcion", "").strip() or f"Nota de dibujo: {titulo}"
         etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        archivo       = request.files.get("imagen")
 
-        archivo = request.files.get("imagen")
         if not archivo or archivo.filename == "":
-            return jsonify({"error": "No se recibió ninguna imagen"}), 400
+            return jsonify({"error": "No se recibió ninguna imagen de dibujo"}), 400
 
-        ext = os.path.splitext(archivo.filename)[1].lower()
-        if ext not in {".png", ".jpg", ".jpeg", ".webp"}:
-            return jsonify({"error": "Formato de imagen no permitido"}), 400
+        # Subir a Supabase
+        filename    = f"dibujo_{user_id}_{_uuid.uuid4().hex}.png"
+        url_publica = subir_a_supabase(archivo, "dibujos", filename)
 
-        filename      = f"dibujo_{user_id}_{_uuid.uuid4().hex}{ext}"
-        ruta_completa = os.path.join(DIBUJO_UPLOAD_FOLDER, filename)
-        archivo.save(ruta_completa)
-        ruta_db       = f"uploads/dibujos/{filename}"
+        if not url_publica:
+            return jsonify({"error": "Error al subir el dibujo a Supabase"}), 500
 
         conexion = conectar_db()
-        if conexion is None:
-            return jsonify({"error": "Error de conexión a la base de datos"}), 500
+        cursor   = conexion.cursor()
+        hoy      = datetime.now()
 
-        cursor = conexion.cursor()
-        hoy    = datetime.now()
+        cursor.execute('INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT DO NOTHING', ("png",))
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
-        nuevo_id = cursor.fetchone()[0]
-
+        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
-                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
-                 "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
-            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'dibujo', %s, NULL)
-            RETURNING "ID_Nota"
-        """, (nuevo_id, titulo, descripcion, "", hoy, hoy, user_id))
-        nota_id = cursor.fetchone()[0]
+                ("ID_Nota", "Titulo", "Descripcion", "Contenido", "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta")
+            VALUES (%s, %s, %s, '', %s, %s, 'Activa', 'dibujo', %s)
+        """, (nuevo_id, titulo, descripcion, hoy, hoy, user_id))
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
-        nuevo_id_adj = cursor.fetchone()[0]
+        nuevo_id_adj = obtener_proximo_id("Adjuntos", "ID_Adjunto")
         cursor.execute("""
             INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
-            VALUES (%s, %s, %s, %s, %s)
-        """, (nuevo_id_adj, filename, ext.lstrip("."), ruta_db, nota_id))
+            VALUES (%s, %s, 'png', %s, %s)
+        """, (nuevo_id_adj, filename, url_publica, nuevo_id))
 
         if etiquetas_raw:
-            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+            _insertar_etiquetas(etiquetas_raw, nuevo_id, cursor)
 
         conexion.commit()
-        return jsonify({"success": True, "mensaje": "Nota de dibujo guardada correctamente", "nota_id": nota_id, "redirect": "/notas"}), 201
+        return jsonify({"success": True, "mensaje": "Dibujo guardado correctamente", "redirect": "/notas"}), 201
 
     except Exception as e:
-        if conexion:
-            conexion.rollback()
+        if conexion: conexion.rollback()
         import traceback; traceback.print_exc()
-        return jsonify({"error": "Error al guardar la nota de dibujo"}), 500
-
+        return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
-
 
 @app.route("/actualizar-nota-dibujo/<int:nota_id>", methods=["POST"])
 @login_required
@@ -3077,31 +3202,28 @@ def actualizar_nota_dibujo(nota_id):
             WHERE "ID_Nota" = %s
         """, (titulo, descripcion, datetime.now(), nota_id))
 
-        # Si se sube una imagen nueva (el dibujo actualizado)
+        # Si se sube un nuevo dibujo
         if archivo and archivo.filename != "":
             ext = os.path.splitext(archivo.filename)[1].lower()
             if ext in {".png", ".jpg", ".jpeg", ".webp"}:
-                # 1. Buscar adjunto anterior para borrar archivo fisico
+                # Obtener la ruta del archivo anterior
                 cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
-                adj_ant = cursor.fetchone()
-                if adj_ant:
-                    ruta_borrar = os.path.join(os.getcwd(), "static", adj_ant[0])
-                    if os.path.exists(ruta_borrar):
-                        try: os.remove(ruta_borrar)
-                        except: pass
+                fila_adjunto = cursor.fetchone()
+                old_path = fila_adjunto[0] if (fila_adjunto and fila_adjunto[0]) else None
 
-                # 2. Guardar nueva imagen
-                filename = f"dibujo_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
-                ruta_completa = os.path.join(DIBUJO_UPLOAD_FOLDER, filename)
-                archivo.save(ruta_completa)
-                ruta_db = f"uploads/dibujos/{filename}"
-
-                # 3. Actualizar adjunto en BD
-                cursor.execute("""
-                    UPDATE public."Adjuntos" 
-                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
-                    WHERE "ID_Nota" = %s
-                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+                # SUBIR A SUPABASE
+                filename = f"dib_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                url_publica = subir_a_supabase(archivo, "dibujos", filename)
+                
+                if url_publica:
+                    cursor.execute("""
+                        UPDATE public."Adjuntos" 
+                        SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                        WHERE "ID_Nota" = %s
+                    """, (filename, ext.lstrip("."), url_publica, nota_id))
+                    
+                    if old_path:
+                        eliminar_archivo_de_supabase_por_ruta(old_path)
 
         # Actualizar etiquetas
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
@@ -3119,94 +3241,6 @@ def actualizar_nota_dibujo(nota_id):
 
 
 
-# ==============================================================================
-# 15. GUARDAR NOTA DE AUDIO
-#     Acepta archivos de hasta 200 MB en los formatos de audio más comunes.
-# ==============================================================================
-
-@app.route("/guardar-nota-audio", methods=["POST"])
-@login_required
-def guardar_nota_audio():
-    """
-    Recibe el archivo de audio y crea una nota de tipo audio en la BD.
-
-    Campos:
-        titulo      — str (opcional)
-        descripcion — str (opcional)
-        etiquetas   — str separadas por coma (opcional)
-        audio       — File (MP3, AAC, OGG, WAV, FLAC, WMA, M4A, WEBM; máx 200 MB)
-    """
-    user_id  = session["usuario_id"]
-    conexion = None
-    cursor   = None
-    try:
-        titulo        = request.form.get("titulo",      "").strip() or "Audio sin título"
-        descripcion   = request.form.get("descripcion", "").strip() or f"Nota de audio: {titulo}"
-        etiquetas_raw = request.form.get("etiquetas",   "").strip()
-
-        archivo = request.files.get("audio")
-        if not archivo or archivo.filename == "":
-            return jsonify({"error": "No se recibió ningún archivo de audio"}), 400
-
-        ext = os.path.splitext(archivo.filename)[1].lower()
-        if ext not in AUDIO_EXTENSIONES_PERMITIDAS:
-            return jsonify({"error": f"Formato no permitido ({ext}). Usa: MP3, AAC, OGG, WAV, FLAC, WMA, M4A"}), 400
-
-        audio_bytes = archivo.read()
-        if len(audio_bytes) > AUDIO_MAX_BYTES:
-            return jsonify({"error": "El archivo supera el límite de 200 MB"}), 400
-
-        filename      = f"audio_{user_id}_{_uuid.uuid4().hex}{ext}"
-        ruta_completa = os.path.join(AUDIO_UPLOAD_FOLDER, filename)
-        with open(ruta_completa, "wb") as f:
-            f.write(audio_bytes)
-        ruta_db = f"uploads/audios/{filename}"
-
-        conexion = conectar_db()
-        if conexion is None:
-            try: os.remove(ruta_completa)
-            except: pass
-            return jsonify({"error": "Error de conexión a la base de datos"}), 500
-
-        cursor     = conexion.cursor()
-        hoy        = datetime.now()
-        formato_adj = ext.lstrip(".")
-
-        cursor.execute("""
-            INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT ("Formato") DO NOTHING
-        """, (formato_adj,))
-
-        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
-        nuevo_id = cursor.fetchone()[0]
-
-        cursor.execute("""
-            INSERT INTO public."Notas"
-                ("ID_Nota", "Titulo", "Descripcion", "Contenido",
-                 "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
-            VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'audio', %s, NULL)
-            RETURNING "ID_Nota"
-        """, (nuevo_id, titulo, descripcion, "", hoy, hoy, user_id))
-        nota_id = cursor.fetchone()[0]
-
-        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
-        nuevo_id_adj = cursor.fetchone()[0]
-        cursor.execute("""
-            INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
-            VALUES (%s, %s, %s, %s, %s)
-        """, (nuevo_id_adj, filename, formato_adj, ruta_db, nota_id))
-
-        if etiquetas_raw:
-            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
-
-        conexion.commit()
-        return jsonify({"success": True, "mensaje": "Nota de audio guardada correctamente", "nota_id": nota_id, "redirect": "/notas"}), 201
-
-    except Exception as e:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
-        return jsonify({"error": "Error al guardar la nota de audio"}), 500
-    finally:
-        cerrar_db(cursor, conexion)
 
 
 @app.route("/actualizar-nota-audio/<int:nota_id>", methods=["POST"])
@@ -3238,23 +3272,22 @@ def actualizar_nota_audio(nota_id):
         if archivo and archivo.filename != "":
             ext = os.path.splitext(archivo.filename)[1].lower()
             if ext in AUDIO_EXTENSIONES_PERMITIDAS:
-                # Borrar anterior
+                # Obtener la ruta del archivo anterior
                 cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
-                adj_ant = cursor.fetchone()
-                if adj_ant:
-                    try: os.remove(os.path.join(os.getcwd(), "static", adj_ant[0]))
-                    except: pass
-                
-                filename = f"audio_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
-                ruta_completa = os.path.join(AUDIO_UPLOAD_FOLDER, filename)
-                archivo.save(ruta_completa)
-                ruta_db = f"uploads/audios/{filename}"
+                fila_adjunto = cursor.fetchone()
+                old_path = fila_adjunto[0] if (fila_adjunto and fila_adjunto[0]) else None
 
-                cursor.execute("""
-                    UPDATE public."Adjuntos" 
-                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
-                    WHERE "ID_Nota" = %s
-                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+                filename = f"aud_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                url_publica = subir_a_supabase(archivo, "audios", filename)
+                if url_publica:
+                    cursor.execute("""
+                        UPDATE public."Adjuntos" 
+                        SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                        WHERE "ID_Nota" = %s
+                    """, (filename, ext.lstrip("."), url_publica, nota_id))
+
+                    if old_path:
+                        eliminar_archivo_de_supabase_por_ruta(old_path)
 
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
         if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
@@ -3296,6 +3329,7 @@ def guardar_nota_video():
         titulo        = request.form.get("titulo",      "").strip() or "Video sin título"
         descripcion   = request.form.get("descripcion", "").strip() or f"Nota de video: {titulo}"
         etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        filtros       = request.form.get("filtros",     "").strip()
 
         archivo = request.files.get("video")
         if not archivo or archivo.filename == "":
@@ -3334,6 +3368,23 @@ def guardar_nota_video():
 
         ruta_fisica_guardada = ruta_completa
 
+        # SUBIR A SUPABASE desde el disco temporal
+        url_publica = None
+        try:
+            with open(ruta_completa, "rb") as f_in:
+                url_publica = subir_a_supabase(f_in, "videos", filename)
+        except Exception as st_err:
+            print(f"Error subiendo video a Supabase: {st_err}")
+
+        # Borrar el archivo local temporal de inmediato
+        if os.path.exists(ruta_completa):
+            try: os.remove(ruta_completa)
+            except: pass
+        ruta_fisica_guardada = None
+
+        if not url_publica:
+            return jsonify({"error": "Error al subir el video a la nube"}), 500
+
         conexion    = conectar_db()
         if conexion is None:
             return jsonify({"error": "Error de conexión a la base de datos"}), 500
@@ -3346,24 +3397,20 @@ def guardar_nota_video():
             INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT ("Formato") DO NOTHING
         """, (formato_adj,))
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
-        nuevo_id = cursor.fetchone()[0]
-
+        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
                  "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
             VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'video', %s, NULL)
-            RETURNING "ID_Nota"
-        """, (nuevo_id, titulo, descripcion, "", hoy, hoy, user_id))
-        nota_id = cursor.fetchone()[0]
+        """, (nuevo_id, titulo, descripcion, filtros, hoy, hoy, user_id))
+        nota_id = nuevo_id
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
-        nuevo_id_adj = cursor.fetchone()[0]
+        nuevo_id_adj = obtener_proximo_id("Adjuntos", "ID_Adjunto")
         cursor.execute("""
             INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
             VALUES (%s, %s, %s, %s, %s)
-        """, (nuevo_id_adj, filename, formato_adj, ruta_db, nota_id))
+        """, (nuevo_id_adj, filename, formato_adj, url_publica, nota_id))
 
         if etiquetas_raw:
             _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
@@ -3398,6 +3445,7 @@ def actualizar_nota_video(nota_id):
         titulo        = request.form.get("titulo",      "").strip()
         descripcion   = request.form.get("descripcion", "").strip()
         etiquetas_raw = request.form.get("etiquetas",   "").strip()
+        filtros       = request.form.get("filtros",     "").strip()
         archivo       = request.files.get("video")
 
         conexion = conectar_db()
@@ -3409,37 +3457,30 @@ def actualizar_nota_video(nota_id):
 
         cursor.execute("""
             UPDATE public."Notas"
-            SET "Titulo" = %s, "Descripcion" = %s, "Fecha_deedicion" = %s
+            SET "Titulo" = %s, "Descripcion" = %s, "Contenido" = %s, "Fecha_deedicion" = %s
             WHERE "ID_Nota" = %s
-        """, (titulo, descripcion, datetime.now(), nota_id))
+        """, (titulo, descripcion, filtros, datetime.now(), nota_id))
 
         if archivo and archivo.filename != "":
             ext = os.path.splitext(archivo.filename)[1].lower()
             if ext in VIDEO_EXTENSIONES:
-                # Borrar anterior
+                # Obtener la ruta del archivo anterior
                 cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
-                adj_ant = cursor.fetchone()
-                if adj_ant:
-                    try: os.remove(os.path.join(os.getcwd(), "static", adj_ant[0]))
-                    except: pass
-                
-                filename = f"video_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
-                ruta_completa = os.path.join(VIDEO_UPLOAD_FOLDER, filename)
-                
-                CHUNK_SIZE = 4 * 1024 * 1024
-                with open(ruta_completa, "wb") as f:
-                    while True:
-                        chunk = archivo.stream.read(CHUNK_SIZE)
-                        if not chunk: break
-                        f.write(chunk)
-                
-                ruta_db = f"uploads/videos/{filename}"
+                fila_adjunto = cursor.fetchone()
+                old_path = fila_adjunto[0] if (fila_adjunto and fila_adjunto[0]) else None
 
-                cursor.execute("""
-                    UPDATE public."Adjuntos" 
-                    SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
-                    WHERE "ID_Nota" = %s
-                """, (filename, ext.lstrip("."), ruta_db, nota_id))
+                filename = f"vid_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
+                url_publica = subir_a_supabase(archivo, "videos", filename)
+                
+                if url_publica:
+                    cursor.execute("""
+                        UPDATE public."Adjuntos" 
+                        SET "Nombre_archivo" = %s, "Formato" = %s, "Ruta_archivo" = %s
+                        WHERE "ID_Nota" = %s
+                    """, (filename, ext.lstrip("."), url_publica, nota_id))
+
+                    if old_path:
+                        eliminar_archivo_de_supabase_por_ruta(old_path)
 
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
         if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
@@ -3610,11 +3651,26 @@ def guardar_nota_mixta():
                     with open(ruta_completa, "wb") as f:
                         f.write(data)
 
-                archivos_guardados.append(ruta_completa)
+                # SUBIR A SUPABASE
+                url_publica = None
+                try:
+                    with open(ruta_completa, "rb") as f_in:
+                        url_publica = subir_a_supabase(f_in, tipo, filename)
+                except Exception as st_err:
+                    print(f"Error en mixta -> Supabase ({tipo}): {st_err}")
+
+                # Borrar local de inmediato
+                if os.path.exists(ruta_completa):
+                    try: os.remove(ruta_completa)
+                    except: pass
+
+                if not url_publica:
+                    return jsonify({"error": f"Error al subir {tipo} a la nube"}), 500
+
                 adjuntos_a_insertar.append({
                     "filename": filename,
                     "ext":      ext.lstrip("."),
-                    "ruta_db":  ruta_db,
+                    "url":      url_publica,
                 })
 
         conexion = conectar_db()
@@ -3629,25 +3685,21 @@ def guardar_nota_mixta():
                 INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT ("Formato") DO NOTHING
             """, (fmt_val,))
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Nota"), 0) + 1 FROM public."Notas"')
-        nuevo_id = cursor.fetchone()[0]
-
+        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
                  "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta", "ID_Carpeta")
             VALUES (%s, %s, %s, %s, %s, %s, 'Activa', 'mixta', %s, NULL)
-            RETURNING "ID_Nota"
         """, (nuevo_id, titulo, descripcion, contenido, hoy, hoy, user_id))
-        nota_id = cursor.fetchone()[0]
+        nota_id = nuevo_id
 
         for adj in adjuntos_a_insertar:
-            cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
-            nuevo_id_adj = cursor.fetchone()[0]
+            nuevo_id_adj = obtener_proximo_id("Adjuntos", "ID_Adjunto")
             cursor.execute("""
                 INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
                 VALUES (%s, %s, %s, %s, %s)
-            """, (nuevo_id_adj, adj["filename"], adj["ext"], adj["ruta_db"], nota_id))
+            """, (nuevo_id_adj, adj["filename"], adj["ext"], adj["url"], nota_id))
 
         if etiquetas_raw:
             _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
@@ -3717,15 +3769,29 @@ def actualizar_nota_mixta(nota_id):
                     ruta_completa = os.path.join(carpeta, filename)
                     archivo.save(ruta_completa)
                     archivos_guardados.append(ruta_completa)
-                    ruta_db = f"uploads/{tipo}/{filename}"
 
-                    cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
-                    nuevo_id_adj = cursor.fetchone()[0]
-                    cursor.execute("""
-                        INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
-                        VALUES (%s, %s, %s, %s, %s)
-                    """, (nuevo_id_adj, filename, ext.lstrip("."), ruta_db, nota_id))
+                    # SUBIR A SUPABASE
+                    url_publica = None
+                    try:
+                        with open(ruta_completa, "rb") as f_in:
+                            url_publica = subir_a_supabase(f_in, tipo, filename)
+                    except Exception as st_err:
+                        print(f"Error en actualizar mixta -> Supabase ({tipo}): {st_err}")
 
+                    # Borrar local inmediato
+                    if os.path.exists(ruta_completa):
+                        try: os.remove(ruta_completa)
+                        except: pass
+                    if ruta_completa in archivos_guardados:
+                        archivos_guardados.remove(ruta_completa)
+
+                    if url_publica:
+                        cursor.execute('SELECT COALESCE(MAX("ID_Adjunto"), 0) + 1 FROM public."Adjuntos"')
+                        nuevo_id_adj = cursor.fetchone()[0]
+                        cursor.execute("""
+                            INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (nuevo_id_adj, filename, ext.lstrip("."), url_publica, nota_id))
 
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
         if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
@@ -3735,6 +3801,7 @@ def actualizar_nota_mixta(nota_id):
         return jsonify({"success": True, "mensaje": "Nota mixta actualizada", "redirect": "/notas"}), 200
     except Exception as e:
         if conexion: conexion.rollback()
+        import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
         for ruta in archivos_guardados:
@@ -3921,16 +3988,54 @@ def enviar_soporte():
 @app.route("/soporte-admin")
 @login_required
 def soporte_admin():
-    """Renderiza el panel de administración de soporte (Solo para Admin)."""
-    if session.get("usuario_id") != 1:
-        return redirect(url_for("dashboard"))
-    return render_template("soporte_admin.html")
+    """Renderiza el panel de administración de soporte (Solo para Cuentas con privilegios Es_admin)."""
+    user_id = session.get("usuario_id")
+    
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return "Error de conexión a la base de datos", 500
+        
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        
+        # Migración al vuelo: Asegurar la columna "Es_admin"
+        cursor.execute('ALTER TABLE public."Cuentas" ADD COLUMN IF NOT EXISTS "Es_admin" BOOLEAN DEFAULT FALSE;')
+        cursor.execute('UPDATE public."Cuentas" SET "Es_admin" = TRUE WHERE "ID_Cuenta" = 1;')
+        conexion.commit()
+        
+        # Consultar datos y rol del usuario
+        cursor.execute("""
+            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium", "Es_admin"
+            FROM public."Cuentas" WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        usuario = cursor.fetchone()
+        
+        if not usuario:
+            session.clear()
+            cerrar_db(cursor, conexion)
+            return redirect(url_for("mostrar_login"))
+            
+        # Validar si tiene permisos de administración
+        if not usuario.get("Es_admin", False):
+            cerrar_db(cursor, conexion)
+            return redirect(url_for("dashboard"))
+            
+        cerrar_db(cursor, conexion)
+        return render_template("soporte_admin.html", usuario=usuario)
+    except Exception as e:
+        print(f"Error en soporte_admin: {e}")
+        if cursor:
+            cerrar_db(cursor, conexion)
+        return f"Error interno: {str(e)}", 500
+    finally:
+        cerrar_db(cursor, conexion)
 
 @app.route("/api/soporte-admin/chats")
 @login_required
 def obtener_chats_admin():
     """Obtiene la lista de usuarios que han enviado mensajes de soporte."""
-    if session.get("usuario_id") != 1:
+    if not es_admin(session.get("usuario_id")):
         return jsonify({"error": "No autorizado"}), 403
         
     conexion = conectar_db(dict_cursor=True)
@@ -3955,7 +4060,7 @@ def obtener_chats_admin():
 @login_required
 def obtener_mensajes_admin(user_id):
     """Obtiene el historial de chat con un usuario específico."""
-    if session.get("usuario_id") != 1:
+    if not es_admin(session.get("usuario_id")):
         return jsonify({"error": "No autorizado"}), 403
         
     conexion = conectar_db(dict_cursor=True)
@@ -3979,7 +4084,7 @@ def obtener_mensajes_admin(user_id):
 @login_required
 def responder_soporte():
     """Envía una respuesta de soporte a un usuario."""
-    if session.get("usuario_id") != 1:
+    if not es_admin(session.get("usuario_id")):
         return jsonify({"error": "No autorizado"}), 403
         
     data = request.get_json()
@@ -4055,6 +4160,317 @@ def api_limpiar_soporte():
         return jsonify({"success": True, "mensaje": "Chat reiniciado"})
     else:
         return jsonify({"error": "No se pudo limpiar el chat"}), 500
+
+
+# ==============================================================================
+# 19. ENDPOINTS DE ADMINISTRACIÓN (Gestión de Usuarios y Estadísticas)
+# ==============================================================================
+
+@app.route("/api/admin/estadisticas")
+@login_required
+def api_admin_estadisticas():
+    """Obtiene estadísticas detalladas para las tarjetas del panel."""
+    if not es_admin(session.get("usuario_id")):
+        return jsonify({"error": "No autorizado"}), 403
+
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    try:
+        cur = conexion.cursor()
+        
+        # 1. Total Registrados
+        cur.execute('SELECT COUNT(*) as count FROM public."Cuentas"')
+        total_registrados = cur.fetchone()["count"]
+        
+        # 2. Premium
+        cur.execute('SELECT COUNT(*) as count FROM public."Cuentas" WHERE "Es_premium" = TRUE')
+        premium = cur.fetchone()["count"]
+        
+        # 3. Gratis
+        cur.execute('SELECT COUNT(*) as count FROM public."Cuentas" WHERE "Es_premium" = FALSE OR "Es_premium" IS NULL')
+        gratis = cur.fetchone()["count"]
+        
+        # 4. Activos 30 días
+        cur.execute("""
+            SELECT COUNT(DISTINCT u."ID_Cuenta") as count FROM public."Cuentas" u
+            LEFT JOIN public."Notas" n ON u."ID_Cuenta" = n."ID_Cuenta" AND (n."Fecha_deedicion" >= CURRENT_DATE - 30 OR n."Fecha_decreacion" >= CURRENT_DATE - 30)
+            LEFT JOIN public."Carpetas" c ON u."ID_Cuenta" = c."ID_Cuenta" AND (c."Fecha_edicion" >= CURRENT_DATE - 30 OR c."Fecha_creacion" >= CURRENT_DATE - 30)
+            LEFT JOIN public."Soporte" s ON u."ID_Cuenta" = s."ID_Cuenta" AND s."Fecha" >= NOW() - INTERVAL '30 days'
+            WHERE n."ID_Nota" IS NOT NULL OR c."ID_Carpeta" IS NOT NULL OR s."ID_Mensaje" IS NOT NULL OR u."ID_Cuenta" = 1
+        """)
+        activos = cur.fetchone()["count"]
+        
+        # 5. Ingresos Totales
+        cur.execute("""
+            SELECT 
+                SUM(CASE 
+                    WHEN "Plan_premium" = 'quincenal' THEN 14900
+                    WHEN "Plan_premium" = 'mensual' THEN 24900
+                    WHEN "Plan_premium" = 'anual' THEN 199900
+                    ELSE 0
+                END) as count
+            FROM public."Cuentas"
+            WHERE "Es_premium" = TRUE
+        """)
+        ingresos = cur.fetchone()["count"] or 0
+        
+        # 6. Notas Creadas
+        cur.execute('SELECT COUNT(*) as count FROM public."Notas"')
+        notas_creadas = cur.fetchone()["count"]
+        
+        cerrar_db(cur, conexion)
+        
+        return jsonify({
+            "total_registrados": total_registrados,
+            "premium": premium,
+            "gratis": gratis,
+            "activos": activos,
+            "ingresos": ingresos,
+            "notas_creadas": notas_creadas
+        })
+    except Exception as e:
+        print(f"Error en api_admin_estadisticas: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/usuarios")
+@login_required
+def api_admin_usuarios():
+    """Obtiene la lista completa de usuarios registrados."""
+    user_id = session.get("usuario_id")
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    try:
+        cur = conexion.cursor()
+        
+        # Asegurar columna Es_admin
+        cur.execute('ALTER TABLE public."Cuentas" ADD COLUMN IF NOT EXISTS "Es_admin" BOOLEAN DEFAULT FALSE;')
+        cur.execute('UPDATE public."Cuentas" SET "Es_admin" = TRUE WHERE "ID_Cuenta" = 1;')
+        conexion.commit()
+        
+        # Validar si el usuario tiene privilegios
+        cur.execute('SELECT "Es_admin" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+        res = cur.fetchone()
+        if not res or not res.get("Es_admin", False):
+            cerrar_db(cur, conexion)
+            return jsonify({"error": "No autorizado"}), 403
+
+        cur.execute("""
+            SELECT "ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin"
+            FROM public."Cuentas"
+            ORDER BY "ID_Cuenta" ASC
+        """)
+        usuarios = cur.fetchall()
+        
+        # Formatear números a string para evitar desbordamiento en JS
+        for u in usuarios:
+            u["Telefono"] = str(u["Telefono"]) if u.get("Telefono") else ""
+            
+        cerrar_db(cur, conexion)
+        return jsonify(usuarios)
+    except Exception as e:
+        print(f"Error en api_admin_usuarios: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/usuarios/<int:target_user_id>/detalles")
+@login_required
+def api_admin_usuario_detalles(target_user_id):
+    """Obtiene los detalles de un usuario, todas sus notas y carpetas en tiempo real."""
+    user_id = session.get("usuario_id")
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    try:
+        cur = conexion.cursor()
+        
+        # Validar si el usuario logueado es admin
+        cur.execute('SELECT "Es_admin" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+        res = cur.fetchone()
+        if not res or not res.get("Es_admin", False):
+            cerrar_db(cur, conexion)
+            return jsonify({"error": "No autorizado"}), 403
+            
+        # 1. Obtener datos de la cuenta
+        cur.execute("""
+            SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan"
+            FROM public."Cuentas"
+            WHERE "ID_Cuenta" = %s
+        """, (target_user_id,))
+        usuario = cur.fetchone()
+        
+        if not usuario:
+            cerrar_db(cur, conexion)
+            return jsonify({"error": "Usuario no encontrado"}), 404
+            
+        usuario["Telefono"] = str(usuario["Telefono"]) if usuario.get("Telefono") else ""
+        
+        # 2. Obtener todas las notas del usuario (con nombre de carpeta correcto en PostgreSQL)
+        cur.execute("""
+            SELECT 
+                n."ID_Nota", 
+                n."Titulo", 
+                n."Contenido", 
+                n."Fecha_decreacion", 
+                n."Fecha_deedicion", 
+                n."Formato",
+                c."Nombre_carpeta" as "Nombre_Carpeta"
+            FROM public."Notas" n
+            LEFT JOIN public."Carpetas" c ON n."ID_Carpeta" = c."ID_Carpeta"
+            WHERE n."ID_Cuenta" = %s AND n."Estado" = 'Activa'
+            ORDER BY n."Fecha_deedicion" DESC
+        """, (target_user_id,))
+        notas = cur.fetchall()
+        
+        # Formatear fechas de notas para JS
+        for nota in notas:
+            if nota.get("Fecha_decreacion"):
+                nota["Fecha_decreacion"] = nota["Fecha_decreacion"].strftime("%d/%m/%Y %H:%M")
+            if nota.get("Fecha_deedicion"):
+                nota["Fecha_deedicion"] = nota["Fecha_deedicion"].strftime("%d/%m/%Y %H:%M")
+                
+        # 3. Obtener todas las carpetas del usuario (con nombre correcto "Nombre_carpeta" en PostgreSQL)
+        cur.execute("""
+            SELECT "ID_Carpeta", "Nombre_carpeta", "Fecha_creacion"
+            FROM public."Carpetas"
+            WHERE "ID_Cuenta" = %s AND "Estado" = 'Activa'
+            ORDER BY "Fecha_creacion" DESC
+        """, (target_user_id,))
+        carpetas = cur.fetchall()
+        
+        # Renombrar clave "Nombre_carpeta" a "Nombre" para consistencia con JS del cliente
+        for carp in carpetas:
+            carp["Nombre"] = carp.pop("Nombre_carpeta", "")
+            if carp.get("Fecha_creacion"):
+                carp["Fecha_creacion"] = carp["Fecha_creacion"].strftime("%d/%m/%Y %H:%M")
+
+        cerrar_db(cur, conexion)
+        
+        return jsonify({
+            "usuario": usuario,
+            "notes": notas,  # Clave alineada con JS: data.notes
+            "carpetas": carpetas
+        })
+    except Exception as e:
+        print(f"Error en api_admin_usuario_detalles: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/usuarios/<int:target_user_id>/toggle-admin", methods=["POST"])
+@login_required
+def api_admin_toggle_admin(target_user_id):
+    """Permite al Administrador Principal (ID 1) otorgar/quitar privilegios de panel de control a otros usuarios."""
+    if session.get("usuario_id") != 1:
+        return jsonify({"error": "No autorizado para cambiar privilegios administrativos"}), 403
+
+    if target_user_id == 1:
+        return jsonify({"error": "El Administrador Principal no puede ser modificado"}), 400
+
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    try:
+        cur = conexion.cursor()
+        
+        # Consultar estado actual
+        cur.execute('SELECT "Es_admin" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (target_user_id,))
+        user = cur.fetchone()
+        if not user:
+            cerrar_db(cur, conexion)
+            return jsonify({"error": "Usuario no encontrado"}), 404
+            
+        nuevo_estado = not user.get("Es_admin", False)
+        
+        # Actualizar
+        cur.execute('UPDATE public."Cuentas" SET "Es_admin" = %s WHERE "ID_Cuenta" = %s', (nuevo_estado, target_user_id))
+        conexion.commit()
+        
+        cerrar_db(cur, conexion)
+        return jsonify({
+            "success": True,
+            "es_admin": nuevo_estado,
+            "message": f"Acceso al panel {'otorgado' if nuevo_estado else 'revocado'} correctamente."
+        })
+    except Exception as e:
+        print(f"Error en api_admin_toggle_admin: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/usuarios/eliminar/<int:target_user_id>", methods=["POST"])
+@login_required
+def api_admin_eliminar_usuario(target_user_id):
+    """Elimina permanentemente la cuenta de un usuario y todos sus datos en cascada."""
+    if not es_admin(session.get("usuario_id")):
+        return jsonify({"error": "No autorizado"}), 403
+
+    if target_user_id == 1:
+        return jsonify({"error": "No es posible eliminar la cuenta del Administrador principal"}), 400
+
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+
+        # 1. Obtener notas del usuario
+        cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Cuenta" = %s', (target_user_id,))
+        notas = cursor.fetchall()
+        ids_notas = [n["ID_Nota"] for n in notas]
+
+        if ids_notas:
+            # 2. Obtener adjuntos de las notas del usuario y eliminarlos de Supabase Storage
+            cursor.execute('SELECT "Ruta_archivo" FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+            adjuntos = cursor.fetchall()
+            for adj in adjuntos:
+                ruta = adj["Ruta_archivo"]
+                if ruta:
+                    eliminar_archivo_de_supabase_por_ruta(ruta)
+
+            # 3. Eliminar registros de Adjuntos
+            cursor.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+
+            # 4. Eliminar etiquetas de las notas
+            cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (ids_notas,))
+
+            # 5. Eliminar notas
+            cursor.execute('DELETE FROM public."Notas" WHERE "ID_Cuenta" = %s', (target_user_id,))
+
+        # 6. Eliminar carpetas del usuario
+        cursor.execute('DELETE FROM public."Carpetas" WHERE "ID_Cuenta" = %s', (target_user_id,))
+
+        # 7. Eliminar mensajes de soporte del usuario
+        cursor.execute('DELETE FROM public."Soporte" WHERE "ID_Cuenta" = %s', (target_user_id,))
+
+        # 8. Obtener foto de perfil y borrarla si está en Supabase Storage
+        cursor.execute('SELECT "Foto" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (target_user_id,))
+        cuenta = cursor.fetchone()
+        if cuenta and cuenta.get("Foto"):
+            foto_path = cuenta["Foto"]
+            eliminar_archivo_de_supabase_por_ruta(foto_path)
+
+        # 9. Eliminar cuenta
+        cursor.execute('DELETE FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (target_user_id,))
+
+        conexion.commit()
+        print(f"Cuenta de usuario {target_user_id} y todos sus datos en cascada eliminados correctamente.")
+        return jsonify({"success": True, "mensaje": "Cuenta de usuario eliminada exitosamente"})
+
+    except Exception as e:
+        if conexion:
+            conexion.rollback()
+        print(f"Error al eliminar usuario {target_user_id}: {e}")
+        return jsonify({"error": f"Error interno: {str(e)}"}), 500
+    finally:
+        cerrar_db(cursor, conexion)
+
 
 # ==============================================================================
 # PUNTO DE ENTRADA

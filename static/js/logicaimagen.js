@@ -108,7 +108,7 @@ imgOriginal.onload = () => {
     const url = $id('editImagenUrl')?.value;
     if (!url) return;
     imgOriginal.crossOrigin = "Anonymous";
-    imgOriginal.src = '/static/' + url;
+    imgOriginal.src = (url.startsWith('http') || url.startsWith('https')) ? url : '/static/' + url;
     // Marcar como guardada para no disparar modal
     setTimeout(() => { notaGuardada = true; }, 800);
 })();

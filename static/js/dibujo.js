@@ -29,7 +29,7 @@ async function cargarDibujoExistente() {
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = '/static/' + url; 
+    img.src = (url.startsWith('http') || url.startsWith('https')) ? url : '/static/' + url; 
     img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         lienzoPristino = false;

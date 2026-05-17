@@ -12,7 +12,7 @@ COPY requirements.txt .
 
 #Instalamos las dependencias necesarias para el proyecto
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --default-timeout=100 --no-cache-dir -r requirements.txt
 
 #Ahora copiamos todo el proyecto al contenedor 
 
@@ -26,6 +26,7 @@ EXPOSE 5000
 
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
+ENV PYTHONUNBUFFERED=1
 
 #Y ya finalmente usamos el comando para ejecutar la aplicacion de flask
 

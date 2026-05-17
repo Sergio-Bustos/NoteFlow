@@ -156,12 +156,39 @@ async function restaurarVideoExistente() {
     const url = document.getElementById('editVideoUrl')?.value;
     if (!url) return;
     try {
-        const response = await fetch('/static/' + url);
+        const finalUrl = (url.startsWith('http') || url.startsWith('https')) ? url : '/static/' + url;
+        const response = await fetch(finalUrl);
         const blob = await response.blob();
         const filename = url.split('/').pop();
         const file = new File([blob], filename, { type: blob.type });
         cargarVideo(file);
         notaGuardada = true;
+
+        // Restaurar filtros
+        const strFiltros = document.getElementById('editVideoFiltros')?.value;
+        if (strFiltros && strFiltros.trim().startsWith('{')) {
+            try {
+                const config = JSON.parse(strFiltros);
+                if (config.filtros && Array.isArray(config.filtros)) {
+                    config.filtros.forEach(id => {
+                        const btn = document.getElementById(id);
+                        if (btn) {
+                            filtrosActivos.add(id);
+                            btn.classList.add('activo');
+                        }
+                    });
+                }
+                if (config.espejo) {
+                    espejoActivo = true;
+                    document.getElementById('efEspejo')?.classList.add('activo');
+                }
+                aplicarFiltros();
+                actualizarStatsExtra();
+            } catch (err) {
+                console.error("Error al parsear filtros:", err);
+            }
+        }
+
     } catch (e) {
         console.error("Error al restaurar video:", e);
     }
@@ -797,6 +824,13 @@ async function guardarNota() {
     formData.append('descripcion', descripcion);
     formData.append('etiquetas',   etiquetas);
     formData.append('video',       archivoOriginal, archivoOriginal.name);
+    
+    // Serializar filtros
+    const configFiltros = {
+        filtros: Array.from(filtrosActivos),
+        espejo: espejoActivo
+    };
+    formData.append('filtros', JSON.stringify(configFiltros));
 
     try {
         const resp = await fetch(url, { method: 'POST', body: formData });

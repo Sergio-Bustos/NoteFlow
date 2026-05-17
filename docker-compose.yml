@@ -1,33 +1,5 @@
 services:
 
-  db:
-    image: postgres:15
-    container_name: db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: dbnoteflow
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d 
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin4
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin 
-    ports:
-      - "5050:80"
-    depends_on:
-      - db
-
   web:
     build: .
     container_name: noteflow-app
@@ -36,12 +8,3 @@ services:
       - "5000:5000"
     env_file:
       - .env
-    depends_on:
-      - db
-    volumes:
-      - ./static/uploads:/app/static/uploads
-      - ./static/perfil:/app/static/perfil
-
-volumes:
-  postgres_data:  
-  pgadmin_data:

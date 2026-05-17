@@ -256,7 +256,7 @@
     <!-- ══ BARRA INFERIOR ══ -->
     <div class="barra-inferior">
         <input type="hidden" id="editNotaId" value="{{ nota.ID_Nota if edit_mode else '' }}">
-        <input type="hidden" id="editAudioUrl" value="{{ adjuntos[0].Ruta_archivo if edit_mode and adjuntos else '' }}">
+        <input type="hidden" id="editAudioUrl" value="{{ adjuntos[0]['Ruta_archivo'] if edit_mode and adjuntos else '' }}">
 
         <input type="text" class="input-titulo" id="inputTitulo"
                placeholder="Título de tu nota de audio..." maxlength="100"
@@ -306,7 +306,7 @@
 <!-- TOAST -->
 <div class="toast-audio" id="toastAudio"></div>
 
-<script src="/static/js/audio.js"></script>
+<script src="/static/js/audio_v2.js?v={{ range(1, 9999) | random }}"></script>
     {% include 'partials/support_widget.html' %}
 </body>
 </html>
