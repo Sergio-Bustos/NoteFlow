@@ -1,33 +1,34 @@
-#Imagen base para el contenedor osea que sistema operativo se va a usar, en este caso es una imagen de python 3.11 en su version slim que es mas ligera
+# Etapa 1: Construcción del frontend (React)
+FROM node:18-alpine AS frontend
+WORKDIR /app
+# Copiamos la carpeta de React
+COPY admin-react/ ./admin-react/
+# Creamos las carpetas destino donde Vite intentará guardar los archivos
+RUN mkdir -p static/admin-react/dist templates
+# Instalamos dependencias silenciosamente y compilamos
+WORKDIR /app/admin-react
+ENV npm_config_update_notifier=false
+RUN npm install --no-fund --no-audit --loglevel=error
+RUN npm run build
 
+# Etapa 2: Construcción del backend (Flask)
 FROM python:3.11-slim
-
-#Ahore creamos el lugar de trabajo dentro del contenedor que crearemos 
-
 WORKDIR /app
 
-#Copiamos ahora los requerimientos del proyecto al contenedor para que se puedan instalar las dependencias necesarias
-
+# Copiamos requerimientos e instalamos
 COPY requirements.txt .
-
-#Instalamos las dependencias necesarias para el proyecto
-
 RUN pip install --default-timeout=100 --no-cache-dir -r requirements.txt
 
-#Ahora copiamos todo el proyecto al contenedor 
+# Copiamos todo el proyecto
+COPY . .
 
-COPY . . 
-
-#Usamos el puerto que usa flask que seria el 5000
+# Copiamos los archivos compilados de React generados en la Etapa 1
+COPY --from=frontend /app/static/admin-react/dist ./static/admin-react/dist
+COPY --from=frontend /app/templates/soporte_admin_react.html ./templates/soporte_admin_react.html
 
 EXPOSE 5000
-
-#Usamos unas variables para que flask trabaje mejor en el contenedor 
-
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV PYTHONUNBUFFERED=1
-
-#Y ya finalmente usamos el comando para ejecutar la aplicacion de flask
 
 CMD ["flask", "run"]

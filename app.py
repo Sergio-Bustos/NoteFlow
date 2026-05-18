@@ -4022,7 +4022,8 @@ def soporte_admin():
             return redirect(url_for("dashboard"))
             
         cerrar_db(cursor, conexion)
-        return render_template("soporte_admin.html", usuario=usuario)
+        # Renderiza el index.html compilado de React (ubicado en templates)
+        return render_template("soporte_admin_react.html", usuario=usuario)
     except Exception as e:
         print(f"Error en soporte_admin: {e}")
         if cursor:
