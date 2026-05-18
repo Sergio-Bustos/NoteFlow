@@ -236,7 +236,7 @@ body .perfil-info .avatar-container.premium #foto-perfil {
     outline: none !important;
     box-shadow: none !important;
     position: absolute;
-    top: 58% !important;
+    top: 56% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     z-index: 1;
