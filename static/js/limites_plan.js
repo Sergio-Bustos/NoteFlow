@@ -46,14 +46,23 @@
         'anual':     3  * 3600  //   3 horas
     };
 
+    // ── Adjuntos máximos por nota mixta ──────────────────────────
+    const MAX_ADJUNTOS_MIXTA = {
+        'gratis':    3,
+        'quincenal': 6,
+        'mensual':   15,
+        'anual':     50,
+    };
+
     // Exponer globalmente
     window.PLAN_LIMITES = {
         plan,
-        texto:      TEXTO[plan]      ?? TEXTO['gratis'],
-        audio:      AUDIO[plan]      ?? AUDIO['gratis'],
-        video:      VIDEO[plan]      ?? VIDEO['gratis'],
-        imagen:     IMAGEN[plan]     ?? IMAGEN['gratis'],
-        grabacion:  DURACION_GRAB[plan] ?? DURACION_GRAB['gratis'],
+        texto:            TEXTO[plan]             ?? TEXTO['gratis'],
+        audio:            AUDIO[plan]             ?? AUDIO['gratis'],
+        video:            VIDEO[plan]             ?? VIDEO['gratis'],
+        imagen:           IMAGEN[plan]            ?? IMAGEN['gratis'],
+        grabacion:        DURACION_GRAB[plan]     ?? DURACION_GRAB['gratis'],
+        maxAdjuntosMixta: MAX_ADJUNTOS_MIXTA[plan] ?? MAX_ADJUNTOS_MIXTA['gratis'],
     };
 
     // Helper: nombre legible del plan

@@ -31,6 +31,29 @@ const archivos = { imagenes: [], audios: [], videos: [] };  // [{file, id}]
 let idCounter = 0;
 const nuevoId = () => ++idCounter;
 
+// ── Total de archivos adjuntos actualmente en la nota ────────────────
+function totalArchivos() {
+    // Contar nuevos (en memoria) + existentes (ya guardados en BD, con preview-existente)
+    const nuevos = archivos.imagenes.length + archivos.audios.length + archivos.videos.length;
+    const existentes = document.querySelectorAll('.preview-existente, .archivo-item.existente').length;
+    return nuevos + existentes;
+}
+
+function limiteAdjuntos() {
+    return window.PLAN_LIMITES?.maxAdjuntosMixta ?? 3;
+}
+
+function verificarLimite(cantidadNueva = 1) {
+    const max   = limiteAdjuntos();
+    const total = totalArchivos();
+    if (total + cantidadNueva > max) {
+        const plan = window.PLAN_LIMITES?.nombre ?? 'Gratis';
+        mostrarToast(`Límite de ${max} archivos por nota mixta alcanzado (Plan ${plan}). Elimina un archivo o mejora tu plan.`, 'error');
+        return false;
+    }
+    return true;
+}
+
 // Grabación audio
 let mediaRecAudio = null, trozosAudio = [], intervalAudio = null, segsAudio = 0;
 
@@ -131,6 +154,7 @@ configurarDrop('zonaDropImg', files =>
 
 function procesarImagenes(files) {
     files.forEach(file => {
+        if (!verificarLimite(1)) return;
         const err = validarArchivo(file, 'imagen');
         if (err) { mostrarToast(err, 'error'); return; }
         const id = nuevoId();
@@ -173,6 +197,7 @@ configurarDrop('zonaDropAud', files => procesarAudios(files));
 
 function procesarAudios(files) {
     files.forEach(file => {
+        if (!verificarLimite(1)) return;
         const err = validarArchivo(file, 'audio');
         if (err) { mostrarToast(err, 'error'); return; }
         const id = nuevoId();
@@ -251,6 +276,7 @@ configurarDrop('zonaDropVid', files => procesarVideos(files));
 
 function procesarVideos(files) {
     files.forEach(file => {
+        if (!verificarLimite(1)) return;
         const err = validarArchivo(file, 'video');
         if (err) { mostrarToast(err, 'error'); return; }
         const id = nuevoId();
@@ -573,7 +599,7 @@ function formatBytes(bytes) {
             // 2. Cargar adjuntos existentes (imágenes, audios, videos)
             if (data.adjuntos && data.adjuntos.length > 0) {
                 data.adjuntos.forEach(adj => {
-                    const url  = `/static/${adj.ruta}`;
+                    const url  = adj.ruta.startsWith('http') ? adj.ruta : `/static/${adj.ruta}`;
                     const tipo = adj.tipo; // 'imagen', 'audio', 'video'
 
                     if (tipo === 'imagen') {

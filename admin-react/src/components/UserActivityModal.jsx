@@ -147,6 +147,8 @@ const UserActivityModal = ({ userId, onClose }) => {
                         const fmt = note.Formato === 'audio' ? { label: 'Audio', icon: 'fas fa-microphone text-success', bg: 'rgba(46, 204, 113, 0.12)', color: '#2ecc71' } :
                                     note.Formato === 'video' ? { label: 'Video', icon: 'fas fa-video text-danger', bg: 'rgba(231, 76, 60, 0.12)', color: '#e74c3c' } :
                                     note.Formato === 'dibujo' ? { label: 'Dibujo', icon: 'fas fa-paint-brush text-warning', bg: 'rgba(241, 196, 15, 0.12)', color: '#f1c40f' } :
+                                    note.Formato === 'imagen' ? { label: 'Imagen', icon: 'fas fa-image text-info', bg: 'rgba(23, 162, 184, 0.12)', color: '#17a2b8' } :
+                                    note.Formato === 'mixta' ? { label: 'Mixta', icon: 'fas fa-layer-group text-purple', bg: 'rgba(142, 68, 173, 0.12)', color: '#8e44ad' } :
                                     { label: 'Texto', icon: 'fas fa-file-alt text-primary', bg: 'rgba(52, 152, 219, 0.12)', color: '#3498db' };
                         
                         return (
@@ -173,10 +175,50 @@ const UserActivityModal = ({ userId, onClose }) => {
                             {expandedNotes[note.ID_Nota] && (
                               <div style={{ padding: '12px 0 0 0', marginTop: '12px', borderTop: '1px dashed var(--border-claro)' }}>
                                 <div className="p-3 rounded-3" style={{ background: 'rgba(0,0,0,0.02)', fontSize: '0.88rem', color: 'var(--text-main)', border: '1px solid var(--border-claro)' }}>
-                                  {note.Formato === 'texto' ? <div style={{ whiteSpace: 'pre-wrap' }}>{note.Contenido}</div> :
+                                  {note.Formato === 'texto' || note.Formato === 'mixta' ? (
+                                    <div className="d-flex flex-column gap-2">
+                                      {note.Contenido ? (
+                                        <div dangerouslySetInnerHTML={{ __html: note.Contenido }} style={{ fontSize: '0.88rem', color: 'var(--text-main)', overflowWrap: 'break-word' }} />
+                                      ) : (
+                                        <em className="text-muted" style={{ fontSize: '0.82rem' }}>Sin contenido de texto</em>
+                                      )}
+                                      
+                                      {note.Formato === 'mixta' && note.adjuntos && note.adjuntos.length > 0 && (
+                                        <div className="mt-2 pt-2 border-top" style={{ borderColor: 'var(--border-claro)' }}>
+                                          <div className="text-uppercase text-muted mb-2" style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                                            <i className="fas fa-paperclip"></i> Adjuntos ({note.adjuntos.length})
+                                          </div>
+                                          <div className="d-flex flex-column gap-2">
+                                            {note.adjuntos.map(adj => (
+                                              <div key={adj.id} className="p-2 rounded-2 d-flex flex-column gap-1" style={{ border: '1px solid var(--border-claro)', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-main)' }}>
+                                                <div className="d-flex align-items-center justify-content-between">
+                                                  <span className="text-truncate" style={{ fontSize: '0.78rem', fontWeight: 600, maxWidth: '80%', color: 'var(--text-main)' }}>
+                                                    {adj.nombre}
+                                                  </span>
+                                                  <span className="badge bg-secondary text-uppercase" style={{ fontSize: '0.58rem', padding: '3px 6px' }}>
+                                                    {adj.formato}
+                                                  </span>
+                                                </div>
+                                                {adj.tipo === 'imagen' && (
+                                                  <img src={adj.ruta} className="img-fluid rounded mt-1" style={{ maxHeight: '180px', objectFit: 'contain' }} alt="" />
+                                                )}
+                                                {adj.tipo === 'audio' && (
+                                                  <audio src={adj.ruta} controls className="w-100 mt-1" style={{ height: '32px' }}></audio>
+                                                )}
+                                                {adj.tipo === 'video' && (
+                                                  <video src={adj.ruta} controls className="img-fluid rounded mt-1" style={{ maxHeight: '200px' }}></video>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) :
                                    note.Formato === 'audio' ? <audio src={note.Contenido} controls style={{ width: '100%' }}></audio> :
                                    note.Formato === 'video' ? <video src={note.Contenido} controls style={{ maxWidth: '100%' }}></video> :
-                                   note.Formato === 'dibujo' ? <img src={note.Contenido} style={{ maxWidth: '100%' }} alt="Dibujo" /> : null}
+                                   (note.Formato === 'dibujo' || note.Formato === 'imagen') ? <img src={note.Contenido} style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: '8px' }} alt="Previsualización" /> : 
+                                   <div className="text-muted">Previsualización no disponible para este formato.</div>}
                                 </div>
                               </div>
                             )}

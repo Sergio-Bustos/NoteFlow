@@ -116,7 +116,7 @@ const SupportChat = () => {
               const plan = chat.Plan_premium || 'gratis';
               return (
                 <option key={chat.ID_Cuenta} value={chat.ID_Cuenta}>
-                  {chat.Nombres} ({plan.toUpperCase()}) - {chat.Ultimo_Mensaje.substring(0, 20)}...
+                  {chat.Nombres} ({plan.toUpperCase()}) - {(chat.Ultimo_Mensaje || '').substring(0, 20)}...
                 </option>
               );
             })}

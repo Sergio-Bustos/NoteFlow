@@ -7,6 +7,7 @@ from flask import Flask, jsonify, render_template, request, redirect, url_for, s
 from flask_mail import Mail, Message
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2.pool import ThreadedConnectionPool
 from google_auth_oauthlib.flow import Flow
 from functools import wraps
 from werkzeug.utils import secure_filename
@@ -260,19 +261,37 @@ def error_interno_servidor(e):
 # UTILIDADES Y DECORADORES
 # ==============================================================================
 
+DB_POOL = None
+
+def init_db_pool():
+    global DB_POOL
+    if DB_POOL is None:
+        try:
+            config = DB_CONFIG.copy()
+            config["sslmode"] = "require"
+            DB_POOL = ThreadedConnectionPool(
+                minconn=2,
+                maxconn=40,
+                **config
+            )
+            print("Database connection pool initialized successfully.")
+        except Exception as e:
+            sys.stderr.write(f"CRITICAL: Failed to initialize DB connection pool: {e}\n")
+            sys.stderr.flush()
+
 def conectar_db(dict_cursor=False):
-    """Crea y devuelve una conexión a PostgreSQL (Compatible con Supabase)."""
+    """Crea y devuelve una conexión a PostgreSQL desde el pool (Compatible con Supabase)."""
+    global DB_POOL
     try:
-        # Combinamos la configuración básica con el modo SSL requerido para Supabase
-        config = DB_CONFIG.copy()
-        config["sslmode"] = "require"
+        if DB_POOL is None:
+            init_db_pool()
         
-        # Si se solicita, usamos RealDictCursor para obtener resultados como diccionarios
-        cursor_factory = RealDictCursor if dict_cursor else None
-        
-        conexion = psycopg2.connect(cursor_factory=cursor_factory, **config)
-        conexion.set_client_encoding("UTF8")
-        return conexion
+        if DB_POOL:
+            conexion = DB_POOL.getconn()
+            conexion.cursor_factory = RealDictCursor if dict_cursor else None
+            conexion.set_client_encoding("UTF8")
+            return conexion
+        return None
     except Exception as e:
         error_msg = f"CRITICAL: ERROR DE CONEXIÓN A POSTGRESQL: {type(e).__name__}: {e}\n"
         sys.stderr.write(error_msg)
@@ -281,11 +300,27 @@ def conectar_db(dict_cursor=False):
 
 
 def cerrar_db(cursor, conexion):
-    """Cierra el cursor y la conexión a la base de datos."""
+    """Cierra el cursor y devuelve la conexión al pool de base de datos."""
     if cursor:
-        cursor.close()
+        try:
+            cursor.close()
+        except Exception:
+            pass
     if conexion:
-        conexion.close()
+        global DB_POOL
+        if DB_POOL:
+            try:
+                DB_POOL.putconn(conexion)
+            except Exception:
+                try:
+                    conexion.close()
+                except Exception:
+                    pass
+        else:
+            try:
+                conexion.close()
+            except Exception:
+                pass
 
 
 def verificar_sesion():
@@ -3624,6 +3659,28 @@ def guardar_nota_mixta():
         if not tiene_contenido:
             return jsonify({"error": "La nota debe tener al menos un tipo de contenido"}), 400
 
+        # ── Validar límite de adjuntos según plan ─────────────────────
+        total_nuevos = sum(
+            1 for lista in archivos_por_tipo.values()
+            for f in lista if f.filename != ""
+        )
+        if total_nuevos > 0:
+            conexion_plan = conectar_db(dict_cursor=True)
+            if conexion_plan:
+                cur_plan = conexion_plan.cursor()
+                cur_plan.execute('SELECT "Plan_premium" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+                row = cur_plan.fetchone()
+                cerrar_db(cur_plan, conexion_plan)
+                plan_usuario = (row.get("Plan_premium") or "gratis").lower() if row else "gratis"
+            else:
+                plan_usuario = "gratis"
+
+            MAX_ADJUNTOS_MIXTA = {"gratis": 3, "quincenal": 6, "mensual": 15, "anual": 50}
+            max_adj = MAX_ADJUNTOS_MIXTA.get(plan_usuario, 3)
+            if total_nuevos > max_adj:
+                plan_nombre = plan_usuario.capitalize()
+                return jsonify({"error": f"Tu plan {plan_nombre} permite máximo {max_adj} archivos por nota mixta. Intentaste subir {total_nuevos}."}), 400
+
         adjuntos_a_insertar = []
 
         for tipo, lista in archivos_por_tipo.items():
@@ -4069,11 +4126,14 @@ def obtener_chats_admin():
         cur = conexion.cursor()
         # Seleccionar usuarios únicos que tienen mensajes, incluyendo su plan
         cur.execute("""
-            SELECT DISTINCT ON (s."ID_Cuenta") 
-                c."ID_Cuenta", c."Nombres", c."Foto", c."Plan_premium", s."Mensaje" as "Ultimo_Mensaje", s."Fecha"
-            FROM public."Soporte" s
-            JOIN public."Cuentas" c ON s."ID_Cuenta" = c."ID_Cuenta"
-            ORDER BY s."ID_Cuenta", s."Fecha" DESC
+            SELECT * FROM (
+                SELECT DISTINCT ON (s."ID_Cuenta") 
+                    c."ID_Cuenta", c."Nombres", c."Foto", c."Plan_premium", s."Mensaje" as "Ultimo_Mensaje", s."Fecha"
+                FROM public."Soporte" s
+                JOIN public."Cuentas" c ON s."ID_Cuenta" = c."ID_Cuenta"
+                ORDER BY s."ID_Cuenta", s."Fecha" DESC
+            ) sub
+            ORDER BY sub."Fecha" DESC
         """)
         chats = cur.fetchall()
         cerrar_db(cur, conexion)
@@ -4353,34 +4413,91 @@ def api_admin_usuario_detalles(target_user_id):
         """, (target_user_id,))
         notas = cur.fetchall()
         
-        # Formatear fechas de notas para JS
+        # Obtener todos los adjuntos de las notas de este usuario
+        if notas:
+            ids_notas = [n["ID_Nota"] for n in notas]
+            cur.execute("""
+                SELECT "ID_Nota", "ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo"
+                FROM public."Adjuntos"
+                WHERE "ID_Nota" = ANY(%s)
+            """, (ids_notas,))
+            adjuntos_all = cur.fetchall()
+        else:
+            adjuntos_all = []
+
+        # Agrupar adjuntos por ID_Nota
+        adjuntos_por_nota = {}
+        for adj in adjuntos_all:
+            id_nota = adj["ID_Nota"]
+            if id_nota not in adjuntos_por_nota:
+                adjuntos_por_nota[id_nota] = []
+            
+            fmt = (adj["Formato"] or "").lower().strip(".")
+            TIPOS_IMAGEN = {'png','jpg','jpeg','gif','webp','svg','pntg','wmf'}
+            TIPOS_AUDIO  = {'mp3','aac','ogg','wav','flac','wma','m4a','webm'}
+            TIPOS_VIDEO  = {'mp4','mkv','wmv','mov','avi'}
+            if fmt in TIPOS_IMAGEN:   tipo = "imagen"
+            elif fmt in TIPOS_AUDIO:  tipo = "audio"
+            elif fmt in TIPOS_VIDEO:  tipo = "video"
+            else:                     tipo = "otro"
+
+            adjuntos_por_nota[id_nota].append({
+                "id":      adj["ID_Adjunto"],
+                "nombre":  adj["Nombre_archivo"],
+                "formato": fmt,
+                "ruta":    adj["Ruta_archivo"],
+                "tipo":    tipo
+            })
+            
+        # Construir notas como dicts planos con adjuntos incluidos
+        TIPOS_IMAGEN = {'png','jpg','jpeg','gif','webp','svg','pntg','wmf'}
+        TIPOS_AUDIO  = {'mp3','aac','ogg','wav','flac','wma','m4a','webm'}
+        TIPOS_VIDEO  = {'mp4','mkv','wmv','mov','avi'}
+
+        notas_serializadas = []
         for nota in notas:
-            if nota.get("Fecha_decreacion"):
-                nota["Fecha_decreacion"] = nota["Fecha_decreacion"].strftime("%d/%m/%Y %H:%M")
-            if nota.get("Fecha_deedicion"):
-                nota["Fecha_deedicion"] = nota["Fecha_deedicion"].strftime("%d/%m/%Y %H:%M")
-                
-        # 3. Obtener todas las carpetas del usuario (con nombre correcto "Nombre_carpeta" en PostgreSQL)
+            id_nota = nota["ID_Nota"]
+            adj_list = adjuntos_por_nota.get(id_nota, [])
+
+            contenido = nota.get("Contenido") or ""
+            # Para formatos de un solo archivo, usar la ruta del adjunto como contenido si está vacío
+            if nota.get("Formato") in ["audio", "video", "dibujo", "imagen"] and not contenido and adj_list:
+                contenido = adj_list[0]["ruta"] or ""
+
+            notas_serializadas.append({
+                "ID_Nota":        id_nota,
+                "Titulo":         nota.get("Titulo") or "",
+                "Contenido":      contenido,
+                "Formato":        nota.get("Formato") or "texto",
+                "Nombre_Carpeta": nota.get("Nombre_Carpeta"),
+                "Fecha_decreacion": nota["Fecha_decreacion"].strftime("%d/%m/%Y %H:%M") if nota.get("Fecha_decreacion") else "",
+                "Fecha_deedicion":  nota["Fecha_deedicion"].strftime("%d/%m/%Y %H:%M")  if nota.get("Fecha_deedicion")  else "",
+                "adjuntos": adj_list,
+            })
+
+        # 3. Obtener todas las carpetas del usuario
         cur.execute("""
             SELECT "ID_Carpeta", "Nombre_carpeta", "Fecha_creacion"
             FROM public."Carpetas"
             WHERE "ID_Cuenta" = %s AND "Estado" = 'Activa'
             ORDER BY "Fecha_creacion" DESC
         """, (target_user_id,))
-        carpetas = cur.fetchall()
-        
-        # Renombrar clave "Nombre_carpeta" a "Nombre" para consistencia con JS del cliente
-        for carp in carpetas:
-            carp["Nombre"] = carp.pop("Nombre_carpeta", "")
-            if carp.get("Fecha_creacion"):
-                carp["Fecha_creacion"] = carp["Fecha_creacion"].strftime("%d/%m/%Y %H:%M")
+        carpetas_raw = cur.fetchall()
+
+        carpetas_serializadas = []
+        for carp in carpetas_raw:
+            carpetas_serializadas.append({
+                "ID_Carpeta":    carp["ID_Carpeta"],
+                "Nombre":        carp.get("Nombre_carpeta") or "",
+                "Fecha_creacion": carp["Fecha_creacion"].strftime("%d/%m/%Y %H:%M") if carp.get("Fecha_creacion") else "",
+            })
 
         cerrar_db(cur, conexion)
-        
+
         return jsonify({
-            "usuario": usuario,
-            "notes": notas,  # Clave alineada con JS: data.notes
-            "carpetas": carpetas
+            "usuario": dict(usuario),
+            "notes":   notas_serializadas,
+            "carpetas": carpetas_serializadas,
         })
     except Exception as e:
         print(f"Error en api_admin_usuario_detalles: {e}")
@@ -4475,12 +4592,16 @@ def api_admin_eliminar_usuario(target_user_id):
         # 7. Eliminar mensajes de soporte del usuario
         cursor.execute('DELETE FROM public."Soporte" WHERE "ID_Cuenta" = %s', (target_user_id,))
 
-        # 8. Obtener foto de perfil y borrarla si está en Supabase Storage
+        # 8. Obtener foto de perfil y borrarla si está en Supabase Storage si ningún otro usuario la usa
         cursor.execute('SELECT "Foto" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (target_user_id,))
         cuenta = cursor.fetchone()
         if cuenta and cuenta.get("Foto"):
             foto_path = cuenta["Foto"]
-            eliminar_archivo_de_supabase_por_ruta(foto_path)
+            if foto_path and "/storage/v1/object/public/NoteFlow/" in foto_path:
+                cursor.execute('SELECT COUNT(*) AS total FROM public."Cuentas" WHERE "Foto" = %s', (foto_path,))
+                en_uso = cursor.fetchone()["total"] > 1
+                if not en_uso:
+                    eliminar_archivo_de_supabase_por_ruta(foto_path)
 
         # 9. Eliminar cuenta
         cursor.execute('DELETE FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (target_user_id,))
@@ -4498,9 +4619,32 @@ def api_admin_eliminar_usuario(target_user_id):
         cerrar_db(cursor, conexion)
 
 
-# ==============================================================================
-# PUNTO DE ENTRADA
-# ==============================================================================
+def init_indexes():
+    """Crea índices para optimizar las consultas de notas, carpetas y soporte en la base de datos."""
+    conexion = conectar_db()
+    if conexion:
+        try:
+            cur = conexion.cursor()
+            # Índices para la tabla Soporte
+            cur.execute('CREATE INDEX IF NOT EXISTS "idx_soporte_id_cuenta" ON public."Soporte" ("ID_Cuenta");')
+            cur.execute('CREATE INDEX IF NOT EXISTS "idx_soporte_fecha" ON public."Soporte" ("Fecha");')
+            
+            # Índices para la tabla Notas
+            cur.execute('CREATE INDEX IF NOT EXISTS "idx_notas_id_cuenta" ON public."Notas" ("ID_Cuenta");')
+            cur.execute('CREATE INDEX IF NOT EXISTS "idx_notas_estado" ON public."Notas" ("Estado");')
+            
+            # Índices para la tabla Carpetas
+            cur.execute('CREATE INDEX IF NOT EXISTS "idx_carpetas_id_cuenta" ON public."Carpetas" ("ID_Cuenta");')
+            cur.execute('CREATE INDEX IF NOT EXISTS "idx_carpetas_estado" ON public."Carpetas" ("Estado");')
+            
+            conexion.commit()
+            print("Database indexes checked and created successfully.")
+        except Exception as e:
+            print(f"Error al inicializar índices: {e}")
+        finally:
+            cerrar_db(cur, conexion)
+
 
 if __name__ == "__main__":
+    init_indexes()
     app.run(port=5000)
