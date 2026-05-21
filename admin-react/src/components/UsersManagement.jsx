@@ -50,6 +50,30 @@ const UsersManagement = () => {
     }
   };
 
+  const handleToggleAdmin = async (userId, name, isCurrentlyAdmin) => {
+    const actionText = isCurrentlyAdmin 
+      ? `¿Estás seguro de que deseas QUITAR los privilegios de administrador a ${name}? Ya no tendrá acceso a este panel.` 
+      : `¿Estás seguro de que deseas VOLVER administrador a ${name}? Esto le dará acceso completo a este panel de control.`;
+
+    if (window.confirm(actionText)) {
+      try {
+        const response = await fetch(`/api/admin/usuarios/${userId}/toggle-admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.CSRF_TOKEN || '' }
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+          alert(result.message || 'Privilegios actualizados correctamente.');
+          fetchUsers();
+        } else {
+          alert(`Error: ${result.error}`);
+        }
+      } catch (error) {
+        alert('Error de red al cambiar privilegios de administrador.');
+      }
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     const term = searchQuery.toLowerCase();
     const fullName = `${user.Nombres} ${user.Apellidos}`.toLowerCase();
@@ -133,9 +157,20 @@ const UsersManagement = () => {
                       {user.ID_Cuenta === 1 ? (
                         <span className="text-muted" style={{ fontSize: '0.78rem', fontWeight: '700' }}><i className="fas fa-lock"></i> Principal</span>
                       ) : (
-                        <button className="btn-delete-user" onClick={() => handleDeleteUser(user.ID_Cuenta, `${user.Nombres} ${user.Apellidos}`)}>
-                          <i className="fas fa-trash-alt"></i> Eliminar
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button className="btn-delete-user" onClick={() => handleDeleteUser(user.ID_Cuenta, `${user.Nombres} ${user.Apellidos}`)}>
+                            <i className="fas fa-trash-alt"></i> Eliminar
+                          </button>
+                          {user.Es_admin ? (
+                            <button className="btn-demote-admin" onClick={() => handleToggleAdmin(user.ID_Cuenta, `${user.Nombres} ${user.Apellidos}`, true)}>
+                              <i className="fas fa-user-minus"></i> Quitar Admin
+                            </button>
+                          ) : (
+                            <button className="btn-make-admin" onClick={() => handleToggleAdmin(user.ID_Cuenta, `${user.Nombres} ${user.Apellidos}`, false)}>
+                              <i className="fas fa-user-shield"></i> Hacer Admin
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

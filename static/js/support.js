@@ -52,6 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('support_session_active', 'true');
     }
 
+    let lastLoadedMessages = [];
+    let pendingMessages = [];
+
     // Toggle Chat Window
     btn.addEventListener('click', () => {
         const isActive = windowChat.classList.toggle('active');
@@ -62,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isActive) {
             icon.className = 'fas fa-times';
             loadMessages();
-            // Iniciar polling cada 5 segundos cuando está abierto
-            pollingInterval = setInterval(loadMessages, 5000);
+            // Iniciar polling cada 3 segundos cuando está abierto para mayor velocidad
+            pollingInterval = setInterval(loadMessages, 3000);
         } else {
             icon.className = 'fas fa-comment-dots';
             if (pollingInterval) clearInterval(pollingInterval);
@@ -76,16 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const mensajes = await response.json();
             
             if (Array.isArray(mensajes)) {
-                // Solo limpiar y renderizar si hay cambios o es la primera vez
-                // Para simplificar, renderizamos siempre si hay mensajes
-                renderChat(mensajes);
+                lastLoadedMessages = mensajes;
+                renderChat();
             }
         } catch (error) {
             console.error('Error al cargar mensajes de soporte:', error);
         }
     };
 
-    const renderChat = (mensajes) => {
+    const renderChat = () => {
         // Mantener el mensaje de bienvenida fijo arriba
         const welcomeMsg = `
             <div class="support-message received">
@@ -95,12 +97,26 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         let html = welcomeMsg;
-        mensajes.forEach(msg => {
+        
+        // Renderizar mensajes de la base de datos
+        lastLoadedMessages.forEach(msg => {
             const type = msg.Remitente === 'usuario' ? 'sent' : 'received';
             html += `
                 <div class="support-message ${type}">
                     ${msg.Mensaje}
                     <span class="support-time">${msg.Fecha}</span>
+                </div>
+            `;
+        });
+
+        // Renderizar mensajes pendientes locales (optimistas)
+        pendingMessages.forEach(msg => {
+            const errorIndicator = msg.error ? ' <span style="color: #ff7675; font-size: 11px;">(Error)</span>' : ' <i class="fas fa-spinner fa-spin" style="margin-left: 3px;"></i>';
+            const style = msg.error ? 'border: 1px solid #ff7675;' : 'opacity: 0.7;';
+            html += `
+                <div class="support-message sent" style="${style}">
+                    ${msg.Mensaje}
+                    <span class="support-time">${msg.Fecha}${errorIndicator}</span>
                 </div>
             `;
         });
@@ -125,6 +141,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Limpiar input inmediatamente
         input.value = '';
 
+        const ahora = new Date();
+        const horaStr = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const tempId = Date.now();
+
+        const newPending = {
+            id: tempId,
+            Mensaje: text,
+            Fecha: horaStr,
+            error: false
+        };
+
+        pendingMessages.push(newPending);
+        renderChat(); // Mostrar inmediatamente
+
         try {
             const response = await fetch('/api/enviar-soporte', {
                 method: 'POST',
@@ -136,12 +166,28 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                loadMessages(); // Recargar para ver el mensaje enviado
+                // Eliminar de pendientes
+                pendingMessages = pendingMessages.filter(m => m.id !== tempId);
+                loadMessages(); // Recargar de la base de datos
             } else {
                 console.error('Error al enviar mensaje');
+                pendingMessages = pendingMessages.map(m => {
+                    if (m.id === tempId) {
+                        return { ...m, error: true };
+                    }
+                    return m;
+                });
+                renderChat();
             }
         } catch (error) {
             console.error('Error de red al enviar soporte:', error);
+            pendingMessages = pendingMessages.map(m => {
+                if (m.id === tempId) {
+                    return { ...m, error: true };
+                }
+                return m;
+            });
+            renderChat();
         }
     };
 

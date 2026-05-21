@@ -40,7 +40,7 @@ const SupportChat = () => {
   useEffect(() => {
     if (selectedUserId) {
       loadMessages(selectedUserId);
-      const interval = setInterval(() => loadMessages(selectedUserId), 3000);
+      const interval = setInterval(() => loadMessages(selectedUserId), 2000);
       return () => clearInterval(interval);
     }
   }, [selectedUserId]);
@@ -52,20 +52,46 @@ const SupportChat = () => {
   }, [messages]);
 
   const handleSendReply = async () => {
-    if (!replyText.trim() || !selectedUserId) return;
+    const text = replyText.trim();
+    if (!text || !selectedUserId) return;
+    
+    setReplyText(''); // Clear input immediately for zero lag feeling
+    
+    // Add optimistic message
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const tempId = Date.now();
+    
+    const optimisticMessage = {
+      id: tempId,
+      Mensaje: text,
+      Remitente: 'soporte',
+      Fecha: timeStr,
+      pending: true
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+
     try {
       const response = await fetch('/api/soporte-admin/responder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.CSRF_TOKEN || '' },
-        body: JSON.stringify({ user_id: selectedUserId, mensaje: replyText })
+        body: JSON.stringify({ user_id: selectedUserId, mensaje: text })
       });
       if (response.ok) {
-        setReplyText('');
         loadMessages(selectedUserId);
         loadChats();
+      } else {
+        // Mark as error
+        setMessages(prev =>
+          prev.map(m => m.id === tempId ? { ...m, error: true } : m)
+        );
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      setMessages(prev =>
+        prev.map(m => m.id === tempId ? { ...m, error: true } : m)
+      );
     }
   };
 
@@ -120,12 +146,27 @@ const SupportChat = () => {
           </div>
 
           <div id="admin-chat-body" className="admin-chat-body" ref={chatBodyRef}>
-            {messages.map((msg, idx) => (
-              <div key={idx} className={`message ${msg.Remitente}`}>
-                {msg.Mensaje}
-                <span className="message-time">{msg.Fecha}</span>
-              </div>
-            ))}
+            {messages.map((msg, idx) => {
+              const isPending = msg.pending;
+              const hasError = msg.error;
+              let style = {};
+              if (isPending) {
+                style = { opacity: 0.7 };
+              }
+              if (hasError) {
+                style = { border: '1px solid #ff7675' };
+              }
+              return (
+                <div key={idx} className={`message ${msg.Remitente}`} style={style}>
+                  {msg.Mensaje}
+                  <span className="message-time">
+                    {msg.Fecha}
+                    {isPending && !hasError && <i className="fas fa-spinner fa-spin" style={{ marginLeft: '4px' }}></i>}
+                    {hasError && <span style={{ color: '#ff7675', marginLeft: '4px' }}>(Error)</span>}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="chat-footer">

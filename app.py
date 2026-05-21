@@ -3934,6 +3934,13 @@ def procesar_pago():
 # RUTAS DE SOPORTE (Chat Interno)
 # ==============================================================================
 
+def enviar_correo_asincrono(app_instance, msg):
+    with app_instance.app_context():
+        try:
+            mail.send(msg)
+        except Exception as mail_err:
+            print(f"Error al enviar correo de soporte asíncrono: {mail_err}")
+
 @app.route("/api/enviar-soporte", methods=["POST"])
 @login_required
 def enviar_soporte():
@@ -3962,7 +3969,7 @@ def enviar_soporte():
         """, (usuario_id, mensaje, 'usuario'))
         conexion.commit()
         
-        # ENVIAR NOTIFICACIÓN POR CORREO AL ADMIN (ID 1)
+        # ENVIAR NOTIFICACIÓN POR CORREO AL ADMIN (ID 1) DE FORMA ASÍNCRONA
         try:
             admin_email = "miniyonminerat2@gmail.com" # El correo del administrador
             msg = Message(
@@ -3975,9 +3982,10 @@ def enviar_soporte():
                      f"Mensaje: {mensaje}\n\n"
                      f"Puedes responder desde el panel de administración."
             )
-            mail.send(msg)
+            from threading import Thread
+            Thread(target=enviar_correo_asincrono, args=(app, msg)).start()
         except Exception as mail_err:
-            print(f"Error al enviar correo de soporte: {mail_err}")
+            print(f"Error al iniciar hilo para correo de soporte: {mail_err}")
             
         cerrar_db(cur, conexion)
         return jsonify({"success": True})
@@ -4365,8 +4373,8 @@ def api_admin_usuario_detalles(target_user_id):
 @app.route("/api/admin/usuarios/<int:target_user_id>/toggle-admin", methods=["POST"])
 @login_required
 def api_admin_toggle_admin(target_user_id):
-    """Permite al Administrador Principal (ID 1) otorgar/quitar privilegios de panel de control a otros usuarios."""
-    if session.get("usuario_id") != 1:
+    """Permite a los administradores otorgar/quitar privilegios de panel de control a otros usuarios."""
+    if not es_admin(session.get("usuario_id")):
         return jsonify({"error": "No autorizado para cambiar privilegios administrativos"}), 403
 
     if target_user_id == 1:

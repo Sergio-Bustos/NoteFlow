@@ -855,3 +855,45 @@ body.tema-claro #buscar-nota-usuario::placeholder {
 body.tema-oscuro .btn-close {
     filter: invert(1) grayscale(1) brightness(2) !important;
 }
+
+/* Botones para gestión de privilegios de Administrador */
+.btn-make-admin {
+    background: transparent;
+    border: 1.5px solid #2ecc71;
+    color: #2ecc71;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-make-admin:hover {
+    background: #2ecc71 !important;
+    color: white !important;
+}
+
+.btn-demote-admin {
+    background: transparent;
+    border: 1.5px solid #e67e22;
+    color: #e67e22;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-demote-admin:hover {
+    background: #e67e22 !important;
+    color: white !important;
+}
+
