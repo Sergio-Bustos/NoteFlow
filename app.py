@@ -1325,7 +1325,7 @@ def dashboard():
         cursor.execute("""
             SELECT "Nombres",
                    COALESCE(NULLIF(TRIM("Color_principal"), ''), 'Blanco') AS "Color_principal",
-                   "Foto", "Es_premium", "Plan_premium", "Premium_vence"
+                   "Foto", "Es_premium", "Plan_premium", "Premium_vence", "Es_admin"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
@@ -1385,7 +1385,8 @@ def dashboard():
             "Color_principal": usuario_row.get("Color_principal") or "Blanco",
             "Foto":            usuario_row.get("Foto") or "default_profile.png",
             "Es_premium":      es_premium,
-            "Plan_premium":    plan
+            "Plan_premium":    plan,
+            "Es_admin":        bool(usuario_row.get("Es_admin", False))
         }
         
         colores = {"quincenal": "#a29bfe", "mensual": "#f1c40f", "anual": "#00d2d3"}
@@ -1795,7 +1796,7 @@ def mostrar_notas():
         conexion = conectar_db(dict_cursor=True)
         cursor   = conexion.cursor()
         cursor.execute("""
-            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium"
+            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium", "Es_admin"
             FROM public."Cuentas" WHERE "ID_Cuenta" = %s
         """, (user_id,))
         usuario = cursor.fetchone()
@@ -2373,7 +2374,7 @@ def papelera():
         cursor = conexion.cursor()
 
         cursor.execute("""
-            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium"
+            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium", "Es_admin"
             FROM public."Cuentas" WHERE "ID_Cuenta" = %s
         """, (user_id,))
         usuario = cursor.fetchone()

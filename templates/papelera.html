@@ -56,7 +56,7 @@
         <li><a href="/papelera" class="active"><i class="fas fa-trash-alt"></i> Papelera</a></li>
         <li class="separator"></li>
         <li><a href="/perfil"><i class="fas fa-user-circle"></i> Perfil</a></li>
-        {% if session.usuario_id == 1 %}
+        {% if usuario.Es_admin %}
         <li><a href="/soporte-admin" style="color: #f1c40f;"><i class="fas fa-user-shield"></i> Panel Soporte</a></li>
         {% endif %}
     </ul>
