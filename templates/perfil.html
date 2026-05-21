@@ -40,7 +40,7 @@
                          class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
 
                     <img id="foto-perfil" 
-                         src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" 
+                         src="{{ get_file_url(usuario.Foto) }}" 
                          alt="Foto de perfil"
                          class="user-avatar">
                 </div>
@@ -49,7 +49,7 @@
                 </button>
                 {% else %}
                 <img id="foto-perfil" 
-                     src="{{ url_for('static', filename=usuario.Foto if usuario.Foto else 'default_profile.png') }}" 
+                     src="{{ get_file_url(usuario.Foto) }}" 
                      alt="Foto de perfil"
                      class="free-user-avatar">
                 {% endif %}

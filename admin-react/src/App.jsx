@@ -8,6 +8,11 @@ function App() {
   const [isSidebarActive, setSidebarActive] = useState(false);
   const user = window.APP_USER || {};
 
+  const getAvatarUrl = (foto) => {
+    if (!foto || foto === 'None') return '/static/default_profile.png';
+    return foto.startsWith('http') ? foto : `/static/${foto}`;
+  };
+
   useEffect(() => {
     // Aplicar tema según el usuario (Blanco/Negro)
     const esOscuro = window.COLOR_PRINCIPAL === 'Negro';
@@ -27,11 +32,11 @@ function App() {
         <a href="/perfil" className="mobile-topbar-user">
           {user.es_premium ? (
             <div className="avatar-premium-container">
-              <img src={`/static/${user.foto}`} alt="Foto" className="user-avatar" />
+               <img src={getAvatarUrl(user.foto)} alt="Foto" className="user-avatar" />
               <img src={`/static/avatar_${user.avatar_plan || user.plan_premium}_animated.svg`} className={`avatar-frame ${user.avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} />
             </div>
           ) : (
-            <img src={`/static/${user.foto}`} alt="Foto" className="free-user-avatar" />
+             <img src={getAvatarUrl(user.foto)} alt="Foto" className="free-user-avatar" />
           )}
           <span>
             {user.nombres}
@@ -69,10 +74,10 @@ function App() {
             {user.es_premium ? (
               <div className="avatar-premium-container">
                 <img src={`/static/avatar_${user.avatar_plan || user.plan_premium}_animated.svg`} className={`avatar-frame ${user.avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} />
-                <img src={`/static/${user.foto}`} alt="Foto" className="user-avatar" />
+                <img src={getAvatarUrl(user.foto)} alt="Foto" className="user-avatar" />
               </div>
             ) : (
-              <img src={`/static/${user.foto}`} alt="Foto" className="free-user-avatar" />
+              <img src={getAvatarUrl(user.foto)} alt="Foto" className="free-user-avatar" />
             )}
             <span>
               <strong>{user.nombres}</strong>

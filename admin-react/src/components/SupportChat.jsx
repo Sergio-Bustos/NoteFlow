@@ -133,7 +133,7 @@ const SupportChat = () => {
       ) : (
         <div id="active-chat" className="chat-active-container">
           <div className="chat-active-user-info">
-            <img id="active-user-photo" src={activeChatData?.Foto && activeChatData.Foto !== 'None' ? `/static/${activeChatData.Foto}` : '/static/default_profile.png'} alt="" className="chat-avatar" />
+            <img id="active-user-photo" src={activeChatData?.Foto && activeChatData.Foto !== 'None' ? (activeChatData.Foto.startsWith('http') ? activeChatData.Foto : `/static/${activeChatData.Foto}`) : '/static/default_profile.png'} alt="" className="chat-avatar" />
             <div className="user-details-wrap">
               <div className="name-plan">
                 <h4 id="active-user-name">{activeChatData?.Nombres || 'Usuario'}</h4>

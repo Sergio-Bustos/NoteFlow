@@ -1712,15 +1712,22 @@ def subir_foto():
         if not url_publica:
             return jsonify({"error": "No se pudo subir la imagen a la nube"}), 500
 
-        conexion = conectar_db()
+        conexion = conectar_db(dict_cursor=True)
         cursor   = conexion.cursor()
         cursor.execute('SELECT "Foto" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
         result       = cursor.fetchone()
-        foto_anterior = result[0] if result else None
+        foto_anterior = result.get("Foto") if result else None
 
         # Guardamos la URL completa en la base de datos
         cursor.execute('UPDATE public."Cuentas" SET "Foto" = %s WHERE "ID_Cuenta" = %s', (url_publica, user_id))
         conexion.commit()
+
+        # Si había una foto anterior, la borramos del bucket si ningún otro usuario la usa
+        if foto_anterior and "/storage/v1/object/public/NoteFlow/" in foto_anterior:
+            cursor.execute('SELECT COUNT(*) AS total FROM public."Cuentas" WHERE "Foto" = %s', (foto_anterior,))
+            en_uso = cursor.fetchone()["total"] > 0
+            if not en_uso:
+                eliminar_archivo_de_supabase_por_ruta(foto_anterior)
 
         return jsonify({
             "success":   True,
@@ -1743,14 +1750,14 @@ def subir_foto():
 def eliminar_foto_perfil():
     """
     Elimina la foto de perfil del usuario:
-    borra el archivo físico del servidor y pone NULL en la base de datos.
+    borra el archivo del bucket de Supabase si no está en uso y pone NULL en la base de datos.
     """
     user_id  = session["usuario_id"]
     conexion = None
     cursor   = None
 
     try:
-        conexion = conectar_db()
+        conexion = conectar_db(dict_cursor=True)
         if conexion is None:
             return jsonify({"error": "Error de conexión a la base de datos"}), 500
 
@@ -1760,8 +1767,17 @@ def eliminar_foto_perfil():
         if not row:
             return jsonify({"error": "Usuario no encontrado"}), 404
 
+        foto_anterior = row.get("Foto")
+
         cursor.execute('UPDATE public."Cuentas" SET "Foto" = NULL WHERE "ID_Cuenta" = %s', (user_id,))
         conexion.commit()
+
+        # Si había una foto anterior, la borramos del bucket si ningún otro usuario la usa
+        if foto_anterior and "/storage/v1/object/public/NoteFlow/" in foto_anterior:
+            cursor.execute('SELECT COUNT(*) AS total FROM public."Cuentas" WHERE "Foto" = %s', (foto_anterior,))
+            en_uso = cursor.fetchone()["total"] > 0
+            if not en_uso:
+                eliminar_archivo_de_supabase_por_ruta(foto_anterior)
 
         return jsonify({
             "success":      True,

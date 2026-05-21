@@ -122,7 +122,7 @@ const UsersManagement = () => {
                   <tr key={user.ID_Cuenta}>
                     <td>
                       <div className="user-identity" style={{ cursor: 'pointer' }} onClick={() => setSelectedUserId(user.ID_Cuenta)}>
-                        <img src={user.Foto && user.Foto !== 'None' ? `/static/${user.Foto}` : '/static/default_profile.png'} alt="" />
+                        <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" />
                         <div className="name-username">
                           <span className="fullname" style={{ textDecoration: 'underline', color: 'var(--color-principal)', fontWeight: '700' }}>
                             {user.Nombres} {user.Apellidos}
