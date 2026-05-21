@@ -1,5 +1,8 @@
 static/uploads
 static/perfil
+node_modules/
+admin-react/node_modules/
+admin-react/dist/
 __pycache__/
 *.pyc
 *.pyo

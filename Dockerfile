@@ -2,13 +2,14 @@
 FROM node:18-alpine AS frontend
 WORKDIR /app
 # Copiamos la carpeta de React
-COPY admin-react/ ./admin-react/
 # Creamos las carpetas destino donde Vite intentará guardar los archivos
 RUN mkdir -p static/admin-react/dist templates
 # Instalamos dependencias silenciosamente y compilamos
 WORKDIR /app/admin-react
+COPY admin-react/package*.json ./
 ENV npm_config_update_notifier=false
-RUN npm install --no-fund --no-audit --loglevel=error
+RUN npm ci --no-fund --no-audit --loglevel=error
+COPY admin-react/ ./
 RUN npm run build
 
 # Etapa 2: Construcción del backend (Flask)
