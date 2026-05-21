@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Control | NoteFlow Admin</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='notas.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='soporte_admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='avatar.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script type="module" crossorigin src="/static/admin-react/dist/assets/index-D_PgUdsh.js"></script>
+    <link rel="stylesheet" crossorigin href="/static/admin-react/dist/assets/index-tn0RQdqM.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Global variables injected by Flask
+      window.APP_USER = {
+        nombres: "{{ usuario.Nombres if usuario.Nombres else 'Admin' }}",
+        foto: "{{ usuario.Foto if usuario.Foto else 'default_profile.png' }}",
+        es_premium: {{ 'true' if session.get('es_premium') else 'false' }},
+        plan_premium: "{{ session.get('plan_premium') if session.get('plan_premium') else 'gratis' }}",
+        premium_color: "{{ session.get('premium_color') if session.get('premium_color') else '#f1c40f' }}",
+        avatar_plan: "{{ session.get('avatar_plan') if session.get('avatar_plan') else '' }}"
+      };
+      window.COLOR_PRINCIPAL = "{{ usuario.Color_principal if usuario.Color_principal else 'Morado' }}";
+      window.CSRF_TOKEN = "{{ csrf_token() }}";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
