@@ -786,3 +786,31 @@ body.tema-oscuro .btn-close { filter: invert(1) brightness(200%); }
     .avatar-grid { grid-template-columns: repeat(2, 1fr); }
     .modal-avatar-inner { padding: 24px 18px; }
 }
+/* ── TAG MARCO CÓSMICO ADMIN ── */
+.tag-admin-cosmico {
+    background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(167,139,250,0.15));
+    color: #a78bfa;
+    border: 1px solid rgba(139,92,246,0.3);
+}
+
+/* ── ETIQUETA DE ADMIN EN SECCIÓN PERFIL ── */
+.admin-frame-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #a78bfa;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 100px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    margin-top: 4px;
+    letter-spacing: 0.4px;
+}
+
+/* ── CARD BLOQUEADO ADMIN (modal avatar) ── */
+.admin-locked-frame {
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+    background: rgba(139, 92, 246, 0.04) !important;
+}

@@ -26,17 +26,23 @@
 <!-- Barra superior móvil: foto + nombre a la derecha -->
 <div class="mobile-topbar">
     <a href="{{ url_for('perfil') }}" class="mobile-topbar-user">
-        {% if session.es_premium %}
+        {% if session.es_admin or session.es_premium %}
         <div class="avatar-premium-container">
             <img src="{{ get_file_url(usuario.Foto) }}" alt="Foto" class="user-avatar">
-            <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+            {% if session.avatar_plan == 'cosmico' %}
+                <img src="{{ url_for('static', filename='marco_cosmico_admin.svg') }}" class="avatar-frame admin-cosmic-frame">
+            {% else %}
+                <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+            {% endif %}
         </div>
         {% else %}
         <img src="{{ get_file_url(usuario.Foto) }}" alt="Foto" class="free-user-avatar">
         {% endif %}
         <span>
             {{ usuario.Nombres }}
-            {% if session.es_premium %}
+            {% if session.es_admin %}
+                <i class="fas fa-shield-alt" style="color: #a78bfa; margin-left: 5px;" title="Administrador"></i>
+            {% elif session.es_premium %}
                 <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }}; margin-left: 5px;"></i>
             {% endif %}
         </span>
@@ -81,9 +87,13 @@
 
         <!-- Información del usuario -->
         <a href="{{ url_for('perfil') }}" class="usuario-info">
-        {% if session.es_premium %}
+        {% if session.es_admin or session.es_premium %}
         <div class="avatar-premium-container">
-            <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+            {% if session.avatar_plan == 'cosmico' %}
+                <img src="{{ url_for('static', filename='marco_cosmico_admin.svg') }}" class="avatar-frame admin-cosmic-frame">
+            {% else %}
+                <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+            {% endif %}
             <img src="{{ get_file_url(usuario.Foto) }}" alt="Foto" class="user-avatar">
         </div>
         {% else %}
@@ -91,7 +101,9 @@
         {% endif %}
             <span>
                 <strong>{{ usuario.Nombres }}</strong>
-                {% if session.es_premium %}
+                {% if session.es_admin %}
+                    <i class="fas fa-shield-alt" style="color: #a78bfa; margin-left: 5px;" title="Administrador"></i>
+                {% elif session.es_premium %}
                     <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }}; margin-left: 5px;" title="Usuario Premium - Plan {{ session.plan_premium | capitalize }}"></i>
                 {% endif %}
             </span> <!-- Nombre del usuario -->

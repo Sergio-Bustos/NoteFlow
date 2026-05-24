@@ -1016,6 +1016,13 @@ def procesar_login():
             session["plan_premium"] = plan
             session["avatar_plan"]  = avatar_plan if avatar_plan else plan
             
+            # Cargar estado de administrador en sesión
+            cursor_temp2 = conexion.cursor(cursor_factory=RealDictCursor)
+            cursor_temp2.execute('SELECT "Es_admin" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
+            res_admin = cursor_temp2.fetchone()
+            session["es_admin"] = bool(res_admin and res_admin.get("Es_admin", False))
+            cursor_temp2.close()
+            
             # Verificar expiración de forma segura
             if es_p_db and vence:
                 ahora = datetime.now(vence.tzinfo) if vence.tzinfo else datetime.now()
@@ -1617,14 +1624,19 @@ def cambiar_avatar():
     avatar_plan = data.get("avatar_plan", "quincenal")
     plan_actual = session.get("plan_premium", "gratis")
     
-    # Validar que el plan tenga acceso a ese marco
-    permisos = {
-        "quincenal": ["quincenal", "ninguno"],
-        "mensual":   ["quincenal", "mensual", "ninguno"],
-        "anual":     ["quincenal", "mensual", "anual", "ninguno"],
-    }
-    if avatar_plan not in permisos.get(plan_actual, []):
-        return jsonify({"error": "Tu plan no tiene acceso a ese marco."}), 403
+    # El marco cósmico es exclusivo para admins
+    if avatar_plan == "cosmico":
+        if not session.get("es_admin"):
+            return jsonify({"error": "El marco cósmico es exclusivo para administradores."}), 403
+    else:
+        # Validar que el plan tenga acceso a ese marco
+        permisos = {
+            "quincenal": ["quincenal", "ninguno"],
+            "mensual":   ["quincenal", "mensual", "ninguno"],
+            "anual":     ["quincenal", "mensual", "anual", "ninguno"],
+        }
+        if avatar_plan not in permisos.get(plan_actual, []):
+            return jsonify({"error": "Tu plan no tiene acceso a ese marco."}), 403
     
     user_id  = session["usuario_id"]
     conexion = None
@@ -4127,7 +4139,7 @@ def soporte_admin():
         
         # Consultar datos y rol del usuario
         cursor.execute("""
-            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium", "Es_admin"
+            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan"
             FROM public."Cuentas" WHERE "ID_Cuenta" = %s
         """, (user_id,))
         usuario = cursor.fetchone()
@@ -4142,6 +4154,9 @@ def soporte_admin():
             cerrar_db(cursor, conexion)
             return redirect(url_for("dashboard"))
             
+        # Guardar es_admin en sesión para que el template lo pueda usar
+        session["es_admin"] = bool(usuario.get("Es_admin", False))
+        
         cerrar_db(cursor, conexion)
         # Renderiza el index.html compilado de React (ubicado en templates)
         return render_template("soporte_admin_react.html", usuario=usuario)
@@ -4620,8 +4635,9 @@ def api_admin_toggle_admin(target_user_id):
             
         nuevo_estado = not user.get("Es_admin", False)
         
-        # Actualizar
+        # Actualizar rol de admin
         cur.execute('UPDATE public."Cuentas" SET "Es_admin" = %s WHERE "ID_Cuenta" = %s', (nuevo_estado, target_user_id))
+        
         conexion.commit()
         
         cerrar_db(cur, conexion)

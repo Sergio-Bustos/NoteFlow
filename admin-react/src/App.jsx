@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DashboardStats from './components/DashboardStats';
 import UsersManagement from './components/UsersManagement';
 import SupportChat from './components/SupportChat';
+import { NfModal, NfBtn, useNfModal } from './components/NfModal';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarActive, setSidebarActive] = useState(false);
+  const { modal, openModal, closeModal } = useNfModal();
   const user = window.APP_USER || {};
 
   const getAvatarUrl = (foto) => {
@@ -14,13 +16,17 @@ function App() {
   };
 
   useEffect(() => {
-    // Aplicar tema según el usuario (Blanco/Negro)
     const esOscuro = window.COLOR_PRINCIPAL === 'Negro';
     document.body.classList.toggle('tema-oscuro', esOscuro);
     document.body.classList.toggle('tema-claro', !esOscuro);
   }, []);
 
   const toggleSidebar = () => setSidebarActive(!isSidebarActive);
+
+  const handleLogoutClick = (e) => {
+    e.preventDefault();
+    openModal({ type: 'logout' });
+  };
 
   return (
     <>
@@ -30,24 +36,29 @@ function App() {
 
       <div className="mobile-topbar">
         <a href="/perfil" className="mobile-topbar-user">
-          {user.es_premium ? (
+          {(user.es_admin || user.es_premium) ? (
             <div className="avatar-premium-container">
-               <img src={getAvatarUrl(user.foto)} alt="Foto" className="user-avatar" />
-              <img src={`/static/avatar_${user.avatar_plan || user.plan_premium}_animated.svg`} className={`avatar-frame ${user.avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} />
+              <img src={getAvatarUrl(user.foto)} alt="Foto" className="user-avatar" />
+              {user.avatar_plan === 'cosmico' ? (
+                <img src="/static/marco_cosmico_admin.svg" className="avatar-frame admin-cosmic-frame" />
+              ) : (
+                <img src={`/static/avatar_${user.avatar_plan || user.plan_premium}_animated.svg`} className={`avatar-frame ${user.avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} />
+              )}
             </div>
           ) : (
-             <img src={getAvatarUrl(user.foto)} alt="Foto" className="free-user-avatar" />
+            <img src={getAvatarUrl(user.foto)} alt="Foto" className="free-user-avatar" />
           )}
           <span>
             {user.nombres}
-            {user.es_premium && <i className="fas fa-crown" style={{ color: user.premium_color || '#f1c40f', marginLeft: '5px' }}></i>}
+            {user.es_admin && <i className="fas fa-shield-alt" style={{ color: '#a78bfa', marginLeft: '5px' }} title="Administrador"></i>}
+            {!user.es_admin && user.es_premium && <i className="fas fa-crown" style={{ color: user.premium_color || '#f1c40f', marginLeft: '5px' }}></i>}
           </span>
         </a>
       </div>
 
-      <div className={`sidebar-overlay ${isSidebarActive ? 'active' : ''}`} id="sidebar-overlay" onClick={toggleSidebar}></div>
+      <div className={`sidebar-overlay ${isSidebarActive ? 'visible' : ''}`} id="sidebar-overlay" onClick={toggleSidebar}></div>
 
-      <div className={`sidebar ${isSidebarActive ? 'active' : ''}`}>
+      <div className={`sidebar ${isSidebarActive ? 'open' : ''}`}>
         <div className="logo">NoteFlow</div>
         <ul className="menu">
           <li><a href="/dashboard"><i className="fas fa-home"></i> Inicio</a></li>
@@ -63,7 +74,7 @@ function App() {
           <span>Mejorar plan</span>
           <small>Desbloquea todo Premium</small>
         </a>
-        <a href="#" className="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
+        <a href="#" className="logout-btn" onClick={handleLogoutClick}>
           <i className="fas fa-sign-out-alt"></i> Cerrar sesión
         </a>
       </div>
@@ -71,9 +82,13 @@ function App() {
       <div className="main">
         <header>
           <a href="/perfil" className="usuario-info">
-            {user.es_premium ? (
+            {(user.es_admin || user.es_premium) ? (
               <div className="avatar-premium-container">
-                <img src={`/static/avatar_${user.avatar_plan || user.plan_premium}_animated.svg`} className={`avatar-frame ${user.avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} />
+                {user.avatar_plan === 'cosmico' ? (
+                  <img src="/static/marco_cosmico_admin.svg" className="avatar-frame admin-cosmic-frame" />
+                ) : (
+                  <img src={`/static/avatar_${user.avatar_plan || user.plan_premium}_animated.svg`} className={`avatar-frame ${user.avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} />
+                )}
                 <img src={getAvatarUrl(user.foto)} alt="Foto" className="user-avatar" />
               </div>
             ) : (
@@ -81,7 +96,8 @@ function App() {
             )}
             <span>
               <strong>{user.nombres}</strong>
-              {user.es_premium && <i className="fas fa-crown" style={{ color: user.premium_color || '#f1c40f', marginLeft: '5px' }} title={`Usuario Premium - Plan ${user.plan_premium}`}></i>}
+              {user.es_admin && <i className="fas fa-shield-alt" style={{ color: '#a78bfa', marginLeft: '5px' }} title="Administrador"></i>}
+              {!user.es_admin && user.es_premium && <i className="fas fa-crown" style={{ color: user.premium_color || '#f1c40f', marginLeft: '5px' }} title={`Usuario Premium - Plan ${user.plan_premium}`}></i>}
             </span>
             <i className="fas fa-chevron-down profile-dropdown-icon"></i>
           </a>
@@ -110,14 +126,27 @@ function App() {
               <UsersManagement />
             </div>
           </div>
-          
           <div className="admin-panel-right-chat">
             <SupportChat />
           </div>
         </div>
       </div>
-      
-      {/* Modals from old HTML would go here, simplified for brevity */}
+
+      {/* Modal cerrar sesión */}
+      {modal?.type === 'logout' && (
+        <NfModal
+          title={<><i className="fas fa-sign-out-alt" style={{ marginRight: '8px', color: '#e74c3c' }}></i>Cerrar sesión</>}
+          onClose={closeModal}
+          footer={
+            <>
+              <NfBtn.Secondary onClick={closeModal}>Cancelar</NfBtn.Secondary>
+              <NfBtn.Danger onClick={() => { window.location.href = '/logout'; }}>Sí, cerrar sesión</NfBtn.Danger>
+            </>
+          }
+        >
+          <p style={{ margin: 0 }}>¿Estás seguro de que deseas cerrar tu sesión en NoteFlow?</p>
+        </NfModal>
+      )}
     </>
   );
 }

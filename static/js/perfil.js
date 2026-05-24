@@ -286,9 +286,15 @@ window.seleccionarAvatar = function(plan) {
                 setTimeout(() => {
                     if (plan === 'ninguno') {
                         frame.classList.add('frame-hidden');
+                        frame.classList.remove('admin-cosmic-frame');
+                    } else if (plan === 'cosmico') {
+                        frame.src = `/static/marco_cosmico_admin.svg?v=${Date.now()}`;
+                        frame.classList.remove('frame-hidden');
+                        frame.classList.add('admin-cosmic-frame');
+                        setTimeout(() => frame.style.opacity = '1', 50);
                     } else {
                         frame.src = `/static/avatar_${plan}_animated.svg?v=${Date.now()}`;
-                        frame.classList.remove('frame-hidden');
+                        frame.classList.remove('frame-hidden', 'admin-cosmic-frame');
                         setTimeout(() => frame.style.opacity = '1', 50);
                     }
                 }, 300);

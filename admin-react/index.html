@@ -20,6 +20,7 @@
         nombres: "{{ usuario.Nombres if usuario.Nombres else 'Admin' }}",
         foto: "{{ usuario.Foto if usuario.Foto else 'default_profile.png' }}",
         es_premium: {{ 'true' if session.get('es_premium') else 'false' }},
+        es_admin: {{ 'true' if session.get('es_admin') else 'false' }},
         plan_premium: "{{ session.get('plan_premium') if session.get('plan_premium') else 'gratis' }}",
         premium_color: "{{ session.get('premium_color') if session.get('premium_color') else '#f1c40f' }}",
         avatar_plan: "{{ session.get('avatar_plan') if session.get('avatar_plan') else '' }}"

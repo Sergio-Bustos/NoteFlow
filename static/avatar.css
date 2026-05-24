@@ -8,19 +8,23 @@
     height: fit-content;
     transition: all 0.3s ease;
     background: transparent !important;
+    /* Evita que el contenido desborde en hover */
+    overflow: visible;
 }
 
 /* El marco animado */
 .avatar-premium-container .avatar-frame {
     position: absolute;
-    top: 39%;
-    left: 49%;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%) scale(1.3);
-    width: 103%;
-    height: 103%;
+    width: 105%;
+    height: 105%;
     pointer-events: none;
     z-index: 2;
     transition: opacity 0.3s ease;
+    /* Evitar que el GIF se recorte de forma extraña */
+    object-fit: contain;
 }
 
 /* Imagen de usuario dentro del contenedor premium */
@@ -28,22 +32,27 @@
     border-radius: 50%;
     object-fit: cover;
     z-index: 1;
-    transition: all 0.3s ease;
-    border: 2px solid transparent; /* Espacio para el borde cuando no hay marco */
+    transition: transform 0.3s ease;
+    border: 2px solid transparent;
+    /* Clip para que el avatar no sobresalga del círculo en hover */
+    clip-path: circle(50% at 50% 50%);
 }
 
-/* Variante para el perfil (que es más grande y ya tiene tamaños en perfil.css) */
+/* Variante para el perfil (más grande, ya tiene tamaños en perfil.css) */
 .avatar-container.premium.avatar-premium-container .user-avatar {
     width: 73% !important;
     height: 71% !important;
+    clip-path: circle(50% at 50% 50%);
 }
 
 /* Ajuste del marco para el perfil */
 .avatar-container.premium.avatar-premium-container .avatar-frame {
+    width: 100%;
     height: 110%;
-    transform: translateY(-8%) translateX(-50%);
+    top: 50%;
     left: 50%;
-    top: 0;
+    transform: translate(-50%, -50%);
+    object-fit: contain;
 }
 
 /* Clase para ocultar el marco si el usuario eligió "ninguno" */
@@ -67,7 +76,36 @@
     object-fit: cover;
 }
 
-/* Soporte para el hover de las fotos */
+/* Hover: solo escala el avatar, el clip lo mantiene dentro del círculo */
 .avatar-premium-container:hover .user-avatar {
-    transform: scale(1.05);
+    transform: scale(1.06);
 }
+
+/* ── MARCO CÓSMICO ADMIN ── */
+@keyframes cosmic-pulse {
+    0%   { filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.7))  drop-shadow(0 0 14px rgba(167, 139, 250, 0.4)); }
+    50%  { filter: drop-shadow(0 0 14px rgba(139, 92, 246, 1))   drop-shadow(0 0 28px rgba(167, 139, 250, 0.7)); }
+    100% { filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.7))  drop-shadow(0 0 14px rgba(167, 139, 250, 0.4)); }
+}
+
+.avatar-frame.admin-cosmic-frame {
+    animation: cosmic-pulse 2.5s ease-in-out infinite !important;
+    top: 39% !important;
+    left: 51% !important;
+    transform: translate(-50%, -50%) scale(1.35) !important;
+    width: 102% !important;
+    height: 111% !important;
+    object-fit: contain !important;
+}
+
+/* Versión en la página de perfil (más grande) */
+.avatar-container.premium.avatar-premium-container .avatar-frame.admin-cosmic-frame {
+    animation: cosmic-pulse 2.5s ease-in-out infinite !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 100% !important;
+    height: 110% !important;
+    object-fit: contain !important;
+}
+

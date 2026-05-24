@@ -33,17 +33,26 @@
         <div class="perfil-info">
             <!-- Foto + botón debajo -->
             <div class="avatar-section">
-                {% if session.es_premium %}
+                {% if session.es_admin or session.es_premium %}
                 <div class="avatar-container premium avatar-premium-container">
-                    <img id="avatar-frame-actual" 
-                         src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" 
-                         class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+                    {% if session.avatar_plan == 'cosmico' %}
+                        <img id="avatar-frame-actual" 
+                             src="{{ url_for('static', filename='marco_cosmico_admin.svg') }}" 
+                             class="avatar-frame admin-cosmic-frame">
+                    {% else %}
+                        <img id="avatar-frame-actual" 
+                             src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" 
+                             class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+                    {% endif %}
 
                     <img id="foto-perfil" 
                          src="{{ get_file_url(usuario.Foto) }}" 
                          alt="Foto de perfil"
                          class="user-avatar">
                 </div>
+                {% if session.es_admin and session.avatar_plan == 'cosmico' %}
+                <p class="admin-frame-label"><i class="fas fa-shield-alt"></i> Marco exclusivo de Administrador</p>
+                {% endif %}
                 <button onclick="abrirModalAvatar()" class="btn-cambiar-marco">
                     <i class="fas fa-magic"></i> Cambiar marco
                 </button>
@@ -260,6 +269,28 @@
                 <img src="/static/avatar_anual_animated.svg" class="avatar-card-img grayscale">
                 <p class="avatar-card-title opt-bloqueado-text">Plan Anual</p>
                 <p class="avatar-card-subtitle opt-bloqueado-sub">Requiere plan anual</p>
+                <div class="prohibido-icon">
+                    <div class="prohibido-circle"><div class="prohibido-line"></div></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ── CÓSMICO ADMIN ── -->
+            {% if session.es_admin %}
+            <div class="avatar-card" id="opt-cosmico" onclick="seleccionarAvatar('cosmico')">
+                <span class="plan-tag tag-admin-cosmico"><i class="fas fa-shield-alt"></i> Admin</span>
+                <br>
+                <img src="/static/marco_cosmico_admin.svg" class="avatar-card-img">
+                <p class="avatar-card-title opt-quincenal-text" style="color: #a78bfa;">Marco Cósmico</p>
+                <p class="avatar-card-subtitle">Exclusivo para Administradores</p>
+            </div>
+            {% else %}
+            <div class="avatar-card bloqueado admin-locked-frame">
+                <span class="plan-tag tag-admin-cosmico"><i class="fas fa-shield-alt"></i> Admin</span>
+                <br>
+                <img src="/static/marco_cosmico_admin.svg" class="avatar-card-img grayscale">
+                <p class="avatar-card-title opt-bloqueado-text">Marco Cósmico</p>
+                <p class="avatar-card-subtitle opt-bloqueado-sub">Exclusivo para Administradores</p>
                 <div class="prohibido-icon">
                     <div class="prohibido-circle"><div class="prohibido-line"></div></div>
                 </div>
