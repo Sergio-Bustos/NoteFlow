@@ -282,21 +282,44 @@ def init_db_pool():
 def conectar_db(dict_cursor=False):
     """Crea y devuelve una conexión a PostgreSQL desde el pool (Compatible con Supabase)."""
     global DB_POOL
-    try:
-        if DB_POOL is None:
-            init_db_pool()
-        
-        if DB_POOL:
-            conexion = DB_POOL.getconn()
-            conexion.cursor_factory = RealDictCursor if dict_cursor else None
-            conexion.set_client_encoding("UTF8")
-            return conexion
-        return None
-    except Exception as e:
-        error_msg = f"CRITICAL: ERROR DE CONEXIÓN A POSTGRESQL: {type(e).__name__}: {e}\n"
-        sys.stderr.write(error_msg)
-        sys.stderr.flush()
-        return None
+    retries = 3
+    while retries > 0:
+        try:
+            if DB_POOL is None:
+                init_db_pool()
+            
+            if DB_POOL:
+                conexion = DB_POOL.getconn()
+                if conexion.closed != 0:
+                    DB_POOL.putconn(conexion, close=True)
+                    retries -= 1
+                    continue
+                
+                conexion.cursor_factory = RealDictCursor if dict_cursor else None
+                conexion.set_client_encoding("UTF8")
+                return conexion
+            return None
+        except psycopg2.InterfaceError as e:
+            # Si la conexión estaba cerrada a nivel de red, la descartamos
+            if "connection already closed" in str(e).lower() or "connection closed" in str(e).lower():
+                try:
+                    DB_POOL.putconn(conexion, close=True)
+                except:
+                    pass
+                retries -= 1
+                continue
+            error_msg = f"CRITICAL: ERROR DE CONEXIÓN A POSTGRESQL: {type(e).__name__}: {e}\n"
+            sys.stderr.write(error_msg)
+            sys.stderr.flush()
+            return None
+        except Exception as e:
+            error_msg = f"CRITICAL: ERROR DE CONEXIÓN A POSTGRESQL: {type(e).__name__}: {e}\n"
+            sys.stderr.write(error_msg)
+            sys.stderr.flush()
+            return None
+            
+    return None
+
 
 
 def cerrar_db(cursor, conexion):
@@ -338,9 +361,7 @@ def es_admin(user_id):
         return False
     try:
         cur = conexion.cursor()
-        cur.execute('ALTER TABLE public."Cuentas" ADD COLUMN IF NOT EXISTS "Es_admin" BOOLEAN DEFAULT FALSE;')
-        cur.execute('UPDATE public."Cuentas" SET "Es_admin" = TRUE WHERE "ID_Cuenta" = 1;')
-        conexion.commit()
+
         
         cur.execute('SELECT "Es_admin" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
         res = cur.fetchone()
@@ -350,12 +371,17 @@ def es_admin(user_id):
         print(f"Error en es_admin: {e}")
         return False
 
-def obtener_proximo_id(tabla, columna):
-    """Busca el ID mÃ¡s pequeño disponible (hueco) en una tabla."""
+def obtener_proximo_id(tabla, columna, cursor=None):
+    """Busca el ID más pequeño disponible en una tabla abriendo su propia conexión.
+    ADVERTENCIA: no debe usarse dentro de transacciones abiertas porque no ve
+    las filas pendientes de commit. Usa _next_id(cursor, ...) en su lugar.
+    """
+    if cursor:
+        return _next_id(cursor, tabla, columna)
+        
     conexion = conectar_db()
     cursor = conexion.cursor()
     try:
-        # Busca el primer ID + 1 que no existe en la tabla, o 1 si estÃ¡ vacÃa
         query = f"""
             SELECT COALESCE(MIN(t1."{columna}" + 1), 1)
             FROM public."{tabla}" t1
@@ -374,6 +400,14 @@ def obtener_proximo_id(tabla, columna):
     finally:
         cerrar_db(cursor, conexion)
 
+def _next_id(cursor, tabla, columna):
+    """Calcula el próximo ID disponible usando el cursor de la transacción activa.
+    Al reutilizar el mismo cursor, la consulta SÍ ve las filas insertadas pero
+    aún no confirmadas (within-transaction visibility), evitando colisiones de clave.
+    """
+    cursor.execute(f'SELECT COALESCE(MAX("{columna}"), 0) + 1 FROM public."{tabla}"')
+    return cursor.fetchone()[0]
+
 def subir_a_supabase(archivo, carpeta, nombre_archivo):
     """Sube un archivo a Supabase Storage y retorna la ruta pública."""
     try:
@@ -382,11 +416,16 @@ def subir_a_supabase(archivo, carpeta, nombre_archivo):
         bucket = "NoteFlow"
         path = f"{carpeta}/{nombre_archivo}"
         
+        import mimetypes
+        content_type = getattr(archivo, "content_type", None)
+        if not content_type:
+            content_type = mimetypes.guess_type(nombre_archivo)[0] or "application/octet-stream"
+        
         # Subir archivo
         supabase_client.storage.from_(bucket).upload(
             path=path,
             file=file_data,
-            file_options={"content-type": archivo.content_type}
+            file_options={"content-type": content_type}
         )
         
         # Retornar la URL pública
@@ -2911,7 +2950,7 @@ def guardar_nota_texto():
             INSERT INTO public."Tipos" ("Formato") VALUES ('texto') ON CONFLICT ("Formato") DO NOTHING
         """)
 
-        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
+        nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
@@ -3023,7 +3062,7 @@ def guardar_nota_audio():
         cursor = conexion.cursor()
         hoy = datetime.now()
 
-        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
+        nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
@@ -3076,7 +3115,7 @@ def guardar_nota_imagen():
         cursor = conexion.cursor()
         hoy = datetime.now()
 
-        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
+        nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
@@ -3200,14 +3239,14 @@ def guardar_nota_dibujo():
 
         cursor.execute('INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT DO NOTHING', ("png",))
 
-        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
+        nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido", "Fecha_decreacion", "Fecha_deedicion", "Estado", "Formato", "ID_Cuenta")
             VALUES (%s, %s, %s, '', %s, %s, 'Activa', 'dibujo', %s)
         """, (nuevo_id, titulo, descripcion, hoy, hoy, user_id))
 
-        nuevo_id_adj = obtener_proximo_id("Adjuntos", "ID_Adjunto")
+        nuevo_id_adj = _next_id(cursor, "Adjuntos", "ID_Adjunto")
         cursor.execute("""
             INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
             VALUES (%s, %s, 'png', %s, %s)
@@ -3449,7 +3488,7 @@ def guardar_nota_video():
             INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT ("Formato") DO NOTHING
         """, (formato_adj,))
 
-        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
+        nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
@@ -3458,7 +3497,7 @@ def guardar_nota_video():
         """, (nuevo_id, titulo, descripcion, filtros, hoy, hoy, user_id))
         nota_id = nuevo_id
 
-        nuevo_id_adj = obtener_proximo_id("Adjuntos", "ID_Adjunto")
+        nuevo_id_adj = _next_id(cursor, "Adjuntos", "ID_Adjunto")
         cursor.execute("""
             INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
             VALUES (%s, %s, %s, %s, %s)
@@ -3759,7 +3798,7 @@ def guardar_nota_mixta():
                 INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT ("Formato") DO NOTHING
             """, (fmt_val,))
 
-        nuevo_id = obtener_proximo_id("Notas", "ID_Nota")
+        nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
                 ("ID_Nota", "Titulo", "Descripcion", "Contenido",
@@ -3769,7 +3808,7 @@ def guardar_nota_mixta():
         nota_id = nuevo_id
 
         for adj in adjuntos_a_insertar:
-            nuevo_id_adj = obtener_proximo_id("Adjuntos", "ID_Adjunto")
+            nuevo_id_adj = _next_id(cursor, "Adjuntos", "ID_Adjunto")
             cursor.execute("""
                 INSERT INTO public."Adjuntos" ("ID_Adjunto", "Nombre_archivo", "Formato", "Ruta_archivo", "ID_Nota")
                 VALUES (%s, %s, %s, %s, %s)
@@ -4115,6 +4154,7 @@ def soporte_admin():
         cerrar_db(cursor, conexion)
 
 @app.route("/api/soporte-admin/chats")
+@limiter.exempt
 @login_required
 def obtener_chats_admin():
     """Obtiene la lista de usuarios que han enviado mensajes de soporte."""
@@ -4143,6 +4183,7 @@ def obtener_chats_admin():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/soporte-admin/mensajes/<int:user_id>")
+@limiter.exempt
 @login_required
 def obtener_mensajes_admin(user_id):
     """Obtiene el historial de chat con un usuario específico."""
@@ -4191,6 +4232,57 @@ def responder_soporte():
         cerrar_db(cur, conexion)
         return jsonify({"success": True})
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/soporte-admin/resolver", methods=["POST"])
+@login_required
+def resolver_soporte():
+    """Resuelve un chat de soporte, limpia el historial y notifica al usuario."""
+    if not es_admin(session.get("usuario_id")):
+        return jsonify({"error": "No autorizado"}), 403
+        
+    data = request.get_json()
+    user_id = data.get("user_id")
+    
+    if not user_id:
+        return jsonify({"error": "Falta user_id"}), 400
+        
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+         return jsonify({"error": "Error de base de datos"}), 500
+         
+    try:
+        cur = conexion.cursor()
+        
+        # Obtener correo del usuario
+        cur.execute('SELECT "Correo", "Nombres" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+        user_info = cur.fetchone()
+        
+        if user_info and user_info.get("Correo"):
+            correo = user_info["Correo"]
+            nombres = user_info["Nombres"]
+            
+            # Enviar correo de resolución
+            try:
+                from flask_mail import Message
+                import threading
+                msg = Message(
+                    subject="✅ Tu consulta de soporte ha sido resuelta - NoteFlow",
+                    recipients=[correo],
+                    body=f"Hola {nombres},\n\nTu consulta de soporte reciente ha sido marcada como resuelta por nuestro equipo.\n\nEsperamos haberte sido de gran ayuda. Si tienes alguna otra duda, no dudes en contactarnos nuevamente abriendo un nuevo chat de soporte.\n\n¡Gracias por usar NoteFlow!"
+                )
+                threading.Thread(target=enviar_correo_asincrono, args=(app, msg)).start()
+            except Exception as mail_err:
+                print(f"Error preparando correo de resolución: {mail_err}")
+        
+        # Limpiar el historial de soporte de ese usuario
+        cur.execute('DELETE FROM public."Soporte" WHERE "ID_Cuenta" = %s', (user_id,))
+        conexion.commit()
+        
+        cerrar_db(cur, conexion)
+        return jsonify({"success": True, "mensaje": "Chat resuelto y usuario notificado"})
+    except Exception as e:
+        print(f"Error al resolver soporte: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/mensajes-soporte")
@@ -4253,6 +4345,7 @@ def api_limpiar_soporte():
 # ==============================================================================
 
 @app.route("/api/admin/estadisticas")
+@limiter.exempt
 @login_required
 def api_admin_estadisticas():
     """Obtiene estadísticas detalladas para las tarjetas del panel."""
@@ -4322,6 +4415,7 @@ def api_admin_estadisticas():
 
 
 @app.route("/api/admin/usuarios")
+@limiter.exempt
 @login_required
 def api_admin_usuarios():
     """Obtiene la lista completa de usuarios registrados."""
@@ -4332,11 +4426,6 @@ def api_admin_usuarios():
 
     try:
         cur = conexion.cursor()
-        
-        # Asegurar columna Es_admin
-        cur.execute('ALTER TABLE public."Cuentas" ADD COLUMN IF NOT EXISTS "Es_admin" BOOLEAN DEFAULT FALSE;')
-        cur.execute('UPDATE public."Cuentas" SET "Es_admin" = TRUE WHERE "ID_Cuenta" = 1;')
-        conexion.commit()
         
         # Validar si el usuario tiene privilegios
         cur.execute('SELECT "Es_admin" FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
@@ -4364,6 +4453,7 @@ def api_admin_usuarios():
 
 
 @app.route("/api/admin/usuarios/<int:target_user_id>/detalles")
+@limiter.exempt
 @login_required
 def api_admin_usuario_detalles(target_user_id):
     """Obtiene los detalles de un usuario, todas sus notas y carpetas en tiempo real."""

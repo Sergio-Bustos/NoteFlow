@@ -95,6 +95,30 @@ const SupportChat = () => {
     }
   };
 
+  const handleResolveChat = async () => {
+    if (!selectedUserId) return;
+    if (!confirm('¿Estás seguro de que deseas terminar y resolver este chat? Esto limpiará el historial y notificará al usuario por correo.')) return;
+    
+    try {
+      const response = await fetch('/api/soporte-admin/resolver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.CSRF_TOKEN || '' },
+        body: JSON.stringify({ user_id: selectedUserId })
+      });
+      if (response.ok) {
+        setSelectedUserId(null);
+        setMessages([]);
+        loadChats();
+        alert('Chat resuelto y usuario notificado.');
+      } else {
+        alert('Error al resolver el chat.');
+      }
+    } catch (error) {
+      console.error('Error resolving chat:', error);
+      alert('Error al resolver el chat.');
+    }
+  };
+
   const activeChatData = activeChats.find(c => c.ID_Cuenta == selectedUserId);
 
   return (
@@ -132,17 +156,27 @@ const SupportChat = () => {
         </div>
       ) : (
         <div id="active-chat" className="chat-active-container">
-          <div className="chat-active-user-info">
-            <img id="active-user-photo" src={activeChatData?.Foto && activeChatData.Foto !== 'None' ? (activeChatData.Foto.startsWith('http') ? activeChatData.Foto : `/static/${activeChatData.Foto}`) : '/static/default_profile.png'} alt="" className="chat-avatar" />
-            <div className="user-details-wrap">
-              <div className="name-plan">
-                <h4 id="active-user-name">{activeChatData?.Nombres || 'Usuario'}</h4>
-                <span id="active-user-plan" className={`plan-badge premium-${activeChatData?.Plan_premium || 'gratis'}`}>
-                  {(activeChatData?.Plan_premium || 'gratis').charAt(0).toUpperCase() + (activeChatData?.Plan_premium || 'gratis').slice(1)}
-                </span>
+          <div className="chat-active-user-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <img id="active-user-photo" src={activeChatData?.Foto && activeChatData.Foto !== 'None' ? (activeChatData.Foto.startsWith('http') ? activeChatData.Foto : `/static/${activeChatData.Foto}`) : '/static/default_profile.png'} alt="" className="chat-avatar" />
+              <div className="user-details-wrap">
+                <div className="name-plan">
+                  <h4 id="active-user-name">{activeChatData?.Nombres || 'Usuario'}</h4>
+                  <span id="active-user-plan" className={`plan-badge premium-${activeChatData?.Plan_premium || 'gratis'}`}>
+                    {(activeChatData?.Plan_premium || 'gratis').charAt(0).toUpperCase() + (activeChatData?.Plan_premium || 'gratis').slice(1)}
+                  </span>
+                </div>
+                <span id="active-user-status"><i className="fas fa-circle text-success"></i> Chat activo</span>
               </div>
-              <span id="active-user-status"><i className="fas fa-circle text-success"></i> Chat activo</span>
             </div>
+            <button 
+              className="btn btn-sm btn-outline-danger" 
+              onClick={handleResolveChat}
+              title="Terminar y resolver chat"
+              style={{ padding: '0.375rem 0.75rem', borderRadius: '0.25rem' }}
+            >
+              <i className="fas fa-check-circle"></i> Terminar Chat
+            </button>
           </div>
 
           <div id="admin-chat-body" className="admin-chat-body" ref={chatBodyRef}>

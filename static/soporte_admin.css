@@ -539,7 +539,6 @@ body.tema-oscuro .sidebar .menu li a.active {
 .admin-chat-body {
     flex: 1;
     background-color: var(--chat-bg);
-    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
     padding: 15px;
     overflow-y: auto;
     display: flex;
@@ -692,6 +691,12 @@ body.tema-oscuro .admin-chat-widget {
     border-color: #3e3e4a !important;
 }
 
+body.tema-oscuro .admin-chat-body {
+    background-color: #0b141a !important;
+    background-image: linear-gradient(rgba(11, 20, 26, 0.92), rgba(11, 20, 26, 0.92)), url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png') !important;
+    background-size: cover;
+}
+
 body.tema-oscuro .chat-widget-header {
     background-color: #21212d !important;
     border-bottom: 2px solid #3e3e4a !important;
@@ -788,6 +793,12 @@ body.tema-claro .premium-table td {
 body.tema-claro .admin-chat-widget {
     background-color: #ffffff !important;
     border-color: #bdc3c7 !important;
+}
+
+body.tema-claro .admin-chat-body {
+    background-color: #e5ddd5 !important;
+    background-image: linear-gradient(rgba(229, 221, 213, 0.75), rgba(229, 221, 213, 0.75)), url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png') !important;
+    background-size: cover;
 }
 
 body.tema-claro .chat-widget-header {
