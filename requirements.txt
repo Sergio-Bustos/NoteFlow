@@ -30,3 +30,4 @@ bleach
 flask-limiter
 flask-wtf
 supabase
+APScheduler==3.10.4

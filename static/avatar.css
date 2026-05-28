@@ -15,11 +15,11 @@
 /* El marco animado */
 .avatar-premium-container .avatar-frame {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 38%;
+    left: 49%;
     transform: translate(-50%, -50%) scale(1.3);
-    width: 105%;
-    height: 105%;
+    width: 101%;
+    height: 113%;
     pointer-events: none;
     z-index: 2;
     transition: opacity 0.3s ease;
@@ -49,7 +49,7 @@
 .avatar-container.premium.avatar-premium-container .avatar-frame {
     width: 100%;
     height: 110%;
-    top: 50%;
+    top: 46%;
     left: 50%;
     transform: translate(-50%, -50%);
     object-fit: contain;
@@ -90,18 +90,18 @@
 
 .avatar-frame.admin-cosmic-frame {
     animation: cosmic-pulse 2.5s ease-in-out infinite !important;
-    top: 39% !important;
+    top: 38% !important;
     left: 51% !important;
     transform: translate(-50%, -50%) scale(1.35) !important;
-    width: 102% !important;
-    height: 111% !important;
+    width: 100% !important;
+    height: 109% !important;
     object-fit: contain !important;
 }
 
 /* Versión en la página de perfil (más grande) */
 .avatar-container.premium.avatar-premium-container .avatar-frame.admin-cosmic-frame {
     animation: cosmic-pulse 2.5s ease-in-out infinite !important;
-    top: 50% !important;
+    top: 47% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     width: 100% !important;

@@ -368,6 +368,20 @@ body.tema-oscuro .sidebar .menu li a.active {
 .text-green { color: #2ecc71 !important; }
 .text-purple { color: #9b59b6 !important; }
 .text-orange { color: #e67e22 !important; }
+.text-danger { color: #e74c3c !important; }
+
+.stats-section-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
 
 /* --- PREMIUM TABLE STYLING --- */
 .premium-table-container {
@@ -417,7 +431,9 @@ body.tema-oscuro .sidebar .menu li a.active {
     gap: 12px;
 }
 
-.user-identity img {
+.user-identity > img,
+.user-identity .free-user-avatar,
+.user-identity .user-avatar {
     width: 38px;
     height: 38px;
     border-radius: 50%;
@@ -1011,3 +1027,162 @@ body.tema-oscuro .btn-close {
     color: white !important;
 }
 
+/* ============================================================================
+   ESTILOS DE REPORTES Y ANÁLISIS (AnalyticsReport)
+   ============================================================================ */
+.analytics-report-container {
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 2px solid var(--border-claro);
+    box-shadow: var(--card-shadow);
+    color: var(--text-main);
+}
+
+.analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-claro);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.analytics-title h3 {
+    margin: 0 0 5px 0;
+    color: var(--color-principal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.analytics-title p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.btn-export-report {
+    background: var(--color-principal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-export-report:hover {
+    background: #4a48cc;
+}
+
+.analytics-summary-box {
+    background: rgba(84, 82, 211, 0.05);
+    border: 1px solid rgba(84, 82, 211, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.analytics-summary-box h4 {
+    margin: 0 0 10px 0;
+    color: var(--color-principal);
+}
+
+.summary-badges {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.summary-badge {
+    background: var(--card-bg);
+    border: 1px solid var(--border-claro);
+    padding: 10px 15px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 120px;
+}
+
+.summary-badge .badge-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.summary-badge .badge-label {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    text-transform: uppercase;
+}
+
+.highlight-badge .badge-value {
+    color: #2ecc71;
+}
+
+.analytics-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.chart-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-claro);
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.chart-card h4 {
+    margin: 0 0 15px 0;
+    text-align: center;
+    color: var(--text-main);
+}
+
+.analytics-data-table-container {
+    margin-top: 25px;
+}
+
+.analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.analytics-table th, .analytics-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-claro);
+    text-align: left;
+}
+
+.analytics-table th {
+    background: var(--table-header-bg);
+    color: #7f8c8d;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .analytics-report-container, .analytics-report-container * {
+        visibility: visible;
+    }
+    .analytics-report-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: none;
+        box-shadow: none;
+    }
+    .no-print {
+        display: none !important;
+    }
+}

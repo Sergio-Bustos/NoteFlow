@@ -73,10 +73,14 @@ const UserActivityModal = ({ userId, onClose }) => {
               <>
                 <div className="d-flex align-items-center gap-3 pb-3 mb-4 border-bottom">
                   {data.usuario.Es_premium ? (
-                    <div className="avatar-premium-container" style={{ width: '65px', height: '65px' }}>
-                      <img src={data.usuario.Foto && data.usuario.Foto !== 'None' ? (data.usuario.Foto.startsWith('http') ? data.usuario.Foto : `/static/${data.usuario.Foto}`) : '/static/default_profile.png'} alt="" className="user-avatar" style={{ width: '100%', height: '100%' }} />
-                      <img src={`/static/avatar_${data.usuario.Avatar_plan || data.usuario.Plan_premium}_animated.svg`} className={`avatar-frame ${data.usuario.Avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} />
-                    </div>
+                      <div className="avatar-premium-container" style={{ width: '65px', height: '65px' }}>
+                        <img src={data.usuario.Foto && data.usuario.Foto !== 'None' ? (data.usuario.Foto.startsWith('http') ? data.usuario.Foto : `/static/${data.usuario.Foto}`) : '/static/default_profile.png'} alt="" className="user-avatar" style={{ width: '100%', height: '100%' }} />
+                        {data.usuario.Avatar_plan === 'cosmico' ? (
+                          <img src="/static/marco_cosmico_admin.svg" className="avatar-frame admin-cosmic-frame" alt="marco" />
+                        ) : (
+                          <img src={`/static/avatar_${(data.usuario.Avatar_plan || data.usuario.Plan_premium || 'quincenal').toLowerCase()}_animated.svg`} className={`avatar-frame ${data.usuario.Avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} alt="marco" />
+                        )}
+                      </div>
                   ) : (
                     <img src={data.usuario.Foto && data.usuario.Foto !== 'None' ? (data.usuario.Foto.startsWith('http') ? data.usuario.Foto : `/static/${data.usuario.Foto}`) : '/static/default_profile.png'} alt="" className="free-user-avatar" style={{ width: '65px', height: '65px', objectFit: 'cover', borderRadius: '50%' }} />
                   )}

@@ -81,7 +81,15 @@
                         <span class="free-badge-text"><i class="fas fa-user"></i> Gratuito</span>
                     {% endif %}
                 </p>
-                <p><i class="fas fa-envelope"></i> <strong>Correo:</strong>   {{ usuario.Correo }}</p>
+
+                {% if tiempo_restante %}
+                <p class="plan-expiry-info {% if 'vencido' in tiempo_restante %}plan-expiry-urgent{% elif 'hora' in tiempo_restante or ('día' in tiempo_restante and not 'semana' in tiempo_restante and not 'mes' in tiempo_restante) %}plan-expiry-warning{% else %}plan-expiry-ok{% endif %}">
+                    <i class="fas fa-clock"></i>
+                    <strong>Tiempo restante del plan:</strong> {{ tiempo_restante }}
+                </p>
+                {% endif %}
+
+
                 <p><i class="fas fa-at"></i>       <strong>Usuario:</strong>  {{ usuario.Usuario }}</p>
                 <p><i class="fas fa-phone"></i>    <strong>Teléfono:</strong> {{ usuario.Telefono }}</p>
 

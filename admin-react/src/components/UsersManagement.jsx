@@ -132,7 +132,18 @@ const UsersManagement = () => {
                   <tr key={user.ID_Cuenta}>
                     <td>
                       <div className="user-identity" style={{ cursor: 'pointer' }} onClick={() => setSelectedUserId(user.ID_Cuenta)}>
-                        <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" />
+                        {user.Es_premium ? (
+                          <div className="avatar-premium-container" style={{ width: '40px', height: '40px', marginRight: '10px' }}>
+                            {user.Avatar_plan === 'cosmico' ? (
+                              <img src="/static/marco_cosmico_admin.svg" className="avatar-frame admin-cosmic-frame" alt="marco" />
+                            ) : (
+                              <img src={`/static/avatar_${(user.Avatar_plan || user.Plan_premium || 'quincenal').toLowerCase()}_animated.svg`} className={`avatar-frame ${user.Avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} alt="marco" />
+                            )}
+                            <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" className="user-avatar" style={{ width: '43px', height: '40px', position: 'absolute', right: '-1px' }} />
+                          </div>
+                        ) : (
+                          <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" className="free-user-avatar" style={{ width: '40px', height: '40px', marginRight: '10px' }} />
+                        )}
                         <div className="name-username">
                           <span className="fullname" style={{ textDecoration: 'underline', color: 'var(--color-principal)', fontWeight: '700' }}>
                             {user.Nombres} {user.Apellidos}

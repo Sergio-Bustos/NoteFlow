@@ -7,7 +7,7 @@
 .venv/
 venv/
 env/
-
+node_modules/
 
 # Base de datos local (sqlite no afecta en postgresql)
 *.db

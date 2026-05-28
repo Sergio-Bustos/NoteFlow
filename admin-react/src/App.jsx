@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardStats from './components/DashboardStats';
 import UsersManagement from './components/UsersManagement';
 import SupportChat from './components/SupportChat';
+import AnalyticsReport from './components/AnalyticsReport';
 import { NfModal, NfBtn, useNfModal } from './components/NfModal';
 
 function App() {
@@ -115,6 +116,9 @@ function App() {
           <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
             <i className="fas fa-users-cog"></i> Cuentas
           </button>
+          <button className={`admin-tab-btn ${activeTab === 'reportes' ? 'active' : ''}`} onClick={() => setActiveTab('reportes')}>
+            <i className="fas fa-chart-pie"></i> Reportes
+          </button>
         </div>
 
         <div className="admin-split-layout">
@@ -124,6 +128,9 @@ function App() {
             </div>
             <div className={`admin-tab-content ${activeTab === 'users' ? 'active' : ''}`}>
               <UsersManagement />
+            </div>
+            <div className={`admin-tab-content ${activeTab === 'reportes' ? 'active' : ''}`}>
+              <AnalyticsReport />
             </div>
           </div>
           <div className="admin-panel-right-chat">

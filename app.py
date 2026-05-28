@@ -29,6 +29,9 @@ import bleach
 import logging
 from logging.handlers import RotatingFileHandler
 from supabase import create_client, Client
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import threading
 
 load_dotenv()
 
@@ -1406,7 +1409,9 @@ def dashboard():
         cursor.execute("""
             SELECT "Nombres",
                    COALESCE(NULLIF(TRIM("Color_principal"), ''), 'Blanco') AS "Color_principal",
-                   "Foto", "Es_premium", "Plan_premium", "Premium_vence", "Es_admin"
+                   "Foto", "Es_premium", "Plan_premium", "Premium_vence", "Es_admin",
+                   COALESCE("Veces_premium", 0) AS "Veces_premium",
+                   COALESCE("Avatar_plan", "Plan_premium", 'quincenal') AS "Avatar_plan"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
@@ -1445,22 +1450,23 @@ def dashboard():
                     data_tx = resp_epayco.json().get("data", {})
                     estado = data_tx.get("x_response")
                     if estado == "Aceptada":
-                        plan_comprado = data_tx.get("x_extra2", "mensual")
+                        plan_comprado = data_tx.get("x_extra2", "mensual").lower()
                         dias = {"quincenal": 15, "mensual": 30, "anual": 365}.get(plan_comprado, 30)
                         
                         expira = datetime.now() + timedelta(days=dias)
                         
                         cursor.execute("""
                             UPDATE public."Cuentas"
-                            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s
+                            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s,
+                                "Veces_premium" = COALESCE("Veces_premium", 0) + 1,
+                                "Avatar_plan" = %s
                             WHERE "ID_Cuenta" = %s
-                        """, (expira, plan_comprado, user_id))
+                        """, (expira, plan_comprado, plan_comprado, user_id))
                         conexion.commit()
                         es_premium = True
                         plan = plan_comprado
             except Exception as e:
                 print(f"Error verificando ref_payco en dashboard: {e}")
-
         usuario = {
             "Nombres":         usuario_row.get("Nombres"),
             "Color_principal": usuario_row.get("Color_principal") or "Blanco",
@@ -1470,10 +1476,35 @@ def dashboard():
             "Es_admin":        bool(usuario_row.get("Es_admin", False))
         }
         
+        # El avatar_plan de la fila puede estar desincronizado si el pago acaba de ocurrir
+        # Usar el plan_comprado si fue actualizado, si no usar el del row
+        avatar_plan_actual = usuario_row.get("Avatar_plan")
+        
+        # Si es premium y el avatar_plan está VACÍO o tiene un valor inválido ('gratis'),
+        # sincronizarlo automáticamente con el plan comprado.
+        # IMPORTANTE: 'ninguno' es una elección válida del usuario, no se toca.
+        planes_orden = {"quincenal": 1, "mensual": 2, "anual": 3}
+        if es_premium and plan in planes_orden:
+            nivel_avatar = planes_orden.get(avatar_plan_actual, -1)
+            # Solo auto-asignar si es None, 'gratis', o un valor completamente desconocido
+            if avatar_plan_actual in (None, "gratis") or (nivel_avatar < 0 and avatar_plan_actual != "ninguno"):
+                avatar_plan_actual = plan
+                # Actualizar en BD silenciosamente
+                try:
+                    cursor.execute(
+                        'UPDATE public."Cuentas" SET "Avatar_plan" = %s WHERE "ID_Cuenta" = %s',
+                        (plan, user_id)
+                    )
+                    conexion.commit()
+                except Exception:
+                    pass
+        
         colores = {"quincenal": "#a29bfe", "mensual": "#f1c40f", "anual": "#00d2d3"}
-        session["es_premium"]   = es_premium
-        session["plan_premium"] = plan
+        session["es_premium"]    = es_premium
+        session["plan_premium"]  = plan
         session["premium_color"] = colores.get(plan, "#f1c40f")
+        session["avatar_plan"]   = avatar_plan_actual
+        session["es_admin"]      = bool(usuario_row.get("Es_admin", False))
 
         cursor.execute("""
             SELECT COUNT(*) AS total FROM public."Notas"
@@ -1555,6 +1586,8 @@ def dashboard():
         )
         recientes = todos_recientes[:3]
 
+        veces_premium = usuario_row.get("Veces_premium", 0)
+
         return render_template(
             "dashboard.html",
             usuario=usuario,
@@ -1562,6 +1595,7 @@ def dashboard():
             total_carpetas=total_carpetas,
             notas_papelera=notas_papelera,
             notas_recientes=recientes,
+            veces_premium=veces_premium,
         )
 
     except Exception as e:
@@ -1596,7 +1630,8 @@ def perfil():
         cursor.execute("""
             SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos",
                    "Correo", "Telefono", "Foto", "Color_principal", "Es_premium", "Plan_premium",
-                   COALESCE("Avatar_plan", "Plan_premium", 'quincenal') AS "Avatar_plan"
+                   COALESCE("Avatar_plan", "Plan_premium", 'quincenal') AS "Avatar_plan",
+                   "Premium_vence"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
         """, (user_id,))
@@ -1606,7 +1641,32 @@ def perfil():
             session.clear()
             return redirect(url_for("mostrar_login"))
 
-        return render_template("perfil.html", usuario=usuario)
+        # Calcular tiempo restante del plan
+        tiempo_restante = None
+        if usuario.get("Es_premium") and usuario.get("Premium_vence"):
+            ahora = datetime.now(tz=usuario["Premium_vence"].tzinfo)
+            delta = usuario["Premium_vence"] - ahora
+            dias = delta.days
+            if dias < 0:
+                tiempo_restante = "Plan vencido"
+            elif dias == 0:
+                horas = delta.seconds // 3600
+                tiempo_restante = f"{horas} hora{'s' if horas != 1 else ''} restante{'s' if horas != 1 else ''}"
+            elif dias == 1:
+                tiempo_restante = "1 día restante"
+            elif dias < 7:
+                tiempo_restante = f"{dias} días restantes"
+            elif dias < 31:
+                semanas = dias // 7
+                tiempo_restante = f"{semanas} semana{'s' if semanas != 1 else ''} restante{'s' if semanas != 1 else ''}"
+            elif dias < 365:
+                meses = dias // 30
+                tiempo_restante = f"{meses} mes{'es' if meses != 1 else ''} restante{'s' if meses != 1 else ''}"
+            else:
+                anios = dias // 365
+                tiempo_restante = f"{anios} año{'s' if anios != 1 else ''} restante{'s' if anios != 1 else ''}"
+
+        return render_template("perfil.html", usuario=usuario, tiempo_restante=tiempo_restante)
 
     except Exception as e:
         print(f"Error al cargar perfil: {e}")
@@ -4002,7 +4062,7 @@ def procesar_pago():
     user_id = session["usuario_id"]
     datos   = request.get_json(silent=True) or request.form
 
-    plan   = datos.get("plan",   "mensual")
+    plan   = datos.get("plan",   "mensual").lower()
     precio = datos.get("precio", "24900")
     metodo = datos.get("metodo", "")
     nombre = datos.get("nombre", "").strip()
@@ -4038,9 +4098,9 @@ def procesar_pago():
         cursor = conexion.cursor()
         cursor.execute("""
             UPDATE public."Cuentas"
-            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s
+            SET "Es_premium" = TRUE, "Premium_vence" = %s, "Plan_premium" = %s, "Avatar_plan" = %s
             WHERE "ID_Cuenta" = %s
-        """, (expira, plan, user_id))
+        """, (expira, plan, plan, user_id))
         conexion.commit()
     except Exception as e:
         print(f"Error al guardar premium en BD: {e}")
@@ -4359,6 +4419,101 @@ def api_limpiar_soporte():
 # 19. ENDPOINTS DE ADMINISTRACIÓN (Gestión de Usuarios y Estadísticas)
 # ==============================================================================
 
+@app.route("/api/admin/reporte-mensual")
+@limiter.exempt
+@login_required
+def api_admin_reporte_mensual():
+    """Obtiene datos de los últimos 30 días para los gráficos y el reporte mensual."""
+    if not es_admin(session.get("usuario_id")):
+        return jsonify({"error": "No autorizado"}), 403
+
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    try:
+        cur = conexion.cursor()
+        
+        query = """
+        WITH RECURSIVE dias AS (
+            SELECT current_date - 29 AS fecha
+            UNION ALL
+            SELECT fecha + 1 FROM dias WHERE fecha < current_date
+        ),
+        notas_diarias AS (
+            SELECT "Fecha_decreacion"::date as fecha, COUNT(*) as cant_notas
+            FROM public."Notas"
+            WHERE "Fecha_decreacion" >= current_date - 30
+            GROUP BY "Fecha_decreacion"::date
+        ),
+        cuentas_diarias AS (
+            SELECT "Fecha_creacion"::date as fecha, COUNT(*) as cant_cuentas
+            FROM public."Cuentas"
+            WHERE "Fecha_creacion" >= current_date - 30
+            GROUP BY "Fecha_creacion"::date
+        ),
+        compras_estimadas AS (
+            SELECT 
+                CASE 
+                    WHEN "Plan_premium" = 'quincenal' THEN ("Premium_vence" - INTERVAL '15 days')::date
+                    WHEN "Plan_premium" = 'mensual' THEN ("Premium_vence" - INTERVAL '1 month')::date
+                    WHEN "Plan_premium" = 'anual' THEN ("Premium_vence" - INTERVAL '1 year')::date
+                    ELSE NULL
+                END as fecha,
+                COUNT(*) as cant_compras,
+                SUM(CASE 
+                    WHEN "Plan_premium" = 'quincenal' THEN 14900
+                    WHEN "Plan_premium" = 'mensual' THEN 24900
+                    WHEN "Plan_premium" = 'anual' THEN 199900
+                    ELSE 0
+                END) as ingresos
+            FROM public."Cuentas"
+            WHERE "Es_premium" = TRUE AND "Premium_vence" IS NOT NULL
+            GROUP BY 1
+        )
+        SELECT 
+            d.fecha,
+            COALESCE(n.cant_notas, 0) as notas,
+            COALESCE(c.cant_cuentas, 0) as cuentas,
+            COALESCE(co.cant_compras, 0) as compras,
+            COALESCE(co.ingresos, 0) as ingresos
+        FROM dias d
+        LEFT JOIN notas_diarias n ON d.fecha = n.fecha
+        LEFT JOIN cuentas_diarias c ON d.fecha = c.fecha
+        LEFT JOIN compras_estimadas co ON d.fecha = co.fecha
+        ORDER BY d.fecha ASC;
+        """
+        cur.execute(query)
+        rows = cur.fetchall()
+        cerrar_db(cur, conexion)
+        
+        # Generar un pequeño análisis de texto
+        total_notas = sum(r["notas"] for r in rows)
+        total_cuentas = sum(r["cuentas"] for r in rows)
+        total_ingresos = sum(r["ingresos"] for r in rows)
+        
+        analisis_texto = f"En los últimos 30 días, se han creado {total_notas} notas nuevas y {total_cuentas} cuentas de usuario. Los ingresos estimados generados en este periodo son de ${total_ingresos:,.0f} COP."
+        
+        return jsonify({
+            "datos": [{
+                "fecha": r["fecha"].strftime("%Y-%m-%d"),
+                "notas": r["notas"],
+                "cuentas": r["cuentas"],
+                "compras": r["compras"],
+                "ingresos": r["ingresos"]
+            } for r in rows],
+            "resumen": {
+                "total_notas": total_notas,
+                "total_cuentas": total_cuentas,
+                "total_ingresos": total_ingresos,
+                "texto": analisis_texto
+            }
+        })
+    except Exception as e:
+        print(f"Error en api_admin_reporte_mensual: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/admin/estadisticas")
 @limiter.exempt
 @login_required
@@ -4410,9 +4565,29 @@ def api_admin_estadisticas():
         """)
         ingresos = cur.fetchone()["count"] or 0
         
-        # 6. Notas Creadas
+        # 6. Notas Creadas (total)
         cur.execute('SELECT COUNT(*) as count FROM public."Notas"')
         notas_creadas = cur.fetchone()["count"]
+        
+        # 7. Notas Este Mes
+        cur.execute('SELECT COUNT(*) as count FROM public."Notas" WHERE "Fecha_decreacion" >= date_trunc(\'month\', CURRENT_DATE)')
+        notas_este_mes = cur.fetchone()["count"]
+        
+        # 8. Notas Mes Pasado
+        cur.execute('SELECT COUNT(*) as count FROM public."Notas" WHERE "Fecha_decreacion" >= date_trunc(\'month\', CURRENT_DATE) - INTERVAL \'1 month\' AND "Fecha_decreacion" < date_trunc(\'month\', CURRENT_DATE)')
+        notas_mes_pasado = cur.fetchone()["count"]
+        
+        # 9. Total Carpetas
+        cur.execute('SELECT COUNT(*) as count FROM public."Carpetas"')
+        total_carpetas = cur.fetchone()["count"]
+        
+        # 10. Notas en Papelera
+        cur.execute('SELECT COUNT(*) as count FROM public."Notas" WHERE LOWER("Estado") = \'papelera\'')
+        notas_papelera = cur.fetchone()["count"]
+        
+        # 11. Total compras acumuladas (suma de Veces_premium)
+        cur.execute('SELECT COALESCE(SUM("Veces_premium"), 0) as count FROM public."Cuentas"')
+        total_compras = cur.fetchone()["count"]
         
         cerrar_db(cur, conexion)
         
@@ -4422,7 +4597,12 @@ def api_admin_estadisticas():
             "gratis": gratis,
             "activos": activos,
             "ingresos": ingresos,
-            "notas_creadas": notas_creadas
+            "notas_creadas": notas_creadas,
+            "notas_este_mes": notas_este_mes,
+            "notas_mes_pasado": notas_mes_pasado,
+            "total_carpetas": total_carpetas,
+            "notas_papelera": notas_papelera,
+            "total_compras": total_compras
         })
     except Exception as e:
         print(f"Error en api_admin_estadisticas: {e}")
@@ -4450,7 +4630,7 @@ def api_admin_usuarios():
             return jsonify({"error": "No autorizado"}), 403
 
         cur.execute("""
-            SELECT "ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin"
+            SELECT "ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan"
             FROM public."Cuentas"
             ORDER BY "ID_Cuenta" ASC
         """)
@@ -4461,7 +4641,11 @@ def api_admin_usuarios():
             u["Telefono"] = str(u["Telefono"]) if u.get("Telefono") else ""
             
         cerrar_db(cur, conexion)
-        return jsonify(usuarios)
+        response = jsonify(usuarios)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
     except Exception as e:
         print(f"Error en api_admin_usuarios: {e}")
         return jsonify({"error": str(e)}), 500
@@ -4635,8 +4819,13 @@ def api_admin_toggle_admin(target_user_id):
             
         nuevo_estado = not user.get("Es_admin", False)
         
-        # Actualizar rol de admin
-        cur.execute('UPDATE public."Cuentas" SET "Es_admin" = %s WHERE "ID_Cuenta" = %s', (nuevo_estado, target_user_id))
+        # Actualizar rol de admin y resetear/asignar el avatar cósmico
+        if nuevo_estado:
+            # Si se le da admin, asignarle automáticamente el marco cósmico
+            cur.execute('UPDATE public."Cuentas" SET "Es_admin" = %s, "Avatar_plan" = %s WHERE "ID_Cuenta" = %s', (nuevo_estado, 'cosmico', target_user_id))
+        else:
+            # Si se le quita admin, regresarlo a su marco según su plan premium, o a ninguno si es gratis
+            cur.execute('UPDATE public."Cuentas" SET "Es_admin" = %s, "Avatar_plan" = "Plan_premium" WHERE "ID_Cuenta" = %s', (nuevo_estado, target_user_id))
         
         conexion.commit()
         
@@ -4751,6 +4940,116 @@ def init_indexes():
             cerrar_db(cur, conexion)
 
 
-if __name__ == "__main__":
+# ==============================================================================
+# TAREA PROGRAMADA — Correo de aviso 7 días antes del vencimiento del plan
+# ==============================================================================
+
+def verificar_vencimientos_plan():
+    """
+    Revisa diariamente si algún usuario premium vence en exactamente 7 días
+    y le envía un correo de aviso para que renueve su plan.
+    """
+    print("[Scheduler] Verificando vencimientos de planes...")
+    conexion = None
+    cursor = None
+    try:
+        conexion = conectar_db(dict_cursor=True)
+        if not conexion:
+            print("[Scheduler] Error: no se pudo conectar a la BD.")
+            return
+        cursor = conexion.cursor()
+
+        # Buscar usuarios cuyo plan vence entre 6 días 23h y 7 días 1h desde ahora
+        cursor.execute("""
+            SELECT "ID_Cuenta", "Nombres", "Correo", "Plan_premium", "Premium_vence"
+            FROM public."Cuentas"
+            WHERE "Es_premium" = TRUE
+              AND "Premium_vence" BETWEEN NOW() + INTERVAL '6 days 22 hours'
+                                       AND NOW() + INTERVAL '7 days 2 hours'
+        """)
+        usuarios_por_vencer = cursor.fetchall()
+
+        print(f"[Scheduler] Usuarios con plan por vencer en 7 días: {len(usuarios_por_vencer)}")
+
+        for u in usuarios_por_vencer:
+            nombre   = u.get("Nombres", "Usuario")
+            correo   = u.get("Correo")
+            plan     = (u.get("Plan_premium") or "premium").capitalize()
+            vence    = u.get("Premium_vence")
+            fecha_str = vence.strftime("%d de %B de %Y") if vence else "pronto"
+
+            if not correo:
+                continue
+
+            cuerpo = f"""
+            <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 16px;">
+                Hola <strong>{nombre}</strong>, 👋
+            </p>
+            <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 16px;">
+                Queremos recordarte que tu plan <strong>{plan}</strong> en NoteFlow
+                vencerá el <strong>{fecha_str}</strong>, es decir, en aproximadamente <strong>7 días</strong>.
+            </p>
+            <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 24px;">
+                Para seguir disfrutando de todas las funciones premium sin interrupciones,
+                renueva tu plan desde el dashboard.
+            </p>
+            <div style="text-align:center;margin:0 0 24px;">
+                <a href="https://noteflow.com/dashboard"
+                   style="background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                          color:#fff;text-decoration:none;padding:14px 32px;
+                          border-radius:8px;font-weight:700;font-size:15px;
+                          display:inline-block;">
+                    🔄 Renovar mi plan
+                </a>
+            </div>
+            <p style="color:#6b7280;font-size:13px;margin:0;">
+                Si ya realizaste tu renovación, puedes ignorar este mensaje.
+            </p>
+            """
+
+            html_body = construir_email_html("⏰ Tu plan vence en 7 días", cuerpo)
+
+            try:
+                msg = Message(
+                    subject="⏰ Tu plan NoteFlow vence pronto",
+                    recipients=[correo],
+                    html=html_body,
+                    sender=app.config.get("MAIL_DEFAULT_SENDER", "NoteFlow <no-reply@noteflow.com>")
+                )
+                t = threading.Thread(target=enviar_correo_asincrono, args=(app, msg))
+                t.daemon = True
+                t.start()
+                print(f"[Scheduler] Correo de aviso enviado a {correo}")
+            except Exception as e_mail:
+                print(f"[Scheduler] Error al enviar correo a {correo}: {e_mail}")
+
+    except Exception as e:
+        print(f"[Scheduler] Error en verificar_vencimientos_plan: {e}")
+    finally:
+        if cursor and conexion:
+            cerrar_db(cursor, conexion)
+
+
+# Iniciar el scheduler solo una vez (evitar duplicados con el reloader de Flask)
+_scheduler_iniciado = False
+
+def iniciar_scheduler():
+    global _scheduler_iniciado
+    if _scheduler_iniciado:
+        return
+    _scheduler_iniciado = True
+    scheduler = BackgroundScheduler(timezone="UTC")
+    # Ejecutar todos los días a las 9:00 AM UTC
+    scheduler.add_job(verificar_vencimientos_plan, CronTrigger(hour=9, minute=0))
+    scheduler.start()
+    print("[Scheduler] Programador de vencimientos iniciado — verifica diariamente a las 09:00 UTC.")
+
+
+# Arrancar el scheduler con el servidor
+with app.app_context():
     init_indexes()
+    iniciar_scheduler()
+
+
+if __name__ == "__main__":
     app.run(port=5000)
