@@ -5051,7 +5051,15 @@ def api_admin_toggle_admin(target_user_id):
             cur.execute('UPDATE public."Cuentas" SET "Es_admin" = %s, "Avatar_plan" = %s WHERE "ID_Cuenta" = %s', (nuevo_estado, 'cosmico', target_user_id))
         else:
             # Si se le quita admin, regresarlo a su marco según su plan premium, o a ninguno si es gratis
-            cur.execute('UPDATE public."Cuentas" SET "Es_admin" = %s, "Avatar_plan" = "Plan_premium" WHERE "ID_Cuenta" = %s', (nuevo_estado, target_user_id))
+            cur.execute('''
+                UPDATE public."Cuentas" 
+                SET "Es_admin" = %s,
+                    "Avatar_plan" = CASE 
+                        WHEN "Plan_premium" IN (\'quincenal\', \'mensual\', \'anual\') THEN "Plan_premium"
+                        ELSE \'ninguno\'
+                    END
+                WHERE "ID_Cuenta" = %s
+            ''', (nuevo_estado, target_user_id))
         
         conexion.commit()
         

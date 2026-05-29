@@ -139,7 +139,7 @@ function AnalyticsReport() {
       {/* Footer exclusivo de impresión (PDF) */}
       <div className="print-footer">
         <div className="print-footer-content">
-          <img src="/static/logocircular.png" alt="NoteFlow Logo" className="print-logo" />lll
+          <img src="/static/logocircular.png" alt="NoteFlow Logo" className="print-logo" />
           <div className="print-text">
             <strong>NoteFlow</strong> - Palmira, Valle del Cauca, Colombia<br/>
             <em>"Para todos los viajeros que tienen un espíritu libre"</em>
