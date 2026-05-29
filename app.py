@@ -1486,8 +1486,7 @@ def dashboard():
         planes_orden = {"quincenal": 1, "mensual": 2, "anual": 3}
         if es_premium and plan in planes_orden:
             nivel_avatar = planes_orden.get(avatar_plan_actual, -1)
-            # Solo auto-asignar si es None, 'gratis', o un valor completamente desconocido
-            if avatar_plan_actual in (None, "gratis") or (nivel_avatar < 0 and avatar_plan_actual != "ninguno"):
+            if avatar_plan_actual in (None, "gratis") or (nivel_avatar < 0 and avatar_plan_actual not in ("ninguno", "cosmico")):
                 avatar_plan_actual = plan
                 # Actualizar en BD silenciosamente
                 try:
