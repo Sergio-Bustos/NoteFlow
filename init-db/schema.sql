@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS public."Cuentas" (
     "Plan_premium"       TEXT DEFAULT 'gratis',
     "Avatar_plan"        VARCHAR(20) DEFAULT 'quincenal',
     "Fecha_creacion"     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    "Veces_premium"      INTEGER DEFAULT 0
+    "Veces_premium"      INTEGER DEFAULT 0,
+    "Ultimo_acceso"      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Tabla: Carpetas
@@ -84,4 +85,14 @@ CREATE TABLE IF NOT EXISTS public."Soporte" (
     "Remitente" VARCHAR(10) NOT NULL,
     "Leido" BOOLEAN DEFAULT FALSE,
     "Fecha" TIMESTAMP DEFAULT NOW()
+);
+-- Tabla: Actividad_Usuario
+CREATE TABLE IF NOT EXISTS public."Actividad_Usuario" (
+    "ID_Actividad" SERIAL PRIMARY KEY,
+    "ID_Cuenta" INTEGER NOT NULL REFERENCES public."Cuentas"("ID_Cuenta"),
+    "ID_Nota" INTEGER REFERENCES public."Notas"("ID_Nota") ON DELETE SET NULL,
+    "Fecha" DATE NOT NULL DEFAULT CURRENT_DATE,
+    "Tiempo_segundos" INTEGER NOT NULL DEFAULT 0,
+    "Visitas" INTEGER NOT NULL DEFAULT 1,
+    UNIQUE ("ID_Cuenta", "ID_Nota", "Fecha")
 );

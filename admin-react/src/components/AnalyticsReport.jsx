@@ -135,6 +135,22 @@ function AnalyticsReport() {
           </tbody>
         </table>
       </div>
+
+      {/* Footer exclusivo de impresión (PDF) */}
+      <div className="print-footer">
+        <div className="print-footer-content">
+          <img src="/static/logocircular.png" alt="NoteFlow Logo" className="print-logo" />lll
+          <div className="print-text">
+            <strong>NoteFlow</strong> - Palmira, Valle del Cauca, Colombia<br/>
+            <em>"Para todos los viajeros que tienen un espíritu libre"</em>
+          </div>
+        </div>
+        <div className="print-copyright">
+          &copy; Derechos reservados a todo NoteFlow.<br/>
+          Generado el: <span>{new Date().toLocaleString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+      </div>
+      
     </div>
   );
 }

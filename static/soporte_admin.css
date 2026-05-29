@@ -1185,4 +1185,29 @@ body.tema-oscuro .btn-close {
     .no-print {
         display: none !important;
     }
+    .print-footer {
+        display: block !important;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 2px solid #ccc;
+        text-align: center;
+    }
+}
+
+.print-footer {
+    display: none;
+}
+.print-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 10px;
+}
+.print-text {
+    font-size: 0.95rem;
+    color: #333;
+    margin-bottom: 15px;
+}
+.print-copyright {
+    font-size: 0.8rem;
+    color: #666;
 }

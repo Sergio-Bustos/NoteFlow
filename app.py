@@ -499,21 +499,37 @@ def sanitizar_html(html_sucio):
         'font', 's', 'strike', 'b', 'i',  # execCommand genera estas etiquetas
     ]
     attrs_permitidos = {
-        '*':    ['style', 'class'],
+        '*':    ['style', 'class', 'align', 'dir'],
         'a':    ['href', 'title'],
+        'div':  ['style', 'class', 'align', 'dir'],
+        'p':    ['style', 'class', 'align', 'dir'],
         'font': ['size', 'color', 'face'],  # execCommand('fontSize') genera <font size="N">
     }
     styles_permitidos = [
         'color', 'background-color', 'text-align',
         'font-size', 'font-weight', 'font-style', 'text-decoration',
     ]
+    
 
-    return bleach.clean(
-        html_sucio,
-        tags=tags_permitidos,
-        attributes=attrs_permitidos,
-        strip=True
-    )
+    try:
+        from bleach.css_sanitizer import CSSSanitizer
+        css_sanitizer = CSSSanitizer(allowed_css_properties=styles_permitidos)
+        return bleach.clean(
+            html_sucio,
+            tags=tags_permitidos,
+            attributes=attrs_permitidos,
+            css_sanitizer=css_sanitizer,
+            strip=True
+        )
+    except ImportError:
+        # Fallback para versiones antiguas de bleach
+        return bleach.clean(
+            html_sucio,
+            tags=tags_permitidos,
+            attributes=attrs_permitidos,
+            styles=styles_permitidos,
+            strip=True
+        )
 
 def limpiar_datos_formulario(datos, campos):
     """Limpia y retorna un diccionario con los campos del formulario."""
@@ -1002,6 +1018,16 @@ def procesar_login():
             session.clear()
             session["usuario_id"]     = cuenta["ID_Cuenta"]
             session["usuario_nombre"] = cuenta["Usuario"]
+            
+            # Registrar el último acceso
+            try:
+                cur_temp = conexion.cursor()
+                cur_temp.execute('UPDATE public."Cuentas" SET "Ultimo_acceso" = NOW() WHERE "ID_Cuenta" = %s', (cuenta["ID_Cuenta"],))
+                conexion.commit()
+                cur_temp.close()
+            except Exception as e:
+                print(f"Error actualizando Ultimo_acceso: {e}")
+                
             security_logger.info(f"Login exitoso: {usuario} desde {request.remote_addr}")
             
             # ... resto del código de premium ...
@@ -1169,6 +1195,13 @@ def google_callback():
         session["es_premium"]     = es_premium
         session["plan_premium"]   = plan_premium
         session["premium_color"]  = colores.get(plan_premium, "#f1c40f")
+
+        # Registrar el último acceso
+        try:
+            cursor.execute('UPDATE public."Cuentas" SET "Ultimo_acceso" = NOW() WHERE "ID_Cuenta" = %s', (id_cuenta,))
+            conexion.commit()
+        except Exception as e:
+            print(f"Error actualizando Ultimo_acceso en google login: {e}")
 
         return redirect("/dashboard")
 
@@ -1387,6 +1420,148 @@ def cerrar_sesion_perfil():
         limpiar_soporte_db(usuario_id)
     session.clear()
     return redirect(url_for("mostrar_login"))
+
+# ==============================================================================
+# REPORTE DE USUARIO
+# ==============================================================================
+
+@app.route("/reporte")
+@login_required
+def reporte_usuario():
+    """Muestra estadísticas y reporte detallado del usuario."""
+    user_id = session.get("usuario_id")
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return "Error de conexión a la base de datos", 500
+        
+    try:
+        cur = conexion.cursor()
+        
+        # 1. Datos básicos del usuario (Último acceso, plan, etc.)
+        cur.execute("""
+            SELECT "Nombres", "Foto", "Color_principal", "Es_premium", "Plan_premium", "Es_admin", "Ultimo_acceso"
+            FROM public."Cuentas" WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        usuario = cur.fetchone()
+        
+        if not usuario:
+            session.clear()
+            cerrar_db(cur, conexion)
+            return redirect(url_for("mostrar_login"))
+            
+        # 2. Estadísticas de notas (totales vs eliminadas)
+        cur.execute("""
+            SELECT 
+                COUNT(*) FILTER (WHERE "Estado" = 'Activa') as activas,
+                COUNT(*) FILTER (WHERE LOWER("Estado") = 'papelera') as eliminadas
+            FROM public."Notas"
+            WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        stats_notas = cur.fetchone()
+        
+        # 3. Archivo más reciente modificado
+        cur.execute("""
+            SELECT "Titulo", "Fecha_deedicion", "Formato"
+            FROM public."Notas"
+            WHERE "ID_Cuenta" = %s
+            ORDER BY "Fecha_deedicion" DESC
+            LIMIT 1
+        """, (user_id,))
+        ultima_nota = cur.fetchone()
+        
+        # 4. Distribución por formato
+        cur.execute("""
+            SELECT "Formato", COUNT(*) as cantidad
+            FROM public."Notas"
+            WHERE "ID_Cuenta" = %s AND "Estado" = 'Activa'
+            GROUP BY "Formato"
+            ORDER BY cantidad DESC
+        """, (user_id,))
+        formatos = cur.fetchall()
+        
+        # 5. Resumen de carpetas
+        cur.execute("""
+            SELECT COUNT(*) as total_carpetas
+            FROM public."Carpetas"
+            WHERE "ID_Cuenta" = %s AND "Estado" = 'Activa'
+        """, (user_id,))
+        carpetas_info = cur.fetchone()
+
+        # 6. Horas totales en NoteFlow
+        cur.execute("""
+            SELECT SUM("Tiempo_segundos") as total_segundos
+            FROM public."Actividad_Usuario"
+            WHERE "ID_Cuenta" = %s
+        """, (user_id,))
+        actividad_total = cur.fetchone()
+        horas_totales = round((actividad_total['total_segundos'] or 0) / 3600, 2)
+
+        # 7. Notas más usadas en el mes actual
+        cur.execute("""
+            SELECT 
+                n."Titulo",
+                SUM(a."Tiempo_segundos") as tiempo_segundos,
+                SUM(a."Visitas") as visitas
+            FROM public."Actividad_Usuario" a
+            JOIN public."Notas" n ON a."ID_Nota" = n."ID_Nota"
+            WHERE a."ID_Cuenta" = %s 
+              AND EXTRACT(MONTH FROM a."Fecha") = EXTRACT(MONTH FROM CURRENT_DATE)
+              AND EXTRACT(YEAR FROM a."Fecha") = EXTRACT(YEAR FROM CURRENT_DATE)
+            GROUP BY n."ID_Nota", n."Titulo"
+            ORDER BY tiempo_segundos DESC
+            LIMIT 5
+        """, (user_id,))
+        notas_mas_usadas = cur.fetchall()
+        
+        cerrar_db(cur, conexion)
+        
+        return render_template("reporte.html", 
+                             usuario=usuario, 
+                             stats_notas=stats_notas, 
+                             ultima_nota=ultima_nota, 
+                             formatos=formatos,
+                             carpetas_info=carpetas_info,
+                             horas_totales=horas_totales,
+                             notas_mas_usadas=notas_mas_usadas)
+    except Exception as e:
+        print(f"Error en reporte_usuario: {e}")
+        return "Error interno del servidor", 500
+
+@app.route("/ping-actividad", methods=["POST"])
+@login_required
+def ping_actividad():
+    """Recibe pings periódicos para calcular tiempo de uso."""
+    user_id = session.get("usuario_id")
+    tiempo = request.form.get("tiempo_segundos", type=int, default=0)
+    nota_id = request.form.get("nota_id", type=int)
+
+    if tiempo <= 0 or tiempo > 300: # Ignorar pings maliciosos o muy largos
+        return jsonify({"status": "ok"})
+
+    conexion = conectar_db()
+    if not conexion:
+        return jsonify({"error": "db"}), 500
+
+    try:
+        cur = conexion.cursor()
+        # Insertar o actualizar la actividad del día
+        cur.execute("""
+            INSERT INTO public."Actividad_Usuario" ("ID_Cuenta", "ID_Nota", "Fecha", "Tiempo_segundos", "Visitas")
+            VALUES (%s, %s, CURRENT_DATE, %s, 1)
+            ON CONFLICT ("ID_Cuenta", "ID_Nota", "Fecha")
+            DO UPDATE SET 
+                "Tiempo_segundos" = "Actividad_Usuario"."Tiempo_segundos" + EXCLUDED."Tiempo_segundos",
+                "Visitas" = "Actividad_Usuario"."Visitas" + 1
+        """, (user_id, nota_id, tiempo))
+        conexion.commit()
+        cerrar_db(cur, conexion)
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        print("Error en ping_actividad:", e)
+        if conexion:
+            conexion.rollback()
+            cerrar_db(conexion.cursor(), conexion)
+        return jsonify({"error": "server"}), 500
 
 # ==============================================================================
 # 7. DASHBOARD
@@ -1690,6 +1865,7 @@ def cambiar_avatar():
     else:
         # Validar que el plan tenga acceso a ese marco
         permisos = {
+            "gratis":    ["ninguno"],
             "quincenal": ["quincenal", "ninguno"],
             "mensual":   ["quincenal", "mensual", "ninguno"],
             "anual":     ["quincenal", "mensual", "anual", "ninguno"],
@@ -1724,6 +1900,57 @@ def cambiar_avatar():
     finally:
         cerrar_db(cursor, conexion)
 
+@app.route("/eliminar-cuenta", methods=["POST"])
+@login_required
+def eliminar_cuenta():
+    """Elimina permanentemente la cuenta del usuario y todos sus datos asociados."""
+    user_id = session.get("usuario_id")
+    conexion = conectar_db()
+    if not conexion:
+        return jsonify({"error": "Error de conexión a la base de datos"}), 500
+
+    try:
+        cur = conexion.cursor()
+        
+        # Eliminar relaciones en cascada manual
+        
+        # 1. Obtener los IDs de las notas del usuario
+        cur.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Cuenta" = %s', (user_id,))
+        notas = cur.fetchall()
+        notas_ids = [n[0] for n in notas]
+
+        if notas_ids:
+            # 2. Eliminar de Notas_etiquetas
+            cur.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = ANY(%s)', (notas_ids,))
+            
+            # 3. Eliminar Adjuntos (opcional: eliminar archivos del filesystem o S3 si los hubiera)
+            cur.execute('DELETE FROM public."Adjuntos" WHERE "ID_Nota" = ANY(%s)', (notas_ids,))
+
+        # 4. Eliminar Actividad
+        cur.execute('DELETE FROM public."Actividad_Usuario" WHERE "ID_Cuenta" = %s', (user_id,))
+
+        # 5. Eliminar Notas
+        cur.execute('DELETE FROM public."Notas" WHERE "ID_Cuenta" = %s', (user_id,))
+
+        # 6. Eliminar Carpetas
+        cur.execute('DELETE FROM public."Carpetas" WHERE "ID_Cuenta" = %s', (user_id,))
+
+        # 7. Eliminar Soporte
+        cur.execute('DELETE FROM public."Soporte" WHERE "ID_Cuenta" = %s', (user_id,))
+
+        # 8. Finalmente, eliminar Cuenta
+        cur.execute('DELETE FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (user_id,))
+        
+        conexion.commit()
+        session.clear()
+        return jsonify({"success": True, "redirect": url_for('bienvenidoalapagina')})
+        
+    except Exception as e:
+        conexion.rollback()
+        print(f"Error al eliminar cuenta: {e}")
+        return jsonify({"error": "No se pudo eliminar la cuenta. Contacte soporte."}), 500
+    finally:
+        cerrar_db(cur, conexion)
 
 @app.route("/perfil/cambiar-tema", methods=["POST"])
 @login_required

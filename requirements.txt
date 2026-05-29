@@ -31,3 +31,4 @@ flask-limiter
 flask-wtf
 supabase
 APScheduler==3.10.4
+tinycss2

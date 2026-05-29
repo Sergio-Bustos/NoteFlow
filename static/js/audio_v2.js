@@ -357,9 +357,16 @@ Object.entries(botonesEfecto).forEach(([id, cfg]) => {
     });
 });
 
-// Pitch acumulativo
+// Pitch acumulativo (límite: ±24 semitonos = 2 octavas)
+const PITCH_MAX = 24;
+const PITCH_MIN = -24;
+
 document.getElementById('efPitch')?.addEventListener('click', () => {
     if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
+    if (pitchAcumulado >= PITCH_MAX) {
+        mostrarToast(`Límite máximo de pitch alcanzado (+${PITCH_MAX} semitonos)`);
+        return;
+    }
     pitchAcumulado += 2;
     if (reproduciendo) reconectarCadenaEfectos();
     efectosActivos.add('efPitch');
@@ -370,6 +377,10 @@ document.getElementById('efPitch')?.addEventListener('click', () => {
 
 document.getElementById('efPitchDown')?.addEventListener('click', () => {
     if (!audioBuffer) { mostrarToast('Carga un audio primero'); return; }
+    if (pitchAcumulado <= PITCH_MIN) {
+        mostrarToast(`Límite mínimo de pitch alcanzado (${PITCH_MIN} semitonos)`);
+        return;
+    }
     pitchAcumulado -= 2;
     if (pitchAcumulado === 0) {
         efectosActivos.delete('efPitch');

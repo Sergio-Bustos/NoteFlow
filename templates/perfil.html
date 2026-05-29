@@ -187,8 +187,14 @@
         </form>
     </div>
 
-    <!-- ── CERRAR SESIÓN ── -->
-    <div class="card">
+    <!-- ── ACCIONES PELIGROSAS Y CERRAR SESIÓN ── -->
+    <div class="card" style="border: 1px solid #e74c3c;">
+        <h2 style="color: #e74c3c;"><i class="fas fa-exclamation-triangle"></i> Zona de Peligro</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Las acciones en esta área tienen consecuencias irreversibles.</p>
+        <button class="logout" style="background-color: transparent; border: 2px solid #e74c3c; color: #e74c3c; margin-bottom: 15px;" data-bs-toggle="modal" data-bs-target="#eliminarCuentaModal">
+            <i class="fas fa-user-times"></i> Eliminar mi cuenta
+        </button>
+
         <button class="logout" data-bs-toggle="modal" data-bs-target="#logoutModal">
             <i class="fas fa-sign-out-alt"></i> Cerrar sesión
         </button>
@@ -227,7 +233,8 @@
                 <p class="avatar-card-subtitle">Normal</p>
             </div>
 
-            <!-- ── QUINCENAL (siempre disponible) ── -->
+            <!-- ── QUINCENAL ── -->
+            {% if session.es_premium %}
             <div class="avatar-card" id="opt-quincenal"
                  onclick="seleccionarAvatar('quincenal')">
                 <span class="plan-tag tag-quincenal">Quincenal</span>
@@ -236,6 +243,18 @@
                 <p class="avatar-card-title opt-quincenal-text">Plan Quincenal</p>
                 <p class="avatar-card-subtitle">15 días</p>
             </div>
+            {% else %}
+            <div class="avatar-card bloqueado">
+                <span class="plan-tag tag-bloqueada">Quincenal</span>
+                <br>
+                <img src="/static/avatar_quincenal_animated.svg" class="avatar-card-img grayscale">
+                <p class="avatar-card-title opt-bloqueado-text">Plan Quincenal</p>
+                <p class="avatar-card-subtitle opt-bloqueado-sub">Requiere plan premium</p>
+                <div class="prohibido-icon">
+                    <div class="prohibido-circle"><div class="prohibido-line"></div></div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- ── MENSUAL ── -->
             {% if session.plan_premium in ['mensual','anual'] %}
@@ -368,6 +387,38 @@
                 <a href="{{ url_for('cerrar_sesion') }}" class="btn btn-logout-confirm">
                     <i class="fas fa-sign-out-alt"></i> Cerrar sesión
                 </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: Confirmar eliminar cuenta ── -->
+<div class="modal fade" id="eliminarCuentaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: 1px solid #e74c3c;">
+            <div class="modal-header" style="background-color: rgba(231, 76, 60, 0.1); border-bottom: 1px solid rgba(231, 76, 60, 0.2);">
+                <h5 class="modal-title" style="color: #e74c3c;">
+                    <i class="fas fa-user-times"></i> Eliminar Cuenta Permanentemente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás completamente seguro de que deseas eliminar tu cuenta?</strong></p>
+                <p>Esta acción <strong style="color: #e74c3c;">no se puede deshacer</strong> y perderás acceso de inmediato. Se eliminarán permanentemente:</p>
+                <ul>
+                    <li>Todas tus notas y archivos multimedia adjuntos.</li>
+                    <li>Todas tus carpetas y organización.</li>
+                    <li>Tu suscripción premium (si tienes alguna).</li>
+                    <li>Tu historial y configuración de perfil.</li>
+                </ul>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(231, 76, 60, 0.2);">
+                <button type="button" class="btn btn-cancel-custom" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-logout-confirm" style="background-color: #e74c3c; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);" onclick="eliminarCuenta()">
+                    <i class="fas fa-trash-alt"></i> Sí, eliminar para siempre
+                </button>
             </div>
         </div>
     </div>
