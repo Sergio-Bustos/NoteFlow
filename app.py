@@ -349,6 +349,46 @@ def cerrar_db(cursor, conexion):
                 pass
 
 
+def generar_nombre_unico_carpeta(cur, user_id, nombre_base, exclude_id=None):
+    """Genera un nombre único de carpeta añadiendo (2), (3)... si ya existe."""
+    nombre = nombre_base
+    contador = 2
+    while True:
+        if exclude_id:
+            cur.execute(
+                'SELECT 1 FROM public."Carpetas" WHERE "ID_Cuenta"=%s AND LOWER("Nombre_carpeta")=LOWER(%s) AND "Estado"=\'Activa\' AND "ID_Carpeta" != %s',
+                (user_id, nombre, exclude_id)
+            )
+        else:
+            cur.execute(
+                'SELECT 1 FROM public."Carpetas" WHERE "ID_Cuenta"=%s AND LOWER("Nombre_carpeta")=LOWER(%s) AND "Estado"=\'Activa\'',
+                (user_id, nombre)
+            )
+        if not cur.fetchone():
+            return nombre
+        nombre = f"{nombre_base} ({contador})"
+        contador += 1
+
+def generar_titulo_unico_nota(cur, user_id, titulo_base, exclude_id=None):
+    """Genera un título único de nota añadiendo (2), (3)... si ya existe."""
+    titulo = titulo_base
+    contador = 2
+    while True:
+        if exclude_id:
+            cur.execute(
+                'SELECT 1 FROM public."Notas" WHERE "ID_Cuenta"=%s AND LOWER("Titulo")=LOWER(%s) AND "Estado"=\'Activa\' AND "ID_Nota" != %s',
+                (user_id, titulo, exclude_id)
+            )
+        else:
+            cur.execute(
+                'SELECT 1 FROM public."Notas" WHERE "ID_Cuenta"=%s AND LOWER("Titulo")=LOWER(%s) AND "Estado"=\'Activa\'',
+                (user_id, titulo)
+            )
+        if not cur.fetchone():
+            return titulo
+        titulo = f"{titulo_base} ({contador})"
+        contador += 1
+
 def verificar_sesion():
     """Verifica si hay sesión activa. Retorna redirección si no la hay."""
     if "usuario_id" not in session:
@@ -2613,13 +2653,8 @@ def api_crear_carpeta():
         conexion = conectar_db(dict_cursor=True)
         cursor   = conexion.cursor()
 
-        # Verificar duplicado (solo activas)
-        cursor.execute(
-            'SELECT 1 FROM public."Carpetas" WHERE "ID_Cuenta"=%s AND LOWER("Nombre_carpeta")=LOWER(%s) AND "Estado"=\'Activa\'',
-            (user_id, nombre)
-        )
-        if cursor.fetchone():
-            return jsonify({"success": False, "error": "Ya tienes una carpeta con ese nombre"}), 409
+        # Generar nombre único automáticamente si ya existe
+        nombre = generar_nombre_unico_carpeta(cursor, user_id, nombre)
 
         # Obtener columnas reales de la tabla para insertar correctamente
         cursor.execute("""
@@ -2682,6 +2717,9 @@ def api_editar_carpeta(carpeta_id):
         )
         if not cursor.fetchone():
             return jsonify({"success": False, "error": "Carpeta no encontrada"}), 404
+
+        # Generar un nombre único si ya existe otro con el mismo nombre
+        nombre = generar_nombre_unico_carpeta(cursor, user_id, nombre, exclude_id=carpeta_id)
 
         cursor.execute(
             'UPDATE public."Carpetas" SET "Nombre_carpeta"=%s, "Fecha_edicion"=%s WHERE "ID_Carpeta"=%s',
@@ -3243,6 +3281,9 @@ def guardar_nota_texto():
         cursor = conexion.cursor()
         hoy    = datetime.now()
 
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo)
+
         # Garantizar que el formato existe en Tipos (FK requerida)
         cursor.execute("""
             INSERT INTO public."Tipos" ("Formato") VALUES ('texto') ON CONFLICT ("Formato") DO NOTHING
@@ -3303,6 +3344,9 @@ def actualizar_nota_texto(nota_id):
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso para editar esta nota"}), 403
 
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
+
         # Actualizar base
         cursor.execute("""
             UPDATE public."Notas"
@@ -3360,6 +3404,9 @@ def guardar_nota_audio():
         cursor = conexion.cursor()
         hoy = datetime.now()
 
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo)
+
         nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
@@ -3413,6 +3460,9 @@ def guardar_nota_imagen():
         cursor = conexion.cursor()
         hoy = datetime.now()
 
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo)
+
         nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
         cursor.execute("""
             INSERT INTO public."Notas"
@@ -3459,6 +3509,9 @@ def actualizar_nota_imagen(nota_id):
         cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso para editar esta nota"}), 403
+
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
 
         # Actualizar base de datos (Metadatos)
         cursor.execute("""
@@ -3535,6 +3588,9 @@ def guardar_nota_dibujo():
         cursor   = conexion.cursor()
         hoy      = datetime.now()
 
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo)
+
         cursor.execute('INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT DO NOTHING', ("png",))
 
         nuevo_id = _next_id(cursor, "Notas", "ID_Nota")
@@ -3583,6 +3639,9 @@ def actualizar_nota_dibujo(nota_id):
         cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso para editar esta nota"}), 403
+
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
 
         # Actualizar base de datos (Metadatos)
         cursor.execute("""
@@ -3651,6 +3710,9 @@ def actualizar_nota_audio(nota_id):
         cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso"}), 403
+
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
 
         cursor.execute("""
             UPDATE public."Notas"
@@ -3782,6 +3844,9 @@ def guardar_nota_video():
         hoy         = datetime.now()
         formato_adj = ext.lstrip(".")
 
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo)
+
         cursor.execute("""
             INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT ("Formato") DO NOTHING
         """, (formato_adj,))
@@ -3843,6 +3908,9 @@ def actualizar_nota_video(nota_id):
         cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso"}), 403
+
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
 
         cursor.execute("""
             UPDATE public."Notas"
@@ -4091,6 +4159,9 @@ def guardar_nota_mixta():
         cursor = conexion.cursor()
         hoy    = datetime.now()
 
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo)
+
         for fmt_val in {a["ext"] for a in adjuntos_a_insertar} | {"mixta"}:
             cursor.execute("""
                 INSERT INTO public."Tipos" ("Formato") VALUES (%s) ON CONFLICT ("Formato") DO NOTHING
@@ -4157,6 +4228,9 @@ def actualizar_nota_mixta(nota_id):
         cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso"}), 403
+
+        # Generar un título único si ya existe otro con el mismo nombre
+        titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
 
         cursor.execute("""
             UPDATE public."Notas"
@@ -5052,7 +5126,7 @@ def api_admin_toggle_admin(target_user_id):
         else:
             # Si se le quita admin, regresarlo a su marco según su plan premium, o a ninguno si es gratis
             cur.execute('''
-                UPDATE public."Cuentas" 
+                UPDATE public."Cuentas" L
                 SET "Es_admin" = %s,
                     "Avatar_plan" = CASE 
                         WHEN "Plan_premium" IN (\'quincenal\', \'mensual\', \'anual\') THEN "Plan_premium"
