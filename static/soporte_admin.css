@@ -704,18 +704,31 @@ body.tema-oscuro .sidebar .menu li a.active {
     border-top: 1px solid var(--border-claro);
     display: flex;
     gap: 10px;
-    align-items: center;
+    align-items: flex-end;
 }
 
 #admin-reply-input {
     flex: 1;
     padding: 8px 14px;
     border: 1.5px solid var(--border-claro);
-    border-radius: 20px;
+    border-radius: 18px;
     outline: none;
     background: var(--card-bg);
     color: var(--text-main);
     font-size: 0.88rem;
+    resize: none;
+    height: 38px;
+    max-height: 120px;
+    box-sizing: border-box;
+    font-family: inherit;
+    line-height: 1.3;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+#admin-reply-input::-webkit-scrollbar {
+    display: none;
 }
 
 #admin-send-btn {
@@ -731,6 +744,8 @@ body.tema-oscuro .sidebar .menu li a.active {
     justify-content: center;
     font-size: 0.9rem;
     transition: background 0.15s;
+    flex-shrink: 0;
+    margin-bottom: 0;
 }
 
 #admin-send-btn:hover {

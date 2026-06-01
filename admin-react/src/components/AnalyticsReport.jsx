@@ -52,7 +52,7 @@ function AnalyticsReport() {
       </div>
 
       <div className="analytics-summary-box">
-        <h4><i className="fas fa-robot"></i> Análisis Automático</h4>
+        <h4><i className="fas fa-chart-line"></i> Análisis Automático</h4>
         <p>{summary?.texto}</p>
         <div className="summary-badges">
           <div className="summary-badge">

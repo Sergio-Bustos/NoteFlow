@@ -134,6 +134,8 @@
     align-self: flex-start;
     border-top-left-radius: 0;
     box-shadow: 0 1px 1.5px rgba(0,0,0,0.15);
+    overflow-wrap: break-word;
+    word-break: break-all;
 }
 
 .support-message.sent {
@@ -142,7 +144,7 @@
     align-self: flex-end;
     border-top-right-radius: 0;
     box-shadow: 0 1px 1.5px rgba(0,0,0,0.15);
-    word-wrap: break-word;
+    overflow-wrap: break-word;
     word-break: break-all;
 }
 
@@ -160,7 +162,7 @@
     background: #f0f0f0;
     display: flex;
     gap: 8px;
-    align-items: center;
+    align-items: flex-end;
 }
 
 .support-input {
@@ -168,10 +170,23 @@
     border: none;
     background: white;
     padding: 10px 15px;
-    border-radius: 20px;
+    border-radius: 18px;
     font-size: 14px;
     outline: none;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    resize: none;
+    height: 38px;
+    max-height: 120px;
+    box-sizing: border-box;
+    font-family: inherit;
+    line-height: 1.3;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.support-input::-webkit-scrollbar {
+    display: none;
 }
 
 .support-send-btn {
@@ -186,6 +201,8 @@
     justify-content: center;
     cursor: pointer;
     transition: transform 0.2s;
+    flex-shrink: 0;
+    margin-bottom: 0;
 }
 
 .support-send-btn:hover {

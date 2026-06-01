@@ -19,6 +19,33 @@ const LIMITES = {
     },
 };
 
+const LIMITE_CARACTERES_TEXTO = window.PLAN_LIMITES?.texto ?? 5000;
+
+function actualizarContadorTextoMixta() {
+    const editor = document.getElementById('cuerpo-nota');
+    const contador = document.getElementById('char-count');
+    const limite = document.getElementById('char-limit');
+    if (!editor || !contador || !limite) return;
+
+    const longitud = editor.innerText.length;
+    contador.textContent = longitud.toLocaleString();
+    limite.textContent = LIMITE_CARACTERES_TEXTO.toLocaleString();
+
+    contador.style.color = longitud > LIMITE_CARACTERES_TEXTO ? '#d64550' : '#5f40d4';
+}
+
+function verificarLimiteTextoMixta() {
+    const editor = document.getElementById('cuerpo-nota');
+    if (!editor) return true;
+
+    const longitud = editor.innerText.length;
+    if (longitud > LIMITE_CARACTERES_TEXTO) {
+        mostrarToast(`Has superado el límite de ${LIMITE_CARACTERES_TEXTO.toLocaleString()} caracteres para tu plan ${window.PLAN_LIMITES?.nombre || 'Gratis'}.`, 'error');
+        return false;
+    }
+    return true;
+}
+
 // ══════════════════════════════════════════════════════════════════
 //  ESTADO GLOBAL
 // ══════════════════════════════════════════════════════════════════
@@ -118,10 +145,18 @@ function cambiarColor(color) {
     document.getElementById('cuerpo-nota').focus();
 }
 
-document.getElementById('cuerpo-nota').addEventListener('input', () => {
-    hayContenido = true;
-    notaGuardada = false;
-});
+const cuerpoNota = document.getElementById('cuerpo-nota');
+if (cuerpoNota) {
+    cuerpoNota.addEventListener('input', () => {
+        hayContenido = true;
+        notaGuardada = false;
+        actualizarContadorTextoMixta();
+        verificarLimiteTextoMixta();
+    });
+
+    // Inicializar contador en caso de que el contenido venga precargado
+    actualizarContadorTextoMixta();
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  VALIDACIÓN GENÉRICA
@@ -409,8 +444,9 @@ function configurarDrop(zonaId, callback) {
 //  GUARDAR NOTA — fetch al backend
 // ══════════════════════════════════════════════════════════════════
 async function guardarNota() {
-    const textoHTML  = document.getElementById('cuerpo-nota').innerHTML.trim();
-    const textoPlano = document.getElementById('cuerpo-nota').innerText.trim();
+    const cuerpoNotas = document.getElementById('cuerpo-nota');
+    const textoHTML  = cuerpoNotas?.innerHTML.trim() || '';
+    const textoPlano = cuerpoNotas?.innerText.trim() || '';
     const tieneTexto = textoPlano.length > 0;
     const tieneMedia = archivos.imagenes.length > 0
                     || archivos.audios.length   > 0
@@ -418,6 +454,11 @@ async function guardarNota() {
 
     if (!tieneTexto && !tieneMedia) {
         mostrarToast('Agrega al menos un tipo de contenido antes de guardar', 'error');
+        return;
+    }
+
+    if (textoPlano.length > LIMITE_CARACTERES_TEXTO) {
+        mostrarToast(`No puedes guardar la nota porque excede el límite de ${LIMITE_CARACTERES_TEXTO.toLocaleString()} caracteres de tu plan.`,'error');
         return;
     }
 
@@ -594,6 +635,7 @@ function formatBytes(bytes) {
             // 1. Cargar texto HTML en el editor
             if (data.contenido) {
                 document.getElementById('cuerpo-nota').innerHTML = data.contenido;
+                actualizarContadorTextoMixta();
             }
 
             // 2. Cargar adjuntos existentes (imágenes, audios, videos)

@@ -7,6 +7,7 @@ const SupportChat = () => {
   const [messages, setMessages] = useState([]);
   const [replyText, setReplyText] = useState('');
   const chatBodyRef = useRef(null);
+  const textareaRef = useRef(null);
   const { modal, openModal, closeModal } = useNfModal();
 
   const loadChats = async () => {
@@ -52,6 +53,25 @@ const SupportChat = () => {
       chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const adjustHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '38px';
+      const newHeight = Math.min(textareaRef.current.scrollHeight, 120);
+      textareaRef.current.style.height = `${newHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, [replyText]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendReply();
+    }
+  };
 
   const handleSendReply = async () => {
     const text = replyText.trim();
@@ -206,14 +226,15 @@ const SupportChat = () => {
             </div>
 
             <div className="chat-footer">
-              <input
-                type="text"
+              <textarea
                 id="admin-reply-input"
                 placeholder="Escribe tu respuesta..."
                 autoComplete="off"
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendReply()}
+                onKeyDown={handleKeyDown}
+                rows={1}
+                ref={textareaRef}
               />
               <button id="admin-send-btn" onClick={handleSendReply}>
                 <i className="fas fa-paper-plane"></i>

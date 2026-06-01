@@ -68,7 +68,8 @@ function App() {
           <li><a href="/papelera"><i className="fas fa-trash-alt"></i> Papelera</a></li>
           <li className="separator"></li>
           <li><a href="/perfil"><i className="fas fa-user-circle"></i> Perfil</a></li>
-          <li><a href="/soporte-admin" className="active" style={{ color: '#f1c40f' }}><i className="fas fa-user-shield"></i> Panel Soporte</a></li>
+          <li><a href="/reporte"><i className="fas fa-chart-line"></i> Reporte</a></li>
+          <li><a href="/soporte-admin" className="active"><i className="fas fa-user-shield"></i> Panel Soporte</a></li>
         </ul>
         <a href="/planes" className="upgrade-btn">
           <i className="fas fa-crown"></i>

@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBody = document.getElementById('support-body');
 
     let pollingInterval = null;
+
+    // Auto-resize textarea height
+    const adjustHeight = () => {
+        if (!input) return;
+        input.style.height = '38px';
+        const newHeight = Math.min(input.scrollHeight, 120);
+        input.style.height = `${newHeight}px`;
+    };
+
+    if (input) {
+        input.addEventListener('input', adjustHeight);
+    }
     
     // Function to get CSRF token from cookies
     const getCSRFToken = () => {
@@ -138,8 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = input.value.trim();
         if (!text) return;
 
-        // Limpiar input inmediatamente
+        // Limpiar input e inmediatamente ajustar su tamaño
         input.value = '';
+        adjustHeight();
 
         const ahora = new Date();
         const horaStr = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -192,7 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
     });
 });
