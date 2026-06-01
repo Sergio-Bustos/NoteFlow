@@ -907,7 +907,13 @@ def procesar_verificacion():
             session.pop("registro_pendiente", None)
             return jsonify({"error": "El usuario o correo ya fue registrado."}), 409
 
-        cursor.execute('SELECT COALESCE(MAX("ID_Cuenta"), 0) + 1 FROM public."Cuentas"')
+        cursor.execute('''
+            SELECT min(missing_id)
+            FROM generate_series(1, COALESCE((SELECT MAX("ID_Cuenta") FROM public."Cuentas"), 0) + 1) AS missing_id
+            WHERE NOT EXISTS (
+                SELECT 1 FROM public."Cuentas" WHERE "ID_Cuenta" = missing_id
+            )
+        ''')
         nuevo_id = cursor.fetchone()[0]
 
         cursor.execute("""
@@ -1501,7 +1507,7 @@ def reporte_usuario():
         
         # 3. Archivo más reciente modificado
         cur.execute("""
-            SELECT "Titulo", "Fecha_deedicion", "Formato"
+            SELECT "Titulo", "Fecha_deedicion", "Formato", "Estado"
             FROM public."Notas"
             WHERE "ID_Cuenta" = %s
             ORDER BY "Fecha_deedicion" DESC
@@ -5205,6 +5211,9 @@ def api_admin_eliminar_usuario(target_user_id):
                 en_uso = cursor.fetchone()["total"] > 1
                 if not en_uso:
                     eliminar_archivo_de_supabase_por_ruta(foto_path)
+        
+        # Eliminar Actividad
+        cursor.execute('DELETE FROM public."Actividad_Usuario" WHERE "ID_Cuenta" = %s', (target_user_id,))
 
         # 9. Eliminar cuenta
         cursor.execute('DELETE FROM public."Cuentas" WHERE "ID_Cuenta" = %s', (target_user_id,))

@@ -14,7 +14,21 @@ const UsersManagement = () => {
     try {
       const response = await fetch('/api/admin/usuarios');
       const data = await response.json();
-      if (response.ok && Array.isArray(data)) setUsers(data);
+      if (response.ok && Array.isArray(data)) {
+        // Sort by saved local order
+        const savedOrder = JSON.parse(localStorage.getItem('admin_users_order') || '[]');
+        if (savedOrder.length > 0) {
+          data.sort((a, b) => {
+            const idxA = savedOrder.indexOf(a.ID_Cuenta);
+            const idxB = savedOrder.indexOf(b.ID_Cuenta);
+            if (idxA === -1 && idxB === -1) return 0;
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
+          });
+        }
+        setUsers(data);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -26,6 +40,42 @@ const UsersManagement = () => {
 
   const togglePasswordVisibility = (userId) => {
     setVisiblePasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
+  };
+
+  /* ── Drag & Drop Reordering ── */
+  const [draggedIdx, setDraggedIdx] = useState(null);
+
+  const handleDragStart = (e, index) => {
+    setDraggedIdx(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    setDraggedIdx(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e, targetIdx) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) return;
+    
+    // Solo permitir reordenar si no hay filtro de búsqueda
+    if (searchQuery) return;
+
+    const newUsers = [...users];
+    const [draggedItem] = newUsers.splice(draggedIdx, 1);
+    newUsers.splice(targetIdx, 0, draggedItem);
+    setUsers(newUsers);
+
+    // Guardar nuevo orden en localStorage
+    const newOrder = newUsers.map(u => u.ID_Cuenta);
+    localStorage.setItem('admin_users_order', JSON.stringify(newOrder));
   };
 
   /* ── Eliminar usuario ── */
@@ -122,14 +172,22 @@ const UsersManagement = () => {
             ) : filteredUsers.length === 0 ? (
               <tr><td colSpan="5" className="loading-state">No se encontraron usuarios.</td></tr>
             ) : (
-              filteredUsers.map(user => {
+              filteredUsers.map((user, index) => {
                 const planClass = `premium-${user.Plan_premium || 'gratis'}`;
                 const premiumLabel = (user.Plan_premium || 'gratis').toUpperCase();
                 const showPass = visiblePasswords[user.ID_Cuenta];
                 const isHashed = (user.Contraseña || '').startsWith('pbkdf2') || (user.Contraseña || '').startsWith('scrypt');
 
                 return (
-                  <tr key={user.ID_Cuenta}>
+                  <tr 
+                    key={user.ID_Cuenta}
+                    draggable={!searchQuery}
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    style={{ cursor: !searchQuery ? 'grab' : 'default' }}
+                  >
                     <td>
                       <div className="user-identity" style={{ cursor: 'pointer' }} onClick={() => setSelectedUserId(user.ID_Cuenta)}>
                         {user.Es_premium ? (

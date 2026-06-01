@@ -265,6 +265,9 @@
                 {% if ultima_nota %}
                     <div class="stat-value" style="font-size: 1.5rem; word-break: break-word;">
                         {{ ultima_nota.Titulo|truncate(30) }}
+                        {% if ultima_nota.Estado|lower == 'papelera' %}
+                            <span style="font-size: 0.9rem; color: #e74c3c; margin-left: 5px;">(en papelera)</span>
+                        {% endif %}
                     </div>
                     <div class="stat-details">
                         <span class="badge bg-secondary mb-2">{{ ultima_nota.Formato|capitalize }}</span><br>
