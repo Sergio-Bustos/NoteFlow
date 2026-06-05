@@ -99,6 +99,21 @@
                             // Éxito: el servidor confirmó que el email fue enviado
                             mostrarToast(data.mensaje, 'success');
 
+                            if (data.demo_url) {
+                                // Crear botón de demostración permanente si el correo falló
+                                let oldDemoBtn = form.querySelector('.demo-btn-custom');
+                                if (oldDemoBtn) oldDemoBtn.remove();
+                                
+                                const demoBtn = document.createElement('a');
+                                demoBtn.href = data.demo_url;
+                                demoBtn.className = 'btn demo-btn-custom mt-3 w-100';
+                                demoBtn.style.backgroundColor = '#f1c40f';
+                                demoBtn.style.color = '#000';
+                                demoBtn.style.fontWeight = 'bold';
+                                demoBtn.innerHTML = '🔗 [Modo Demo] Restablecer Contraseña Aquí';
+                                form.appendChild(demoBtn);
+                            }
+
                             // Limpiar el campo de correo tras 1 s para indicar que se procesó
                             setTimeout(() => { form.reset(); }, 1000);
 

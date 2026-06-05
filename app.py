@@ -1353,7 +1353,8 @@ def procesar_olvide_contrasena():
             print(f"\n{'='*50}\n[MODO DEMOSTRACIÓN] El servidor bloqueó el envío de correo ({mail_e}).\nEnlace de recuperación generado: {reset_url}\n{'='*50}\n")
             return jsonify({
                 "success": True,
-                "mensaje": "No se pudo enviar el correo por el cortafuegos de Render, pero revisa los Logs del servidor para ver el enlace de recuperación (Modo Demo)."
+                "mensaje": "Modo Demo activado. Haz clic en el botón inferior para restablecer tu contraseña.",
+                "demo_url": reset_url
             }), 200
 
         return jsonify({
