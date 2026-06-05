@@ -41,6 +41,7 @@ def getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
         family = socket.AF_INET
     return orig_getaddrinfo(host, port, family, type, proto, flags)
 socket.getaddrinfo = getaddrinfo_ipv4_only
+socket.setdefaulttimeout(15)
 
 load_dotenv()
 
@@ -160,8 +161,8 @@ DB_CONFIG = {
 # Correo (Flask-Mail)
 app.config["MAIL_SERVER"]         = os.getenv("MAIL_SERVER")
 app.config["MAIL_PORT"]           = int(os.getenv("MAIL_PORT"))
-app.config["MAIL_USE_TLS"]        = os.getenv("MAIL_USE_TLS") == "True"
-app.config["MAIL_USE_SSL"]        = os.getenv("MAIL_USE_SSL") == "True"
+app.config["MAIL_USE_TLS"]        = str(os.getenv("MAIL_USE_TLS", "")).strip().lower() in ["true", "1", "yes"]
+app.config["MAIL_USE_SSL"]        = str(os.getenv("MAIL_USE_SSL", "")).strip().lower() in ["true", "1", "yes"]
 app.config["MAIL_USERNAME"]       = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"]       = os.getenv("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
