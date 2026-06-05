@@ -201,6 +201,18 @@ body.tema-oscuro .sidebar .menu li a.active {
     border-bottom: 2px solid var(--border-claro);
     margin-bottom: 25px;
     padding-bottom: 5px;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-tabs-nav::-webkit-scrollbar {
+    height: 4px;
+}
+
+.admin-tabs-nav::-webkit-scrollbar-thumb {
+    background: var(--border-claro);
+    border-radius: 4px;
 }
 
 .admin-tab-btn {

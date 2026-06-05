@@ -8,6 +8,8 @@ const UsersManagement = () => {
   const [loading, setLoading] = useState(true);
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   const { modal, openModal, closeModal } = useNfModal();
 
   const fetchUsers = async () => {
@@ -138,6 +140,23 @@ const UsersManagement = () => {
     return fullName.includes(term) || (user.Correo || '').toLowerCase().includes(term) || (user.Usuario || '').toLowerCase().includes(term);
   });
 
+  // Paginación
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  // Restablecer paginación al buscar
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   return (
     <>
       {/* Barra de búsqueda */}
@@ -169,23 +188,24 @@ const UsersManagement = () => {
           <tbody>
             {loading ? (
               <tr><td colSpan="5" className="loading-state"><i className="fas fa-spinner fa-spin"></i> Cargando cuentas...</td></tr>
-            ) : filteredUsers.length === 0 ? (
+            ) : currentUsers.length === 0 ? (
               <tr><td colSpan="5" className="loading-state">No se encontraron usuarios.</td></tr>
             ) : (
-              filteredUsers.map((user, index) => {
+              currentUsers.map((user, index) => {
                 const planClass = `premium-${user.Plan_premium || 'gratis'}`;
                 const premiumLabel = (user.Plan_premium || 'gratis').toUpperCase();
                 const showPass = visiblePasswords[user.ID_Cuenta];
                 const isHashed = (user.Contraseña || '').startsWith('pbkdf2') || (user.Contraseña || '').startsWith('scrypt');
+                const realIndex = indexOfFirstItem + index;
 
                 return (
                   <tr 
                     key={user.ID_Cuenta}
                     draggable={!searchQuery}
-                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragStart={(e) => handleDragStart(e, realIndex)}
                     onDragEnd={handleDragEnd}
                     onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, index)}
+                    onDrop={(e) => handleDrop(e, realIndex)}
                     style={{ cursor: !searchQuery ? 'grab' : 'default' }}
                   >
                     <td>
@@ -236,7 +256,7 @@ const UsersManagement = () => {
                       {user.ID_Cuenta === 1 ? (
                         <span className="text-muted" style={{ fontSize: '0.78rem', fontWeight: '700' }}><i className="fas fa-lock"></i> Principal</span>
                       ) : (
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <button className="btn-delete-user" onClick={() => handleDeleteUser(user.ID_Cuenta, `${user.Nombres} ${user.Apellidos}`)}>
                             <i className="fas fa-trash-alt"></i> Eliminar
                           </button>
@@ -259,6 +279,31 @@ const UsersManagement = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Controles de Paginación */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px' }}>
+          <button 
+            className="nf-btn nf-btn-secondary" 
+            disabled={currentPage === 1} 
+            onClick={() => handlePageChange(currentPage - 1)}
+            style={{ opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+          >
+            <i className="fas fa-chevron-left"></i> Anterior
+          </button>
+          <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>
+            Página {currentPage} de {totalPages}
+          </span>
+          <button 
+            className="nf-btn nf-btn-secondary" 
+            disabled={currentPage === totalPages} 
+            onClick={() => handlePageChange(currentPage + 1)}
+            style={{ opacity: currentPage === totalPages ? 0.5 : 1, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+          >
+            Siguiente <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      )}
 
       {/* Modal actividad usuario */}
       {selectedUserId && (
