@@ -433,8 +433,10 @@ body.tema-oscuro .sidebar .menu li a.active {
     transition: background 0.12s;
 }
 
-.premium-table tbody tr:hover {
-    background: var(--table-row-hover);
+@media (hover: hover) {
+    .premium-table tbody tr:hover {
+        background: var(--table-row-hover);
+    }
 }
 
 .user-identity {
