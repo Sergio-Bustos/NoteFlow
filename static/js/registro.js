@@ -38,6 +38,18 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
+            
+            // ── Input de Teléfono con Código de País ─────────────────────
+            const phoneInputField = document.getElementById('reg-telefono');
+            let phoneInput = null;
+            if (phoneInputField) {
+                phoneInput = window.intlTelInput(phoneInputField, {
+                    initialCountry: "co",
+                    preferredCountries: ["co", "mx", "ar", "es", "us"],
+                    separateDialCode: true,
+                    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+                });
+            }
 
             // ── Barra de fortaleza ───────────────────────────────────────
             const pwdInput   = document.getElementById('reg-password');
@@ -78,8 +90,9 @@
                 });
             }
 
-            // ── Envío del formulario ─────────────────────────────────────
+            // ── Envío del formulario con Tratamiento de Datos ────────────
             const formRegistro = document.querySelector('form[action="/procesar-registro"]');
+            let privacyAccepted = false;
 
             if (formRegistro) {
                 formRegistro.addEventListener('submit', async function (e) {
@@ -91,7 +104,24 @@
                         return;
                     }
 
+                    // Interceptar para la política de privacidad
+                    if (!privacyAccepted) {
+                        const privacyModal = new bootstrap.Modal(document.getElementById('privacyModal'));
+                        privacyModal.show();
+                        return;
+                    }
+
                     const formData  = new FormData(this);
+                    
+                    // Asegurar que enviamos el número completo con el indicativo (ej. +57...)
+                    if (phoneInput && phoneInput.isValidNumber()) {
+                        formData.set('telefono', phoneInput.getNumber());
+                    } else if (phoneInput) {
+                        // Si no es "válido" estrictamente, igual mandamos lo que haya con su código de país
+                        const number = phoneInput.getNumber();
+                        if (number) formData.set('telefono', number);
+                    }
+
                     const submitBtn = this.querySelector('button[type="submit"]');
                     const btnText   = submitBtn.textContent;
                     submitBtn.disabled = true;
@@ -122,5 +152,26 @@
                         submitBtn.textContent = btnText;
                     }
                 });
+
+                // Manejo de los botones del modal de privacidad
+                const btnAcceptPrivacy = document.getElementById('btn-accept-privacy');
+                if (btnAcceptPrivacy) {
+                    btnAcceptPrivacy.addEventListener('click', function() {
+                        privacyAccepted = true;
+                        const privacyModalEl = document.getElementById('privacyModal');
+                        const privacyModal = bootstrap.Modal.getInstance(privacyModalEl);
+                        if(privacyModal) privacyModal.hide();
+                        
+                        // Enviar el formulario ahora que se aceptó la política
+                        formRegistro.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    });
+                }
+                
+                const btnRejectPrivacy = document.getElementById('btn-reject-privacy');
+                if (btnRejectPrivacy) {
+                    btnRejectPrivacy.addEventListener('click', function() {
+                        mostrarToast('Debe aceptar el tratamiento de datos para continuar con el registro.', 'error');
+                    });
+                }
             }
         });

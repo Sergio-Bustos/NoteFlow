@@ -13,19 +13,41 @@
     
     <style>
         .reporte-container {
-            padding: 20px;
+            padding: 24px;
             animation: fadeIn 0.5s ease;
-        }
-        .report-header {
+            background-color: var(--card-claro, #ffffff);
+            border: 2px solid var(--border-claro, #bdc3c7);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             margin-bottom: 30px;
         }
+        body.tema-oscuro .reporte-container, .dark-mode .reporte-container {
+            background-color: var(--card-oscuro, #2d2d2d);
+            border-color: var(--border-oscuro, #404040);
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border-claro, #bdc3c7);
+            padding-bottom: 20px;
+        }
+        body.tema-oscuro .report-header, .dark-mode .report-header {
+            border-bottom-color: var(--border-oscuro, #404040);
+        }
+
         .report-header h2 {
             font-weight: 700;
             color: var(--text-color);
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
         .report-header p {
             color: var(--text-muted);
+            margin: 0;
         }
         
         .report-grid {
@@ -110,13 +132,14 @@
             background-color: var(--color-principal);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 20px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             transition: opacity 0.3s;
-            float: right;
-            margin-top: -40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         .btn-export-report:hover { opacity: 0.9; }
 
@@ -125,7 +148,7 @@
             .sidebar, .mobile-topbar, .hamburger-btn, header, .support-widget-container, .btn-export-report { display: none !important; }
             .main { margin-left: 0 !important; padding: 0 !important; }
             .report-card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; background-color: #f9f9f9 !important; }
-            .reporte-container { animation: none !important; padding: 0 !important; }
+            .reporte-container { animation: none !important; border: 2px solid #ccc !important; padding: 20px !important; box-shadow: none !important; }
             h2, h3, p, .stat-value { color: black !important; }
             .format-item { background: #eee !important; color: black !important; border: 1px solid #ddd; }
             .print-footer { display: block !important; margin-top: 40px; padding-top: 20px; border-top: 2px solid #ccc; text-align: center; }
@@ -228,8 +251,10 @@
 
     <div class="reporte-container">
         <div class="report-header">
-            <h2><i class="fas fa-chart-line"></i> Mi Actividad en NoteFlow</h2>
-            <p>Resumen detallado de tus estadísticas, hábitos de creación e historial.</p>
+            <div>
+                <h2><i class="fas fa-chart-line"></i> Mi Actividad en NoteFlow</h2>
+                <p>Resumen detallado de tus estadísticas, hábitos de creación e historial.</p>
+            </div>
             <button class="btn-export-report" onclick="prepararImpresion()">
                 <i class="fas fa-file-pdf"></i> Exportar a PDF
             </button>

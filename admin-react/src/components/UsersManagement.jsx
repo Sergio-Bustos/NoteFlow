@@ -210,12 +210,12 @@ const UsersManagement = () => {
                   >
                     <td>
                       <div className="user-identity" style={{ cursor: 'pointer' }} onClick={() => setSelectedUserId(user.ID_Cuenta)}>
-                        {user.Es_premium ? (
+                        {(user.Es_premium || user.Es_admin) ? (
                           <div className="avatar-premium-container" style={{ width: '40px', height: '40px', marginRight: '10px' }}>
                             {user.Avatar_plan === 'cosmico' ? (
                               <img src="/static/marco_cosmico_admin.svg" className="avatar-frame admin-cosmic-frame" alt="marco" />
                             ) : (
-                              <img src={`/static/avatar_${(user.Avatar_plan || user.Plan_premium || 'quincenal').toLowerCase()}_animated.svg`} className={`avatar-frame ${user.Avatar_plan === 'ninguno' ? 'frame-hidden' : ''}`} alt="marco" />
+                              <img src={`/static/avatar_${(user.Avatar_plan || user.Plan_premium || 'quincenal').toLowerCase()}_animated.svg`} className={`avatar-frame ${(user.Avatar_plan === 'ninguno' || (!user.Avatar_plan && !user.Es_premium)) ? 'frame-hidden' : ''}`} alt="marco" />
                             )}
                             <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" className="user-avatar" style={{ width: '43px', height: '40px', position: 'absolute', right: '-1px' }} />
                           </div>

@@ -23,6 +23,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Importa los estilos del framework Bootstrap desde CDN -->
 
+    <!-- Intl-tel-input CSS para el selector de país -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
+    <style>
+        .iti { width: 100%; margin-bottom: 15px; }
+        .iti__flag { background-image: url("https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/img/flags.png"); }
+        @media (min-resolution: 2x) {
+            .iti__flag { background-image: url("https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/img/flags@2x.png"); }
+        }
+    </style>
+
 
 </head> <!-- Fin del head -->
 
@@ -159,7 +169,7 @@
                     </div>
 
                     <label>Teléfono</label>
-                    <input type="tel" name="telefono" placeholder="Ej: 3123456789" autocomplete="tel" required>
+                    <input type="tel" name="telefono" id="reg-telefono" placeholder="Ej: 3123456789" autocomplete="tel" required>
 
                     <label>Correo electrónico</label>
                     <input type="email" name="correo" placeholder="correo@ejemplo.com" autocomplete="email" required>
@@ -210,7 +220,33 @@
 
     </div>
 
+    <!-- Modal Tratamiento de Datos -->
+    <div class="modal fade" id="privacyModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="privacyModalLabel"><i class="fas fa-shield-alt" style="color: #5452d3;"></i> Tratamiento de Datos Personales</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto; color: #495057;">
+                    <h6>Política de Privacidad y Tratamiento de Datos</h6>
+                    <p>Para continuar con el registro en <strong>NoteFlow</strong>, necesitamos su consentimiento explícito para el tratamiento de sus datos personales. Si no acepta, no podrá completar el registro ya que la plataforma requiere manejar esta información para funcionar correctamente y proteger su privacidad.</p>
+                    <p><strong>1. Uso de la Información:</strong> Sus datos (nombre, correo, contraseñas encriptadas) se usarán exclusivamente para la autenticación y funcionamiento del aplicativo.</p>
+                    <p><strong>2. Seguridad:</strong> Implementamos medidas de seguridad avanzadas para proteger su información de accesos no autorizados.</p>
+                    <p><strong>3. Compartición:</strong> No compartiremos sus datos personales con terceros sin su consentimiento explícito, salvo por obligaciones legales.</p>
+                    <p><strong>4. Derechos del Usuario:</strong> Usted tiene derecho a acceder, rectificar o eliminar sus datos personales en cualquier momento eliminando su cuenta desde su panel de control.</p>
+                    <p>Al hacer clic en "Sí, Acepto", usted confirma que ha leído y acepta nuestras políticas de privacidad.</p>
+                </div>
+                <div class="modal-footer" style="justify-content: space-between;">
+                    <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal" id="btn-reject-privacy">No, Rechazar</button>
+                    <button type="button" class="btn" id="btn-accept-privacy" style="background-color: #5452d3; color: white; border-radius: 8px; font-weight: 600;">Sí, Acepto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <!-- Importa el JS de Bootstrap -->
     <script src="{{ url_for('static', filename='js/registro.js') }}"></script> <!-- Script personalizado del formulario de registro -->
 </body>
