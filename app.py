@@ -32,6 +32,15 @@ from supabase import create_client, Client
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import threading
+import socket
+
+# Forzar IPv4 para evitar [Errno 101] Network is unreachable en Railway con servicios como SMTP
+orig_getaddrinfo = socket.getaddrinfo
+def getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+    if family == 0 or family == socket.AF_UNSPEC:
+        family = socket.AF_INET
+    return orig_getaddrinfo(host, port, family, type, proto, flags)
+socket.getaddrinfo = getaddrinfo_ipv4_only
 
 load_dotenv()
 
@@ -1132,8 +1141,10 @@ def _google_flow(state=None):
     if "127.0.0.1" in host or "localhost" in host:
         redirect_url = "http://127.0.0.1:5000/google/callback"
     else:
-        redirect_url = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:5000/google/callback")
-    
+        redirect_url = os.getenv("GOOGLE_REDIRECT_URI")
+        if not redirect_url:
+            proto = request.headers.get("X-Forwarded-Proto", "https")
+            redirect_url = f"{proto}://{host}/google/callback"
 
     """Crea y retorna el objeto Flow de Google OAuth configurado."""
     client_config = {
@@ -1185,7 +1196,7 @@ def google_callback():
 
     # Asegurar que la URL de respuesta use HTTPS si estamos en ngrok/producción
     authorization_response = request.url
-    if "https://" in os.getenv("GOOGLE_REDIRECT_URI", "") and authorization_response.startswith("http://"):
+    if authorization_response.startswith("http://") and not ("127.0.0.1" in request.host or "localhost" in request.host):
         authorization_response = authorization_response.replace("http://", "https://", 1)
 
     flow.fetch_token(authorization_response=authorization_response)
