@@ -116,20 +116,20 @@ body.tema-oscuro .formato-cerrar        { border-color: rgba(255,255,255,0.12); 
 body.tema-oscuro .formato-titulo        { color: rgba(255,255,255,0.30); }
 
 /* Modal cerrar sesion */
-.logout-modal .modal-content {
+#logoutModal .modal-content {
     border: none;
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0,0,0,0.18);
 }
 
-.logout-modal .modal-header {
+#logoutModal .modal-header {
     background: #f8f9fa;
     border-bottom: 1px solid #dee2e6;
     padding: 18px 20px 14px;
 }
 
-.logout-modal .modal-title {
+#logoutModal .modal-title {
     color: #212529;
     font-weight: 700;
     display: flex;
@@ -137,37 +137,37 @@ body.tema-oscuro .formato-titulo        { color: rgba(255,255,255,0.30); }
     gap: 8px;
 }
 
-.logout-modal .modal-body {
+#logoutModal .modal-body {
     color: #495057;
     font-size: 0.98rem;
     padding: 20px;
 }
 
-.logout-modal .modal-footer {
+#logoutModal .modal-footer {
     background: #f8f9fa;
     border-top: 1px solid #dee2e6;
     padding: 14px 20px 18px;
 }
 
-body.tema-oscuro .logout-modal .modal-content {
+body.tema-oscuro #logoutModal .modal-content {
     background: #ffffff;
     color: #212529;
     border: 1px solid #dee2e6;
     box-shadow: 0 24px 60px rgba(0,0,0,0.30);
 }
 
-body.tema-oscuro .logout-modal .modal-header,
-body.tema-oscuro .logout-modal .modal-footer {
+body.tema-oscuro #logoutModal .modal-header,
+body.tema-oscuro #logoutModal .modal-footer {
     background: #f8f9fa;
     border-color: #dee2e6;
 }
 
-body.tema-oscuro .logout-modal .modal-title,
-body.tema-oscuro .logout-modal .modal-body {
+body.tema-oscuro #logoutModal .modal-title,
+body.tema-oscuro #logoutModal .modal-body {
     color: #212529;
 }
 
-body.tema-oscuro .logout-modal .btn-close {
+body.tema-oscuro #logoutModal .btn-close {
     filter: none;
     opacity: 0.8;
 }
@@ -201,6 +201,14 @@ body.tema-oscuro .modal-footer .btn-secondary {
 }
 
 /* ── CONTENEDOR PRINCIPAL ── */
+.modal {
+    z-index: 1075 !important;
+}
+
+.modal-backdrop {
+    z-index: 1070 !important;
+}
+
 .modal-content {
     border: none !important;
     border-radius: 24px !important;

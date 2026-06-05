@@ -1075,6 +1075,8 @@ body.tema-oscuro .btn-close {
     border-bottom: 2px solid var(--border-claro);
     padding-bottom: 15px;
     margin-bottom: 20px;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
 .analytics-title h3 {
@@ -1227,8 +1229,10 @@ body.tema-oscuro .btn-close {
         left: 0;
         top: 0;
         width: 100%;
-        border: none;
+        border: 2px solid #ccc;
+        border-radius: 16px;
         box-shadow: none;
+        box-sizing: border-box;
     }
     .no-print {
         display: none !important;
