@@ -1350,8 +1350,11 @@ def procesar_olvide_contrasena():
         try:
             mail.send(msg)
         except Exception as mail_e:
-            print(f"Error al enviar correo: {mail_e}")
-            return jsonify({"error": "Error al enviar el correo, revisa la configuración del MAIL."}), 500
+            print(f"\n{'='*50}\n[MODO DEMOSTRACIÓN] El servidor bloqueó el envío de correo ({mail_e}).\nEnlace de recuperación generado: {reset_url}\n{'='*50}\n")
+            return jsonify({
+                "success": True,
+                "mensaje": "No se pudo enviar el correo por el cortafuegos de Render, pero revisa los Logs del servidor para ver el enlace de recuperación (Modo Demo)."
+            }), 200
 
         return jsonify({
             "success": True,
