@@ -1194,6 +1194,25 @@ body.tema-oscuro .btn-close {
     color: #7f8c8d;
 }
 
+@media (max-width: 900px) {
+    .analytics-charts-grid {
+        grid-template-columns: 1fr;
+    }
+    .summary-badges {
+        flex-wrap: wrap;
+    }
+    .summary-badge {
+        flex: 1;
+        min-width: 100px;
+    }
+    .analytics-data-table-container {
+        overflow-x: auto;
+    }
+    .analytics-table {
+        min-width: 500px;
+    }
+}
+
 @media print {
     body * {
         visibility: hidden;

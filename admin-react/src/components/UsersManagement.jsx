@@ -201,12 +201,12 @@ const UsersManagement = () => {
                 return (
                   <tr 
                     key={user.ID_Cuenta}
-                    draggable={!searchQuery}
-                    onDragStart={(e) => handleDragStart(e, realIndex)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, realIndex)}
-                    style={{ cursor: !searchQuery ? 'grab' : 'default' }}
+                    draggable={window.innerWidth > 768 && !searchQuery}
+                    onDragStart={window.innerWidth > 768 ? (e) => handleDragStart(e, realIndex) : undefined}
+                    onDragEnd={window.innerWidth > 768 ? handleDragEnd : undefined}
+                    onDragOver={window.innerWidth > 768 ? handleDragOver : undefined}
+                    onDrop={window.innerWidth > 768 ? (e) => handleDrop(e, realIndex) : undefined}
+                    style={{ cursor: (window.innerWidth > 768 && !searchQuery) ? 'grab' : 'default' }}
                   >
                     <td>
                       <div className="user-identity" style={{ cursor: 'pointer' }} onClick={() => setSelectedUserId(user.ID_Cuenta)}>
