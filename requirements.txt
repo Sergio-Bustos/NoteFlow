@@ -32,3 +32,4 @@ flask-wtf
 supabase
 APScheduler==3.10.4
 tinycss2
+google-api-python-client

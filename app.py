@@ -660,6 +660,56 @@ def construir_email_html(titulo: str, cuerpo_html: str) -> str:
     </html>
     """
 
+def enviar_correo_gmail_api(destinatario: str, asunto: str, cuerpo_html: str) -> bool:
+    """Envia un correo usando la API de Gmail."""
+    try:
+        from googleapiclient.discovery import build
+        from google.oauth2.credentials import Credentials
+        import base64
+        from email.message import EmailMessage
+
+        # Cargar token desde el archivo local si existe
+        if os.path.exists('token.json'):
+            creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/gmail.send'])
+        else:
+            # Fallback a variable de entorno si el usuario decidió poner el refresh token ahí
+            client_id = os.getenv("GOOGLE_CLIENT_ID")
+            client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+            refresh_token = os.getenv("GOOGLE_REFRESH_TOKEN")
+            if not refresh_token:
+                print("Error: No se encontró token.json ni GOOGLE_REFRESH_TOKEN.")
+                return False
+            creds = Credentials(
+                token=None,
+                refresh_token=refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=client_id,
+                client_secret=client_secret
+            )
+
+        service = build('gmail', 'v1', credentials=creds)
+
+        message = EmailMessage()
+        message.set_content("Por favor activa la visualización HTML para ver este correo.")
+        message.add_alternative(cuerpo_html, subtype='html')
+        
+        remitente = os.getenv("GMAIL_SENDER") or "soporte@noteflow.com"
+        message['To'] = destinatario
+        message['From'] = remitente
+        message['Subject'] = asunto
+
+        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        create_message = {'raw': encoded_message}
+        send_message = (service.users().messages().send(userId="me", body=create_message).execute())
+        print(f"Correo enviado exitosamente vía Gmail API (ID: {send_message['id']})")
+        return True
+
+    except Exception as e:
+        print(f"Error al enviar correo con Gmail API: {e}")
+        return False
+
+
 def allowed_file(filename):
     """Verifica si la extensión del archivo es válida para fotos de perfil."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS_FOTO
@@ -1320,9 +1370,7 @@ def procesar_olvide_contrasena():
         conexion.commit()
 
         reset_url = url_for("mostrar_restablecer_contrasena", token=token, _external=True)
-        msg      = Message("Restablecimiento de Contraseña NoteFlow", recipients=[correo])
-        msg.body = f"Hola {usuario_nombre}, restablece tu contraseña aquí: {reset_url}"
-        msg.html = construir_email_html(
+        html_content = construir_email_html(
             titulo="¿Olvidaste tu contraseña?",
             cuerpo_html=f"""
             <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
@@ -1348,7 +1396,9 @@ def procesar_olvide_contrasena():
         )
 
         try:
-            mail.send(msg)
+            exito = enviar_correo_gmail_api(correo, "Restablecimiento de Contraseña NoteFlow", html_content)
+            if not exito:
+                raise Exception("La API de Gmail falló (asegúrate de haber generado token.json)")
         except Exception as mail_e:
             print(f"\n{'='*50}\n[MODO DEMOSTRACIÓN] El servidor bloqueó el envío de correo ({mail_e}).\nEnlace de recuperación generado: {reset_url}\n{'='*50}\n")
             return jsonify({
