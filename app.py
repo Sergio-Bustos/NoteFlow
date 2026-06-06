@@ -4,7 +4,7 @@
 # IMPORTACIONES
 # ==============================================================================
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
-from flask_mail import Mail, Message
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
@@ -158,16 +158,8 @@ DB_CONFIG = {
     "port":     int(os.getenv("DB_PORT", 5432)),
 }
 
-# Correo (Flask-Mail)
-app.config["MAIL_SERVER"]         = os.getenv("MAIL_SERVER")
-app.config["MAIL_PORT"]           = int(os.getenv("MAIL_PORT"))
-app.config["MAIL_USE_TLS"]        = str(os.getenv("MAIL_USE_TLS", "")).strip().lower() in ["true", "1", "yes"]
-app.config["MAIL_USE_SSL"]        = str(os.getenv("MAIL_USE_SSL", "")).strip().lower() in ["true", "1", "yes"]
-app.config["MAIL_USERNAME"]       = os.getenv("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"]       = os.getenv("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
-app.config["MAIL_DEFAULT_CHARSET"]= "utf-8"
-mail = Mail(app)
+# Correo (Gmail API) - Ya no se usa Flask-Mail ni variables SMTP
+# La configuración está en enviar_correo_gmail_api y token.json
 
 # ==============================================================================
 # CARPETAS DE UPLOADS Y CONSTANTES DE ARCHIVOS
@@ -879,10 +871,8 @@ def procesar_registro():
             "expira":     expira.isoformat(),
         }
 
-        # DESPUÉS
-        msg      = Message(subject="Tu código de verificación NoteFlow", recipients=[correo])
-        msg.body = f"Hola {nombres}, tu código de verificación es: {codigo}. Expira en 15 minutos."
-        msg.html = construir_email_html(
+        # Enviar correo de verificación
+        html_content = construir_email_html(
             titulo=f"Hola {nombres}, verifica tu cuenta 👋",
             cuerpo_html=f"""
             <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
@@ -902,7 +892,9 @@ def procesar_registro():
         )
 
         try:
-            mail.send(msg)
+            exito = enviar_correo_gmail_api(request.form.get("correo"), "Verifica tu cuenta en NoteFlow", html_content)
+            if not exito:
+                raise Exception("La API de Gmail falló")
         except Exception as mail_e:
             print(f"Error al enviar correo: {mail_e}")
             return jsonify({"error": "Error al enviar el correo de verificación."}), 500
@@ -1026,10 +1018,7 @@ def reenviar_codigo():
     session["registro_pendiente"]["codigo"] = codigo
     session["registro_pendiente"]["expira"] = expira.isoformat()
     session.modified = True
-
-    msg      = Message(subject="Tu nuevo código de verificación NoteFlow", recipients=[pendiente["correo"]])
-    msg.body = f"Tu nuevo código es: {codigo}. Expira en 15 minutos."
-    msg.html = construir_email_html(
+    html_content = construir_email_html(
         titulo="Nuevo código de verificación",
         cuerpo_html=f"""
         <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 24px;">
@@ -1048,7 +1037,9 @@ def reenviar_codigo():
     )
 
     try:
-        mail.send(msg)
+        exito = enviar_correo_gmail_api(pendiente["correo"], "Tu nuevo código de verificación NoteFlow", html_content)
+        if not exito:
+            raise Exception("La API de Gmail falló")
     except Exception as e:
         print(f"Error al reenviar correo: {e}")
         return jsonify({"error": "Error al reenviar el correo"}), 500
@@ -4491,12 +4482,12 @@ def procesar_pago():
 # RUTAS DE SOPORTE (Chat Interno)
 # ==============================================================================
 
-def enviar_correo_asincrono(app_instance, msg):
+def enviar_correo_asincrono(app_instance, destinatario, asunto, cuerpo_html):
     with app_instance.app_context():
         try:
-            mail.send(msg)
+            enviar_correo_gmail_api(destinatario, asunto, cuerpo_html)
         except Exception as mail_err:
-            print(f"Error al enviar correo de soporte asíncrono: {mail_err}")
+            print(f"Error al enviar correo asíncrono: {mail_err}")
 
 @app.route("/api/enviar-soporte", methods=["POST"])
 @login_required
@@ -4529,18 +4520,11 @@ def enviar_soporte():
         # ENVIAR NOTIFICACIÓN POR CORREO AL ADMIN (ID 1) DE FORMA ASÍNCRONA
         try:
             admin_email = "miniyonminerat2@gmail.com" # El correo del administrador
-            msg = Message(
-                subject=f"🔔 Nuevo Mensaje de Soporte: {user_info['Nombres']}",
-                recipients=[admin_email],
-                body=f"Hola Admin,\n\nTienes un nuevo mensaje de soporte en NoteFlow.\n\n"
-                     f"Usuario: {user_info['Nombres']}\n"
-                     f"Correo: {user_info['Correo']}\n"
-                     f"Teléfono: {user_info['Telefono']}\n"
-                     f"Mensaje: {mensaje}\n\n"
-                     f"Puedes responder desde el panel de administración."
-            )
+            asunto = f"🔔 Nuevo Mensaje de Soporte: {user_info['Nombres']}"
+            cuerpo = f"Hola Admin,<br><br>Tienes un nuevo mensaje de soporte en NoteFlow.<br><br>Usuario: {user_info['Nombres']}<br>Correo: {user_info['Correo']}<br>Teléfono: {user_info['Telefono']}<br>Mensaje: {mensaje}<br><br>Puedes responder desde el panel de administración."
+            html_body = construir_email_html(asunto, cuerpo)
             from threading import Thread
-            Thread(target=enviar_correo_asincrono, args=(app, msg)).start()
+            Thread(target=enviar_correo_asincrono, args=(app, admin_email, asunto, html_body)).start()
         except Exception as mail_err:
             print(f"Error al iniciar hilo para correo de soporte: {mail_err}")
             
@@ -4711,14 +4695,11 @@ def resolver_soporte():
             
             # Enviar correo de resolución
             try:
-                from flask_mail import Message
                 import threading
-                msg = Message(
-                    subject="✅ Tu consulta de soporte ha sido resuelta - NoteFlow",
-                    recipients=[correo],
-                    body=f"Hola {nombres},\n\nTu consulta de soporte reciente ha sido marcada como resuelta por nuestro equipo.\n\nEsperamos haberte sido de gran ayuda. Si tienes alguna otra duda, no dudes en contactarnos nuevamente abriendo un nuevo chat de soporte.\n\n¡Gracias por usar NoteFlow!"
-                )
-                threading.Thread(target=enviar_correo_asincrono, args=(app, msg)).start()
+                asunto = "✅ Tu consulta de soporte ha sido resuelta - NoteFlow"
+                cuerpo = f"Hola {nombres},<br><br>Tu consulta de soporte reciente ha sido marcada como resuelta por nuestro equipo.<br><br>Esperamos haberte sido de gran ayuda. Si tienes alguna otra duda, no dudes en contactarnos nuevamente abriendo un nuevo chat de soporte.<br><br>¡Gracias por usar NoteFlow!"
+                html_body = construir_email_html(asunto, cuerpo)
+                threading.Thread(target=enviar_correo_asincrono, args=(app, correo, asunto, html_body)).start()
             except Exception as mail_err:
                 print(f"Error preparando correo de resolución: {mail_err}")
         
@@ -5393,13 +5374,8 @@ def verificar_vencimientos_plan():
             html_body = construir_email_html("⏰ Tu plan vence en 7 días", cuerpo)
 
             try:
-                msg = Message(
-                    subject="⏰ Tu plan NoteFlow vence pronto",
-                    recipients=[correo],
-                    html=html_body,
-                    sender=app.config.get("MAIL_DEFAULT_SENDER", "NoteFlow <no-reply@noteflow.com>")
-                )
-                t = threading.Thread(target=enviar_correo_asincrono, args=(app, msg))
+                asunto = "⏰ Tu plan NoteFlow vence pronto"
+                t = threading.Thread(target=enviar_correo_asincrono, args=(app, correo, asunto, html_body))
                 t.daemon = True
                 t.start()
                 print(f"[Scheduler] Correo de aviso enviado a {correo}")
