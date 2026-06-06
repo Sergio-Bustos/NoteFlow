@@ -1391,12 +1391,8 @@ def procesar_olvide_contrasena():
             if not exito:
                 raise Exception("La API de Gmail falló (asegúrate de haber generado token.json)")
         except Exception as mail_e:
-            print(f"\n{'='*50}\n[MODO DEMOSTRACIÓN] El servidor bloqueó el envío de correo ({mail_e}).\nEnlace de recuperación generado: {reset_url}\n{'='*50}\n")
-            return jsonify({
-                "success": True,
-                "mensaje": "Modo Demo activado. Haz clic en el botón inferior para restablecer tu contraseña.",
-                "demo_url": reset_url
-            }), 200
+            print(f"Error al enviar correo de recuperación: {mail_e}")
+            return jsonify({"error": "Error al enviar el correo de recuperación."}), 500
 
         return jsonify({
             "success": True,
