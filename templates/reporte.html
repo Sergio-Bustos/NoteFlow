@@ -171,6 +171,51 @@
             font-size: 0.8rem;
             color: #666;
         }
+        .print-user-header {
+            display: none; /* Oculto en pantalla normal */
+        }
+        @media print {
+            .print-user-header {
+                display: flex !important;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 2px solid #ccc;
+            }
+            .print-user-header .user-avatar {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid #8b5cf6;
+            }
+            .print-user-header .avatar-premium-container {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 60px;
+                height: 60px;
+            }
+            .print-user-header .avatar-frame {
+                position: absolute;
+                top: 45%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(1.35);
+                width: 105%;
+                height: 115%;
+                z-index: 2;
+                object-fit: contain;
+            }
+            .print-user-header .user-info h3 {
+                margin: 0;
+                font-size: 1.4rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body class="{{ 'dark-mode' if session.get('theme') == 'dark' else '' }}">
@@ -183,12 +228,24 @@
     <a href="{{ url_for('perfil') }}" class="mobile-topbar-user">
         {% if session.es_admin or session.es_premium %}
         <div class="avatar-premium-container">
+            {% if session.avatar_plan == 'cosmico' %}
+                <img src="{{ url_for('static', filename='marco_cosmico_admin.svg') }}" class="avatar-frame admin-cosmic-frame">
+            {% else %}
+                <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+            {% endif %}
             <img src="{{ get_file_url(usuario.Foto) }}" alt="Foto" class="user-avatar">
         </div>
         {% else %}
         <img src="{{ get_file_url(usuario.Foto) }}" alt="Foto" class="free-user-avatar">
         {% endif %}
-        <span>{{ usuario.Nombres }}</span>
+        <span>
+            {{ usuario.Nombres }}
+            {% if session.es_admin %}
+                <i class="fas fa-shield-alt" style="color: #a78bfa; margin-left: 5px;" title="Administrador"></i>
+            {% elif session.es_premium %}
+                <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }}; margin-left: 5px;"></i>
+            {% endif %}
+        </span>
     </a>
 </div>
 
@@ -250,6 +307,33 @@
     </header>
 
     <div class="reporte-container">
+        <!-- Encabezado exclusivo para impresión (PDF) -->
+        <div class="print-user-header">
+            {% if session.es_admin or session.es_premium %}
+            <div class="avatar-premium-container">
+                {% if session.avatar_plan == 'cosmico' %}
+                    <img src="{{ url_for('static', filename='marco_cosmico_admin.svg') }}" class="avatar-frame admin-cosmic-frame">
+                {% else %}
+                    <img src="{{ url_for('static', filename='avatar_' + (session.avatar_plan or session.plan_premium) + '_animated.svg') }}" class="avatar-frame {% if session.avatar_plan == 'ninguno' %}frame-hidden{% endif %}">
+                {% endif %}
+                <img src="{{ get_file_url(usuario.Foto) }}" alt="Foto" class="user-avatar">
+            </div>
+            {% else %}
+            <img src="{{ get_file_url(usuario.Foto) }}" alt="Foto" class="user-avatar">
+            {% endif %}
+            <div class="user-info">
+                <h3>
+                    {{ usuario.Nombres }} {{ usuario.Apellidos }}
+                    {% if session.es_admin %}
+                        <i class="fas fa-shield-alt" style="color: #a78bfa;" title="Administrador"></i>
+                    {% elif session.es_premium %}
+                        <i class="fas fa-crown" style="color: {{ session.premium_color or '#f1c40f' }};"></i>
+                    {% endif %}
+                </h3>
+                <p style="margin: 0; color: #666;">Reporte de Actividad en NoteFlow</p>
+            </div>
+        </div>
+
         <div class="report-header">
             <div>
                 <h2><i class="fas fa-chart-line"></i> Mi Actividad en NoteFlow</h2>

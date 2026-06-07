@@ -168,18 +168,27 @@
         <form id="form-password">
             <div class="form-group">
                 <label><i class="fas fa-key"></i> Contraseña actual</label>
-                <input type="password" name="password_actual" id="password_actual" required>
+                <div style="position: relative;">
+                    <input type="password" name="password_actual" id="password_actual" required style="width: 100%; padding-right: 40px;">
+                    <i class="fas fa-eye" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888;" onclick="const input = document.getElementById('password_actual'); if (input.type === 'password') { input.type = 'text'; this.classList.remove('fa-eye'); this.classList.add('fa-eye-slash'); } else { input.type = 'password'; this.classList.remove('fa-eye-slash'); this.classList.add('fa-eye'); }"></i>
+                </div>
             </div>
             <div class="form-group">
                 <label><i class="fas fa-lock"></i> Nueva contraseña</label>
-                <input type="password" name="password_nueva" id="password_nueva"
-                       minlength="6" maxlength="15" required>
+                <div style="position: relative;">
+                    <input type="password" name="password_nueva" id="password_nueva"
+                           minlength="6" maxlength="15" required style="width: 100%; padding-right: 40px;">
+                    <i class="fas fa-eye" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888;" onclick="const input = document.getElementById('password_nueva'); if (input.type === 'password') { input.type = 'text'; this.classList.remove('fa-eye'); this.classList.add('fa-eye-slash'); } else { input.type = 'password'; this.classList.remove('fa-eye-slash'); this.classList.add('fa-eye'); }"></i>
+                </div>
                 <small class="password-requirements">Entre 6 y 15 caracteres</small>
             </div>
             <div class="form-group">
                 <label><i class="fas fa-check-circle"></i> Confirmar nueva contraseña</label>
-                <input type="password" name="password_confirmacion" id="password_confirmacion"
-                       minlength="6" maxlength="15" required>
+                <div style="position: relative;">
+                    <input type="password" name="password_confirmacion" id="password_confirmacion"
+                           minlength="6" maxlength="15" required style="width: 100%; padding-right: 40px;">
+                    <i class="fas fa-eye" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888;" onclick="const input = document.getElementById('password_confirmacion'); if (input.type === 'password') { input.type = 'text'; this.classList.remove('fa-eye'); this.classList.add('fa-eye-slash'); } else { input.type = 'password'; this.classList.remove('fa-eye-slash'); this.classList.add('fa-eye'); }"></i>
+                </div>
             </div>
             <button type="submit">
                 <i class="fas fa-sync-alt"></i> Actualizar Contraseña

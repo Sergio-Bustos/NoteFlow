@@ -7,6 +7,15 @@ const UserActivityModal = ({ userId, onClose }) => {
   const [error, setError] = useState(null);
   const [searchNote, setSearchNote] = useState('');
   const [expandedNotes, setExpandedNotes] = useState({});
+  const [photoOpen, setPhotoOpen] = useState(false);
+
+  // Cerrar lightbox con Escape
+  useEffect(() => {
+    if (!photoOpen) return;
+    const handler = (e) => { if (e.key === 'Escape') setPhotoOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [photoOpen]);
 
   useEffect(() => {
     if (!userId) return;
@@ -73,7 +82,12 @@ const UserActivityModal = ({ userId, onClose }) => {
               <>
                 <div className="d-flex align-items-center gap-3 pb-3 mb-4 border-bottom">
                   {data.usuario.Es_premium ? (
-                      <div className="avatar-premium-container" style={{ width: '65px', height: '65px' }}>
+                      <div
+                        className="avatar-premium-container"
+                        style={{ width: '65px', height: '65px', cursor: 'pointer' }}
+                        onClick={() => setPhotoOpen(true)}
+                        title="Ver foto de perfil"
+                      >
                         <img src={data.usuario.Foto && data.usuario.Foto !== 'None' ? (data.usuario.Foto.startsWith('http') ? data.usuario.Foto : `/static/${data.usuario.Foto}`) : '/static/default_profile.png'} alt="" className="user-avatar" style={{ width: '100%', height: '100%' }} />
                         {data.usuario.Avatar_plan === 'cosmico' ? (
                           <img src="/static/marco_cosmico_admin.svg" className="avatar-frame admin-cosmic-frame" alt="marco" />
@@ -82,7 +96,14 @@ const UserActivityModal = ({ userId, onClose }) => {
                         )}
                       </div>
                   ) : (
-                    <img src={data.usuario.Foto && data.usuario.Foto !== 'None' ? (data.usuario.Foto.startsWith('http') ? data.usuario.Foto : `/static/${data.usuario.Foto}`) : '/static/default_profile.png'} alt="" className="free-user-avatar" style={{ width: '65px', height: '65px', objectFit: 'cover', borderRadius: '50%' }} />
+                    <img
+                      src={data.usuario.Foto && data.usuario.Foto !== 'None' ? (data.usuario.Foto.startsWith('http') ? data.usuario.Foto : `/static/${data.usuario.Foto}`) : '/static/default_profile.png'}
+                      alt=""
+                      className="free-user-avatar"
+                      style={{ width: '65px', height: '65px', objectFit: 'cover', borderRadius: '50%', cursor: 'pointer' }}
+                      onClick={() => setPhotoOpen(true)}
+                      title="Ver foto de perfil"
+                    />
                   )}
                   <div>
                     <h4 className="mb-1" style={{ fontWeight: '800', fontSize: '1.3rem' }}>{data.usuario.Nombres} {data.usuario.Apellidos}</h4>
@@ -240,9 +261,87 @@ const UserActivityModal = ({ userId, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Renderizamos el Lightbox aquí si photoOpen es true */}
+      {photoOpen && data?.usuario && (
+        <ProfilePhotoLightbox 
+          src={data.usuario.Foto && data.usuario.Foto !== 'None' ? (data.usuario.Foto.startsWith('http') ? data.usuario.Foto : `/static/${data.usuario.Foto}`) : '/static/default_profile.png'}
+          name={`${data.usuario.Nombres} ${data.usuario.Apellidos}`}
+          onClose={() => setPhotoOpen(false)}
+        />
+      )}
     </div>,
     document.body
   );
 };
+
+// Componente Lightbox para la foto de perfil (estilo WhatsApp)
+const ProfilePhotoLightbox = ({ src, name, onClose }) => createPortal(
+  <div
+    onClick={onClose}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundColor: 'rgba(0,0,0,0.92)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 99999, // Debe estar por encima del modal actual
+      cursor: 'zoom-out',
+      animation: 'lbFadeIn 0.22s ease',
+    }}
+  >
+    <style>{`
+      @keyframes lbFadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes lbZoomIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    `}</style>
+    {/* Botón cerrar */}
+    <button
+      onClick={onClose}
+      style={{
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        background: 'rgba(255,255,255,0.15)',
+        border: 'none',
+        borderRadius: '50%',
+        width: '40px',
+        height: '40px',
+        color: 'white',
+        fontSize: '1.2rem',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backdropFilter: 'blur(4px)',
+      }}
+    >
+      <i className="fas fa-times" />
+    </button>
+    {/* Nombre del usuario */}
+    <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', marginBottom: '16px', fontWeight: 600, letterSpacing: '0.03em' }}>
+      {name}
+    </p>
+    {/* Imagen ampliada */}
+    <img
+      src={src}
+      alt="Foto de perfil"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        maxWidth: 'min(85vw, 420px)',
+        maxHeight: '70vh',
+        borderRadius: '50%',
+        objectFit: 'cover',
+        border: '4px solid rgba(255,255,255,0.25)',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+        animation: 'lbZoomIn 0.28s cubic-bezier(0.34,1.56,0.64,1)',
+        cursor: 'default',
+      }}
+    />
+    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '14px' }}>Toca fuera para cerrar</p>
+  </div>,
+  document.body
+);
 
 export default UserActivityModal;

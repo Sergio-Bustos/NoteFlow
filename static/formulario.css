@@ -28,6 +28,9 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+body, input, button, textarea, select {
     font-family: var(--font-sans, "Inter", system-ui, sans-serif);
 }
 
@@ -376,7 +379,7 @@ button[type="submit"] {
     border-radius: 10px;
     font-size: 0.97rem;
     font-weight: 700;
-    margin-top: 22px;
+    margin-top: 0px;
     cursor: pointer;
     letter-spacing: 0.04em;
     box-shadow: 0 4px 14px rgba(84, 82, 211, 0.28);
