@@ -22,27 +22,10 @@
         <p>Desbloquea edición avanzada de imágenes, audio y video en todas tus notas.</p>
     </div>
 
-    <!-- VIDEO DE FUNCIONALIDADES -->
-    <div class="video-section">
-        <div class="video-wrapper" id="video-container">
-            <!--
-                ════════════════════════════════════════════
-                REEMPLAZAR ESTE BLOQUE con etiqueta <video>:
-
-                <video controls poster="tu_thumbnail.jpg">
-                    <source src="tu_video.mp4" type="video/mp4">
-                </video>
-
-                Pero como usamos flask seria:
-                <video controls>
-                    <source src="{{ url_for('static', filename='videos/demo_premium.mp4') }}" type="video/mp4">
-                </video>
-                ════════════════════════════════════════════
-            -->
-            <video controls autoplay muted loop>
-                <source src="{{ url_for('static', filename='Promocion video NoteFlow (online-video-cutter.com)_1.mp4') }}" type="video/mp4">
-                Tu navegador no soporta el formato de video.
-            </video>
+    <!-- IMAGEN DE PREMIUM -->
+    <div class="imagen-section">
+        <div class="imagen-wrapper" id="imagen-container">
+            <img src="{{ url_for('static', filename='NoteFlow-Premium.png') }}" alt="" style="width: 100%;">
         </div>
     </div>
 
