@@ -325,9 +325,40 @@ header h1 span { color: var(--morado-vivo); font-size: 0.85em; }
 
 
 /* Cosas extras */
+/* GLASSMORPHISM Y PREMIUM UI AÑADIDOS */
+.toolbar, .panel-lateral, .efectos-panel, .filtros-panel {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255,255,255,0.4) !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15) !important;
+}
 
+.panel {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(240,240,250,0.9)) !important;
+    border-radius: 24px;
+    overflow: hidden;
+}
 
-    /* ══════════════════════════════════════════
+.btn-tool {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.btn-tool:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(124, 77, 255, 0.3);
+}
+
+.efecto-btn {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(124, 77, 255, 0.2);
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+.efecto-btn:hover {
+    background: var(--morado-vivo);
+    color: white;
+    transform: scale(1.05);
+}    /* ══════════════════════════════════════════
        VARIABLES EXTENDIDAS
     ══════════════════════════════════════════ */
     :root {

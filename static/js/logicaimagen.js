@@ -20,7 +20,7 @@ let flipV              = false;
 let imagenCargada      = false;
 let notaGuardada       = false;
 
-// Herramienta activa: 'pincel' | 'borrador' | 'linea' | 'rect' | 'circulo' | 'texto' | 'cuentagotas'
+// Herramienta activa: 'pincel' | 'borrador' | 'linea' | 'rect' | 'circulo' | 'texto' | 'cuentagotas' | 'sticker'
 let herramientaActiva  = 'pincel';
 
 // Estado de dibujo
@@ -427,10 +427,11 @@ const cursorMap = {
     linea:       '',
     rect:        '',
     circulo:     '',
+    sticker:     'cursor-texto',
 };
 const nombreHerr = {
     pincel:'Pincel', borrador:'Borrador', linea:'Línea', rect:'Rectángulo',
-    circulo:'Círculo', texto:'Texto', cuentagotas:'Cuentagotas'
+    circulo:'Círculo', texto:'Texto', cuentagotas:'Cuentagotas', sticker:'Sticker'
 };
 
 function setHerramienta(h) {
@@ -441,7 +442,7 @@ function setHerramienta(h) {
     else canvasContainer.style.cursor = 'crosshair';
 
     // Botones toolbar
-    ['btnHerPincel','btnHerBorrador','btnHerLinea','btnHerRect','btnHerCirculo','btnHerTexto','btnHerCuentagotas'].forEach(id => {
+    ['btnHerPincel','btnHerBorrador','btnHerLinea','btnHerRect','btnHerCirculo','btnHerTexto','btnHerCuentagotas','btnHerSticker'].forEach(id => {
         $id(id)?.classList.remove('activo');
     });
     // Botones lateral
@@ -450,9 +451,9 @@ function setHerramienta(h) {
     });
 
     const mapaBtn = { pincel:'btnHerPincel', borrador:'btnHerBorrador', linea:'btnHerLinea',
-        rect:'btnHerRect', circulo:'btnHerCirculo', texto:'btnHerTexto', cuentagotas:'btnHerCuentagotas' };
+        rect:'btnHerRect', circulo:'btnHerCirculo', texto:'btnHerTexto', cuentagotas:'btnHerCuentagotas', sticker:'btnHerSticker' };
     const mapaLat = { pincel:'latPincel', borrador:'latBorrador', linea:'latLinea',
-        rect:'latRect', circulo:'latCirculo', texto:'latTexto', cuentagotas:'latGota' };
+        rect:'latRect', circulo:'latCirculo', texto:'latTexto', cuentagotas:'latGota', sticker:'btnHerSticker' };
     $id(mapaBtn[h])?.classList.add('activo');
     $id(mapaLat[h])?.classList.add('activo');
 
@@ -468,6 +469,7 @@ $id('btnHerRect')?.addEventListener('click', () => setHerramienta('rect'));
 $id('btnHerCirculo')?.addEventListener('click', () => setHerramienta('circulo'));
 $id('btnHerTexto')?.addEventListener('click', () => setHerramienta('texto'));
 $id('btnHerCuentagotas')?.addEventListener('click', () => setHerramienta('cuentagotas'));
+$id('btnHerSticker')?.addEventListener('click', () => setHerramienta('sticker'));
 
 $id('latPincel')?.addEventListener('click',   () => setHerramienta('pincel'));
 $id('latBorrador')?.addEventListener('click', () => setHerramienta('borrador'));
@@ -616,6 +618,24 @@ function iniciarDibujo(pos, e) {
         return;
     }
 
+    if (herramientaActiva === 'sticker') {
+        dibujando = false;
+        const texto = prompt('Introduce un emoji para usar como sticker (ej: 🍕, 🚀, 👽):', '✨');
+        if (texto) {
+            guardarHistorial();
+            const grosor  = getGrosor();
+            const size = Math.max(30, grosor * 5);
+            ctxVisible.save();
+            ctxVisible.font         = `${size}px sans-serif`;
+            ctxVisible.globalAlpha  = getOpacidad();
+            ctxVisible.fillText(texto, pos.x - size/2, pos.y + size/3);
+            ctxVisible.restore();
+            trazosPaint.push({ tipo:'sticker', texto, x:pos.x - size/2, y:pos.y + size/3, color:'#000', grosor, fuente:'sans-serif', opacidad:getOpacidad(), size });
+            actualizarStatsTrazos();
+        }
+        return;
+    }
+
     if (['linea','rect','circulo'].includes(herramientaActiva)) {
         // Capturar snapshot para preview en tiempo real
         snapshotAntesDibujo = ctxVisible.getImageData(0, 0, canvasVisible.width, canvasVisible.height);
@@ -727,6 +747,10 @@ function redibujarTrazos(ctx) {
             const fuente = trazo.fuente || 'Nunito';
             ctx.font      = `${Math.max(12, trazo.grosor * 3)}px ${fuente}`;
             ctx.fillStyle = trazo.color;
+            ctx.fillText(trazo.texto, trazo.x, trazo.y);
+        } else if (trazo.tipo === 'sticker') {
+            const size = trazo.size || Math.max(30, trazo.grosor * 5);
+            ctx.font      = `${size}px sans-serif`;
             ctx.fillText(trazo.texto, trazo.x, trazo.y);
         } else if (['linea','rect','circulo'].includes(trazo.tipo)) {
             dibujarForma(ctx, trazo);

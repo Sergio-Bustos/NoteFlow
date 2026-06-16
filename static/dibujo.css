@@ -434,3 +434,263 @@ body {
     .tool-group { padding-right: 8px; }
     .barra-inferior { flex-direction: column; align-items: stretch; }
 }
+
+/* ══════════════════════════════════════════
+   CONTEXT MENU (Click Derecho)
+══════════════════════════════════════════ */
+.context-menu {
+    position: absolute;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(60,20,120,0.15);
+    padding: 6px 0;
+    min-width: 160px;
+    z-index: 10000;
+    display: none;
+    border: 1px solid var(--violeta-suave);
+    font-family: 'Nunito', sans-serif;
+}
+.context-menu.visible {
+    display: block;
+    animation: fadeIn 0.15s ease-out;
+}
+.context-item {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    color: var(--morado-oscuro);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.1s;
+}
+.context-item:hover {
+    background: var(--violeta-suave);
+    color: var(--morado-vivo);
+}
+.context-item.danger {
+    color: var(--rojo);
+}
+.context-item.danger:hover {
+    background: #fee2e2;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ══════════════════════════════════════════
+   PANEL DE STICKERS
+══════════════════════════════════════════ */
+.sticker-panel {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(60,20,120,0.18);
+    padding: 12px 16px;
+    z-index: 9999;
+    display: none;
+    border: 1px solid var(--violeta-suave);
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.sticker-panel.visible {
+    display: block;
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+}
+.sticker-panel-title {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--morado-oscuro);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+.sticker-opt {
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    text-align: center;
+    transition: background 0.15s, transform 0.1s;
+    user-select: none;
+}
+.sticker-opt:hover {
+    background: var(--violeta-suave);
+    transform: scale(1.2);
+}
+.sticker-opt.seleccionado {
+    background: var(--morado-vivo);
+    outline: 2px solid var(--morado-oscuro);
+    transform: scale(1.15);
+}
+
+/* ══════════════════════════════════════════
+   CANVAS OUTER (scroll para lienzos grandes)
+══════════════════════════════════════════ */
+.canvas-outer {
+    overflow: auto;
+    max-height: calc(100vh - 280px);
+    border-radius: 0 0 12px 12px;
+    background: repeating-conic-gradient(#e8e0f8 0% 25%, #f3f0fa 0% 50%) 0 0 / 16px 16px;
+}
+
+/* ══════════════════════════════════════════
+   BARRA DE CONTROLES DEL LIENZO
+══════════════════════════════════════════ */
+.canvas-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--violeta-suave);
+    border-bottom: 1px solid var(--violeta-suave);
+    flex-wrap: wrap;
+}
+.canvas-size-info {
+    font-size: 0.75rem;
+    color: var(--morado-oscuro);
+    font-family: 'Nunito', sans-serif;
+    opacity: 0.7;
+    min-width: 80px;
+}
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.btn-zoom {
+    background: var(--violeta-suave);
+    border: none;
+    border-radius: 8px;
+    padding: 5px 9px;
+    color: var(--morado-oscuro);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.15s, transform 0.1s;
+}
+.btn-zoom:hover { background: var(--morado-vivo); color: #fff; transform: scale(1.05); }
+.zoom-label {
+    font-size: 0.8rem;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    color: var(--morado-oscuro);
+    min-width: 38px;
+    text-align: center;
+}
+.expand-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+.expand-label {
+    font-size: 0.75rem;
+    font-family: 'Nunito', sans-serif;
+    color: var(--morado-oscuro);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.btn-expand {
+    background: transparent;
+    border: 1.5px solid var(--morado-vivo);
+    color: var(--morado-vivo);
+    border-radius: 7px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.btn-expand:hover, .btn-expand.activo {
+    background: var(--morado-vivo);
+    color: #fff;
+    transform: scale(1.05);
+}
+.btn-expand-reset {
+    border-color: #aaa;
+    color: #aaa;
+}
+.btn-expand-reset:hover {
+    background: #e0e0e0;
+    color: #555;
+}
+
+/* ══════════════════════════════════════════
+   BOTONES DE EXPANSIÓN DEL LIENZO (+)
+══════════════════════════════════════════ */
+.canvas-wrap {
+    position: relative;
+    display: inline-block; /* ajusta al contenido */
+    margin: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    background: #fff;
+    border-radius: 8px;
+}
+.canvas-expander {
+    position: absolute;
+    background: var(--morado-vivo);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 10;
+    transition: transform 0.15s, background 0.15s;
+    font-size: 12px;
+}
+.canvas-expander:hover {
+    transform: scale(1.15);
+    background: var(--morado-oscuro);
+}
+.canvas-expander:active {
+    transform: scale(0.9);
+}
+.expander-top {
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.expander-bottom {
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.expander-left {
+    left: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.expander-right {
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.expander-top:hover { transform: translateX(-50%) scale(1.15); }
+.expander-bottom:hover { transform: translateX(-50%) scale(1.15); }
+.expander-left:hover { transform: translateY(-50%) scale(1.15); }
+.expander-right:hover { transform: translateY(-50%) scale(1.15); }

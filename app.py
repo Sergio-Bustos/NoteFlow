@@ -3239,7 +3239,8 @@ def editar_nota(nota_id):
         }
         
         template = templates.get(formato, "editortexto.html")
-        return render_template(template, nota=nota, adjuntos=adjuntos, etiquetas=etiquetas_str, edit_mode=True)
+        plan = session.get("plan_premium", "gratis")
+        return render_template(template, nota=nota, adjuntos=adjuntos, etiquetas=etiquetas_str, edit_mode=True, plan_premium=plan)
 
     except Exception as e:
         import traceback; traceback.print_exc()
@@ -3268,7 +3269,8 @@ def crear_nota_imagen():
 @login_required
 def bloc_dibujo():
     """Bloc de dibujo libre."""
-    return render_template("dibujo.html", edit_mode=False)
+    plan = session.get("plan_premium", "gratis")
+    return render_template("dibujo.html", edit_mode=False, plan_premium=plan)
 
 
 @app.route("/crear-nota-audio")
