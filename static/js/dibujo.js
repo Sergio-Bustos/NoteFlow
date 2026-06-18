@@ -73,16 +73,13 @@ function actualizarEstadoBotonesExpand() {
 
 function ajustarCanvas() {
     fabric.devicePixelRatio = window.devicePixelRatio || 1;
-    // La dimensión de la "parte de adentro" (píxeles reales) SIEMPRE se mantiene igual al tamaño establecido
     fcanvas.setDimensions({ width: lienzW, height: lienzH });
-    fcanvas.setZoom(1); // El zoom interno siempre es 1
+    fcanvas.setZoom(1);
     
-    // El zoom visual se aplica solo por CSS a la "parte de afuera"
     const wrap = document.getElementById('canvasWrap');
     if (wrap) {
         wrap.style.transform = `scale(${zoomActual})`;
         wrap.style.transformOrigin = 'top left';
-        // Para que el scroll del contenedor funcione con transform, forzamos un margen
         wrap.style.marginBottom = `${(lienzH * zoomActual) - lienzH}px`;
         wrap.style.marginRight = `${(lienzW * zoomActual) - lienzW}px`;
     }
@@ -250,6 +247,14 @@ fcanvas.on('object:added', () => { if(!bloqueado) guardarEstado(); });
 fcanvas.on('object:modified', () => { if(!bloqueado) guardarEstado(); });
 fcanvas.on('object:removed', () => { if(!bloqueado) guardarEstado(); });
 
+// Marcar trazos del borrador como no seleccionables
+fcanvas.on('path:created', function(e) {
+    if (herramienta === 'borrador') {
+        e.path.set({ selectable: false, evented: false, _isEraser: true });
+        e.path.bringToFront();
+    }
+});
+
 function deshacer() {
     if (pasoActual > 0) {
         bloqueado = true;
@@ -264,19 +269,88 @@ function deshacer() {
 }
 
 document.addEventListener('keydown', e => {
+    const tag = document.activeElement.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'textarea') return;
+    const editing = fcanvas.getActiveObject();
+    if (editing && editing.isEditing) return;
+
+    // Ctrl+Z: deshacer
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault();
         deshacer();
+        return;
     }
-    // Delete object
+
+    // Ctrl+C: copiar selección
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        e.preventDefault();
+        var activos = fcanvas.getActiveObjects();
+        if (activos.length === 0) return;
+        window._clipboard = [];
+        activos.forEach(function(obj) {
+            obj.clone(function(cloned) {
+                cloned.set({ evented: true, selectable: true });
+                window._clipboard.push(cloned);
+            });
+        });
+        return;
+    }
+
+    // Ctrl+X: cortar (copiar + eliminar)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+        e.preventDefault();
+        var activos = fcanvas.getActiveObjects();
+        if (activos.length === 0) return;
+        window._clipboard = [];
+        activos.forEach(function(obj) {
+            obj.clone(function(cloned) {
+                cloned.set({ evented: true, selectable: true });
+                window._clipboard.push(cloned);
+            });
+            fcanvas.remove(obj);
+        });
+        fcanvas.discardActiveObject();
+        fcanvas.requestRenderAll();
+        guardarEstado();
+        return;
+    }
+
+    // Ctrl+V: pegar
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        e.preventDefault();
+        if (!window._clipboard || window._clipboard.length === 0) return;
+        var pasteOffset = 20;
+        var pasted = [];
+        window._clipboard.forEach(function(obj) {
+            obj.clone(function(cloned) {
+                cloned.set({
+                    left: cloned.left + pasteOffset,
+                    top: cloned.top + pasteOffset,
+                    evented: true,
+                    selectable: true
+                });
+                fcanvas.add(cloned);
+                pasted.push(cloned);
+            });
+        });
+        if (pasted.length) {
+            var sel = new fabric.ActiveSelection(pasted, { canvas: fcanvas });
+            fcanvas.setActiveObject(sel);
+            fcanvas.requestRenderAll();
+            guardarEstado();
+        }
+        return;
+    }
+
+    // Delete / Backspace: eliminar
     if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (herramienta === 'seleccion') {
-            const activos = fcanvas.getActiveObjects();
-            if (activos.length) {
-                activos.forEach(obj => fcanvas.remove(obj));
-                fcanvas.discardActiveObject();
-                fcanvas.requestRenderAll();
-            }
+        var activos = fcanvas.getActiveObjects();
+        if (activos.length > 0) {
+            e.preventDefault();
+            activos.forEach(function(obj) { fcanvas.remove(obj); });
+            fcanvas.discardActiveObject();
+            fcanvas.renderAll();
+            guardarEstado();
         }
     }
 });
@@ -344,27 +418,6 @@ document.getElementById('btnVolver').addEventListener('click', function(e) {
 let isDown = false;
 let shape = null;
 let origX, origY;
-
-// Mantener el cuadro de texto aunque esté vacío: reemplazar texto vacío por un espacio
-// y re-entrar en modo edición para que el cursor siga parpadeando
-fcanvas.on('text:editing:exited', function(e) {
-    const obj = e.target;
-    if (!obj) return;
-    // Si el usuario borró todo el contenido, ponemos un espacio y volvemos a editarlo
-    if (obj.text === '' || obj.text.trim() === '') {
-        obj.set({ text: ' ' });
-        fcanvas.renderAll();
-        // Solo volvemos a editar si seguimos en modo texto
-        if (herramienta === 'texto') {
-            setTimeout(() => {
-                fcanvas.setActiveObject(obj);
-                obj.enterEditing();
-                obj.setCursorByClick({ x: obj.left, y: obj.top });
-                fcanvas.renderAll();
-            }, 0);
-        }
-    }
-});
 
 /* ──────────────────────────────────────────
    BALDE DE PINTURA – FLOOD FILL DE ALTA CALIDAD
@@ -439,28 +492,21 @@ function floodFill(imgData, W, H, startX, startY, fillHex, tolerance) {
     }
 
     // ── Pasada 2: Limpiar píxeles de borde anti-aliased ──
-    // Solo afecta a vecinos inmediatos de los píxeles ya rellenados
-    // No se propaga más allá de 1 pixel de distancia → no se "sale" de la figura
     const radius = 3;
     for (let py = radius; py < H - radius; py++) {
         for (let px = radius; px < W - radius; px++) {
             if (!filled[py * W + px]) continue;
-
-            // Solo procesar si este pixel relleno toca un pixel NO relleno (es un borde)
             if (filled[py * W + (px + 1)] && filled[py * W + (px - 1)] &&
                 filled[(py + 1) * W + px] && filled[(py - 1) * W + px]) {
                 continue;
             }
-
             for (let dy = -radius; dy <= radius; dy++) {
                 for (let dx = -radius; dx <= radius; dx++) {
                     if (dx === 0 && dy === 0) continue;
                     const nx = px + dx, ny = py + dy;
                     if (filled[ny * W + nx]) continue;
-
                     const nidx = (ny * W + nx) * 4;
                     const dToTarget = colorDist(d, nidx, target);
-
                     if (dToTarget <= BLUR_TOL) {
                         const blend = 1 - (dToTarget / BLUR_TOL);
                         d[nidx]   = Math.round(d[nidx]   + (fill[0] - d[nidx])   * blend);
@@ -472,10 +518,26 @@ function floodFill(imgData, W, H, startX, startY, fillHex, tolerance) {
             }
         }
     }
+
+    // ── Pasada 3: Rellenar huecos aislados (letras como Q, O, A, etc) ──
+    // Busca píxeles que NO se rellenaron pero aún tienen el color objetivo
+    // (no conectados al punto de clic porque están rodeados por trazos)
+    for (let py = 0; py < H; py++) {
+        for (let px = 0; px < W; px++) {
+            if (filled[py * W + px]) continue;
+            const idx = (py * W + px) * 4;
+            if (colorDist(d, idx, target) <= FILL_TOL) {
+                d[idx]   = fill[0];
+                d[idx+1] = fill[1];
+                d[idx+2] = fill[2];
+                d[idx+3] = 255;
+            }
+        }
+    }
 }
 
 fcanvas.on('mouse:down', function(o){
-    if (herramienta === 'seleccion' || herramienta === 'lapiz' || herramienta === 'borrador') return;
+    if (herramienta === 'seleccion' || herramienta === 'lapiz' || herramienta === 'borrador' || herramienta === 'sticker') return;
 
     if (herramienta === 'balde') {
         const pointer = fcanvas.getPointer(o.e);
@@ -529,46 +591,7 @@ fcanvas.on('mouse:down', function(o){
         return;
     }
 
-    if (herramienta === 'texto') {
-        // Si el click fue sobre un texto existente, entrar a editarlo directamente
-        if (o.target && o.target.type === 'i-text') {
-            fcanvas.setActiveObject(o.target);
-            o.target.enterEditing();
-            fcanvas.renderAll();
-            return;
-        }
-        const pointer = fcanvas.getPointer(o.e);
-        const text = new fabric.IText(' ', {  // Espacio en vez de placeholder para que comience vacío
-            left: pointer.x,
-            top: pointer.y,
-            fontFamily: 'Nunito',
-            fill: colorActual(),
-            fontSize: Math.max(grosorActual() * 5, 20),
-            editable: true
-        });
-        fcanvas.add(text);
-        fcanvas.setActiveObject(text);
-        text.enterEditing();
-        // NO cambiamos a selección: el usuario sigue en modo texto y puede seguir escribiendo
-        fcanvas.renderAll();
-        return;
-    }
-    if (herramienta === 'sticker') {
-        // El panel de stickers se muestra en seleccionarHerramienta
-        // Insertamos el emoji elegido en el punto donde se haga click
-        if (!window.stickerElegido) return;
-        const pointer = fcanvas.getPointer(o.e);
-        const sticker = new fabric.Text(window.stickerElegido, {
-            left: pointer.x,
-            top: pointer.y,
-            fontSize: Math.max(grosorActual() * 8, 40),
-            selectable: true
-        });
-        fcanvas.add(sticker);
-        fcanvas.setActiveObject(sticker);
-        guardarEstado();
-        return;
-    }
+
     if (herramienta === 'estrella') {
         const pointer = fcanvas.getPointer(o.e);
         const starPoints = [
@@ -602,7 +625,9 @@ fcanvas.on('mouse:down', function(o){
         stroke: colorActual(),
         strokeWidth: grosorActual(),
         fill: 'transparent',
-        transparentCorners: false
+        transparentCorners: false,
+        strokeUniform: true,
+        strokeDashArray: null
     };
 
     if (herramienta === 'rectangulo') {
@@ -667,6 +692,7 @@ function aplicarConfiguracion() {
     const activos = fcanvas.getActiveObjects();
     if(activos.length) {
         activos.forEach(obj => {
+            if (obj._isEraser) return;
             if (obj.type === 'i-text' || obj.type === 'text') {
                 obj.set('fill', colorActual());
             } else if (obj.type === 'path' && herramienta !== 'borrador') {
@@ -712,31 +738,13 @@ window.seleccionarHerramienta = function(nombre, btn) {
         fcanvas.freeDrawingBrush.width = grosorActual() * 2;
         if(canvasWrapper) canvasWrapper.style.cursor = 'cell';
     } else if (nombre === 'seleccion') {
-        // Multiselección con drag-rect y Shift+clic
         fcanvas.selection = true;
         fcanvas.forEachObject(obj => {
+            if (obj._isEraser) return;
             obj.selectable = true;
             obj.evented = true;
-            // Los textos se seleccionan con 1 clic y solo editan con doble clic
-            if (obj.type === 'i-text') {
-                obj.lockMovementX = false;
-                obj.lockMovementY = false;
-            }
         });
         if(canvasWrapper) canvasWrapper.style.cursor = 'default';
-    } else if (nombre === 'texto') {
-        // En modo texto los objetos existentes también pueden ser clickeados
-        fcanvas.selection = false;
-        fcanvas.forEachObject(obj => { obj.selectable = false; obj.evented = true; });
-        if(canvasWrapper) canvasWrapper.style.cursor = 'text';
-    } else if (nombre === 'sticker') {
-        // Mostrar el panel de stickers con el primer emoji por defecto
-        if (!window.stickerElegido) window.stickerElegido = '😀';
-        if(stickerPanel) {
-            stickerPanel.style.display = 'block';
-            requestAnimationFrame(() => stickerPanel.classList.add('visible'));
-        }
-        if(canvasWrapper) canvasWrapper.style.cursor = 'copy';
     } else if (nombre === 'balde') {
         // Balde de pintura: cursor especial, sin selección
         if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
@@ -745,35 +753,6 @@ window.seleccionarHerramienta = function(nombre, btn) {
         if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
     }
 }
-
-// ── Doble clic: editar texto en modo selección ──
-fcanvas.on('mouse:dblclick', function(o) {
-    if (o.target && o.target.type === 'i-text') {
-        fcanvas.setActiveObject(o.target);
-        o.target.enterEditing();
-        fcanvas.renderAll();
-    }
-});
-
-// ── Suprimir selección múltiple con Delete / Backspace ──
-document.addEventListener('keydown', function(e) {
-    const tag = document.activeElement.tagName.toLowerCase();
-    // No capturar si el foco está en un input, textarea o en edición de texto del canvas
-    if (tag === 'input' || tag === 'textarea') return;
-    const editing = fcanvas.getActiveObject();
-    if (editing && editing.isEditing) return;
-
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-        const activos = fcanvas.getActiveObjects();
-        if (activos.length > 0) {
-            e.preventDefault();
-            activos.forEach(obj => fcanvas.remove(obj));
-            fcanvas.discardActiveObject();
-            fcanvas.renderAll();
-            guardarEstado();
-        }
-    }
-});
 
 // Iniciar con lápiz
 seleccionarHerramienta('lapiz', document.getElementById('btnLapiz'));
@@ -1130,12 +1109,88 @@ document.getElementById('bgColorPicker').addEventListener('input', (e) => {
 
 
 /* ──────────────────────────────────────────
-   PANEL STICKERS – SELECCIÓN DE EMOJI
+   PANEL STICKERS – EMOJI PICKER CON BÚSQUEDA
 ────────────────────────────────────────── */
-// Usamos emoji-picker-element en vez de botones estáticos
-document.querySelector('emoji-picker')?.addEventListener('emoji-click', event => {
-    window.stickerElegido = event.detail.unicode;
-    document.getElementById('stickerPanel').classList.remove('activo');
-    seleccionarHerramienta('sticker', document.getElementById('btnSticker'));
-    mostrarToast(`Sticker ${window.stickerElegido} listo — haz clic en el lienzo`);
-});
+(function initEmojiPicker() {
+    var EMOJIS = [
+        '😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛',
+        '😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔',
+        '😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥴','😵','🤯','🤠','🥳','🥺','😢','😭','😤','😠','😡','🤬',
+        '💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
+        '💋','👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇',
+        '👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦵','🦶','👂','🦻',
+        '👀','🧠','🫀','🫁','🦷','👅','👄','👶','🧒','👦','👧','🧑','👨','👩','🧔','👴','👵','🧓','🙋','💁',
+        '👨‍💻','👩‍💻','👨‍🎓','👩‍🎓','👨‍🎨','👩‍🎨','👨‍🚀','👩‍🚀','👨‍⚕️','👩‍⚕️','👮','🕵️','💂','🥷','👷','🤴','👸','🤵','👰','🤰',
+        '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆',
+        '🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🦂','🐢','🐍','🦎','🦖',
+        '🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🦭','🐅','🐆','🦓','🦍','🦧',
+        '🐘','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐓',
+        '🌸','💮','🏵️','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌲','🌳','🌴','🌵','🌾','🌿','🍀','🍁','🍂','🍃',
+        '🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🫐','🥝','🍅','🫒','🥥','🥑',
+        '🍔','🍟','🍕','🌭','🥪','🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🫕','🥣','🥗','🍿','🧈','🧂','🥫',
+        '🍰','🎂','🍦','🍩','🍪','🍫','🍬','🍭','🍮','🎂','🍡','🥟','🦪','🍤','🍙','🍚','🍛','🍜','🍝','🍠',
+        '⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳',
+        '🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🛹',
+        '🚂','🚃','🚄','🚅','🚆','🚇','🚈','🚉','🚊','🚝','🚞','✈️','🛫','🛬','💺','🛰️','🚀','🛸','🚁','🛶',
+        '🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌',
+        '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️',
+        '⭐','🌟','✨','⚡','🔥','💥','💫','💨','💦','💤','🌟','🌈','☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️',
+        '🎉','🎊','🎈','🎁','🎀','🪄','🕯️','💡','🔦','🏆','🏅','🥇','🥈','🥉','🎖️','🎗️','📯','🎵','🎶','🎤',
+        '📱','💻','🖥️','🖨️','⌨️','🖱️','🖲️','💽','💾','💿','📀','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟',
+        '🔒','🔓','🔐','🔑','🗝️','🔨','🪓','⛏️','⚒️','🛠️','🔧','🔩','⚙️','🗜️','⚖️','🪛','🔗','⛓️','🧰','🧲',
+        '🇨🇴','🇺🇸','🇬🇧','🇪🇸','🇫🇷','🇩🇪','🇮🇹','🇧🇷','🇯🇵','🇰🇷','🇨🇳','🇮🇳','🇷🇺','🇦🇷','🇲🇽','🇨🇱','🇵🇪','🇻🇪','🇨🇺','🇵🇦'
+    ];
+
+    var grid = document.getElementById('emojiGrid');
+    var search = document.getElementById('emojiSearch');
+    if (!grid) return;
+
+    function renderEmojis(filter) {
+        filter = filter.toLowerCase();
+        grid.innerHTML = '';
+        EMOJIS.forEach(function(e) {
+            if (filter && !e.toLowerCase().includes(filter) && !descripcionEmoji(e).includes(filter)) return;
+            var el = document.createElement('div');
+            el.className = 'emoji-item';
+            el.textContent = e;
+            el.title = descripcionEmoji(e);
+            el.addEventListener('click', function() {
+                var cx = lienzW / 2 + (Math.random() - 0.5) * 80;
+                var cy = lienzH / 2 + (Math.random() - 0.5) * 80;
+                var sticker = new fabric.Text(e, {
+                    left: cx - 20,
+                    top: cy - 20,
+                    fontSize: Math.max(grosorActual() * 8, 40),
+                    selectable: true
+                });
+                fcanvas.add(sticker);
+                fcanvas.setActiveObject(sticker);
+                guardarEstado();
+                // Cambiar a selección automáticamente
+                var btnSel = document.getElementById('btnSeleccion');
+                if (btnSel) seleccionarHerramienta('seleccion', btnSel);
+                mostrarToast('Emoji colocado en el centro');
+            });
+            grid.appendChild(el);
+        });
+        if (grid.children.length === 0) {
+            grid.innerHTML = '<div style="padding:20px;color:#b39ddb;text-align:center;">Sin resultados</div>';
+        }
+    }
+
+    function descripcionEmoji(e) {
+        var map = {
+            '😀':'sonrisa','😂':'risa','❤️':'corazon','👍':'pulgar','🎉':'celebracion',
+            '🔥':'fuego','⭐':'estrella','💀':'calavera','👽':'alien','🤖':'robot',
+            '🐶':'perro','🐱':'gato','🌸':'flor','🍕':'pizza','🚀':'cohete',
+            '🇨🇴':'colombia','🇺🇸':'usa','💻':'laptop','📱':'celular','💡':'idea',
+            '🎨':'arte','🎵':'musica','💰':'dinero','💎':'diamante','👑':'corona'
+        };
+        return map[e] || 'emoji';
+    }
+
+    renderEmojis('');
+    if (search) {
+        search.addEventListener('input', function() { renderEmojis(search.value); });
+    }
+})();

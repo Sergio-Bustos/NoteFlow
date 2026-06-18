@@ -4,7 +4,6 @@
 # IMPORTACIONES
 # ==============================================================================
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
-from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
@@ -63,13 +62,16 @@ GOOGLE_REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI")
 
 # Flask
 app = Flask(__name__)
-# Usar una clave secreta segura desde .env, o generar una aleatoria si no existe (no recomendado para producción real pero mejor que un fallback fijo)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
+_secret_key = os.getenv("FLASK_SECRET_KEY")
+if not _secret_key:
+    _secret_key = secrets.token_hex(32)
+    sys.stderr.write("⚠️  ADVERTENCIA: FLASK_SECRET_KEY no está definida. Se usó una clave aleatoria; las sesiones se perderán al reiniciar el servidor.\n")
+app.secret_key = _secret_key
 app.static_folder = "static"
 app.static_url_path = "/static"
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024 * 1024  # 2 GB
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SECURE"] = False  # Cambiar a True si se usa HTTPS
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("FLASK_ENV") != "development"  # True en producción
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # Configuración de Flask-WTF CSRF
@@ -154,9 +156,14 @@ DB_CONFIG = {
     "host":     os.getenv("DB_HOST",     "localhost"),
     "database": os.getenv("DB_NAME",     "dbnoteflow"),
     "user":     os.getenv("DB_USER",     "postgres"),
-    "password": os.getenv("DB_PASSWORD", "123456"),
+    "password": os.getenv("DB_PASSWORD"),  # Obligatorio: sin valor por defecto
     "port":     int(os.getenv("DB_PORT", 5432)),
 }
+
+if not DB_CONFIG["password"]:
+    sys.stderr.write("CRITICAL: DB_PASSWORD no está configurada en el entorno.\n")
+    sys.stderr.flush()
+    sys.exit(1)
 
 # Correo (Gmail API) - Ya no se usa Flask-Mail ni variables SMTP
 # La configuración está en enviar_correo_gmail_api y token.json
@@ -229,6 +236,14 @@ for _carpeta in [
 # MANEJADORES DE ERROR
 # ==============================================================================
 
+def _sanitizar_error(e, mensaje_publico="Error interno del servidor"):
+    """Registra el error real y retorna un mensaje genérico para el cliente."""
+    import traceback
+    traceback.print_exc()
+    security_logger.error(f"Error interno: {e}")
+    return mensaje_publico
+
+
 @app.errorhandler(413)
 def archivo_demasiado_grande(e):
     """El archivo supera el MAX_CONTENT_LENGTH configurado (2 GB)."""
@@ -242,7 +257,8 @@ def solicitud_invalida(e):
     if 'csrf' in descripcion.lower() or 'token' in descripcion.lower():
         security_logger.warning(f"Fallo de CSRF desde {request.remote_addr}: {descripcion}")
         return jsonify({"error": "Token de seguridad inválido. Refresca la página e intenta de nuevo."}), 400
-    return jsonify({"error": descripcion}), 400
+    security_logger.warning(f"Error 400 desde {request.remote_addr}: {descripcion}")
+    return jsonify({"error": "Solicitud inválida"}), 400
 
 
 @app.errorhandler(429)
@@ -456,20 +472,23 @@ def _next_id(cursor, tabla, columna):
 def subir_a_supabase(archivo, carpeta, nombre_archivo):
     """Sube un archivo a Supabase Storage y retorna la ruta pública."""
     try:
-        archivo.seek(0)
-        file_data = archivo.read()
+        ext = os.path.splitext(nombre_archivo)[1].lower()
+        if not _magic_bytes(archivo, ext):
+            raise ValueError(f"El contenido del archivo no coincide con su extensión ({ext})")
+
         bucket = "NoteFlow"
         path = f"{carpeta}/{nombre_archivo}"
-        
+
         import mimetypes
+        stream = getattr(archivo, "stream", archivo)
         content_type = getattr(archivo, "content_type", None)
         if not content_type:
             content_type = mimetypes.guess_type(nombre_archivo)[0] or "application/octet-stream"
-        
-        # Subir archivo
+
+        stream.seek(0)
         supabase_client.storage.from_(bucket).upload(
             path=path,
-            file=file_data,
+            file=stream,
             file_options={"content-type": content_type}
         )
         
@@ -564,12 +583,10 @@ def sanitizar_html(html_sucio):
             strip=True
         )
     except ImportError:
-        # Fallback para versiones antiguas de bleach
         return bleach.clean(
             html_sucio,
             tags=tags_permitidos,
             attributes=attrs_permitidos,
-            styles=styles_permitidos,
             strip=True
         )
 
@@ -659,24 +676,35 @@ def enviar_correo_gmail_api(destinatario: str, asunto: str, cuerpo_html: str) ->
         from google.oauth2.credentials import Credentials
         import base64
         from email.message import EmailMessage
+        import requests as _requests
 
-        # Cargar token desde el archivo local si existe
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+        refresh_token = (os.getenv("GOOGLE_REFRESH_TOKEN") or "").strip()
+
         if os.path.exists('token.json'):
             creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/gmail.send'])
+        elif not refresh_token:
+            print("Error: No se encontró token.json ni GOOGLE_REFRESH_TOKEN.")
+            return False
         else:
-            # Fallback a variable de entorno si el usuario decidió poner el refresh token ahí
-            client_id = os.getenv("GOOGLE_CLIENT_ID")
-            client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-            refresh_token = os.getenv("GOOGLE_REFRESH_TOKEN")
-            if not refresh_token:
-                print("Error: No se encontró token.json ni GOOGLE_REFRESH_TOKEN.")
+            token_resp = _requests.post("https://oauth2.googleapis.com/token", data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
+            })
+            if token_resp.status_code != 200:
+                print(f"Error al refrescar token Gmail: {token_resp.text}")
                 return False
+            token_data = token_resp.json()
             creds = Credentials(
-                token=None,
+                token=token_data["access_token"],
                 refresh_token=refresh_token,
                 token_uri="https://oauth2.googleapis.com/token",
                 client_id=client_id,
-                client_secret=client_secret
+                client_secret=client_secret,
+                scopes=["https://www.googleapis.com/auth/gmail.send"]
             )
 
         service = build('gmail', 'v1', credentials=creds)
@@ -705,6 +733,44 @@ def enviar_correo_gmail_api(destinatario: str, asunto: str, cuerpo_html: str) ->
 def allowed_file(filename):
     """Verifica si la extensión del archivo es válida para fotos de perfil."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS_FOTO
+
+def _magic_bytes(archivo, ext):
+    """Valida que los primeros bytes del archivo coincidan con la extensión declarada."""
+    ext = ext.lower().lstrip(".")
+    archivo.seek(0)
+
+    MARCAS = {
+        "png":        [(b"\x89PNG\r\n\x1a\n", 0)],
+        "jpg":        [(b"\xff\xd8\xff", 0)],
+        "jpeg":       [(b"\xff\xd8\xff", 0)],
+        "gif":        [(b"GIF87a", 0), (b"GIF89a", 0)],
+        "webp":       [(b"WEBP", 8)],
+        "svg":        [(b"<svg", 0), (b"<?xml", 0), (b"<!DOCTYPE svg", 0)],
+        "mp3":        [(b"ID3", 0), (b"\xff\xfb", 0), (b"\xff\xf2", 0), (b"\xff\xf3", 0)],
+        "aac":        [(b"\xff\xf1", 0), (b"\xff\xf9", 0)],
+        "ogg":        [(b"OggS", 0)],
+        "wav":        [(b"RIFF", 0), (b"WAVE", 8)],
+        "flac":       [(b"fLaC", 0)],
+        "wma":        [(b"0&\xb2u\x8e\x66\xcf\x11\xa6\xd9", 0)],
+        "m4a":        [(b"ftyp", 4)],
+        "webm":       [(b"\x1a\x45\xdf\xa3", 0)],
+        "mp4":        [(b"ftyp", 4)],
+        "mkv":        [(b"\x1a\x45\xdf\xa3", 0)],
+        "mov":        [(b"ftyp", 4), (b"moov", 4)],
+        "avi":        [(b"RIFF", 0)],
+    }
+
+    cabecera = archivo.read(32)
+    archivo.seek(0)
+
+    firmas = MARCAS.get(ext)
+    if not firmas:
+        return True
+    for firma, offset in firmas:
+        if len(cabecera) >= offset + len(firma):
+            if cabecera[offset:offset+len(firma)] == firma:
+                return True
+    return False
 
 
 def obtener_etiquetas_nota(nota_id, cursor):
@@ -835,7 +901,7 @@ def procesar_registro():
         """, (usuario, correo))
 
         if cursor.fetchone():
-            return jsonify({"error": "El usuario o correo ya está registrado en NoteFlow"}), 409
+            return jsonify({"error": "No se pudo completar el registro. Verifica los datos e intenta de nuevo."}), 409
 
         # Sanitizar entradas de texto si es necesario (nombre/usuario)
         nombres = bleach.clean(nombres, tags=[], strip=True)
@@ -922,6 +988,7 @@ def mostrar_verificacion():
 
 
 @app.route("/procesar-verificacion", methods=["POST"])
+@limiter.limit("10 per minute")
 def procesar_verificacion():
     """
     Paso 2 del registro: valida el código recibido por correo
@@ -1006,6 +1073,7 @@ def procesar_verificacion():
 
 
 @app.route("/reenviar-codigo", methods=["POST"])
+@limiter.limit("3 per minute")
 def reenviar_codigo():
     """Genera un nuevo código de verificación y lo reenvía al correo."""
     pendiente = session.get("registro_pendiente")
@@ -1345,8 +1413,8 @@ def procesar_olvide_contrasena():
 
         if not row:
             return jsonify({
-                "error": "Este correo no está registrado en NoteFlow. Por favor verifica o regístrate primero."
-            }), 404
+                "error": "Si el correo está registrado, recibirás un enlace para restablecer tu contraseña."
+            }), 200  # 200 para no revelar si el correo existe o no
 
         usuario_id     = row[0]
         usuario_nombre = row[1]
@@ -1442,6 +1510,7 @@ def mostrar_restablecer_contrasena(token):
 
 
 @app.route("/procesar-restablecer-contrasena", methods=["POST"])
+@limiter.limit("5 per minute")
 def procesar_restablecer_contrasena():
     """Actualiza la contraseña del usuario si el token es válido."""
     conexion          = None
@@ -1873,7 +1942,7 @@ def dashboard():
 
     except Exception as e:
         import traceback; traceback.print_exc()
-        return f"Error al cargar dashboard: {str(e)}", 500
+        return _sanitizar_error(e, "Error al cargar el dashboard"), 500
 
     finally:
         cerrar_db(cursor, conexion)
@@ -2174,9 +2243,11 @@ def subir_foto():
     cursor   = None
 
     try:
-        ext              = os.path.splitext(archivo.filename)[1].lower()
-        filename         = f"user_{user_id}_{_uuid.uuid4().hex}{ext}"
-        
+        ext = os.path.splitext(archivo.filename)[1].lower()
+        if not _magic_bytes(archivo, ext):
+            return jsonify({"error": "El contenido del archivo no coincide con su extensión"}), 400
+        filename = f"user_{user_id}_{_uuid.uuid4().hex}{ext}"
+
         # SUBIR A SUPABASE en la carpeta 'profile'
         url_publica = subir_a_supabase(archivo, "profile", filename)
         
@@ -2296,7 +2367,7 @@ def mostrar_notas():
 
     except Exception as e:
         import traceback; traceback.print_exc()
-        return f"Error al cargar la página de notas: {str(e)}", 500
+        return _sanitizar_error(e, "Error al cargar la página de notas"), 500
 
     finally:
         cerrar_db(cursor, conexion)
@@ -2932,7 +3003,7 @@ def papelera():
 
     except Exception as e:
         import traceback; traceback.print_exc()
-        return f"Error al cargar la papelera: {str(e)}", 500
+        return _sanitizar_error(e, "Error al cargar la papelera"), 500
 
     finally:
         cerrar_db(cursor, conexion)
@@ -3244,7 +3315,9 @@ def editar_nota(nota_id):
 
     except Exception as e:
         import traceback; traceback.print_exc()
-        return f"Error al abrir el editor: {str(e)}", 500
+        return _sanitizar_error(e, "Error al abrir el editor"), 500
+
+
     finally:
         cerrar_db(cursor, conexion)
 
@@ -4160,6 +4233,8 @@ def guardar_nota_mixta():
                 ext = os.path.splitext(archivo.filename)[1].lower()
                 if ext not in reglas["exts"]:
                     return jsonify({"error": f"Formato no permitido para {tipo}: {ext}"}), 400
+                if not _magic_bytes(archivo, ext):
+                    return jsonify({"error": f"El contenido del archivo no coincide con su extensión ({ext})"}), 400
 
                 filename      = f"{reglas['prefijo']}_{user_id}_{_uuid.uuid4().hex}{ext}"
                 ruta_completa = os.path.join(carpeta, filename)
@@ -4488,6 +4563,7 @@ def enviar_correo_asincrono(app_instance, destinatario, asunto, cuerpo_html):
             print(f"Error al enviar correo asíncrono: {mail_err}")
 
 @app.route("/api/enviar-soporte", methods=["POST"])
+@limiter.limit("5 per minute")
 @login_required
 def enviar_soporte():
     """Recibe un mensaje de soporte del usuario y lo guarda en la BD."""
@@ -4517,7 +4593,7 @@ def enviar_soporte():
         
         # ENVIAR NOTIFICACIÓN POR CORREO AL ADMIN (ID 1) DE FORMA ASÍNCRONA
         try:
-            admin_email = "miniyonminerat2@gmail.com" # El correo del administrador
+            admin_email = os.getenv("ADMIN_EMAIL", "miniyonminerat2@gmail.com")
             asunto = f"🔔 Nuevo Mensaje de Soporte: {user_info['Nombres']}"
             cuerpo = f"Hola Admin,<br><br>Tienes un nuevo mensaje de soporte en NoteFlow.<br><br>Usuario: {user_info['Nombres']}<br>Correo: {user_info['Correo']}<br>Teléfono: {user_info['Telefono']}<br>Mensaje: {mensaje}<br><br>Puedes responder desde el panel de administración."
             html_body = construir_email_html(asunto, cuerpo)
@@ -4578,7 +4654,9 @@ def soporte_admin():
         print(f"Error en soporte_admin: {e}")
         if cursor:
             cerrar_db(cursor, conexion)
-        return f"Error interno: {str(e)}", 500
+        return _sanitizar_error(e, "Error interno del servidor"), 500
+
+
     finally:
         cerrar_db(cursor, conexion)
 
@@ -4981,7 +5059,7 @@ def api_admin_usuarios():
             return jsonify({"error": "No autorizado"}), 403
 
         cur.execute("""
-            SELECT "ID_Cuenta", "Usuario", "Contraseña", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan"
+            SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan"
             FROM public."Cuentas"
             ORDER BY "ID_Cuenta" ASC
         """)

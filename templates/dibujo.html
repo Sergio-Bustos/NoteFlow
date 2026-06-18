@@ -57,10 +57,8 @@
                 <button class="btn-tool" id="btnEstrella" title="Estrella" onclick="seleccionarHerramienta('estrella', this)">
                     <i class="far fa-star"></i>
                 </button>
-                <button class="btn-tool" id="btnTexto" title="Texto" onclick="seleccionarHerramienta('texto', this)">
-                    <i class="fas fa-font"></i>
-                </button>
-                <button class="btn-tool" id="btnSticker" title="Stickers" onclick="seleccionarHerramienta('sticker', this)">
+
+                <button class="btn-tool" id="btnSticker" title="Stickers" onclick="document.getElementById('stickerPanel').classList.toggle('visible')">
                     <i class="fas fa-smile"></i>
                 </button>
                 <button class="btn-tool" id="btnBalde" title="Balde de pintura" onclick="seleccionarHerramienta('balde', this)">
@@ -198,18 +196,17 @@
 
 
 
-    <!-- Panel de Stickers -->
-    <div id="stickerPanel" class="sticker-panel" style="padding:0; background:transparent; box-shadow:none;">
-        <div style="display:flex; justify-content:flex-end; margin-bottom:5px;">
-            <button onclick="document.getElementById('stickerPanel').classList.remove('activo')" 
-                    style="background:var(--morado-vivo); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer;">
+    <!-- Panel de Emojis/Stickers -->
+    <div id="stickerPanel" class="sticker-panel">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <input type="text" id="emojiSearch" class="emoji-search-input" placeholder="Buscar emoji..." autocomplete="off">
+            <button onclick="document.getElementById('stickerPanel').classList.remove('visible')" 
+                    class="emoji-close-btn">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <emoji-picker class="light"></emoji-picker>
+        <div id="emojiGrid" class="sticker-grid"></div>
     </div>
-
-    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
 
 
     <!-- Toast -->
