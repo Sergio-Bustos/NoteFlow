@@ -29,6 +29,15 @@ const userPlan = document.getElementById('userPlanPremium')?.value || 'gratis';
 const maxW = limitW[userPlan] || limitW['gratis'];
 const maxH = limitH[userPlan] || limitH['gratis'];
 
+function esPremium() {
+    return userPlan !== 'gratis';
+}
+function requierePremium() {
+    if (esPremium()) return true;
+    mostrarToast('🔒 Funciones premium. Mejora tu plan para acceder.');
+    return false;
+}
+
 function actualizarInfoTamaño() {
     const el = document.getElementById('canvasSizeInfo');
     if (el) {
@@ -85,19 +94,327 @@ function ajustarCanvas() {
     }
 
     fcanvas.calcOffset();
+    if (simetriaActiva) {
+        eliminarEjeSimetria();
+        crearEjeSimetria();
+    }
     fcanvas.renderAll();
     actualizarInfoTamaño();
 }
 ajustarCanvas();
 window.addEventListener('resize', () => { fcanvas.calcOffset(); });
 
+/* ──────────────────────────────────────────
+   SISTEMA DE CAPAS (LAYERS)
+────────────────────────────────────────── */
+let layers = [];
+let activeLayerIndex = 0;
+let layerIdCounter = 0;
+
+function initLayers() {
+    layers = [{ id: 'layer_' + (layerIdCounter++), name: 'Capa 1', visible: true, locked: false }];
+    activeLayerIndex = 0;
+}
+
+function getActiveLayer() { return layers[activeLayerIndex]; }
+
+function getLayerIndexById(id) { return layers.findIndex(function(l) { return l.id === id; }); }
+
+function addLayer(nombre) {
+    if (!requierePremium()) return;
+    var name = nombre || 'Capa ' + (layers.length + 1);
+    var newLayer = { id: 'layer_' + (layerIdCounter++), name: name, visible: true, locked: false };
+    layers.push(newLayer);
+    setActiveLayer(layers.length - 1);
+    renderLayerPanel();
+    guardarEstado();
+}
+
+function deleteLayer(index) {
+    if (layers.length <= 1) { mostrarToast('Debe haber al menos una capa'); return; }
+    var layerId = layers[index].id;
+    // Mover objetos de la capa eliminada a la activa
+    var activeId = getActiveLayer().id;
+    fcanvas.getObjects().forEach(function(obj) {
+        if (obj._layerId === layerId) obj._layerId = activeId;
+    });
+    layers.splice(index, 1);
+    if (activeLayerIndex >= layers.length) activeLayerIndex = layers.length - 1;
+    if (activeLayerIndex === index && index > 0) activeLayerIndex--;
+    updateCanvasFromLayers();
+    renderLayerPanel();
+    guardarEstado();
+}
+
+function setActiveLayer(index) {
+    activeLayerIndex = index;
+    updateCanvasFromLayers();
+    renderLayerPanel();
+}
+
+function toggleVisibility(index) {
+    layers[index].visible = !layers[index].visible;
+    updateCanvasFromLayers();
+    renderLayerPanel();
+    guardarEstado();
+}
+
+function toggleLock(index) {
+    layers[index].locked = !layers[index].locked;
+    updateCanvasFromLayers();
+    renderLayerPanel();
+}
+
+function moveLayer(index, dir) {
+    var newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= layers.length) return;
+    var temp = layers[index];
+    layers[index] = layers[newIndex];
+    layers[newIndex] = temp;
+    if (activeLayerIndex === index) activeLayerIndex = newIndex;
+    else if (activeLayerIndex === newIndex) activeLayerIndex = index;
+    reorderObjectsByLayers();
+    updateCanvasFromLayers();
+    renderLayerPanel();
+    guardarEstado();
+}
+
+function reorderObjectsByLayers() {
+    // Reordenar objetos en fabric según el orden de capas (abajo→arriba)
+    var allObjects = fcanvas.getObjects().slice();
+    // Ordenar: objetos de capas inferiores primero
+    allObjects.sort(function(a, b) {
+        var idxA = getLayerIndexById(a._layerId);
+        var idxB = getLayerIndexById(b._layerId);
+        if (idxA === -1) return 1;
+        if (idxB === -1) return -1;
+        return idxA - idxB;
+    });
+    allObjects.forEach(function(obj, i) { fcanvas.moveTo(obj, i); });
+    fcanvas.renderAll();
+}
+
+function updateCanvasFromLayers() {
+    var activeId = getActiveLayer() ? getActiveLayer().id : null;
+    var defaultId = layers[0] ? layers[0].id : null;
+    fcanvas.getObjects().forEach(function(obj) {
+        // Asignar objetos legacy a la primera capa
+        if (!obj._layerId) obj._layerId = defaultId || 'layer_0';
+        var layerIdx = getLayerIndexById(obj._layerId);
+        var layer = layers[layerIdx];
+        if (!layer) {
+            obj.visible = false;
+            obj.selectable = false;
+            obj.evented = false;
+            return;
+        }
+        obj.visible = layer.visible;
+        obj.selectable = !layer.locked && layer.visible;
+        obj.evented = !layer.locked && layer.visible;
+        // Atenuar opacidad de capas inactivas (pero no las bloqueadas, que ya son no editables)
+        if (layer.visible && obj._layerId !== activeId) {
+            if (obj._savedOpacity === undefined) obj._savedOpacity = obj.opacity;
+            obj.opacity = 0.35;
+        } else if (obj._layerId === activeId) {
+            if (obj._savedOpacity !== undefined) {
+                obj.opacity = obj._savedOpacity;
+                obj._savedOpacity = undefined;
+            }
+        }
+    });
+    fcanvas.renderAll();
+}
+
+function renderLayerPanel() {
+    var list = document.getElementById('layerList');
+    if (!list) return;
+    list.innerHTML = '';
+    for (var i = layers.length - 1; i >= 0; i--) {
+        (function(idx) {
+            var layer = layers[idx];
+            var item = document.createElement('div');
+            item.className = 'layer-item' + (idx === activeLayerIndex ? ' active' : '');
+            
+            var eye = document.createElement('button');
+            eye.className = 'layer-btn layer-eye';
+            eye.innerHTML = layer.visible ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash" style="opacity:0.4"></i>';
+            eye.title = layer.visible ? 'Ocultar capa' : 'Mostrar capa';
+            eye.addEventListener('click', function(e) { e.stopPropagation(); toggleVisibility(idx); });
+            
+            var name = document.createElement('span');
+            name.className = 'layer-name';
+            name.textContent = layer.name;
+            name.addEventListener('dblclick', function() {
+                var nuevo = prompt('Nombre de la capa:', layer.name);
+                if (nuevo && nuevo.trim()) { layer.name = nuevo.trim(); renderLayerPanel(); guardarEstado(); }
+            });
+            
+            var lock = document.createElement('button');
+            lock.className = 'layer-btn layer-lock';
+            lock.innerHTML = layer.locked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-unlock"></i>';
+            lock.title = layer.locked ? 'Desbloquear capa' : 'Bloquear capa';
+            lock.addEventListener('click', function(e) { e.stopPropagation(); toggleLock(idx); });
+            
+            item.appendChild(eye);
+            item.appendChild(name);
+            item.appendChild(lock);
+            item.addEventListener('click', function() { setActiveLayer(idx); });
+            list.appendChild(item);
+        })(i);
+    }
+    var label = document.getElementById('layerPanelActive');
+    if (label && layers[activeLayerIndex]) {
+        label.textContent = 'Activa: ' + layers[activeLayerIndex].name;
+    }
+}
+
+function toggleLayerPanel() {
+    var panel = document.getElementById('layerPanel');
+    if (panel) panel.classList.toggle('visible');
+}
+
+// Inicializar capas
+initLayers();
+
+// ── Variables del Estabilizador ──
+let stabilizerPoints = [];
+
+// ── Tipo de Pincel ──
+let brushType = 'pencil';
+
+// ── Simetría ──
+var simetriaActiva = false;
+var simetriaEje = null;
+
+window.toggleSimetria = function() {
+    if (simetriaActiva) {
+        // Permitir desactivar sin ser premium
+    } else if (!requierePremium()) return;
+    simetriaActiva = !simetriaActiva;
+    var btn = document.getElementById('btnSimetria');
+    if (btn) {
+        btn.classList.toggle('activo', simetriaActiva);
+        btn.style.background = simetriaActiva ? 'var(--morado-vivo)' : '';
+        btn.style.color = simetriaActiva ? '#fff' : '';
+    }
+    if (simetriaActiva) {
+        crearEjeSimetria();
+    } else {
+        eliminarEjeSimetria();
+    }
+};
+
+function crearEjeSimetria() {
+    eliminarEjeSimetria();
+    var midX = lienzW / 2;
+    simetriaEje = new fabric.Line([midX, 0, midX, lienzH], {
+        stroke: '#7c4dff',
+        strokeWidth: 1.5,
+        strokeDashArray: [6, 4],
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        opacity: 0.6
+    });
+    fcanvas.add(simetriaEje);
+    simetriaEje.moveTo(0);
+    fcanvas.renderAll();
+}
+
+function eliminarEjeSimetria() {
+    if (simetriaEje) {
+        fcanvas.remove(simetriaEje);
+        simetriaEje = null;
+    }
+}
+
+function espejarObjeto(obj) {
+    if (!simetriaActiva) return;
+    if (obj === simetriaEje || obj._isMirror || obj._isEraser) return;
+    // Pausar guardarEstado para que el espejado no genere historia extra
+    var oldBloqueado = bloqueado;
+    bloqueado = true;
+    obj.clone(function(clon) {
+        var midX = lienzW / 2;
+        // Calcular la posición espejada
+        var bounds = obj.getBoundingRect();
+        var objCenterX = bounds.left + bounds.width / 2;
+        var mirrorCenterX = midX + (midX - objCenterX);
+        var newLeft = mirrorCenterX - bounds.width / 2;
+        clon.set({
+            left: newLeft,
+            flipX: true,
+            _isMirror: true,
+            _layerId: obj._layerId,
+            evented: false
+        });
+        fcanvas.add(clon);
+        clon.moveTo(obj.depth || 0);
+        fcanvas.renderAll();
+        bloqueado = oldBloqueado;
+        guardarEstado();
+    });
+}
+window.setBrush = function(tipo, btn) {
+    if (tipo !== 'pencil' && !requierePremium()) return;
+    brushType = tipo;
+    document.querySelectorAll('.brush-option').forEach(function(b) { b.classList.remove('activo'); });
+    if (btn) btn.classList.add('activo');
+    if (herramienta === 'lapiz' || herramienta === 'estabilizador') {
+        seleccionarHerramienta(herramienta, document.querySelector('.btn-tool.activo'));
+    }
+};
+let stabilizerPreviewPath = null;
+
+function smoothPoints(raw, windowSize) {
+    if (raw.length < 2) return raw;
+    var result = [];
+    for (var i = 0; i < raw.length; i++) {
+        var start = Math.max(0, i - Math.floor(windowSize / 2));
+        var end = Math.min(raw.length - 1, i + Math.floor(windowSize / 2));
+        var cnt = end - start + 1;
+        var sx = 0, sy = 0;
+        for (var j = start; j <= end; j++) {
+            sx += raw[j].x;
+            sy += raw[j].y;
+        }
+        result.push({ x: sx / cnt, y: sy / cnt });
+    }
+    return result;
+}
+
+function pointsToPath(points) {
+    if (points.length < 2) return null;
+    var d = 'M ' + points[0].x.toFixed(1) + ' ' + points[0].y.toFixed(1);
+    for (var i = 1; i < points.length - 1; i++) {
+        var mx = (points[i].x + points[i + 1].x) / 2;
+        var my = (points[i].y + points[i + 1].y) / 2;
+        d += ' Q ' + points[i].x.toFixed(1) + ' ' + points[i].y.toFixed(1) +
+             ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+    }
+    var last = points[points.length - 1];
+    d += ' L ' + last.x.toFixed(1) + ' ' + last.y.toFixed(1);
+    return d;
+}
+
+function createSmoothPath(points) {
+    var pathData = pointsToPath(points);
+    if (!pathData) return null;
+    return new fabric.Path(pathData, {
+        stroke: colorActual(),
+        strokeWidth: grosorActual(),
+        fill: 'transparent',
+        strokeLineCap: 'round',
+        strokeLineJoin: 'round',
+        _layerId: getActiveLayer().id
+    });
+}
+
 // ── Lógica de Zoom Dinámico ──
 function getClampZoom(z) {
-    // Evitar demasiado espacio vacío (hoja muy pequeña) o hoja absurdamente grande
-    const minVisualW = 450;
     const maxVisualW = 5000;
     
-    let minZ = Math.min(1, Math.max(minVisualW / lienzW, minVisualW / lienzH));
+    let minZ = Math.min(0.5, Math.max(300 / lienzW, 300 / lienzH));
     let maxZ = Math.max(1, Math.min(maxVisualW / lienzW, maxVisualW / lienzH));
 
     return Math.max(Math.min(z, maxZ, 5), minZ, 0.1);
@@ -128,6 +445,26 @@ document.getElementById('canvasOuter').addEventListener('wheel', (e) => {
     ajustarCanvas();
     document.getElementById('zoomLabel').textContent = Math.round(zoomActual * 100) + '%';
 }, { passive: false });
+
+// Pinch-to-zoom táctil (dos dedos)
+let lastTouchDist = 0;
+document.getElementById('canvasOuter').addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        const t1 = e.touches[0], t2 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        if (lastTouchDist > 0) {
+            const delta = (dist - lastTouchDist) * 0.01;
+            zoomActual = getClampZoom(zoomActual + delta);
+            ajustarCanvas();
+            document.getElementById('zoomLabel').textContent = Math.round(zoomActual * 100) + '%';
+        }
+        lastTouchDist = dist;
+    }
+}, { passive: false });
+document.getElementById('canvasOuter').addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) lastTouchDist = 0;
+});
 
 
 // ── Expandir Lienzo por Lados ──
@@ -208,8 +545,7 @@ async function cargarDibujoExistente() {
             scaleX: 0.5,
             scaleY: 0.5
         });
-        lienzoPristino = false;
-        canvasHint.style.opacity = '0';
+        actualizarHint();
         guardarEstado();
     }, { crossOrigin: 'Anonymous' });
 }
@@ -223,35 +559,50 @@ let historial = [];
 let pasoActual = -1;
 let bloqueado = false;
 
+function actualizarHint() {
+    const hayAlgo = fcanvas.getObjects().length > 0 || !!fcanvas.backgroundImage || fcanvas.backgroundColor !== '#ffffff';
+    lienzoPristino = !hayAlgo;
+    canvasHint.style.opacity = hayAlgo ? '0' : '1';
+}
+
 function guardarEstado() {
     if (bloqueado) return;
-    const json = JSON.stringify(fcanvas.toJSON());
+    const json = JSON.stringify(fcanvas.toJSON(['_layerId', '_isEraser']));
+    const layerState = JSON.stringify(layers);
     if (pasoActual < historial.length - 1) {
         historial = historial.slice(0, pasoActual + 1);
     }
-    historial.push(json);
-    if (historial.length > 30) historial.shift(); // Limitar a 30 pasos
+    historial.push({ canvas: json, layers: layerState });
+    if (historial.length > 30) historial.shift();
     else pasoActual++;
     
-    if (lienzoPristino && fcanvas.getObjects().length > 0) {
-        lienzoPristino = false;
-        notaGuardada = false;
-        canvasHint.style.opacity = '0';
-    }
+    actualizarHint();
+    if (!lienzoPristino) notaGuardada = false;
 }
 
 // Guardar estado inicial vacío
 guardarEstado();
 
-fcanvas.on('object:added', () => { if(!bloqueado) guardarEstado(); });
+fcanvas.on('object:added', function(e) {
+    if (!bloqueado) {
+        guardarEstado();
+        if (simetriaActiva && e && e.target && !e.target._isMirror && e.target !== simetriaEje && !e.target._isEraser) {
+            espejarObjeto(e.target);
+        }
+    }
+});
 fcanvas.on('object:modified', () => { if(!bloqueado) guardarEstado(); });
 fcanvas.on('object:removed', () => { if(!bloqueado) guardarEstado(); });
 
-// Marcar trazos del borrador como no seleccionables
+// Marcar trazos con capa activa; los del borrador como no seleccionables
 fcanvas.on('path:created', function(e) {
+    if (!e.path) return;
+    var activeId = getActiveLayer().id;
     if (herramienta === 'borrador') {
-        e.path.set({ selectable: false, evented: false, _isEraser: true });
+        e.path.set({ selectable: false, evented: false, _isEraser: true, _layerId: activeId });
         e.path.bringToFront();
+    } else {
+        e.path.set({ _layerId: activeId });
     }
 });
 
@@ -259,10 +610,28 @@ function deshacer() {
     if (pasoActual > 0) {
         bloqueado = true;
         pasoActual--;
-        fcanvas.loadFromJSON(historial[pasoActual], function() {
-            fcanvas.renderAll();
-            bloqueado = false;
-        });
+        var entry = historial[pasoActual];
+        // Compatibilidad: historial antiguo (solo string)
+        if (typeof entry === 'string') {
+            fcanvas.loadFromJSON(entry, function() {
+                fcanvas.renderAll();
+                const hayObjetos = fcanvas.getObjects().length > 0 || !!fcanvas.backgroundImage;
+                lienzoPristino = !hayObjetos;
+                canvasHint.style.opacity = hayObjetos ? '0' : '1';
+                bloqueado = false;
+            });
+        } else {
+            layers = JSON.parse(entry.layers);
+            fcanvas.loadFromJSON(entry.canvas, function() {
+                fcanvas.renderAll();
+                updateCanvasFromLayers();
+                renderLayerPanel();
+                const hayObjetos = fcanvas.getObjects().length > 0 || !!fcanvas.backgroundImage;
+                lienzoPristino = !hayObjetos;
+                canvasHint.style.opacity = hayObjetos ? '0' : '1';
+                bloqueado = false;
+            });
+        }
     } else {
         mostrarToast('No hay más pasos para deshacer');
     }
@@ -327,7 +696,8 @@ document.addEventListener('keydown', e => {
                     left: cloned.left + pasteOffset,
                     top: cloned.top + pasteOffset,
                     evented: true,
-                    selectable: true
+                    selectable: true,
+                    _layerId: getActiveLayer().id
                 });
                 fcanvas.add(cloned);
                 pasted.push(cloned);
@@ -537,7 +907,45 @@ function floodFill(imgData, W, H, startX, startY, fillHex, tolerance) {
 }
 
 fcanvas.on('mouse:down', function(o){
-    if (herramienta === 'seleccion' || herramienta === 'lapiz' || herramienta === 'borrador' || herramienta === 'sticker') return;
+    if (herramienta === 'cuentagotas') {
+        (function() {
+            var p = fcanvas.getPointer(o.e);
+            var ctx = fcanvas.getContext();
+            var pixel = ctx.getImageData(Math.round(p.x), Math.round(p.y), 1, 1).data;
+            var hex = '#' + [pixel[0], pixel[1], pixel[2]].map(function(v) {
+                return ('0' + v.toString(16)).slice(-2);
+            }).join('');
+            document.getElementById('colorPicker').value = hex;
+            document.querySelectorAll('.color-rapido').forEach(function(el) {
+                el.classList.remove('seleccionado');
+                if (el.dataset.color === hex) el.classList.add('seleccionado');
+            });
+            mostrarToast('Color capturado: ' + hex);
+            var btnLapiz = document.getElementById('btnLapiz');
+            if (btnLapiz) seleccionarHerramienta('lapiz', btnLapiz);
+        })();
+        return;
+    }
+
+    if (herramienta === 'estabilizador') {
+        isDown = true;
+        stabilizerPoints = [];
+        var p = fcanvas.getPointer(o.e);
+        stabilizerPoints.push({ x: p.x, y: p.y });
+        return;
+    }
+
+    if (herramienta === 'seleccion' || herramienta === 'lapiz' || herramienta === 'sticker' || herramienta === 'mano') return;
+
+    if (herramienta === 'borrador') {
+        isDown = true;
+        eraserPoints = [];
+        eraseEnProgreso = false;
+        const pointer = fcanvas.getPointer(o.e);
+        eraserPoints.push({ x: pointer.x, y: pointer.y });
+        inicializarCacheBorrador();
+        return;
+    }
 
     if (herramienta === 'balde') {
         const pointer = fcanvas.getPointer(o.e);
@@ -599,12 +1007,14 @@ fcanvas.on('mouse:down', function(o){
             {x: 23, y: 7}, {x: 29, y: 40}, {x: 0, y: 25},
             {x: -29, y: 40}, {x: -23, y: 7}, {x: -47, y: -15}, {x: -14, y: -20}
         ];
+        const activeId = getActiveLayer().id;
         const star = new fabric.Polygon(starPoints, {
             left: pointer.x,
             top: pointer.y,
             fill: 'transparent',
             stroke: colorActual(),
-            strokeWidth: grosorActual()
+            strokeWidth: grosorActual(),
+            _layerId: activeId
         });
         fcanvas.add(star);
         fcanvas.setActiveObject(star);
@@ -617,6 +1027,7 @@ fcanvas.on('mouse:down', function(o){
     origX = pointer.x;
     origY = pointer.y;
 
+    const activeId = getActiveLayer().id;
     const props = {
         left: origX,
         top: origY,
@@ -627,7 +1038,8 @@ fcanvas.on('mouse:down', function(o){
         fill: 'transparent',
         transparentCorners: false,
         strokeUniform: true,
-        strokeDashArray: null
+        strokeDashArray: null,
+        _layerId: activeId
     };
 
     if (herramienta === 'rectangulo') {
@@ -637,7 +1049,8 @@ fcanvas.on('mouse:down', function(o){
     } else if (herramienta === 'linea') {
         shape = new fabric.Line([origX, origY, pointer.x, pointer.y], {
             stroke: colorActual(),
-            strokeWidth: grosorActual()
+            strokeWidth: grosorActual(),
+            _layerId: activeId
         });
     } else if (herramienta === 'triangulo') {
         shape = new fabric.Triangle({ ...props, width: pointer.x-origX, height: pointer.y-origY });
@@ -648,6 +1061,30 @@ fcanvas.on('mouse:down', function(o){
 fcanvas.on('mouse:move', function(o){
     if (!isDown) return;
     const pointer = fcanvas.getPointer(o.e);
+    const absPos = o.e;
+
+    if (herramienta === 'estabilizador') {
+        var p = fcanvas.getPointer(o.e);
+        stabilizerPoints.push({ x: p.x, y: p.y });
+        return;
+    }
+
+    if (herramienta === 'borrador') {
+        eraserPoints.push({ x: pointer.x, y: pointer.y });
+        if (absPos) {
+            const clientX = absPos.clientX || (absPos.touches ? absPos.touches[0].clientX : 0);
+            const clientY = absPos.clientY || (absPos.touches ? absPos.touches[0].clientY : 0);
+            mostrarCursorBorrador(clientX, clientY);
+        }
+        // Procesar en vivo cada ~60ms
+        const ahora = Date.now();
+        if (eraserCacheReady && ahora - eraserUltimoCommit > 50) {
+            eraserUltimoCommit = ahora;
+            procesarBorradorEnVivo(eraserPoints, grosorActual() * 2);
+            eraseEnProgreso = true;
+        }
+        return;
+    }
 
     if (herramienta === 'rectangulo') {
         if(origX > pointer.x){
@@ -671,6 +1108,35 @@ fcanvas.on('mouse:move', function(o){
 });
 
 fcanvas.on('mouse:up', function(o){
+    if (herramienta === 'estabilizador' && isDown) {
+        isDown = false;
+        if (stabilizerPoints.length >= 2) {
+            var fuerza = parseInt(document.getElementById('estabilizadorFuerza').value) || 8;
+            var smoothed = smoothPoints(stabilizerPoints, fuerza);
+            var path = createSmoothPath(smoothed);
+            if (path) {
+                fcanvas.add(path);
+                guardarEstado();
+            }
+        }
+        stabilizerPoints = [];
+        return;
+    }
+
+    if (herramienta === 'borrador' && isDown) {
+        if (eraseEnProgreso || eraserPoints.length > 1) {
+            // Commit final con todos los puntos
+            if (eraserPoints.length > 1) procesarBorradorEnVivo(eraserPoints, grosorActual() * 2);
+            finalizarBorrador();
+        } else {
+            ocultarCursorBorrador();
+            eraserCacheCanvas = null;
+            eraserCacheReady = false;
+            eraserPoints = [];
+        }
+        isDown = false;
+        return;
+    }
     isDown = false;
     if(shape) {
         shape.setCoords();
@@ -709,13 +1175,208 @@ function aplicarConfiguracion() {
 /* ──────────────────────────────────────────
    SELECCIONAR HERRAMIENTA
 ────────────────────────────────────────── */
+let panPosInicial = { x: 0, y: 0 };
+let panScrollInicial = { x: 0, y: 0 };
+
+// ── Borrador tipo Paint (en vivo) ──
+let eraserPoints = [];
+let eraserCursor = null;
+let eraserCacheCanvas = null;
+let eraserCacheReady = false;
+let eraserUltimoCommit = 0;
+let eraseEnProgreso = false;
+let eraserMode = 'normal'; // 'normal' | 'block' | 'soft'
+
+window.setEraserMode = function(mode, btn) {
+    if (mode !== 'normal' && !requierePremium()) return;
+    eraserMode = mode;
+    document.querySelectorAll('.eraser-option').forEach(function(b) { b.classList.remove('activo'); });
+    if (btn) btn.classList.add('activo');
+    // Actualizar cursor
+    ocultarCursorBorrador();
+    if (herramienta === 'borrador') {
+        crearCursorBorrador();
+        if (eraserCursor) {
+            if (mode === 'block') {
+                eraserCursor.style.borderRadius = '0';
+            } else {
+                eraserCursor.style.borderRadius = '50%';
+            }
+            if (mode === 'soft') {
+                eraserCursor.style.boxShadow = '0 0 8px 4px rgba(180,180,180,0.3)';
+                eraserCursor.style.background = 'rgba(180,180,180,0.15)';
+            } else {
+                eraserCursor.style.boxShadow = 'none';
+                eraserCursor.style.background = 'rgba(180,180,180,0.25)';
+            }
+        }
+    }
+};
+
+function crearCursorBorrador() {
+    if (eraserCursor) return;
+    eraserCursor = document.createElement('div');
+    eraserCursor.id = 'eraserCursor';
+    eraserCursor.style.cssText = 'position:fixed;pointer-events:none;border-radius:50%;border:2px solid rgba(0,0,0,0.5);background:rgba(180,180,180,0.25);z-index:9999;display:none;transform:translate(-50%,-50%);';
+    document.body.appendChild(eraserCursor);
+}
+
+function mostrarCursorBorrador(x, y) {
+    if (!eraserCursor) crearCursorBorrador();
+    const size = grosorActual() * 2;
+    eraserCursor.style.width = size + 'px';
+    eraserCursor.style.height = size + 'px';
+    eraserCursor.style.left = x + 'px';
+    eraserCursor.style.top = y + 'px';
+    eraserCursor.style.display = 'block';
+}
+
+function ocultarCursorBorrador() {
+    if (eraserCursor) eraserCursor.style.display = 'none';
+}
+
+function inicializarCacheBorrador() {
+    const dpr = window.devicePixelRatio || 1;
+    const W = lienzW * dpr;
+    const H = lienzH * dpr;
+
+    eraserCacheCanvas = document.createElement('canvas');
+    eraserCacheCanvas.width = W;
+    eraserCacheCanvas.height = H;
+    eraserCacheReady = false;
+
+    const origBg = fcanvas.backgroundColor;
+    fcanvas.backgroundColor = 'transparent';
+    fcanvas.renderAll();
+    const dataURL = fcanvas.toDataURL({ format: 'png', multiplier: dpr });
+    fcanvas.backgroundColor = origBg;
+    fcanvas.renderAll();
+
+    const img = new Image();
+    img.onload = function () {
+        const ctx = eraserCacheCanvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        eraserCacheReady = true;
+        // Hacer commit inicial (mostrar el canvas sin cambios)
+        commitCacheBorrador();
+    };
+    img.src = dataURL;
+}
+
+function commitCacheBorrador() {
+    if (!eraserCacheReady || !eraserCacheCanvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const bgColor = fcanvas.backgroundColor || '#ffffff';
+
+    const fabricImg = new fabric.Image(eraserCacheCanvas, {
+        scaleX: 1 / dpr,
+        scaleY: 1 / dpr,
+        left: 0,
+        top: 0,
+        selectable: false,
+        evented: false
+    });
+
+    // Establecer fondo ANTES de limpiar para evitar parpadeo
+    fcanvas.backgroundImage = fabricImg;
+    fcanvas.backgroundColor = bgColor;
+    fcanvas.discardActiveObject();
+    if (fcanvas._objects.length > 0) {
+        bloqueado = true;
+        fcanvas._objects.slice().forEach(function(obj) { fcanvas.remove(obj); });
+        bloqueado = false;
+    }
+    fcanvas.renderAll();
+}
+
+function procesarBorradorEnVivo(points, brushWidth) {
+    if (!eraserCacheReady || !eraserCacheCanvas) return;
+    const dpr = window.devicePixelRatio || 1;
+
+    const ctx = eraserCacheCanvas.getContext('2d');
+    ctx.globalCompositeOperation = 'destination-out';
+
+    if (eraserMode === 'block') {
+        ctx.lineCap = 'square';
+        ctx.lineJoin = 'miter';
+        ctx.lineWidth = brushWidth * dpr;
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            const px = p.x * dpr;
+            const py = p.y * dpr;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+    } else if (eraserMode === 'soft') {
+        ctx.shadowColor = 'rgba(0,0,0,1)';
+        ctx.shadowBlur = brushWidth * dpr * 0.4;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = brushWidth * dpr * 0.6;
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            const px = p.x * dpr;
+            const py = p.y * dpr;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+    } else {
+        // normal
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = brushWidth * dpr;
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            const px = p.x * dpr;
+            const py = p.y * dpr;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    commitCacheBorrador();
+}
+
+function finalizarBorrador() {
+    if (eraserCacheCanvas && eraserCacheReady) {
+        guardarEstado();
+    }
+    eraserCacheCanvas = null;
+    eraserCacheReady = false;
+    eraserPoints = [];
+    ocultarCursorBorrador();
+}
+
 window.seleccionarHerramienta = function(nombre, btn) {
+    // Restringir herramientas premium
+    if ((nombre === 'estabilizador' || nombre === 'cuentagotas') && !esPremium()) {
+        mostrarToast('🔒 Funciones premium. Mejora tu plan para acceder.');
+        if (btn) btn.classList.remove('activo');
+        return;
+    }
     herramienta = nombre;
     document.querySelectorAll('.btn-tool').forEach(b => b.classList.remove('activo'));
     if(btn) btn.classList.add('activo');
 
+    // Ocultar grupos contextuales
+    var stabGroup = document.getElementById('estabilizadorGroup');
+    if (stabGroup) stabGroup.style.display = 'none';
+    var brushGroup = document.getElementById('brushGroup');
+    if (brushGroup) brushGroup.style.display = 'none';
+    var eraserGroup = document.getElementById('eraserGroup');
+    if (eraserGroup) eraserGroup.style.display = 'none';
+
     fcanvas.isDrawingMode = false;
     fcanvas.selection = false;
+    
+    // Actualizar visibilidad según capas, luego inhabilitar selección por defecto
+    updateCanvasFromLayers();
     fcanvas.forEachObject(obj => { obj.selectable = false; obj.evented = false; });
 
     const canvasWrapper = document.querySelector('.canvas-container');
@@ -724,34 +1385,129 @@ window.seleccionarHerramienta = function(nombre, btn) {
     // Siempre ocultar panel de stickers al cambiar de herramienta, salvo si es 'sticker'
     if (nombre !== 'sticker' && stickerPanel) stickerPanel.classList.remove('visible');
 
+    // Ocultar cursor del borrador al cambiar de herramienta
+    if (nombre !== 'borrador') {
+        ocultarCursorBorrador();
+        eraserCacheCanvas = null;
+        eraserCacheReady = false;
+        eraserPoints = [];
+    }
+
     if (nombre === 'lapiz') {
+        var brushGroup = document.getElementById('brushGroup');
+        if (brushGroup) brushGroup.style.display = 'flex';
         fcanvas.isDrawingMode = true;
-        fcanvas.freeDrawingBrush = new fabric.PencilBrush(fcanvas);
-        fcanvas.freeDrawingBrush.decimate = 2;
+        if (brushType === 'circle') {
+            fcanvas.freeDrawingBrush = new fabric.CircleBrush(fcanvas);
+        } else if (brushType === 'spray') {
+            fcanvas.freeDrawingBrush = new fabric.SprayBrush(fcanvas);
+        } else {
+            fcanvas.freeDrawingBrush = new fabric.PencilBrush(fcanvas);
+            fcanvas.freeDrawingBrush.decimate = 2;
+        }
         aplicarConfiguracion();
         if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
     } else if (nombre === 'borrador') {
-        fcanvas.isDrawingMode = true;
-        fcanvas.freeDrawingBrush = new fabric.PencilBrush(fcanvas);
-        fcanvas.freeDrawingBrush.decimate = 2;
-        fcanvas.freeDrawingBrush.color = fcanvas.backgroundColor || '#ffffff';
-        fcanvas.freeDrawingBrush.width = grosorActual() * 2;
-        if(canvasWrapper) canvasWrapper.style.cursor = 'cell';
+        var eraserGroup = document.getElementById('eraserGroup');
+        if (eraserGroup) eraserGroup.style.display = 'flex';
+        crearCursorBorrador();
+        eraserPoints = [];
+        if(canvasWrapper) canvasWrapper.style.cursor = 'none';
     } else if (nombre === 'seleccion') {
         fcanvas.selection = true;
         fcanvas.forEachObject(obj => {
             if (obj._isEraser) return;
-            obj.selectable = true;
-            obj.evented = true;
+            var layerIdx = getLayerIndexById(obj._layerId);
+            var layer = layers[layerIdx];
+            obj.selectable = layer && layer.visible && !layer.locked;
+            obj.evented = layer && layer.visible && !layer.locked;
         });
         if(canvasWrapper) canvasWrapper.style.cursor = 'default';
-    } else if (nombre === 'balde') {
-        // Balde de pintura: cursor especial, sin selección
+    } else if (nombre === 'estabilizador') {
+        var stabGroup = document.getElementById('estabilizadorGroup');
+        if (stabGroup) stabGroup.style.display = 'flex';
+        fcanvas.freeDrawingBrush = new fabric.PencilBrush(fcanvas);
+        fcanvas.freeDrawingBrush.decimate = 1;
+        aplicarConfiguracion();
         if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
+    } else if (nombre === 'cuentagotas') {
+        if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
+    } else if (nombre === 'balde') {
+        if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
+    } else if (nombre === 'mano') {
+        document.getElementById('canvasOuter').style.cursor = 'grab';
+        if(canvasWrapper) canvasWrapper.style.cursor = 'grab';
     } else {
         // Formas (rectangulo, circulo, linea, triangulo, estrella)
         if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
     }
+}
+
+// ── Seguimiento del cursor del borrador ──
+document.addEventListener('mousemove', (e) => {
+    if (herramienta === 'borrador' && eraserCursor) {
+        mostrarCursorBorrador(e.clientX, e.clientY);
+    }
+});
+document.addEventListener('touchmove', (e) => {
+    if (herramienta === 'borrador' && eraserCursor && e.touches.length > 0) {
+        mostrarCursorBorrador(e.touches[0].clientX, e.touches[0].clientY);
+    }
+}, { passive: true });
+
+// ── Pan con herramienta mano (arrastrar el canvas-outer) ──
+const canvasOuter = document.getElementById('canvasOuter');
+canvasOuter.addEventListener('mousedown', (e) => {
+    if (herramienta !== 'mano') return;
+    e.preventDefault();
+    panPosInicial = { x: e.clientX, y: e.clientY };
+    panScrollInicial = { x: canvasOuter.scrollLeft, y: canvasOuter.scrollTop };
+    canvasOuter.style.cursor = 'grabbing';
+    document.addEventListener('mousemove', onPanMove);
+    document.addEventListener('mouseup', onPanEnd);
+});
+canvasOuter.addEventListener('touchstart', (e) => {
+    if (herramienta !== 'mano' || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    panPosInicial = { x: t.clientX, y: t.clientY };
+    panScrollInicial = { x: canvasOuter.scrollLeft, y: canvasOuter.scrollTop };
+    canvasOuter.style.cursor = 'grabbing';
+    document.addEventListener('touchmove', onPanMoveTouch, { passive: false });
+    document.addEventListener('touchend', onPanEndTouch);
+}, { passive: true });
+
+function onPanMove(e) {
+    e.preventDefault();
+    const dx = e.clientX - panPosInicial.x;
+    const dy = e.clientY - panPosInicial.y;
+    canvasOuter.scrollLeft = panScrollInicial.x - dx;
+    canvasOuter.scrollTop  = panScrollInicial.y - dy;
+}
+function onPanMoveTouch(e) {
+    e.preventDefault();
+    const t = e.touches[0];
+    const dx = t.clientX - panPosInicial.x;
+    const dy = t.clientY - panPosInicial.y;
+    canvasOuter.scrollLeft = panScrollInicial.x - dx;
+    canvasOuter.scrollTop  = panScrollInicial.y - dy;
+}
+function onPanEnd() {
+    document.removeEventListener('mousemove', onPanMove);
+    document.removeEventListener('mouseup', onPanEnd);
+    canvasOuter.style.cursor = 'grab';
+}
+function onPanEndTouch() {
+    document.removeEventListener('touchmove', onPanMoveTouch);
+    document.removeEventListener('touchend', onPanEndTouch);
+    canvasOuter.style.cursor = 'grab';
+}
+
+// Marcar botones premium para usuarios gratis
+if (!esPremium()) {
+    document.querySelectorAll('.btn-premium').forEach(function(b) {
+        b.classList.add('locked');
+        b.title = (b.title || '') + ' (Premium)';
+    });
 }
 
 // Iniciar con lápiz
@@ -798,12 +1554,13 @@ colorPicker.addEventListener('input', () => {
 ────────────────────────────────────────── */
 document.getElementById('btnLimpiar').addEventListener('click', () => {
     if (fcanvas.getObjects().length === 0 && !fcanvas.backgroundImage) return;
+    bloqueado = true;
     fcanvas.clear();
+    bloqueado = false;
     fcanvas.backgroundColor = '#ffffff';
-    lienzoPristino = true;
-    canvasHint.style.opacity = '1';
-    mostrarToast('Lienzo limpiado');
     guardarEstado();
+    actualizarHint();
+    mostrarToast('Lienzo limpiado');
 });
 
 /* ──────────────────────────────────────────
@@ -823,7 +1580,7 @@ async function guardarNota() {
     btns.forEach(b => { 
         if (b) {
             b.disabled = true; 
-            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; 
+            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Guardando...</span>'; 
         }
     });
 
@@ -880,7 +1637,7 @@ async function guardarNota() {
             if (b) {
                 b.disabled = false; 
                 const isUpdate = !!document.getElementById('editNotaId')?.value;
-                b.innerHTML = '<i class="fas fa-save"></i> ' + (isUpdate ? 'Actualizar nota' : 'Guardar nota'); 
+                b.innerHTML = '<i class="fas fa-save"></i> <span>' + (isUpdate ? 'Actualizar nota' : 'Guardar nota') + '</span>'; 
             }
         });
     }
@@ -958,6 +1715,39 @@ window.mostrarToast = function(msg) {
     });
     window.addEventListener('scroll', () => ctxMenu.classList.remove('visible'));
 
+    // Long-press táctil para abrir menú contextual en móvil
+    let longPressTimer = null;
+    let longPressTriggered = false;
+    fcanvas.upperCanvasEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        longPressTriggered = false;
+        const touch = e.touches[0];
+        longPressTimer = setTimeout(() => {
+            longPressTriggered = true;
+            const target = fcanvas.findTarget({ clientX: touch.clientX, clientY: touch.clientY }, false);
+            if (target) {
+                targetObject = target;
+                fcanvas.setActiveObject(target);
+                fcanvas.requestRenderAll();
+                document.getElementById('ctxAgrupar').style.display = target.type === 'activeSelection' ? 'flex' : 'none';
+                document.getElementById('ctxDesagrupar').style.display = target.type === 'group' ? 'flex' : 'none';
+                ctxMenu.style.left = touch.clientX + 'px';
+                ctxMenu.style.top = touch.clientY + 'px';
+                ctxMenu.classList.add('visible');
+            }
+        }, 500);
+    }, { passive: true });
+    fcanvas.upperCanvasEl.addEventListener('touchmove', () => {
+        clearTimeout(longPressTimer);
+    }, { passive: true });
+    fcanvas.upperCanvasEl.addEventListener('touchend', (e) => {
+        clearTimeout(longPressTimer);
+        // Si fue un toque corto y no long-press, cerrar menú
+        if (!longPressTriggered) {
+            ctxMenu.classList.remove('visible');
+        }
+    }, { passive: true });
+
     // ── ACCIONES DEL MENÚ ──
 
     document.getElementById('ctxCambiarColor').addEventListener('click', () => {
@@ -1029,10 +1819,11 @@ window.mostrarToast = function(msg) {
                     left: targetObject.left + 20,
                     top: targetObject.top + 20,
                     evented: true,
+                    _layerId: getActiveLayer().id
                 });
                 if (cloned.type === 'activeSelection') {
                     cloned.canvas = fcanvas;
-                    cloned.forEachObject(function(obj) { fcanvas.add(obj); });
+                    cloned.forEachObject(function(obj) { fcanvas.add(obj); obj._layerId = getActiveLayer().id; });
                     cloned.setCoords();
                 } else {
                     fcanvas.add(cloned);
@@ -1102,6 +1893,7 @@ fcanvas.on('selection:updated', (e) => {
 document.getElementById('bgColorPicker').addEventListener('input', (e) => {
     fcanvas.backgroundColor = e.target.value;
     fcanvas.requestRenderAll();
+    actualizarHint();
     guardarEstado();
 });
 
@@ -1161,7 +1953,8 @@ document.getElementById('bgColorPicker').addEventListener('input', (e) => {
                     left: cx - 20,
                     top: cy - 20,
                     fontSize: Math.max(grosorActual() * 8, 40),
-                    selectable: true
+                    selectable: true,
+                    _layerId: getActiveLayer().id
                 });
                 fcanvas.add(sticker);
                 fcanvas.setActiveObject(sticker);

@@ -58,11 +58,21 @@
                     <i class="far fa-star"></i>
                 </button>
 
+                <button class="btn-tool" id="btnMano" title="Mover lienzo (arrastrar)" onclick="seleccionarHerramienta('mano', this)">
+                    <i class="fas fa-hand-paper"></i>
+                </button>
+
                 <button class="btn-tool" id="btnSticker" title="Stickers" onclick="document.getElementById('stickerPanel').classList.toggle('visible')">
                     <i class="fas fa-smile"></i>
                 </button>
                 <button class="btn-tool" id="btnBalde" title="Balde de pintura" onclick="seleccionarHerramienta('balde', this)">
                     <i class="fas fa-fill-drip"></i>
+                </button>
+                <button class="btn-tool btn-premium" id="btnCuentagotas" title="Cuentagotas" onclick="seleccionarHerramienta('cuentagotas', this)">
+                    <i class="fas fa-eye-dropper"></i>
+                </button>
+                <button class="btn-tool btn-premium" id="btnEstabilizador" title="Estabilizador de trazo" onclick="seleccionarHerramienta('estabilizador', this)">
+                    <i class="fas fa-magic"></i>
                 </button>
             </div>
 
@@ -104,6 +114,42 @@
                 </div>
             </div>
 
+            <!-- Estabilizador -->
+            <div class="tool-group" id="estabilizadorGroup" style="display:none;">
+                <span class="tool-label">Estabilizador</span>
+                <div class="grosor-wrap">
+                    <input type="range" id="estabilizadorFuerza" min="2" max="20" step="1" value="8" title="Fuerza del estabilizador">
+                </div>
+            </div>
+
+            <!-- Pinceles -->
+            <div class="tool-group" id="brushGroup" style="display:none;">
+                <span class="tool-label">Pincel</span>
+                <button class="btn-tool brush-option activo" data-brush="pencil" title="Lápiz (sólido)" onclick="setBrush('pencil',this)">
+                    <i class="fas fa-pen-fancy"></i>
+                </button>
+                <button class="btn-tool brush-option btn-premium" data-brush="circle" title="Marcador (círculos)" onclick="setBrush('circle',this)">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="btn-tool brush-option btn-premium" data-brush="spray" title="Spray" onclick="setBrush('spray',this)">
+                    <i class="fas fa-spray-can"></i>
+                </button>
+            </div>
+
+            <!-- Modos de borrador -->
+            <div class="tool-group" id="eraserGroup" style="display:none;">
+                <span class="tool-label">Borrador</span>
+                <button class="btn-tool eraser-option activo" data-eraser="normal" title="Normal (círculo)" onclick="setEraserMode('normal',this)">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="btn-tool eraser-option btn-premium" data-eraser="block" title="Bloque (cuadrado)" onclick="setEraserMode('block',this)">
+                    <i class="fas fa-square"></i>
+                </button>
+                <button class="btn-tool eraser-option btn-premium" data-eraser="soft" title="Blando (bordes suaves)" onclick="setEraserMode('soft',this)">
+                    <i class="fas fa-cloud"></i>
+                </button>
+            </div>
+
             <!-- Fondo -->
             <div class="tool-group">
                 <span class="tool-label">Fondo</span>
@@ -114,14 +160,20 @@
 
             <!-- Acciones -->
             <div class="tool-group" style="margin-left:auto; border-right:none; display:flex; flex-wrap:wrap; gap:5px;">
+                <button class="btn-accion btn-premium" id="btnSimetria" onclick="toggleSimetria()" title="Simetría">
+                    <i class="fas fa-arrows-alt-h"></i> <span>Simetría</span>
+                </button>
+                <button class="btn-accion btn-premium" onclick="toggleLayerPanel()" title="Capas">
+                    <i class="fas fa-layer-group"></i> <span>Capas</span>
+                </button>
                 <button class="btn-accion btn-deshacer" onclick="deshacer()" title="Deshacer (Ctrl+Z)">
-                    <i class="fas fa-undo"></i> Deshacer
+                    <i class="fas fa-undo"></i> <span>Deshacer</span>
                 </button>
                 <button class="btn-accion btn-limpiar" id="btnLimpiar">
-                    <i class="fas fa-trash-alt"></i> Limpiar
+                    <i class="fas fa-trash-alt"></i> <span>Limpiar</span>
                 </button>
                 <button class="btn-accion btn-guardar" id="btnGuardar">
-                    <i class="fas fa-save"></i> Guardar nota
+                    <i class="fas fa-save"></i> <span>Guardar nota</span>
                 </button>
             </div>
 
@@ -182,7 +234,7 @@
                 <i class="fas fa-check-circle"></i> Guardado
             </span>
             <button class="btn-accion btn-guardar" id="btnGuardar2" style="margin-left:auto;">
-                <i class="fas fa-save"></i> {{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}
+                <i class="fas fa-save"></i> <span>{{ 'Actualizar nota' if edit_mode else 'Guardar nota' }}</span>
             </button>
             <!-- Etiquetas -->
             <input type="text" class="input-titulo" id="inputEtiquetas"
@@ -206,6 +258,25 @@
             </button>
         </div>
         <div id="emojiGrid" class="sticker-grid"></div>
+    </div>
+
+    <!-- Panel de Capas -->
+    <div id="layerPanel" class="layer-panel">
+        <div class="layer-panel-header">
+            <span><i class="fas fa-layer-group"></i> Capas</span>
+            <button onclick="document.getElementById('layerPanel').classList.remove('visible')" 
+                    class="emoji-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="layer-panel-actions">
+            <button onclick="addLayer()" class="layer-action-btn" title="Añadir capa"><i class="fas fa-plus"></i></button>
+            <button onclick="if(activeLayerIndex>0){moveLayer(activeLayerIndex,-1)}" class="layer-action-btn" title="Subir capa"><i class="fas fa-arrow-up"></i></button>
+            <button onclick="if(activeLayerIndex<layers.length-1){moveLayer(activeLayerIndex,1)}" class="layer-action-btn" title="Bajar capa"><i class="fas fa-arrow-down"></i></button>
+            <button onclick="deleteLayer(activeLayerIndex)" class="layer-action-btn" title="Eliminar capa"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="layer-panel-active" id="layerPanelActive">Activa: Capa 1</div>
+        <div class="layer-list" id="layerList"></div>
     </div>
 
 
