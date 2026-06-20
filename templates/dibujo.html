@@ -65,6 +65,9 @@
                 <button class="btn-tool" id="btnSticker" title="Stickers" onclick="document.getElementById('stickerPanel').classList.toggle('visible')">
                     <i class="fas fa-smile"></i>
                 </button>
+                <button class="btn-tool" id="btnBrushPanel" title="Pinceles" onclick="toggleBrushPanel()">
+                    <i class="fas fa-paint-brush"></i>
+                </button>
                 <button class="btn-tool" id="btnBalde" title="Balde de pintura" onclick="seleccionarHerramienta('balde', this)">
                     <i class="fas fa-fill-drip"></i>
                 </button>
@@ -82,6 +85,10 @@
                 <div class="color-picker-wrap" title="Elige un color">
                     <input type="color" id="colorPicker" value="#7c4dff">
                 </div>
+                <input type="text" id="hexInput" class="hex-input" value="#7c4dff" maxlength="7" title="Código hexadecimal">
+                <button class="btn-tool" id="btnColorPalette" title="Paleta de colores" onclick="toggleColorPalette()">
+                    <i class="fas fa-palette"></i>
+                </button>
                 <!-- Paleta rápida -->
                 <div class="paleta-colores" id="paleta">
                     <div class="color-rapido" style="background:#212121" data-color="#212121" title="Negro"></div>
@@ -279,6 +286,54 @@
         <div class="layer-list" id="layerList"></div>
     </div>
 
+
+    <!-- Modal de Orientación -->
+    <div id="orientacionModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icono"><i class="fas fa-expand-arrows-alt"></i></div>
+            <h3>Elige el formato</h3>
+            <p>Selecciona la orientación para tu dibujo</p>
+            <div class="orientacion-btns">
+                <button onclick="establecerOrientacion('vertical')" class="btn-orientacion">
+                    <i class="fas fa-arrow-up"></i> Vertical
+                    <span class="orientacion-desc">Retrato 600×800</span>
+                </button>
+                <button onclick="establecerOrientacion('horizontal')" class="btn-orientacion">
+                    <i class="fas fa-arrows-alt-h"></i> Horizontal
+                    <span class="orientacion-desc">Paisaje 900×520</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Paleta de Colores -->
+    <div id="colorPalettePanel" class="color-palette-panel">
+        <div class="palette-header">
+            <span><i class="fas fa-palette"></i> Paleta de colores</span>
+            <button onclick="toggleColorPalette()" class="emoji-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="palette-hex-row">
+            <input type="text" id="paletteHexInput" class="palette-hex-input" value="#7c4dff" maxlength="7" placeholder="#000000" spellcheck="false">
+            <div class="palette-current-swatch" id="paletteCurrentSwatch" style="background:#7c4dff"></div>
+        </div>
+        <div class="palette-grid" id="paletteGrid"></div>
+        <div class="palette-shades-title">
+            <span>Tonos</span>
+            <span class="palette-hex-label" id="paletteHexLabel">#7c4dff</span>
+        </div>
+        <div class="palette-shades" id="paletteShades"></div>
+    </div>
+
+    <!-- Panel de Pinceles -->
+    <div id="brushPanel" class="brush-panel">
+        <div class="brush-panel-header">
+            <span><i class="fas fa-paint-brush"></i> Pinceles</span>
+            <button onclick="document.getElementById('brushPanel').classList.remove('visible')" class="emoji-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="brush-grid" id="brushGrid"></div>
+    </div>
 
     <!-- Toast -->
     <div class="toast-dibujo" id="toastDibujo"></div>
