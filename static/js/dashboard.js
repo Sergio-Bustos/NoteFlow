@@ -4,22 +4,24 @@ function _aplicarTema(esOscuro) {
     document.body.classList.toggle('tema-claro',  !esOscuro);
 }
 
+function _setTemaCookie(valor) {
+    document.cookie = `tema=${valor};path=/;max-age=31536000`;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // COLOR_PRINCIPAL viene del HTML: <script>window.COLOR_PRINCIPAL = "{{ usuario.Color_principal }}";</script>
     _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
+    _setTemaCookie(window.COLOR_PRINCIPAL);
 });
 
-// Cuando Chrome restaura desde cache (boton atras/adelante)
-window.addEventListener('pageshow', function(event) {
-    if (event.persisted) {
-        const cookie = document.cookie.split(';')
-            .find(c => c.trim().startsWith('tema='));
-        if (cookie) {
-            const val = cookie.split('=')[1].trim();
-            _aplicarTema(val === 'Negro');
-        } else {
-            _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
-        }
+// Al volver con atras/adelante (bfcache) se re-aplica el tema
+window.addEventListener('pageshow', function() {
+    const cookie = document.cookie.split(';')
+        .find(c => c.trim().startsWith('tema='));
+    if (cookie) {
+        const val = cookie.split('=')[1].trim();
+        _aplicarTema(val === 'Negro');
+    } else if (window.COLOR_PRINCIPAL) {
+        _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
     }
 });
 // Boton de hamburguesa funcion
@@ -36,6 +38,12 @@ function toggleSidebar() {
 
 // ========== MODAL ELEGIR FORMATO ==========
 function abrirFormato() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('visible');
+        document.getElementById('hamburger-btn').classList.remove('hidden');
+    }
     document.getElementById('formato-modal').classList.add('visible');
     document.getElementById('formato-backdrop').classList.add('visible');
 }

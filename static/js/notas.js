@@ -1365,8 +1365,13 @@
         document.body.classList.toggle('tema-claro',  !esOscuro);
     }
 
+    function _setTemaCookie(valor) {
+        document.cookie = 'tema=' + valor + ';path=/;max-age=31536000';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
+        _setTemaCookie(window.COLOR_PRINCIPAL);
 
         var params = new URLSearchParams(window.location.search);
         var carpetaUrl = params.get('carpeta');
@@ -1398,19 +1403,23 @@
         }
     });
 
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted) {
-            var cookie = document.cookie.split(';')
-                .find(function(c) { return c.trim().startsWith('tema='); });
-            if (cookie) {
-                _aplicarTema(cookie.split('=')[1].trim() === 'Negro');
-            } else {
-                _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
-            }
+    window.addEventListener('pageshow', function() {
+        var cookie = document.cookie.split(';')
+            .find(function(c) { return c.trim().startsWith('tema='); });
+        if (cookie) {
+            _aplicarTema(cookie.split('=')[1].trim() === 'Negro');
+        } else if (window.COLOR_PRINCIPAL) {
+            _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
         }
     });
 
     function abrirFormato() {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('visible');
+            document.getElementById('hamburger-btn').classList.remove('hidden');
+        }
         document.getElementById('formato-modal').classList.add('visible');
         document.getElementById('formato-backdrop').classList.add('visible');
     }

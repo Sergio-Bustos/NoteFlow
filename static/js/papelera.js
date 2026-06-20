@@ -8,18 +8,17 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
+        document.cookie = 'tema=' + window.COLOR_PRINCIPAL + ';path=/;max-age=31536000';
     });
 
-    window.addEventListener('pageshow', function (event) {
-        if (event.persisted) {
-            const cookie = document.cookie.split(';')
-                .find(c => c.trim().startsWith('tema='));
-            if (cookie) {
-                const val = cookie.split('=')[1].trim();
-                _aplicarTema(val === 'Negro');
-            } else {
-                _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
-            }
+    window.addEventListener('pageshow', function () {
+        const cookie = document.cookie.split(';')
+            .find(c => c.trim().startsWith('tema='));
+        if (cookie) {
+            const val = cookie.split('=')[1].trim();
+            _aplicarTema(val === 'Negro');
+        } else if (window.COLOR_PRINCIPAL) {
+            _aplicarTema(window.COLOR_PRINCIPAL === 'Negro');
         }
     });
 
@@ -289,6 +288,12 @@
        MODAL FORMATO (crear nota)
     ────────────────────────────────────────── */
     function abrirFormato() {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('visible');
+            document.getElementById('hamburger-btn').classList.remove('hidden');
+        }
         document.getElementById('formato-modal').classList.add('visible');
         document.getElementById('formato-backdrop').classList.add('visible');
     }

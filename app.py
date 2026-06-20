@@ -486,9 +486,10 @@ def subir_a_supabase(archivo, carpeta, nombre_archivo):
             content_type = mimetypes.guess_type(nombre_archivo)[0] or "application/octet-stream"
 
         stream.seek(0)
+        file_bytes = stream.read()
         supabase_client.storage.from_(bucket).upload(
             path=path,
-            file=stream,
+            file=file_bytes,
             file_options={"content-type": content_type}
         )
         

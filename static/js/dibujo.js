@@ -879,104 +879,91 @@ function colorDist(d, i, t) {
     );
 }
 
-function floodFill(imgData, W, H, startX, startY, fillHex, tolerance) {
+function floodFillOverlay(imgData, W, H, startX, startY, fillHex) {
     const d = imgData.data;
-    const fill = hexToRgb(fillHex);
-
+    const fillRgb = hexToRgb(fillHex);
     const si = (startY * W + startX) * 4;
     const target = [d[si], d[si+1], d[si+2], d[si+3]];
 
-    // Si ya tiene el color de relleno, no hacer nada
-    if (colorDist(d, si, fill) < 2) return;
+    if (colorDist(d, si, fillRgb) < 2) return null;
 
-    const FILL_TOL = 100;   // Mayor tolerancia para adentrarse en los bordes suaves
-    const BLUR_TOL = 250;  // Para suavizar el contacto con el borde real
-
+    const TOL = 160; // Increased tolerance significantly to cover full antialiased gradient
     const filled = new Uint8Array(W * H);
-
-    // ── Pasada 1: Scanline fill estricto (no se filtra por bordes) ──
     const stack = [[startX, startY]];
+    
+    const overlayCanvas = document.createElement('canvas');
+    overlayCanvas.width = W;
+    overlayCanvas.height = H;
+    const overlayCtx = overlayCanvas.getContext('2d');
+    const overlayData = overlayCtx.createImageData(W, H);
+    const od = overlayData.data;
 
-    while (stack.length > 0) {
-        let [x, y] = stack.pop();
+    let painted = false;
 
-        // Buscar el borde izquierdo de la línea
-        while (x > 0 && colorDist(d, (y*W + x-1)*4, target) <= FILL_TOL && !filled[y*W+x-1]) x--;
+    while (stack.length) {
+        const [x, y] = stack.pop();
+        let left = x;
+        while (left > 0 && colorDist(d, (y * W + left - 1) * 4, target) <= TOL && !filled[y * W + left - 1])
+            left--;
 
-        let spanUp = false, spanDown = false;
+        let right = x;
+        while (right < W && colorDist(d, (y * W + right) * 4, target) <= TOL && !filled[y * W + right])
+            right++;
 
-        while (x < W) {
-            const idx = (y * W + x) * 4;
-            const dist = colorDist(d, idx, target);
-            if (dist > FILL_TOL || filled[y * W + x]) break;
-
-            filled[y * W + x] = 1;
-
-            // Rellenar el pixel completamente
-            d[idx]   = fill[0];
-            d[idx+1] = fill[1];
-            d[idx+2] = fill[2];
-            d[idx+3] = 255;
-
-            if (y > 0) {
-                const up = colorDist(d, ((y-1)*W+x)*4, target);
-                if (!spanUp && up <= FILL_TOL && !filled[(y-1)*W+x]) {
-                    stack.push([x, y-1]); spanUp = true;
-                } else if (spanUp && up > FILL_TOL) spanUp = false;
-            }
-            if (y < H - 1) {
-                const dn = colorDist(d, ((y+1)*W+x)*4, target);
-                if (!spanDown && dn <= FILL_TOL && !filled[(y+1)*W+x]) {
-                    stack.push([x, y+1]); spanDown = true;
-                } else if (spanDown && dn > FILL_TOL) spanDown = false;
-            }
-            x++;
+        for (let cx = left; cx < right; cx++) {
+            const idx = (y * W + cx) * 4;
+            filled[y * W + cx] = 1;
+            
+            d[idx] = fillRgb[0];
+            d[idx+1] = fillRgb[1];
+            d[idx+2] = fillRgb[2];
+            
+            od[idx] = fillRgb[0];
+            od[idx+1] = fillRgb[1];
+            od[idx+2] = fillRgb[2];
+            od[idx+3] = 255;
+            painted = true;
         }
-    }
 
-    // ── Pasada 2: Limpiar píxeles de borde anti-aliased ──
-    const radius = 3;
-    for (let py = radius; py < H - radius; py++) {
-        for (let px = radius; px < W - radius; px++) {
-            if (!filled[py * W + px]) continue;
-            if (filled[py * W + (px + 1)] && filled[py * W + (px - 1)] &&
-                filled[(py + 1) * W + px] && filled[(py - 1) * W + px]) {
-                continue;
+        if (y > 0) {
+            let span = false;
+            for (let cx = left; cx < right; cx++) {
+                const up = colorDist(d, ((y - 1) * W + cx) * 4, target);
+                if (up <= TOL && !filled[(y - 1) * W + cx]) {
+                    if (!span) { stack.push([cx, y - 1]); span = true; }
+                } else { span = false; }
             }
-            for (let dy = -radius; dy <= radius; dy++) {
-                for (let dx = -radius; dx <= radius; dx++) {
-                    if (dx === 0 && dy === 0) continue;
-                    const nx = px + dx, ny = py + dy;
-                    if (filled[ny * W + nx]) continue;
-                    const nidx = (ny * W + nx) * 4;
-                    const dToTarget = colorDist(d, nidx, target);
-                    if (dToTarget <= BLUR_TOL) {
-                        const blend = 1 - (dToTarget / BLUR_TOL);
-                        d[nidx]   = Math.round(d[nidx]   + (fill[0] - d[nidx])   * blend);
-                        d[nidx+1] = Math.round(d[nidx+1] + (fill[1] - d[nidx+1]) * blend);
-                        d[nidx+2] = Math.round(d[nidx+2] + (fill[2] - d[nidx+2]) * blend);
-                        d[nidx+3] = 255;
-                    }
-                }
+        }
+        if (y < H - 1) {
+            let span = false;
+            for (let cx = left; cx < right; cx++) {
+                const dn = colorDist(d, ((y + 1) * W + cx) * 4, target);
+                if (dn <= TOL && !filled[(y + 1) * W + cx]) {
+                    if (!span) { stack.push([cx, y + 1]); span = true; }
+                } else { span = false; }
             }
         }
     }
+    
+    if (!painted) return null;
+    overlayCtx.putImageData(overlayData, 0, 0);
 
-    // ── Pasada 3: Rellenar huecos aislados (letras como Q, O, A, etc) ──
-    // Busca píxeles que NO se rellenaron pero aún tienen el color objetivo
-    // (no conectados al punto de clic porque están rodeados por trazos)
-    for (let py = 0; py < H; py++) {
-        for (let px = 0; px < W; px++) {
-            if (filled[py * W + px]) continue;
-            const idx = (py * W + px) * 4;
-            if (colorDist(d, idx, target) <= FILL_TOL) {
-                d[idx]   = fill[0];
-                d[idx+1] = fill[1];
-                d[idx+2] = fill[2];
-                d[idx+3] = 255;
+    // Dilation pass: expand the fill by ~2 physical pixels (0.5 logical pixels)
+    // This perfectly covers the white antialiasing halos without swallowing the stroke.
+    const tmpCopy = document.createElement('canvas');
+    tmpCopy.width = W;
+    tmpCopy.height = H;
+    tmpCopy.getContext('2d').drawImage(overlayCanvas, 0, 0);
+    
+    for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+            if (dx*dx + dy*dy <= 4 && (dx !== 0 || dy !== 0)) {
+                overlayCtx.drawImage(tmpCopy, dx, dy);
             }
         }
     }
+
+    return overlayCanvas.toDataURL('image/png');
 }
 
 // ── Cuentagotas con preview en vivo ──
@@ -1055,34 +1042,69 @@ fcanvas.on('mouse:down', function(o){
 
         mostrarToast('Rellenando…');
 
-        const tmpCanvas = document.createElement('canvas');
-        tmpCanvas.width  = lienzW;
-        tmpCanvas.height = lienzH;
-        const tmpCtx = tmpCanvas.getContext('2d');
+        // Guardar estado actual del canvas (zoom, paneo, dimensiones visuales)
+        const prevVpt = fcanvas.viewportTransform.slice();
+        const prevWidth = fcanvas.width;
+        const prevHeight = fcanvas.height;
 
-        tmpCtx.fillStyle = fcanvas.backgroundColor || '#ffffff';
-        tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+        // Restaurar a 1:1 lógico para exportar la imagen sin distorsiones
+        fcanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        fcanvas.setDimensions({ width: lienzW, height: lienzH });
+        fcanvas.renderAll();
 
-        const dataURLFlat = fcanvas.toDataURL({ format: 'png', multiplier: 1 });
+        const exportMultiplier = Math.max(4, window.devicePixelRatio || 1); // 4x supersampling
+        const dataURLFlat = fcanvas.toDataURL({ 
+            format: 'png', 
+            multiplier: exportMultiplier,
+            left: 0, top: 0, width: lienzW, height: lienzH 
+        });
+
+        // Devolver el canvas a su estado visual inmediatamente (no hay parpadeo porque es sincrónico)
+        fcanvas.setViewportTransform(prevVpt);
+        fcanvas.setDimensions({ width: prevWidth, height: prevHeight });
+        fcanvas.renderAll();
+
         const imgEl = new Image();
         imgEl.onload = function() {
+            const actualW = imgEl.width;
+            const actualH = imgEl.height;
+            const scaleX = actualW / lienzW;
+            const scaleY = actualH / lienzH;
+
+            const targetX = Math.round(px * scaleX);
+            const targetY = Math.round(py * scaleY);
+
+            const tmpCanvas = document.createElement('canvas');
+            tmpCanvas.width  = actualW;
+            tmpCanvas.height = actualH;
+            const tmpCtx = tmpCanvas.getContext('2d');
+
+            tmpCtx.fillStyle = fcanvas.backgroundColor || '#ffffff';
+            tmpCtx.fillRect(0, 0, actualW, actualH);
             tmpCtx.drawImage(imgEl, 0, 0);
 
-            const imgData = tmpCtx.getImageData(0, 0, tmpCanvas.width, tmpCanvas.height);
-            floodFill(imgData, tmpCanvas.width, tmpCanvas.height, px, py, colorActual());
-            tmpCtx.putImageData(imgData, 0, 0);
-
-            const resultURL = tmpCanvas.toDataURL('image/png');
-            fabric.Image.fromURL(resultURL, function(img) {
-                img.set({ left: 0, top: 0, selectable: false, evented: false });
-                fcanvas.clear();
-                fcanvas.backgroundColor = '#ffffff';
-                fcanvas.setBackgroundImage(img, () => {
+            const imgData = tmpCtx.getImageData(0, 0, actualW, actualH);
+            const overlayURL = floodFillOverlay(imgData, actualW, actualH, targetX, targetY, colorActual());
+            
+            if (overlayURL) {
+                fabric.Image.fromURL(overlayURL, function(img) {
+                    img.set({ 
+                        left: 0, top: 0, 
+                        originX: 'left', originY: 'top', 
+                        selectable: false, evented: false,
+                        scaleX: 1 / scaleX,
+                        scaleY: 1 / scaleY,
+                        _layerId: getActiveLayer().id
+                    });
+                    
+                    fcanvas.add(img);
                     fcanvas.renderAll();
                     guardarEstado();
                     mostrarToast('✅ Relleno aplicado');
                 });
-            });
+            } else {
+                mostrarToast('Área ya rellenada o color similar');
+            }
         };
         imgEl.src = dataURLFlat;
         return;
