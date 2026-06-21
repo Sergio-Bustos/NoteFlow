@@ -374,18 +374,18 @@ function espejarObjeto(obj) {
     bloqueado = true;
     obj.clone(function(clon) {
         var midX = lienzW / 2;
-        // Calcular la posición espejada
-        var bounds = obj.getBoundingRect();
-        var objCenterX = bounds.left + bounds.width / 2;
-        var mirrorCenterX = midX + (midX - objCenterX);
-        var newLeft = mirrorCenterX - bounds.width / 2;
+        var center = obj.getCenterPoint();
+        var mirrorX = 2 * midX - center.x;
+        
         clon.set({
-            left: newLeft,
-            flipX: true,
+            flipX: !obj.flipX,
+            angle: -obj.angle,
             _isMirror: true,
             _layerId: obj._layerId,
             evented: false
         });
+        
+        clon.setPositionByOrigin(new fabric.Point(mirrorX, center.y), 'center', 'center');
         fcanvas.add(clon);
         clon.moveTo(obj.depth || 0);
         fcanvas.renderAll();
@@ -658,11 +658,17 @@ fcanvas.on('object:removed', () => { if(!bloqueado) guardarEstado(); });
 fcanvas.on('path:created', function(e) {
     if (!e.path) return;
     var activeId = getActiveLayer().id;
+    const opacidad = parseFloat(document.getElementById('opacidadInput').value) || 1;
+    
     if (herramienta === 'borrador') {
-        e.path.set({ selectable: false, evented: false, _isEraser: true, _layerId: activeId });
+        e.path.set({ selectable: false, evented: false, _isEraser: true, _layerId: activeId, opacity: opacidad });
         e.path.bringToFront();
     } else {
-        e.path.set({ _layerId: activeId });
+        e.path.set({ 
+            _layerId: activeId, 
+            stroke: colorActual(), // ensure solid color stroke
+            opacity: opacidad 
+        });
         if (brushType === 'watercolor') {
             e.path.set({
                 shadow: new fabric.Shadow({
@@ -968,6 +974,7 @@ function floodFillOverlay(imgData, W, H, startX, startY, fillHex) {
 
 // ── Cuentagotas con preview en vivo ──
 var cuentagotasPreview = null;
+var cuentagotasCrosshair = null;
 
 function crearPreviewCuentagotas() {
     if (cuentagotasPreview) return;
@@ -977,12 +984,76 @@ function crearPreviewCuentagotas() {
         '<div class="cp-swatch" id="cpSwatch"></div>' +
         '<div class="cp-hex" id="cpHex">#000000</div>';
     document.body.appendChild(cuentagotasPreview);
+
+    // Cruzeta de precisión sobre el canvas
+    if (!cuentagotasCrosshair) {
+        cuentagotasCrosshair = document.createElement('div');
+        cuentagotasCrosshair.id = 'cuentagotasCrosshair';
+        cuentagotasCrosshair.innerHTML = `
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 1px #000)">
+                <line x1="11" y1="0" x2="11" y2="8" stroke="white" stroke-width="2"/>
+                <line x1="11" y1="14" x2="11" y2="22" stroke="white" stroke-width="2"/>
+                <line x1="0" y1="11" x2="8" y2="11" stroke="white" stroke-width="2"/>
+                <line x1="14" y1="11" x2="22" y2="11" stroke="white" stroke-width="2"/>
+                <circle cx="11" cy="11" r="3" stroke="white" stroke-width="1.5"/>
+                <line x1="11" y1="1" x2="11" y2="8" stroke="black" stroke-width="1"/>
+                <line x1="11" y1="14" x2="11" y2="21" stroke="black" stroke-width="1"/>
+                <line x1="1" y1="11" x2="8" y2="11" stroke="black" stroke-width="1"/>
+                <line x1="14" y1="11" x2="21" y2="11" stroke="black" stroke-width="1"/>
+            </svg>`;
+        cuentagotasCrosshair.style.cssText = 'position:fixed;pointer-events:none;z-index:99999;display:none;transform:translate(-50%,-50%);';
+        document.body.appendChild(cuentagotasCrosshair);
+    }
 }
 
 function capturarPixelHex(e) {
-    var p = fcanvas.getPointer(e);
+    // pLogico: coordenadas en el espacio lógico del lienzo (con zoom/pan) → para containsPoint
+    var pLogico = fcanvas.getPointer(e, false);
+    // pAbs: coordenadas absolutas sobre el elemento canvas → para getImageData
+    var pAbs = fcanvas.getPointer(e, true);
+    var px = Math.round(pAbs.x);
+    var py = Math.round(pAbs.y);
+
+    // Buscar el objeto más superior exactamente bajo la cruzeta
+    var objetos = fcanvas.getObjects();
+    var encontrado = null;
+    var pFabric = new fabric.Point(pLogico.x, pLogico.y);
+    for (var i = objetos.length - 1; i >= 0; i--) {
+        var obj = objetos[i];
+        if (obj === simetriaEje) continue;
+        // containsPoint necesita coordenadas lógicas (espacio del lienzo)
+        if (obj.containsPoint(pFabric)) {
+            encontrado = obj;
+            break;
+        }
+    }
+
+    if (encontrado) {
+        var rawColor = encontrado.stroke || encontrado.fill || null;
+        if (rawColor && rawColor !== 'transparent') {
+            var op = encontrado.opacity !== undefined ? encontrado.opacity : 1;
+            window._cuentagotasOpacity = op;
+            // Convertir rgba a hex si es necesario
+            if (rawColor.startsWith('rgba') || rawColor.startsWith('rgb')) {
+                var m = rawColor.match(/[\d.]+/g);
+                if (m && m.length >= 3) {
+                    var r2 = parseInt(m[0]).toString(16).padStart(2,'0');
+                    var g2 = parseInt(m[1]).toString(16).padStart(2,'0');
+                    var b2 = parseInt(m[2]).toString(16).padStart(2,'0');
+                    if (m[3] !== undefined) window._cuentagotasOpacity = parseFloat(m[3]);
+                    return '#' + r2 + g2 + b2;
+                }
+            }
+            if (rawColor.startsWith('#')) {
+                return rawColor.slice(0, 7);
+            }
+        }
+    }
+
+    // Fallback: leer pixel compuesto del canvas con coordenadas absolutas correctas
+    window._cuentagotasOpacity = null;
     var ctx = fcanvas.getContext();
-    var pixel = ctx.getImageData(Math.round(p.x), Math.round(p.y), 1, 1).data;
+    var pixel = ctx.getImageData(px, py, 1, 1).data;
     return '#' + [pixel[0], pixel[1], pixel[2]].map(function(v) {
         return ('0' + v.toString(16)).slice(-2);
     }).join('');
@@ -990,6 +1061,17 @@ function capturarPixelHex(e) {
 
 function aplicarColorCuentagotas(hex) {
     document.getElementById('colorPicker').value = hex;
+    // Restaurar la opacidad del objeto capturado si la tenemos
+    if (window._cuentagotasOpacity !== null && window._cuentagotasOpacity !== undefined) {
+        var opEl = document.getElementById('opacidadInput');
+        if (opEl) {
+            opEl.value = window._cuentagotasOpacity;
+            if (fcanvas.freeDrawingBrush) {
+                fcanvas.freeDrawingBrush.color = colorPincelVivo();
+            }
+        }
+        window._cuentagotasOpacity = null;
+    }
     document.querySelectorAll('.color-rapido').forEach(function(el) {
         el.classList.remove('seleccionado');
         if (el.dataset.color === hex) el.classList.add('seleccionado');
@@ -1088,12 +1170,14 @@ fcanvas.on('mouse:down', function(o){
             
             if (overlayURL) {
                 fabric.Image.fromURL(overlayURL, function(img) {
+                    const opacidad = parseFloat(document.getElementById('opacidadInput').value) || 1;
                     img.set({ 
                         left: 0, top: 0, 
                         originX: 'left', originY: 'top', 
                         selectable: false, evented: false,
                         scaleX: 1 / scaleX,
                         scaleY: 1 / scaleY,
+                        opacity: opacidad,
                         _layerId: getActiveLayer().id
                     });
                     
@@ -1138,6 +1222,7 @@ fcanvas.on('mouse:down', function(o){
     origX = pointer.x;
     origY = pointer.y;
 
+    const opacidad = parseFloat(document.getElementById('opacidadInput').value) || 1;
     const activeId = getActiveLayer().id;
     const props = {
         left: origX,
@@ -1150,6 +1235,7 @@ fcanvas.on('mouse:down', function(o){
         transparentCorners: false,
         strokeUniform: true,
         strokeDashArray: null,
+        opacity: opacidad,
         _layerId: activeId
     };
 
@@ -1161,6 +1247,7 @@ fcanvas.on('mouse:down', function(o){
         shape = new fabric.Line([origX, origY, pointer.x, pointer.y], {
             stroke: colorActual(),
             strokeWidth: grosorActual(),
+            opacity: opacidad,
             _layerId: activeId
         });
     } else if (herramienta === 'triangulo') {
@@ -1187,10 +1274,16 @@ fcanvas.on('mouse:move', function(o){
         var cy = e.clientY || (e.touches ? e.touches[0].clientY : 0);
         if (cuentagotasPreview) {
             cuentagotasPreview.style.display = 'block';
-            cuentagotasPreview.style.left = (cx + 18) + 'px';
-            cuentagotasPreview.style.top = (cy - 50) + 'px';
+            cuentagotasPreview.style.left = (cx + 28) + 'px';
+            cuentagotasPreview.style.top = (cy - 60) + 'px';
             document.getElementById('cpSwatch').style.background = hex;
             document.getElementById('cpHex').textContent = hex;
+        }
+        // Mostrar cruzeta de precisión
+        if (cuentagotasCrosshair) {
+            cuentagotasCrosshair.style.display = 'block';
+            cuentagotasCrosshair.style.left = cx + 'px';
+            cuentagotasCrosshair.style.top = cy + 'px';
         }
         return;
     }
@@ -1266,6 +1359,7 @@ fcanvas.on('mouse:up', function(o){
     if (herramienta === 'cuentagotas' && isDown) {
         isDown = false;
         if (cuentagotasPreview) cuentagotasPreview.style.display = 'none';
+        if (cuentagotasCrosshair) cuentagotasCrosshair.style.display = 'none';
         var hex = capturarPixelHex(o.e);
         aplicarColorCuentagotas(hex);
         var btnLapiz = document.getElementById('btnLapiz');
@@ -1282,11 +1376,24 @@ fcanvas.on('mouse:up', function(o){
 /* ──────────────────────────────────────────
    UTILIDADES
 ────────────────────────────────────────── */
-function colorActual()  { return colorPicker.value; }
+function colorActual() { 
+    return colorPicker.value;
+}
+
+function colorPincelVivo() {
+    const hex = colorPicker.value;
+    const op = parseFloat(document.getElementById('opacidadInput').value);
+    if (isNaN(op) || op >= 1) return hex;
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${op})`;
+}
+
 function grosorActual() { return parseInt(grosorInput.value); }
 
 function aplicarConfiguracion() {
-    fcanvas.freeDrawingBrush.color = colorActual();
+    fcanvas.freeDrawingBrush.color = colorPincelVivo();
     fcanvas.freeDrawingBrush.width = grosorActual();
     
     // Si hay objetos seleccionados, aplicarles color
@@ -1381,15 +1488,30 @@ function inicializarCacheBorrador() {
 
     const origBg = fcanvas.backgroundColor;
     fcanvas.backgroundColor = 'transparent';
+
+    const prevVpt = fcanvas.viewportTransform.slice();
+    const prevWidth = fcanvas.width;
+    const prevHeight = fcanvas.height;
+
+    fcanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    fcanvas.setDimensions({ width: W, height: H });
     fcanvas.renderAll();
-    const dataURL = fcanvas.toDataURL({ format: 'png', multiplier: 1 });
+
+    const dataURL = fcanvas.toDataURL({ 
+        format: 'png', 
+        multiplier: 1,
+        left: 0, top: 0, width: W, height: H 
+    });
+
+    fcanvas.setViewportTransform(prevVpt);
+    fcanvas.setDimensions({ width: prevWidth, height: prevHeight });
     fcanvas.backgroundColor = origBg;
     fcanvas.renderAll();
 
     const img = new Image();
     img.onload = function () {
         const ctx = eraserCacheCanvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, W, H);
         eraserCacheReady = true;
         commitCacheBorrador();
     };
@@ -1404,7 +1526,9 @@ function commitCacheBorrador() {
         left: 0,
         top: 0,
         selectable: false,
-        evented: false
+        evented: false,
+        width: lienzW,
+        height: lienzH
     });
 
     fcanvas.backgroundImage = fabricImg;
@@ -1516,6 +1640,7 @@ window.seleccionarHerramienta = function(nombre, btn) {
     }
     if (nombre !== 'cuentagotas' && cuentagotasPreview) {
         cuentagotasPreview.style.display = 'none';
+        if (cuentagotasCrosshair) cuentagotasCrosshair.style.display = 'none';
     }
 
     if (nombre === 'lapiz') {
@@ -1563,7 +1688,10 @@ window.seleccionarHerramienta = function(nombre, btn) {
         aplicarConfiguracion();
         if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
     } else if (nombre === 'cuentagotas') {
-        if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
+        // Ocultar cursor del sistema y mostrar solo la cruzeta
+        if(canvasWrapper) canvasWrapper.style.cursor = 'none';
+        crearPreviewCuentagotas();
+        if (cuentagotasCrosshair) cuentagotasCrosshair.style.display = 'block';
     } else if (nombre === 'balde') {
         if(canvasWrapper) canvasWrapper.style.cursor = 'crosshair';
     } else if (nombre === 'mano') {
@@ -2203,6 +2331,12 @@ window.mostrarToast = function(msg) {
 // Opacidad
 document.getElementById('opacidadInput').addEventListener('input', (e) => {
     const val = parseFloat(e.target.value);
+    
+    // Update live brush immediately so next stroke uses it
+    if (fcanvas.freeDrawingBrush) {
+        fcanvas.freeDrawingBrush.color = colorPincelVivo();
+    }
+    
     const obj = fcanvas.getActiveObject();
     if (obj) {
         obj.set('opacity', val);
