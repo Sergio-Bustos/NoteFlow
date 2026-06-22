@@ -21,6 +21,7 @@ const canvasHint   = document.getElementById('canvasHint');
 let lienzW = 900;
 let lienzH = 520;
 let zoomActual = 1;
+let _pinchActive = false;
 
 // ── Límites según Plan ──
 const limitW = { 'gratis': 1100, 'quincenal': 1400, 'mensual': 2400, 'anual': 3600 };
@@ -107,7 +108,13 @@ function ajustarCanvas() {
     actualizarInfoTamaño();
 }
 ajustarCanvas();
-window.addEventListener('resize', () => { ajustarCanvas(); });
+window.addEventListener('resize', () => {
+    const outer = document.getElementById('canvasOuter');
+    const sl = outer.scrollLeft, st = outer.scrollTop;
+    ajustarCanvas();
+    outer.scrollLeft = sl;
+    outer.scrollTop = st;
+});
 
 // ── Orientación ──
 function mostrarModalOrientacion() {
@@ -455,7 +462,7 @@ function getClampZoom(z, maxZ) {
     if (maxZ === undefined) {
         maxZ = Math.max(1, Math.min(5000 / lienzW, 5000 / lienzH));
     }
-    return Math.max(Math.min(z, maxZ, 5), minZ, 0.1);
+    return Math.max(Math.min(z, maxZ, 2), minZ, 0.1);
 }
 
 function zoomToFit() {
@@ -496,34 +503,68 @@ document.getElementById('btnZoomReset').addEventListener('click', () => {
     document.getElementById('zoomLabel').textContent = Math.round(zoomActual * 100) + '%';
 });
 
-// Zoom con rueda del ratón (Ctrl + scroll)
+// Zoom con rueda del ratón (Ctrl + scroll) — hacia el cursor, igual que el pinch
 document.getElementById('canvasOuter').addEventListener('wheel', (e) => {
     if (!e.ctrlKey) return;
     e.preventDefault();
+    const pointer = fcanvas.getPointer(e);
+    const logicalX = pointer.x, logicalY = pointer.y;
+
     const delta = e.deltaY > 0 ? -0.05 : 0.05;
     zoomActual = getClampZoom(zoomActual + delta);
     ajustarCanvas();
+
+    const outer = document.getElementById('canvasOuter');
+    const canvasRect = fcanvas.upperCanvasEl.getBoundingClientRect();
+    outer.scrollLeft += canvasRect.left + logicalX * zoomActual - e.clientX;
+    outer.scrollTop += canvasRect.top + logicalY * zoomActual - e.clientY;
+
     document.getElementById('zoomLabel').textContent = Math.round(zoomActual * 100) + '%';
 }, { passive: false });
 
-// Pinch-to-zoom táctil (dos dedos)
+// Pinch-to-zoom táctil (dos dedos) — zoom hacia el centro del pellizco
 let lastTouchDist = 0;
+document.getElementById('canvasOuter').addEventListener('touchstart', () => {
+    _pinchActive = false;
+}, { passive: true });
 document.getElementById('canvasOuter').addEventListener('touchmove', (e) => {
     if (e.touches.length === 2) {
         e.preventDefault();
         const t1 = e.touches[0], t2 = e.touches[1];
         const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         if (lastTouchDist > 0) {
+            const centerX = (t1.clientX + t2.clientX) / 2;
+            const centerY = (t1.clientY + t2.clientY) / 2;
+            // Punto lógico del canvas bajo el centro del pellizco (getPointer
+            // ya considera posición del canvas, márgenes, scroll, etc.)
+            const pointer = fcanvas.getPointer({ clientX: centerX, clientY: centerY });
+            const logicalX = pointer.x;
+            const logicalY = pointer.y;
+
+            _pinchActive = true;
             const delta = (dist - lastTouchDist) * 0.01;
             zoomActual = getClampZoom(zoomActual + delta);
             ajustarCanvas();
+
+            // Tras ajustarCanvas, medir dónde quedó el canvas y corregir scroll
+            // para que el punto lógico aparezca en la misma posición de pantalla
+            const outer = document.getElementById('canvasOuter');
+            const canvasRect = fcanvas.upperCanvasEl.getBoundingClientRect();
+            const canvasPixelX = logicalX * zoomActual;
+            const canvasPixelY = logicalY * zoomActual;
+            outer.scrollLeft += canvasRect.left + canvasPixelX - centerX;
+            outer.scrollTop += canvasRect.top + canvasPixelY - centerY;
+
             document.getElementById('zoomLabel').textContent = Math.round(zoomActual * 100) + '%';
         }
         lastTouchDist = dist;
     }
 }, { passive: false });
 document.getElementById('canvasOuter').addEventListener('touchend', (e) => {
-    if (e.touches.length < 2) lastTouchDist = 0;
+    if (e.touches.length < 2) {
+        lastTouchDist = 0;
+        _pinchActive = false;
+    }
 });
 
 
@@ -584,6 +625,7 @@ fcanvas.freeDrawingBrush.decimate = 2;
 let lienzoPristino = true;
 let notaGuardada   = false;
 let herramienta    = 'lapiz';
+let _draggingShape = false; // evita espejado prematuro en figuras arrastrables
 
 /* ──────────────────────────────────────────
    RESTAURACIÓN DE DIBUJO (Edición)
@@ -646,7 +688,7 @@ guardarEstado();
 fcanvas.on('object:added', function(e) {
     if (!bloqueado) {
         guardarEstado();
-        if (simetriaActiva && e && e.target && !e.target._isMirror && e.target !== simetriaEje && !e.target._isEraser) {
+        if (simetriaActiva && !_draggingShape && e && e.target && !e.target._isMirror && e.target !== simetriaEje && !e.target._isEraser) {
             espejarObjeto(e.target);
         }
     }
@@ -666,7 +708,7 @@ fcanvas.on('path:created', function(e) {
     } else {
         e.path.set({ 
             _layerId: activeId, 
-            stroke: colorActual(), // ensure solid color stroke
+            stroke: colorActual(),
             opacity: opacidad 
         });
         if (brushType === 'watercolor') {
@@ -1080,6 +1122,7 @@ function aplicarColorCuentagotas(hex) {
 }
 
 fcanvas.on('mouse:down', function(o){
+    _draggingShape = false;
     if (herramienta === 'cuentagotas') {
         isDown = true;
         crearPreviewCuentagotas();
@@ -1239,6 +1282,9 @@ fcanvas.on('mouse:down', function(o){
         _layerId: activeId
     };
 
+    if (herramienta === 'rectangulo' || herramienta === 'circulo' || herramienta === 'linea' || herramienta === 'triangulo') {
+        _draggingShape = true;
+    }
     if (herramienta === 'rectangulo') {
         shape = new fabric.Rect({ ...props, width: pointer.x-origX, height: pointer.y-origY });
     } else if (herramienta === 'circulo') {
@@ -1369,8 +1415,12 @@ fcanvas.on('mouse:up', function(o){
     isDown = false;
     if(shape) {
         shape.setCoords();
+        if (simetriaActiva && _draggingShape) {
+            espejarObjeto(shape);
+        }
         shape = null;
     }
+    _draggingShape = false;
 });
 
 /* ──────────────────────────────────────────
@@ -1613,8 +1663,6 @@ window.seleccionarHerramienta = function(nombre, btn) {
     // Ocultar grupos contextuales
     var stabGroup = document.getElementById('estabilizadorGroup');
     if (stabGroup) stabGroup.style.display = 'none';
-    var brushGroup = document.getElementById('brushGroup');
-    if (brushGroup) brushGroup.style.display = 'none';
     var eraserGroup = document.getElementById('eraserGroup');
     if (eraserGroup) eraserGroup.style.display = 'none';
 
@@ -1644,20 +1692,19 @@ window.seleccionarHerramienta = function(nombre, btn) {
     }
 
     if (nombre === 'lapiz') {
-        var brushGroup = document.getElementById('brushGroup');
-        if (brushGroup) brushGroup.style.display = 'flex';
         fcanvas.isDrawingMode = true;
         if (brushType === 'circle') {
             fcanvas.freeDrawingBrush = new fabric.CircleBrush(fcanvas);
         } else if (brushType === 'spray') {
             fcanvas.freeDrawingBrush = new fabric.SprayBrush(fcanvas);
-        } else if (brushType === 'pattern') {
-            var patternBrush = new fabric.PatternBrush(fcanvas);
-            patternBrush.source = crearPatronCaligrafia();
-            fcanvas.freeDrawingBrush = patternBrush;
         } else if (brushType === 'watercolor') {
             fcanvas.freeDrawingBrush = new fabric.PencilBrush(fcanvas);
             fcanvas.freeDrawingBrush.decimate = 1;
+        } else if (brushType === 'puntillismo') {
+            fcanvas.freeDrawingBrush = new fabric.SprayBrush(fcanvas);
+            fcanvas.freeDrawingBrush.density = 50;
+            fcanvas.freeDrawingBrush.dotWidth = 1;
+            fcanvas.freeDrawingBrush.dotWidthVariance = 0;
         } else {
             fcanvas.freeDrawingBrush = new fabric.PencilBrush(fcanvas);
             fcanvas.freeDrawingBrush.decimate = 2;
@@ -1744,19 +1791,22 @@ function onPanMove(e) {
     canvasOuter.scrollTop  = panScrollInicial.y - dy;
 }
 function onPanMoveTouch(e) {
+    if (e.touches.length !== 1) return; // dejar que el pinch-zoom maneje 2 dedos
     e.preventDefault();
     const t = e.touches[0];
-    const dx = t.clientX - panPosInicial.x;
-    const dy = t.clientY - panPosInicial.y;
-    canvasOuter.scrollLeft = panScrollInicial.x - dx;
-    canvasOuter.scrollTop  = panScrollInicial.y - dy;
+    // Delta relativo: así funciona aunque el scroll haya cambiado por un zoom entremedio
+    canvasOuter.scrollLeft -= t.clientX - panPosInicial.x;
+    canvasOuter.scrollTop  -= t.clientY - panPosInicial.y;
+    panPosInicial.x = t.clientX;
+    panPosInicial.y = t.clientY;
 }
 function onPanEnd() {
     document.removeEventListener('mousemove', onPanMove);
     document.removeEventListener('mouseup', onPanEnd);
     canvasOuter.style.cursor = 'grab';
 }
-function onPanEndTouch() {
+function onPanEndTouch(e) {
+    if (e && e.touches && e.touches.length > 0) return; // aún quedan dedos en pantalla
     document.removeEventListener('touchmove', onPanMoveTouch);
     document.removeEventListener('touchend', onPanEndTouch);
     canvasOuter.style.cursor = 'grab';
@@ -2365,36 +2415,13 @@ document.getElementById('bgColorPicker').addEventListener('input', (e) => {
    PANEL DE PINCELES CON PREVISUALIZACIÓN
 ────────────────────────────────────────── */
 var brushDefs = [
-    { tipo: 'pencil',   nombre: 'Lápiz',      premium: false, desc: 'Trazo sólido' },
-    { tipo: 'circle',   nombre: 'Marcador',   premium: true,  desc: 'Círculos' },
-    { tipo: 'spray',    nombre: 'Spray',       premium: true,  desc: 'Aerosol' },
-    { tipo: 'pattern',  nombre: 'Caligrafía', premium: true,  desc: 'Pluma inclinada' },
-    { tipo: 'watercolor', nombre: 'Acuarela', premium: true,  desc: 'Suave y difuso' }
+    { tipo: 'pencil',      nombre: 'Lápiz',       premium: false, desc: 'Trazo sólido' },
+    { tipo: 'circle',      nombre: 'Marcador',    premium: true,  desc: 'Círculos' },
+    { tipo: 'spray',       nombre: 'Spray',       premium: true,  desc: 'Aerosol' },
+    { tipo: 'watercolor',  nombre: 'Acuarela',    premium: true,  desc: 'Suave y difuso' },
+    { tipo: 'puntillismo', nombre: 'Puntillismo', premium: true,  desc: 'Puntos finos' }
 ];
 
-function crearPatronCaligrafia() {
-    var c = document.createElement('canvas');
-    c.width = 24;
-    c.height = 24;
-    var ctx = c.getContext('2d');
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(24, 24);
-    ctx.stroke();
-    ctx.strokeStyle = '#666';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(0, 6);
-    ctx.lineTo(18, 24);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(6, 0);
-    ctx.lineTo(24, 18);
-    ctx.stroke();
-    return c;
-}
 
 function generarPreviewsPinceles() {
     brushDefs.forEach(function(bd) {
@@ -2435,26 +2462,6 @@ function generarPreviewsPinceles() {
                 ctx.arc(t + ox, baseY + oy, 1 + Math.random() * 2, 0, Math.PI * 2);
                 ctx.fill();
             }
-        } else if (bd.tipo === 'pattern') {
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(10, 60);
-            for (var x = 10; x <= 190; x++) {
-                var y = 60 - Math.sin((x - 10) * 0.12) * 18;
-                ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-            // Overlay thin lines for calligraphy effect
-            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-            ctx.lineWidth = 1;
-            for (var k = -6; k <= 6; k += 3) {
-                ctx.beginPath();
-                for (var x = 10; x <= 190; x++) {
-                    var y = 60 - Math.sin((x - 10) * 0.12) * 18 + k;
-                    ctx.lineTo(x, y);
-                }
-                ctx.stroke();
-            }
         } else if (bd.tipo === 'watercolor') {
             ctx.shadowColor = 'rgba(50,50,50,0.3)';
             ctx.shadowBlur = 8;
@@ -2482,6 +2489,17 @@ function generarPreviewsPinceles() {
                 ctx.lineTo(x, y);
             }
             ctx.stroke();
+        } else if (bd.tipo === 'puntillismo') {
+            ctx.fillStyle = '#333';
+            for (var i = 0; i < 200; i++) {
+                var t = 10 + Math.random() * 180;
+                var baseY = 60 - Math.sin((t - 10) * 0.12) * 18;
+                var ox = (Math.random() - 0.5) * 4;
+                var oy = (Math.random() - 0.5) * 4;
+                ctx.beginPath();
+                ctx.arc(t + ox, baseY + oy, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         bd.previewCanvas = c;
     });

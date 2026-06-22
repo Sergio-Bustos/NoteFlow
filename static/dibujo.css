@@ -1093,6 +1093,7 @@ body {
 .canvas-outer {
     overflow: auto;
     text-align: center;
+    touch-action: none;
     max-height: calc(100vh - 280px);
     max-height: calc(100dvh - 280px);
     padding-bottom: 60px;

@@ -3550,10 +3550,11 @@ def guardar_nota_audio():
             VALUES (%s, %s, %s, '', %s, %s, 'Activa', 'audio', %s)
         """, (nuevo_id, titulo, descripcion, hoy, hoy, user_id))
 
+        nuevo_id_adj = _next_id(cursor, "Adjuntos", "ID_Adjunto")
         cursor.execute("""
-            INSERT INTO public."Adjuntos" ("ID_Nota", "Nombre_archivo", "Ruta_archivo", "Formato")
-            VALUES (%s, %s, %s, 'audio')
-        """, (nuevo_id, filename, url_publica))
+            INSERT INTO public."Adjuntos" ("ID_Adjunto", "ID_Nota", "Nombre_archivo", "Ruta_archivo", "Formato")
+            VALUES (%s, %s, %s, %s, 'audio')
+        """, (nuevo_id_adj, nuevo_id, filename, url_publica))
 
         if etiquetas:
             _insertar_etiquetas(etiquetas, nuevo_id, cursor)
@@ -3606,10 +3607,11 @@ def guardar_nota_imagen():
             VALUES (%s, %s, %s, '', %s, %s, 'Activa', 'imagen', %s)
         """, (nuevo_id, titulo, descripcion, hoy, hoy, user_id))
 
+        nuevo_id_adj = _next_id(cursor, "Adjuntos", "ID_Adjunto")
         cursor.execute("""
-            INSERT INTO public."Adjuntos" ("ID_Nota", "Nombre_archivo", "Ruta_archivo", "Formato")
-            VALUES (%s, %s, %s, 'imagen')
-        """, (nuevo_id, filename, url_publica))
+            INSERT INTO public."Adjuntos" ("ID_Adjunto", "ID_Nota", "Nombre_archivo", "Ruta_archivo", "Formato")
+            VALUES (%s, %s, %s, %s, 'imagen')
+        """, (nuevo_id_adj, nuevo_id, filename, url_publica))
 
         if etiquetas:
             _insertar_etiquetas(etiquetas, nuevo_id, cursor)

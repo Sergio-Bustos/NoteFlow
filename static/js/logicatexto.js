@@ -201,11 +201,6 @@ async function guardarNota() {
     const contenido   = cuerpo.innerHTML;
     const textoPlano  = cuerpo.innerText.trim();
 
-    if (!titulo) {
-        mostrarToast('Escribe un título para la nota');
-        document.getElementById('inputTitulo').focus();
-        return;
-    }
     if (!textoPlano) {
         mostrarToast('La nota está vacía');
         cuerpo.focus();
