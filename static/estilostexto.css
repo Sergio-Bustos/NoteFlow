@@ -238,6 +238,75 @@ body {
     font-weight: bold;
 }
 
+/* ══════════════════════════════════════════
+   CHECKLIST
+══════════════════════════════════════════ */
+#cuerpo-nota ul.checklist {
+    padding-left: 0;
+    list-style: none;
+}
+
+#cuerpo-nota ul.checklist li {
+    position: relative;
+    padding: 6px 10px 6px 42px; /* Espacio para el checkbox a la izquierda */
+    margin-bottom: 4px;
+    border-radius: 10px;
+    transition: background 0.15s;
+    list-style: none;
+    min-height: 34px;
+}
+
+#cuerpo-nota ul.checklist li:hover {
+    background: var(--violeta-suave);
+}
+
+#cuerpo-nota ul.checklist li input[type="checkbox"] {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    appearance: none;
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 6px;
+    border: 2px solid #bbb;
+    background: #fff;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    outline: none;
+    display: block;
+}
+
+#cuerpo-nota ul.checklist li input[type="checkbox"]:focus {
+    outline: none;
+}
+
+#cuerpo-nota ul.checklist li input[type="checkbox"]:checked {
+    background: #c8c8c8;
+    border-color: #999;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 16px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#cuerpo-nota ul.checklist li.checked {
+    text-decoration: line-through;
+    color: #aaa;
+}
+
+#cuerpo-nota ul.checklist li.checked input[type="checkbox"] {
+    background: #c8c8c8;
+    border-color: #999;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 16px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 /* Estilo del Contador de Caracteres */
 .char-counter-container {
     padding: 10px 32px;

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='pasarela.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
 </head>
 <body>
@@ -41,15 +42,15 @@
                 <!-- Vuelven a estar aquí los inputs de tarjeta -->
                 <div class="campo input-full">
                     <label>Número de tarjeta</label>
-                    <input type="text" id="numero-tarjeta" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)">
+                    <input type="text" id="numero-tarjeta" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)" required>
                 </div>
                 <div class="campo">
                     <label>Vencimiento</label>
-                    <input type="text" id="vencimiento" placeholder="MM/AA" maxlength="5" oninput="formatExpiry(this)">
+                    <input type="text" id="vencimiento" placeholder="MM/AA" maxlength="5" oninput="formatExpiry(this)" required>
                 </div>
                 <div class="campo">
                     <label>CVV</label>
-                    <input type="password" id="cvv" placeholder="•••" maxlength="4">
+                    <input type="password" id="cvv" placeholder="•••" maxlength="4" required>
                 </div>
             </div>
 

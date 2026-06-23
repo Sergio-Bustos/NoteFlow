@@ -50,6 +50,12 @@
             <button class="btn-tool" id="btnHerSticker" data-tip="Sticker" title="Insertar Sticker">
                 <i class="fas fa-smile"></i>
             </button>
+            <button class="btn-tool" id="btnHerMano" data-tip="Mano (arrastrar lienzo)" title="Mano">
+                <i class="fas fa-hand-paper"></i>
+            </button>
+            <button class="btn-tool" id="btnHerSeleccion" data-tip="Seleccionar (Q)" title="Seleccionar/Mover/Redimensionar">
+                <i class="fas fa-mouse-pointer"></i>
+            </button>
             <button class="btn-tool" id="btnHerCuentagotas" data-tip="Cuentagotas (I)" title="Cuentagotas">
                 <i class="fas fa-eye-dropper"></i>
             </button>
@@ -219,6 +225,17 @@
         <button class="efecto-btn" id="efFade"     data-tip="Efecto fade decolorado"><i class="fas fa-ghost"></i> Fade</button>
     </div>
 
+    <!-- ══ PANEL DE EMOJIS/STICKERS ══ -->
+    <div id="stickerPanel" class="sticker-panel">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <input type="text" id="emojiSearch" class="emoji-search-input" placeholder="Buscar emoji..." autocomplete="off">
+            <button onclick="document.getElementById('stickerPanel').classList.remove('visible')" class="emoji-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="emojiGrid" class="sticker-grid"></div>
+    </div>
+
     <!-- ══ ZONA DE TRABAJO ══ -->
     <div class="zona-trabajo">
 
@@ -265,7 +282,7 @@
         <div class="panel-lateral">
 
             <!-- Herramientas de dibujo -->
-            <div class="lateral-seccion">
+            <div class="lateral-seccion" id="brushSection">
                 <div class="lateral-titulo"><i class="fas fa-toolbox"></i> Herramientas</div>
                 <div class="herramientas-grid">
                     <button class="btn-herramienta activo" id="latPincel"      data-tip="Pincel"    title="Pincel"><i class="fas fa-pen"></i></button>
@@ -275,6 +292,8 @@
                     <button class="btn-herramienta"        id="latCirculo"     data-tip="Círculo"   title="Círculo"><i class="far fa-circle"></i></button>
                     <button class="btn-herramienta"        id="latTexto"       data-tip="Texto"     title="Texto"><i class="fas fa-font"></i></button>
                     <button class="btn-herramienta"        id="latGota"        data-tip="Cuentagotas" title="Cuentagotas"><i class="fas fa-eye-dropper"></i></button>
+                    <button class="btn-herramienta"        id="latMano"        data-tip="Mano" title="Mano (arrastrar lienzo)"><i class="fas fa-hand-paper"></i></button>
+                    <button class="btn-herramienta"        id="latSeleccion"   data-tip="Selección" title="Seleccionar/Mover/Redimensionar"><i class="fas fa-mouse-pointer"></i></button>
                     <button class="btn-herramienta"        id="latLimpiar"     data-tip="Borrar trazos" title="Borrar trazos" style="color:#ef4444;"><i class="fas fa-trash-alt"></i></button>
                 </div>
 
@@ -298,6 +317,44 @@
                     <div class="grosor-preview"><div class="grosor-dot" id="grosortDot" style="width:4px;height:4px;"></div></div>
                     <input type="range" id="grosorLateral" class="grosor-slider" min="1" max="60" value="5">
                     <span style="font-size:11px;font-weight:900;color:var(--morado-vivo);min-width:22px;" id="grosorLateralVal">5px</span>
+                </div>
+            </div>
+
+            <!-- Propiedades de texto/selección -->
+            <div class="lateral-seccion" id="textPropsPanel" style="display:none;">
+                <div class="lateral-titulo"><i class="fas fa-font"></i> Propiedades de texto</div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <input type="color" id="textColorPicker" class="color-picker" value="#7c4dff" title="Color del texto">
+                        <select id="selectFuenteSel" style="flex:1; padding:4px 6px; border-radius:8px; border:1.5px solid #d1c4e9; font-family:'Nunito',sans-serif; font-size:0.78rem; background:#f5f0ff;">
+                            <option value="Nunito">Nunito</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Courier New">Courier</option>
+                            <option value="Impact">Impact</option>
+                            <option value="Caveat">Caveat</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:3px; flex-wrap:wrap;" id="textPaleta">
+                        <span class="paleta-color" data-color="#000000" style="background:#000000;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                        <span class="paleta-color" data-color="#ffffff" style="background:#ffffff;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                        <span class="paleta-color" data-color="#e74c3c" style="background:#e74c3c;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                        <span class="paleta-color" data-color="#e67e22" style="background:#e67e22;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                        <span class="paleta-color" data-color="#2ecc71" style="background:#2ecc71;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                        <span class="paleta-color" data-color="#3498db" style="background:#3498db;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                        <span class="paleta-color" data-color="#9b59b6" style="background:#9b59b6;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                        <span class="paleta-color" data-color="#7c4dff" style="background:#7c4dff;width:18px;height:18px;border-radius:50%;cursor:pointer;border:1.5px solid #d1c4e9;"></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <label style="font-size:0.7rem; font-weight:700; color:var(--morado-medio); min-width:40px;">Opacidad</label>
+                        <input type="range" id="textOpacitySlider" min="5" max="100" value="100" style="flex:1; accent-color:var(--morado-vivo); cursor:pointer;">
+                        <span id="textOpacityVal" style="font-size:11px; font-weight:900; color:var(--morado-vivo); min-width:28px;">100%</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <label style="font-size:0.7rem; font-weight:700; color:var(--morado-medio); min-width:40px;">Tamaño</label>
+                        <input type="range" id="textSizeSlider" class="grosor-slider" min="8" max="120" value="18" style="flex:1; accent-color:var(--morado-vivo); cursor:pointer;">
+                        <span id="textSizeVal" style="font-size:11px; font-weight:900; color:var(--morado-vivo); min-width:28px;">18</span>
+                    </div>
                 </div>
             </div>
 
@@ -358,6 +415,21 @@
     </div>
 
 </div><!-- /panel -->
+
+<!-- MODAL TEXTO -->
+<div class="modal-overlay" id="modalTexto">
+    <div class="modal-box" style="max-width:420px;">
+        <div class="modal-icono" style="background:#ede7f6;"><i class="fas fa-font" style="color:#7c4dff;"></i></div>
+        <h3>Insertar texto</h3>
+        <input type="text" id="modalTextoInput" class="input-nota" placeholder="Escribe el texto..."
+               style="width:100%; margin-bottom:16px; padding:12px 16px; font-size:1rem;"
+               maxlength="100">
+        <div class="modal-btns">
+            <button class="btn-modal-cancelar" id="btnModalTextoCancelar">Cancelar</button>
+            <button class="btn-modal-salir"    id="btnModalTextoInsertar" style="background:#7c4dff; color:#fff; padding:10px 22px; border-radius:30px; border:none; font-family:'Nunito',sans-serif; font-size:0.88rem; font-weight:700; cursor:pointer;">Insertar</button>
+        </div>
+    </div>
+</div>
 
 <!-- MODAL SALIDA SIN GUARDAR -->
 <div class="modal-overlay" id="modalSalida">

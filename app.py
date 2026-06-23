@@ -559,6 +559,7 @@ def sanitizar_html(html_sucio):
         'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3',
         'ul', 'ol', 'li', 'blockquote', 'span', 'div',
         'font', 's', 'strike', 'b', 'i',  # execCommand genera estas etiquetas
+        'input',  # Para checklist
     ]
     attrs_permitidos = {
         '*':    ['style', 'class', 'align', 'dir'],
@@ -566,6 +567,7 @@ def sanitizar_html(html_sucio):
         'div':  ['style', 'class', 'align', 'dir'],
         'p':    ['style', 'class', 'align', 'dir'],
         'font': ['size', 'color', 'face'],  # execCommand('fontSize') genera <font size="N">
+        'input': ['type', 'checked'],  # Para checklist
     }
     styles_permitidos = [
         'color', 'background-color', 'text-align',

@@ -7,6 +7,7 @@
     document.getElementById('display-plan').textContent = nombres[plan] || plan;
     document.getElementById('btn-precio').textContent   = '$ ' + Number(precio).toLocaleString('es-CO') + ' COP';
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
     let metodoSeleccionado = null;
 
     function seleccionarMetodo(el, nombre) {
@@ -31,35 +32,53 @@
         
         const nombre = document.getElementById('nombre').value;
         const correo = document.getElementById('correo').value;
-        
-        // Configuración de la pasarela ePayco Checkout
-        const epaycoKey = document.getElementById('epayco-config').dataset.publicKey;
-        var handler = ePayco.checkout.configure({
-            key: epaycoKey,
-            test: true 
+        const numeroTarjeta = document.getElementById('numero-tarjeta').value.replace(/\s/g, '');
+        const vencimiento = document.getElementById('vencimiento').value;
+        const cvv = document.getElementById('cvv').value;
+
+        if (!nombre || !correo || !numeroTarjeta || !vencimiento || !cvv) {
+            alert('Por favor completa todos los campos de la tarjeta.');
+            return;
+        }
+
+        const btnPagar = document.querySelector('.btn-pagar');
+        const btnOriginal = btnPagar.innerHTML;
+        btnPagar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        btnPagar.disabled = true;
+
+        fetch('/procesar-pago', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                plan: plan,
+                precio: precio,
+                metodo: 'tarjeta',
+                nombre: nombre,
+                correo: correo,
+                numero_tarjeta: numeroTarjeta,
+                vencimiento: vencimiento,
+                cvv: cvv
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const ultimos4 = numeroTarjeta.slice(-4);
+                alert('Pago aprobado. Se usó la tarjeta terminada en ' + ultimos4 + '.\n\nRedirigiendo...');
+                window.location.href = data.redirect || '/dashboard';
+            } else {
+                alert(data.error || 'Error al procesar el pago');
+                btnPagar.innerHTML = btnOriginal;
+                btnPagar.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error('Error en pago:', err);
+            alert('Error de conexión al procesar el pago');
+            btnPagar.innerHTML = btnOriginal;
+            btnPagar.disabled = false;
         });
-
-        // Aseguramos que el precio sea puramente numérico
-        const amountLimpio = String(precio).replace(/\D/g, '');
-
-        var data = {
-            name: "Premium NoteFlow",
-            description: "Suscripcion " + plan,
-            invoice: "NF-" + Date.now(),
-            currency: "cop",
-            amount: amountLimpio,
-            tax_base: "0",
-            tax: "0",
-            country: "co",
-            lang: "es",
-            name_billing: nombre,
-            email_billing: correo,
-            external: "true",
-            extra1: "1", 
-            extra2: plan,
-            response: window.location.origin + "/dashboard", 
-            confirmation: window.location.origin + "/epayco/webhook",
-        };
-
-        handler.open(data);
     }

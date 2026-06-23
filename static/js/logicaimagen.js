@@ -14,20 +14,23 @@ const canvasContainer  = document.getElementById('canvasContainer');
 // ══════════════════════════════════════════════════════════════════
 let imgOriginal        = new Image();
 let zoom               = 1;
+let panX               = 0;
+let panY               = 0;
 let angulo             = 0;
 let flipH              = false;
 let flipV              = false;
 let imagenCargada      = false;
 let notaGuardada       = false;
 
-// Herramienta activa: 'pincel' | 'borrador' | 'linea' | 'rect' | 'circulo' | 'texto' | 'cuentagotas' | 'sticker'
+// Herramienta activa: 'pincel' | 'borrador' | 'linea' | 'rect' | 'circulo' | 'texto' | 'cuentagotas' | 'sticker' | 'mano' | 'seleccion'
 let herramientaActiva  = 'pincel';
 
-// Estado de dibujo
+// Estado de dibujo / mano
 let dibujando          = false;
 let xInicio = 0, yInicio = 0;
 let xAnterior = 0, yAnterior = 0;
 let snapshotAntesDibujo = null;
+let panStartX = 0, panStartY = 0;
 
 // Trazos y historial
 let trazosPaint        = [];
@@ -35,14 +38,49 @@ let historial          = [];
 let historialRedo      = [];
 const MAX_HISTORIAL    = 30;
 
+// Selección
+let selectedIndex      = -1;
+let isMoving           = false;
+let isResizing         = false;
+let resizeHandle       = '';
+let moveOffsetX        = 0;
+let moveOffsetY        = 0;
+let resizeStartBounds  = null;
+
 // Efectos activos (set de IDs)
 const efectosActivos   = new Set();
 let filtroMoradoActivo = false;
+
+// Modal texto — posición donde insertar
+let textoPosX = 0, textoPosY = 0;
 
 // ══════════════════════════════════════════════════════════════════
 //  HELPERS DE DOM
 // ══════════════════════════════════════════════════════════════════
 function $id(id) { return document.getElementById(id); }
+
+// ══════════════════════════════════════════════════════════════════
+//  WORD-WRAP HELPER
+// ══════════════════════════════════════════════════════════════════
+function wrapText(ctx, text, maxWidth) {
+    if (maxWidth <= 0) return [text];
+    var lines = [];
+    var words = text.split(' ');
+    var line = '';
+    for (var i = 0; i < words.length; i++) {
+        var test = line ? line + ' ' + words[i] : words[i];
+        if (ctx.measureText(test).width > maxWidth && line !== '') {
+            lines.push(line);
+            line = words[i];
+        } else {
+            line = test;
+        }
+    }
+    if (line !== '') lines.push(line);
+    if (lines.length === 0) lines.push(text);
+    return lines;
+}
+
 function mostrarToast(msg, tipo = 'info') {
     const t = $id('toastImagen');
     if (!t) return;
@@ -121,7 +159,7 @@ function guardarHistorial() {
     if (historial.length >= MAX_HISTORIAL) historial.shift();
     historial.push({
         trazosPaint: JSON.parse(JSON.stringify(trazosPaint)),
-        zoom, angulo, flipH, flipV,
+        zoom, panX, panY, angulo, flipH, flipV,
         filtros: capturarValoresFiltros(),
         efectos: new Set(efectosActivos),
         filtroMorado: filtroMoradoActivo,
@@ -134,7 +172,7 @@ function deshacerAccion() {
     if (historial.length <= 1) { mostrarToast('Nada que deshacer'); return; }
     historialRedo.push({
         trazosPaint: JSON.parse(JSON.stringify(trazosPaint)),
-        zoom, angulo, flipH, flipV,
+        zoom, panX, panY, angulo, flipH, flipV,
         filtros: capturarValoresFiltros(),
         efectos: new Set(efectosActivos),
         filtroMorado: filtroMoradoActivo,
@@ -151,7 +189,7 @@ function rehacerAccion() {
     const estado = historialRedo.pop();
     historial.push({
         trazosPaint: JSON.parse(JSON.stringify(trazosPaint)),
-        zoom, angulo, flipH, flipV,
+        zoom, panX, panY, angulo, flipH, flipV,
         filtros: capturarValoresFiltros(),
         efectos: new Set(efectosActivos),
         filtroMorado: filtroMoradoActivo,
@@ -177,6 +215,8 @@ function capturarValoresFiltros() {
 function restaurarEstado(estado) {
     trazosPaint       = JSON.parse(JSON.stringify(estado.trazosPaint));
     zoom              = estado.zoom;
+    panX              = estado.panX || 0;
+    panY              = estado.panY || 0;
     angulo            = estado.angulo;
     flipH             = estado.flipH;
     flipV             = estado.flipV;
@@ -205,8 +245,11 @@ function actualizarLienzoCompleto() {
     ctxVisible.clearRect(0, 0, canvasVisible.width, canvasVisible.height);
     aplicarTransformCanvas(ctxVisible, () => {
         ctxVisible.drawImage(canvasBuffer, 0, 0);
+        redibujarTrazos(ctxVisible);
+        if (herramientaActiva === 'seleccion' && selectedIndex >= 0) {
+            dibujarSeleccion(ctxVisible);
+        }
     });
-    redibujarTrazos(ctxVisible);
 }
 
 function procesarEnBuffer() {
@@ -368,7 +411,7 @@ function aplicarEfectosActivos() {
 // ══════════════════════════════════════════════════════════════════
 function aplicarZoom(z) {
     zoom = Math.max(0.05, Math.min(10, z));
-    canvasVisible.style.transform = `scale(${zoom})`;
+    canvasVisible.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
     canvasVisible.style.transformOrigin = 'center center';
     $id('coordZoom').textContent = Math.round(zoom * 100);
 }
@@ -428,32 +471,49 @@ const cursorMap = {
     rect:        '',
     circulo:     '',
     sticker:     'cursor-texto',
+    mano:        'cursor-mano',
+    seleccion:   '',
 };
 const nombreHerr = {
     pincel:'Pincel', borrador:'Borrador', linea:'Línea', rect:'Rectángulo',
-    circulo:'Círculo', texto:'Texto', cuentagotas:'Cuentagotas', sticker:'Sticker'
+    circulo:'Círculo', texto:'Texto', cuentagotas:'Cuentagotas', sticker:'Sticker', mano:'Mano', seleccion:'Selección'
 };
 
 function setHerramienta(h) {
     herramientaActiva = h;
+
+    // Panel de stickers
+    var sp = $id('stickerPanel');
+    if (h === 'sticker') {
+        if (sp) sp.classList.add('visible');
+    } else {
+        if (sp) sp.classList.remove('visible');
+    }
+
     // Cursor
     canvasContainer.className = 'canvas-container';
     if (cursorMap[h]) canvasContainer.classList.add(cursorMap[h]);
     else canvasContainer.style.cursor = 'crosshair';
 
+    // Ocultar panel de propiedades de texto si no estamos en selección
+    if (h !== 'seleccion') {
+        selectedIndex = -1;
+        syncTextPropsPanel();
+    }
+
     // Botones toolbar
-    ['btnHerPincel','btnHerBorrador','btnHerLinea','btnHerRect','btnHerCirculo','btnHerTexto','btnHerCuentagotas','btnHerSticker'].forEach(id => {
+    ['btnHerPincel','btnHerBorrador','btnHerLinea','btnHerRect','btnHerCirculo','btnHerTexto','btnHerCuentagotas','btnHerSticker','btnHerMano','btnHerSeleccion'].forEach(id => {
         $id(id)?.classList.remove('activo');
     });
     // Botones lateral
-    ['latPincel','latBorrador','latLinea','latRect','latCirculo','latTexto','latGota'].forEach(id => {
+    ['latPincel','latBorrador','latLinea','latRect','latCirculo','latTexto','latGota','latMano','latSeleccion'].forEach(id => {
         $id(id)?.classList.remove('activo');
     });
 
     const mapaBtn = { pincel:'btnHerPincel', borrador:'btnHerBorrador', linea:'btnHerLinea',
-        rect:'btnHerRect', circulo:'btnHerCirculo', texto:'btnHerTexto', cuentagotas:'btnHerCuentagotas', sticker:'btnHerSticker' };
+        rect:'btnHerRect', circulo:'btnHerCirculo', texto:'btnHerTexto', cuentagotas:'btnHerCuentagotas', sticker:'btnHerSticker', mano:'btnHerMano', seleccion:'btnHerSeleccion' };
     const mapaLat = { pincel:'latPincel', borrador:'latBorrador', linea:'latLinea',
-        rect:'latRect', circulo:'latCirculo', texto:'latTexto', cuentagotas:'latGota', sticker:'btnHerSticker' };
+        rect:'latRect', circulo:'latCirculo', texto:'latTexto', cuentagotas:'latGota', sticker:'btnHerSticker', mano:'latMano', seleccion:'latSeleccion' };
     $id(mapaBtn[h])?.classList.add('activo');
     $id(mapaLat[h])?.classList.add('activo');
 
@@ -470,6 +530,8 @@ $id('btnHerCirculo')?.addEventListener('click', () => setHerramienta('circulo'))
 $id('btnHerTexto')?.addEventListener('click', () => setHerramienta('texto'));
 $id('btnHerCuentagotas')?.addEventListener('click', () => setHerramienta('cuentagotas'));
 $id('btnHerSticker')?.addEventListener('click', () => setHerramienta('sticker'));
+$id('btnHerMano')?.addEventListener('click',    () => setHerramienta('mano'));
+$id('btnHerSeleccion')?.addEventListener('click', () => setHerramienta('seleccion'));
 
 $id('latPincel')?.addEventListener('click',   () => setHerramienta('pincel'));
 $id('latBorrador')?.addEventListener('click', () => setHerramienta('borrador'));
@@ -478,6 +540,8 @@ $id('latRect')?.addEventListener('click',     () => setHerramienta('rect'));
 $id('latCirculo')?.addEventListener('click',  () => setHerramienta('circulo'));
 $id('latTexto')?.addEventListener('click',    () => setHerramienta('texto'));
 $id('latGota')?.addEventListener('click',     () => setHerramienta('cuentagotas'));
+$id('latMano')?.addEventListener('click',     () => setHerramienta('mano'));
+$id('latSeleccion')?.addEventListener('click', () => setHerramienta('seleccion'));
 $id('latLimpiar')?.addEventListener('click',  () => limpiarTrazos());
 
 // ══════════════════════════════════════════════════════════════════
@@ -502,19 +566,11 @@ document.querySelectorAll('.paleta-color').forEach(swatch => {
         const color = swatch.dataset.color;
         $id('colorPrimario').value = color;
         $id('colorLateral').value  = color;
+        $id('textColorPicker').value = color;
+        aplicarColorASeleccion(color);
     });
 });
 
-// Grosor sincronizado
-function actualizarGrosorUI(val) {
-    $id('grosorPincel').value    = val;
-    $id('grosorLateral').value   = val;
-    $id('grosorValor').textContent = val;
-    $id('grosorLateralVal').textContent = val + 'px';
-    const size = Math.max(2, Math.min(20, val * 0.6));
-    $id('grosortDot').style.width  = size + 'px';
-    $id('grosortDot').style.height = size + 'px';
-}
 $id('grosorPincel').addEventListener('input',  e => actualizarGrosorUI(e.target.value));
 $id('grosorLateral').addEventListener('input', e => actualizarGrosorUI(e.target.value));
 
@@ -556,6 +612,41 @@ canvasVisible.addEventListener('mousemove', (e) => {
         coordColorEl.style.color = (pixel[0]*0.299 + pixel[1]*0.587 + pixel[2]*0.114) > 150 ? '#333' : '#fff';
     }
     if (dibujando) dibujarMovimiento(e);
+
+    // Cursor hover para selección
+    if (herramientaActiva === 'seleccion' && !dibujando) {
+        if (selectedIndex >= 0) {
+            var b = getTrazoBounds(trazosPaint[selectedIndex]);
+            var trazoSel = trazosPaint[selectedIndex];
+            var handle = getHandleAt(pos.x, pos.y, b);
+            if (handle) {
+                // Para texto: handles e/w muestran cursor ↔ (anchar/desanchar)
+                if (handle === 'n' || handle === 's') {
+                    canvasContainer.style.cursor = 'ns-resize';
+                } else if (handle === 'e' || handle === 'w') {
+                    // Cursor especial de ancho (como esquina horizontal)
+                    canvasContainer.style.cursor = 'ew-resize';
+                } else if (handle === 'nw' || handle === 'se') {
+                    canvasContainer.style.cursor = 'nwse-resize';
+                } else if (handle === 'ne' || handle === 'sw') {
+                    canvasContainer.style.cursor = 'nesw-resize';
+                }
+            } else if (getEdgeAt(pos.x, pos.y, b)) {
+                var edge = getEdgeAt(pos.x, pos.y, b);
+                if (edge === 'n' || edge === 's') canvasContainer.style.cursor = 'ns-resize';
+                else if (edge === 'e' || edge === 'w') canvasContainer.style.cursor = 'ew-resize';
+                else if (edge === 'nw' || edge === 'se') canvasContainer.style.cursor = 'nwse-resize';
+                else if (edge === 'ne' || edge === 'sw') canvasContainer.style.cursor = 'nesw-resize';
+            } else if (hitTestTrazo(pos.x, pos.y, trazoSel)) {
+                canvasContainer.style.cursor = 'move';
+            } else {
+                canvasContainer.style.cursor = 'default';
+            }
+        } else {
+            var idx = getTrazoEnPosicion(pos.x, pos.y);
+            canvasContainer.style.cursor = idx >= 0 ? 'move' : 'default';
+        }
+    }
 });
 
 canvasVisible.addEventListener('mousedown', (e) => {
@@ -582,12 +673,74 @@ window.addEventListener('touchend', (e) => {
     if (dibujando && imagenCargada) finalizarDibujo(e);
 });
 
+// Doble clic para editar texto existente
+canvasVisible.addEventListener('dblclick', function(e) {
+    if (!imagenCargada) return;
+    var pos = obtenerPosCanvas(e);
+    for (var i = trazosPaint.length - 1; i >= 0; i--) {
+        var t = trazosPaint[i];
+        if (t.tipo === 'texto' && hitTestTrazo(pos.x, pos.y, t)) {
+            var modal = $id('modalTexto');
+            var input = $id('modalTextoInput');
+            if (!modal || !input) return;
+            input.value = t.texto;
+            textoPosX = t.x;
+            textoPosY = t.y;
+            selectedIndex = i;
+            syncTextPropsPanel();
+            actualizarRenderConSeleccion();
+            modal.classList.add('visible');
+            setTimeout(function() { input.focus(); input.select(); }, 100);
+            return;
+        }
+    }
+});
+
 function iniciarDibujo(pos, e) {
     dibujando   = true;
     xInicio     = pos.x;
     yInicio     = pos.y;
     xAnterior   = pos.x;
     yAnterior   = pos.y;
+
+    if (herramientaActiva === 'mano') {
+        panStartX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        panStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        return;
+    }
+
+    if (herramientaActiva === 'seleccion') {
+        if (selectedIndex >= 0) {
+            var b = getTrazoBounds(trazosPaint[selectedIndex]);
+            var handle = getHandleAt(pos.x, pos.y, b);
+            if (!handle) handle = getEdgeAt(pos.x, pos.y, b);
+            if (handle) {
+                    isResizing = true;
+                    resizeHandle = handle;
+                    resizeStartBounds = { x: b.x, y: b.y, w: b.w, h: b.h };
+                    moveOffsetX = pos.x;
+                    moveOffsetY = pos.y;
+                    return;
+                }
+            if (hitTestTrazo(pos.x, pos.y, trazosPaint[selectedIndex])) {
+                isMoving = true;
+                moveOffsetX = pos.x;
+                moveOffsetY = pos.y;
+                canvasContainer.style.cursor = 'grabbing';
+                return;
+            }
+        }
+        seleccionarTrazoEn(pos.x, pos.y);
+        if (selectedIndex >= 0) {
+            isMoving = true;
+            moveOffsetX = pos.x;
+            moveOffsetY = pos.y;
+            canvasContainer.style.cursor = 'grabbing';
+        } else {
+            dibujando = false;
+        }
+        return;
+    }
 
     if (herramientaActiva === 'cuentagotas') {
         const pixel = ctxVisible.getImageData(Math.floor(pos.x), Math.floor(pos.y), 1, 1).data;
@@ -601,38 +754,14 @@ function iniciarDibujo(pos, e) {
 
     if (herramientaActiva === 'texto') {
         dibujando = false;
-        const texto = prompt('Escribe el texto a insertar:');
-        if (texto) {
-            guardarHistorial();
-            const fuente  = $id('selectFuente')?.value || 'Nunito';
-            const grosor  = getGrosor();
-            ctxVisible.save();
-            ctxVisible.font         = `${Math.max(12, grosor * 3)}px ${fuente}`;
-            ctxVisible.fillStyle    = getColor();
-            ctxVisible.globalAlpha  = getOpacidad();
-            ctxVisible.fillText(texto, pos.x, pos.y);
-            ctxVisible.restore();
-            trazosPaint.push({ tipo:'texto', texto, x:pos.x, y:pos.y, color:getColor(), grosor, fuente, opacidad:getOpacidad() });
-            actualizarStatsTrazos();
-        }
+        mostrarModalTexto(pos.x, pos.y);
         return;
     }
 
     if (herramientaActiva === 'sticker') {
         dibujando = false;
-        const texto = prompt('Introduce un emoji para usar como sticker (ej: 🍕, 🚀, 👽):', '✨');
-        if (texto) {
-            guardarHistorial();
-            const grosor  = getGrosor();
-            const size = Math.max(30, grosor * 5);
-            ctxVisible.save();
-            ctxVisible.font         = `${size}px sans-serif`;
-            ctxVisible.globalAlpha  = getOpacidad();
-            ctxVisible.fillText(texto, pos.x - size/2, pos.y + size/3);
-            ctxVisible.restore();
-            trazosPaint.push({ tipo:'sticker', texto, x:pos.x - size/2, y:pos.y + size/3, color:'#000', grosor, fuente:'sans-serif', opacidad:getOpacidad(), size });
-            actualizarStatsTrazos();
-        }
+        const panel = $id('stickerPanel');
+        if (panel) panel.classList.toggle('visible');
         return;
     }
 
@@ -675,6 +804,38 @@ function dibujarMovimiento(e) {
     if (!dibujando || !imagenCargada) return;
     const pos = obtenerPosCanvas(e);
 
+    if (herramientaActiva === 'mano') {
+        const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+        panX += (clientX - panStartX);
+        panY += (clientY - panStartY);
+        panStartX = clientX;
+        panStartY = clientY;
+        aplicarZoom(zoom);
+        canvasContainer.style.cursor = 'grabbing';
+        return;
+    }
+
+    if (herramientaActiva === 'seleccion') {
+        if (isMoving && selectedIndex >= 0) {
+            var dx = pos.x - moveOffsetX;
+            var dy = pos.y - moveOffsetY;
+            moverTrazoSeleccionado(dx, dy);
+            moveOffsetX = pos.x;
+            moveOffsetY = pos.y;
+            actualizarRenderConSeleccion();
+            return;
+        }
+        if (isResizing && selectedIndex >= 0 && resizeStartBounds) {
+            var dx = pos.x - xInicio;
+            var dy = pos.y - yInicio;
+            redimensionarTrazoSeleccionado(resizeHandle, resizeStartBounds, dx, dy);
+            actualizarRenderConSeleccion();
+            return;
+        }
+        return;
+    }
+
     if (['linea','rect','circulo'].includes(herramientaActiva)) {
         // Restaurar snapshot y dibujar preview
         if (snapshotAntesDibujo) ctxVisible.putImageData(snapshotAntesDibujo, 0, 0);
@@ -708,6 +869,19 @@ function dibujarMovimiento(e) {
 function finalizarDibujo(e) {
     dibujando           = false;
     snapshotAntesDibujo = null;
+    if (herramientaActiva === 'mano') {
+        canvasContainer.style.cursor = 'grab';
+    }
+    if (herramientaActiva === 'seleccion') {
+        if (isMoving || isResizing) {
+            isMoving = false;
+            isResizing = false;
+            resizeStartBounds = null;
+            canvasContainer.style.cursor = 'move';
+            guardarHistorial();
+            actualizarRenderConSeleccion();
+        }
+    }
     actualizarStatsTrazos();
     guardarHistorial();
 }
@@ -744,12 +918,19 @@ function redibujarTrazos(ctx) {
         ctx.globalAlpha = trazo.opacidad ?? 1;
 
         if (trazo.tipo === 'texto') {
-            const fuente = trazo.fuente || 'Nunito';
-            ctx.font      = `${Math.max(12, trazo.grosor * 3)}px ${fuente}`;
+            var fuente = trazo.fuente || 'Nunito';
+            var tam    = trazo.tamano || Math.max(12, trazo.grosor * 3);
+            var ctxTxt = ctx || ctxBuffer;
+            ctxTxt.font = tam + 'px ' + fuente;
+            var wrapW  = trazo.width || ctxTxt.measureText(trazo.texto).width + 10;
+            var lines  = wrapText(ctxTxt, trazo.texto, wrapW);
+            var lineH  = tam * 1.3;
             ctx.fillStyle = trazo.color;
-            ctx.fillText(trazo.texto, trazo.x, trazo.y);
+            lines.forEach(function(line, i) {
+                ctx.fillText(line, trazo.x, trazo.y + i * lineH);
+            });
         } else if (trazo.tipo === 'sticker') {
-            const size = trazo.size || Math.max(30, trazo.grosor * 5);
+            const size = trazo.tamano || trazo.size || Math.max(30, trazo.grosor * 5);
             ctx.font      = `${size}px sans-serif`;
             ctx.fillText(trazo.texto, trazo.x, trazo.y);
         } else if (['linea','rect','circulo'].includes(trazo.tipo)) {
@@ -775,10 +956,377 @@ function redibujarTrazos(ctx) {
     });
 }
 
+// ══════════════════════════════════════════════════════════════════
+//  SELECCIÓN — mover y redimensionar trazos
+// ══════════════════════════════════════════════════════════════════
+function getTrazoBounds(trazo) {
+    var pad = 6;
+    if (trazo.tipo === 'texto') {
+        var tam = trazo.tamano || Math.max(12, trazo.grosor * 3);
+        var fuente = trazo.fuente || 'Nunito';
+        ctxBuffer.font = tam + 'px ' + fuente;
+        // Usar trazo.width (ancho de ajuste) si existe, de lo contrario medir texto natural
+        var naturalW = ctxBuffer.measureText(trazo.texto).width + 10;
+        var wrapW = trazo.width || naturalW;
+        var lines = wrapText(ctxBuffer, trazo.texto, wrapW);
+        var lineH = tam * 1.3;
+        var h = lines.length * lineH;
+        // El ancho del bounding box es el ancho de ajuste (no el de las líneas individuales)
+        // para que los handles E/W coincidan con el borde visual de wrap
+        var boxW = Math.max(wrapW, naturalW);
+        return { x: trazo.x - pad, y: trazo.y - tam - pad, w: boxW + pad * 2, h: h + pad * 2 };
+    }
+    if (trazo.tipo === 'sticker') {
+        var sz = trazo.tamano || trazo.size || Math.max(30, trazo.grosor * 5);
+        return { x: trazo.x - pad, y: trazo.y - sz - pad, w: sz * 1.2 + pad * 2, h: sz * 1.3 + pad * 2 };
+    }
+    if (trazo.tipo === 'linea' || trazo.tipo === 'rect' || trazo.tipo === 'circulo') {
+        var x1 = trazo.x1, y1 = trazo.y1, x2 = trazo.x2, y2 = trazo.y2;
+        var minX = Math.min(x1, x2) - pad, maxX = Math.max(x1, x2) + pad;
+        var minY = Math.min(y1, y2) - pad, maxY = Math.max(y1, y2) + pad;
+        return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+    if (trazo.puntos && trazo.puntos.length > 0) {
+        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        trazo.puntos.forEach(function(p) {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
+        var g = trazo.grosor || 5;
+        return { x: minX - pad - g, y: minY - pad - g, w: maxX - minX + pad * 2 + g * 2, h: maxY - minY + pad * 2 + g * 2 };
+    }
+    return { x: 0, y: 0, w: 0, h: 0 };
+}
+
+function hitTestTrazo(px, py, trazo) {
+    var b = getTrazoBounds(trazo);
+    return px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h;
+}
+
+function getTrazoEnPosicion(px, py) {
+    for (var i = trazosPaint.length - 1; i >= 0; i--) {
+        if (hitTestTrazo(px, py, trazosPaint[i])) return i;
+    }
+    return -1;
+}
+
+function getHandlePoints(b) {
+    var hs = 8;
+    var handles = [
+        { id:'nw', x: b.x, y: b.y },
+        { id:'n',  x: b.x + b.w / 2, y: b.y },
+        { id:'ne', x: b.x + b.w, y: b.y },
+        { id:'e',  x: b.x + b.w, y: b.y + b.h / 2 },
+        { id:'se', x: b.x + b.w, y: b.y + b.h },
+        { id:'s',  x: b.x + b.w / 2, y: b.y + b.h },
+        { id:'sw', x: b.x, y: b.y + b.h },
+        { id:'w',  x: b.x, y: b.y + b.h / 2 },
+    ];
+    return handles;
+}
+
+function getHandleAt(px, py, b) {
+    var hs = 10;
+    var handles = getHandlePoints(b);
+    for (var i = 0; i < handles.length; i++) {
+        var h = handles[i];
+        if (Math.abs(px - h.x) < hs && Math.abs(py - h.y) < hs) return h.id;
+    }
+    return '';
+}
+
+function getEdgeAt(px, py, b) {
+    var margin = 6;
+    var onLeft   = Math.abs(px - b.x) < margin && py >= b.y - margin && py <= b.y + b.h + margin;
+    var onRight  = Math.abs(px - (b.x + b.w)) < margin && py >= b.y - margin && py <= b.y + b.h + margin;
+    var onTop    = Math.abs(py - b.y) < margin && px >= b.x - margin && px <= b.x + b.w + margin;
+    var onBottom = Math.abs(py - (b.y + b.h)) < margin && px >= b.x - margin && px <= b.x + b.w + margin;
+    if (onLeft && onTop) return 'nw';
+    if (onRight && onTop) return 'ne';
+    if (onLeft && onBottom) return 'sw';
+    if (onRight && onBottom) return 'se';
+    if (onLeft) return 'w';
+    if (onRight) return 'e';
+    if (onTop) return 'n';
+    if (onBottom) return 's';
+    return '';
+}
+
+function dibujarSeleccion(ctx) {
+    if (selectedIndex < 0 || selectedIndex >= trazosPaint.length) return;
+    var trazo = trazosPaint[selectedIndex];
+    var b = getTrazoBounds(trazo);
+
+    ctx.save();
+    ctx.strokeStyle = '#7c4dff';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 3]);
+    ctx.strokeRect(b.x, b.y, b.w, b.h);
+    ctx.setLineDash([]);
+
+    // Determinar si el trazo admite redimensionado horizontal (anchar/desanchar)
+    var esTexto = trazo.tipo === 'texto';
+    var handles = getHandlePoints(b);
+    ctx.lineWidth = 1.5;
+
+    handles.forEach(function(h) {
+        var esLateral = (h.id === 'e' || h.id === 'w');
+        var esSupInf  = (h.id === 'n' || h.id === 's');
+
+        if (esTexto && esLateral) {
+            // Handle de ancho — rombo azul con flechas ↔ para indicar que se puede anchar
+            ctx.fillStyle = '#7c4dff';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            // Rombo
+            ctx.beginPath();
+            ctx.moveTo(h.x, h.y - 6);
+            ctx.lineTo(h.x + 6, h.y);
+            ctx.lineTo(h.x, h.y + 6);
+            ctx.lineTo(h.x - 6, h.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // Mini flechas horizontales ↔
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            // Flecha izquierda
+            ctx.moveTo(h.x - 4, h.y); ctx.lineTo(h.x - 2, h.y);
+            ctx.moveTo(h.x - 4, h.y); ctx.lineTo(h.x - 2.5, h.y - 1.5);
+            ctx.moveTo(h.x - 4, h.y); ctx.lineTo(h.x - 2.5, h.y + 1.5);
+            // Flecha derecha
+            ctx.moveTo(h.x + 4, h.y); ctx.lineTo(h.x + 2, h.y);
+            ctx.moveTo(h.x + 4, h.y); ctx.lineTo(h.x + 2.5, h.y - 1.5);
+            ctx.moveTo(h.x + 4, h.y); ctx.lineTo(h.x + 2.5, h.y + 1.5);
+            ctx.stroke();
+        } else if (!esTexto && esSupInf) {
+            // Para stickers/otros, el handle n/s no hace nada especial — cuadrado gris claro
+            ctx.fillStyle = '#d1c4e9';
+            ctx.strokeStyle = '#7c4dff';
+            ctx.lineWidth = 1;
+            ctx.fillRect(h.x - 4, h.y - 4, 8, 8);
+            ctx.strokeRect(h.x - 4, h.y - 4, 8, 8);
+        } else {
+            // Handle estándar — cuadrado blanco con borde morado
+            ctx.fillStyle = '#fff';
+            ctx.strokeStyle = '#7c4dff';
+            ctx.lineWidth = 1.5;
+            ctx.fillRect(h.x - 4, h.y - 4, 8, 8);
+            ctx.strokeRect(h.x - 4, h.y - 4, 8, 8);
+        }
+    });
+    ctx.restore();
+}
+
+function actualizarRenderConSeleccion() {
+    actualizarLienzoCompleto();
+    if (selectedIndex >= 0 && herramientaActiva === 'seleccion') {
+        dibujarSeleccion(ctxVisible);
+    }
+}
+
+function seleccionarTrazoEn(px, py) {
+    var idx = getTrazoEnPosicion(px, py);
+    if (idx >= 0) {
+        selectedIndex = idx;
+        isMoving = false;
+        isResizing = false;
+        canvasContainer.style.cursor = 'move';
+    } else {
+        selectedIndex = -1;
+        canvasContainer.style.cursor = 'default';
+    }
+    syncTextPropsPanel();
+    actualizarRenderConSeleccion();
+}
+
+function moverTrazoSeleccionado(dx, dy) {
+    if (selectedIndex < 0) return;
+    var trazo = trazosPaint[selectedIndex];
+    if (trazo.tipo === 'texto' || trazo.tipo === 'sticker') {
+        trazo.x += dx;
+        trazo.y += dy;
+    } else if (['linea','rect','circulo'].includes(trazo.tipo)) {
+        trazo.x1 += dx; trazo.y1 += dy;
+        trazo.x2 += dx; trazo.y2 += dy;
+    } else if (trazo.puntos) {
+        trazo.puntos.forEach(function(p) { p.x += dx; p.y += dy; });
+    }
+}
+
+function redimensionarTrazoSeleccionado(handle, startBounds, dx, dy) {
+    if (selectedIndex < 0) return;
+    var trazo = trazosPaint[selectedIndex];
+    var b = startBounds;
+    var nx = b.x, ny = b.y, nw = b.w, nh = b.h;
+
+    if (handle.indexOf('e') >= 0) nw += dx;
+    if (handle.indexOf('w') >= 0) { nx += dx; nw -= dx; }
+    if (handle.indexOf('s') >= 0) nh += dy;
+    if (handle.indexOf('n') >= 0) { ny += dy; nh -= dy; }
+
+    if (nw < 10) { nw = 10; if (handle.indexOf('w') >= 0) nx = b.x + b.w - 10; }
+    if (nh < 10) { nh = 10; if (handle.indexOf('n') >= 0) ny = b.y + b.h - 10; }
+
+    var pad = 6;
+    if (trazo.tipo === 'sticker') {
+        var newSize = Math.max(8, Math.round((nh - pad * 2) / 1.3));
+        trazo.size = newSize;
+        trazo.tamano = newSize;
+        trazo.x = nx + pad;
+        trazo.y = ny + newSize + pad;
+    } else if (trazo.tipo === 'texto') {
+        var wChanged = handle.indexOf('e') >= 0 || handle.indexOf('w') >= 0;
+        var hChanged = handle.indexOf('s') >= 0 || handle.indexOf('n') >= 0;
+        var oldTam = trazo.tamano || 18;
+        if (wChanged) {
+            trazo.width = Math.max(20, nw - pad * 2);
+            if (handle.indexOf('w') >= 0) {
+                trazo.x = nx + pad;
+            }
+        }
+        if (hChanged) {
+            var newSize = Math.max(8, Math.round((nh - pad * 2) / 1.3));
+            trazo.grosor = Math.max(1, Math.round(newSize / 3));
+            trazo.tamano = newSize;
+            trazo.y = ny + newSize + pad;
+        }
+    } else if (['linea','rect','circulo'].includes(trazo.tipo)) {
+        var cx = (trazo.x1 + trazo.x2) / 2;
+        var cy = (trazo.y1 + trazo.y2) / 2;
+        var sx = nw / b.w;
+        var sy = nh / b.h;
+        var hw = Math.abs(trazo.x2 - trazo.x1) / 2 * sx;
+        var hh = Math.abs(trazo.y2 - trazo.y1) / 2 * sy;
+        trazo.x1 = cx - hw;
+        trazo.x2 = cx + hw;
+        trazo.y1 = cy - hh;
+        trazo.y2 = cy + hh;
+    } else if (trazo.puntos) {
+        var sx = nw / b.w;
+        var sy = nh / b.h;
+        var minX = Infinity, minY = Infinity;
+        trazo.puntos.forEach(function(p) { if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y; });
+        trazo.puntos.forEach(function(p) {
+            p.x = nx + (p.x - minX) * sx;
+            p.y = ny + (p.y - minY) * sy;
+        });
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PANEL DE PROPIEDADES DE TEXTO/SELECCIÓN
+// ══════════════════════════════════════════════════════════════════
+function aplicarColorASeleccion(color) {
+    if (selectedIndex < 0 || selectedIndex >= trazosPaint.length) return;
+    var t = trazosPaint[selectedIndex];
+    t.color = color;
+    actualizarRenderConSeleccion();
+}
+
+function syncTextPropsPanel() {
+    var panel = $id('textPropsPanel');
+    var brush = $id('brushSection');
+    var showText = false;
+    if (selectedIndex >= 0 && selectedIndex < trazosPaint.length) {
+        var t = trazosPaint[selectedIndex];
+        if (t.tipo === 'texto' || t.tipo === 'sticker') {
+            showText = true;
+            if (panel) {
+                panel.style.display = 'block';
+                $id('textColorPicker').value = t.color || '#7c4dff';
+                $id('selectFuenteSel').value = t.fuente || 'Nunito';
+                var op = Math.round((t.opacidad ?? 1) * 100);
+                $id('textOpacitySlider').value = op;
+                $id('textOpacityVal').textContent = op + '%';
+                var sz = t.tamano || 18;
+                $id('textSizeSlider').value = sz;
+                $id('textSizeVal').textContent = sz;
+            }
+        }
+    }
+    if (panel) panel.style.display = showText ? 'block' : 'none';
+    if (brush) brush.style.display = showText ? 'none' : 'block';
+}
+
+function aplicarPropsTexto() {
+    if (selectedIndex < 0 || selectedIndex >= trazosPaint.length) return;
+    var t = trazosPaint[selectedIndex];
+    if (t.tipo === 'texto' || t.tipo === 'sticker') {
+        t.color = $id('textColorPicker').value || '#7c4dff';
+        if (t.tipo === 'texto') {
+            t.fuente = $id('selectFuenteSel').value || 'Nunito';
+        }
+        var op = parseInt($id('textOpacitySlider').value) / 100;
+        t.opacidad = op;
+        var oldTam = t.tamano || 18;
+        t.tamano = parseInt($id('textSizeSlider').value) || 18;
+        if (t.tipo === 'texto') {
+            ctxBuffer.font = t.tamano + 'px ' + (t.fuente || 'Nunito');
+            var natural = ctxBuffer.measureText(t.texto).width + 10;
+            t.width = Math.max(t.width || 260, Math.min(natural, 400), 60);
+            t.y += (t.tamano - oldTam);
+        } else {
+            t.tamano = Math.max(t.tamano, 20);
+            t.y += (t.tamano - oldTam);
+        }
+        actualizarRenderConSeleccion();
+    }
+}
+
+// Listeners del panel de propiedades de texto
+$id('textColorPicker')?.addEventListener('input', aplicarPropsTexto);
+$id('selectFuenteSel')?.addEventListener('change', aplicarPropsTexto);
+$id('textOpacitySlider')?.addEventListener('input', function() {
+    $id('textOpacityVal').textContent = this.value + '%';
+    aplicarPropsTexto();
+});
+$id('textSizeSlider')?.addEventListener('input', function() {
+    $id('textSizeVal').textContent = this.value;
+    aplicarPropsTexto();
+});
+
+// El slider de grosor también controla tamaño de letra cuando hay texto seleccionado
+function actualizarGrosorUI(val) {
+    $id('grosorPincel').value    = val;
+    $id('grosorLateral').value   = val;
+    $id('grosorValor').textContent = val;
+    $id('grosorLateralVal').textContent = val + 'px';
+    const size = Math.max(2, Math.min(20, val * 0.6));
+    $id('grosortDot').style.width  = size + 'px';
+    $id('grosortDot').style.height = size + 'px';
+
+    // Si hay texto/sticker seleccionado, aplica como tamaño de letra
+    if (selectedIndex >= 0 && selectedIndex < trazosPaint.length) {
+        var t = trazosPaint[selectedIndex];
+        if (t.tipo === 'texto' || t.tipo === 'sticker') {
+            var oldTam = t.tamano || 18;
+            t.tamano = val;
+            if (t.tipo === 'texto') {
+                ctxBuffer.font = t.tamano + 'px ' + (t.fuente || 'Nunito');
+                var natural = ctxBuffer.measureText(t.texto).width + 10;
+                t.width = Math.max(t.width || 260, Math.min(natural, 400), 60);
+            }
+            t.y += (t.tamano - oldTam);
+            $id('textSizeSlider').value = val;
+            $id('textSizeVal').textContent = val;
+            actualizarRenderConSeleccion();
+        }
+    }
+}
+
 function resetearEstadoDibujo() {
     trazosPaint   = [];
+    selectedIndex = -1;
+    isMoving      = false;
+    isResizing    = false;
+    resizeStartBounds = null;
     dibujando     = false;
     snapshotAntesDibujo = null;
+    syncTextPropsPanel();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -817,6 +1365,8 @@ function resetearTodo(limpiarImg = true) {
     flipV              = false;
     filtroMoradoActivo = false;
     zoom               = 1;
+    panX               = 0;
+    panY               = 0;
     aplicarZoom(1);
     efectosActivos.clear();
     document.querySelectorAll('.efecto-btn').forEach(b => b.classList.remove('activo'));
@@ -852,18 +1402,35 @@ function resetearTodo(limpiarImg = true) {
 [$id('latResetear')   ].forEach(b => b?.addEventListener('click', () => resetearTodo(true)));
 
 // ══════════════════════════════════════════════════════════════════
+//  EXPORTAR con transformación (rotación/volteo)
+// ══════════════════════════════════════════════════════════════════
+function exportarConTransformacion(callback) {
+    // Crea un canvas temporal, aplica rotación+volteo, dibuja imagen y trazos, y pasa el canvas al callback
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width  = canvasVisible.width;
+    tempCanvas.height = canvasVisible.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    aplicarTransformCanvas(tempCtx, () => {
+        tempCtx.drawImage(canvasBuffer, 0, 0);
+        redibujarTrazos(tempCtx);
+    });
+    callback(tempCanvas);
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  DESCARGAR
 // ══════════════════════════════════════════════════════════════════
 function descargarResultado() {
     if (!imagenCargada) { mostrarToast('Carga una imagen primero', 'error'); return; }
     procesarEnBuffer();
-    redibujarTrazos(ctxBuffer);
-    const link     = document.createElement('a');
-    const titulo   = $id('inputTitulo')?.value.trim() || 'noteflow_imagen';
-    link.download  = `${titulo}.png`;
-    link.href      = canvasBuffer.toDataURL('image/png');
-    link.click();
-    mostrarToast('Imagen descargada ✓');
+    exportarConTransformacion(function(tempCanvas) {
+        const link     = document.createElement('a');
+        const titulo   = $id('inputTitulo')?.value.trim() || 'noteflow_imagen';
+        link.download  = `${titulo}.png`;
+        link.href      = tempCanvas.toDataURL('image/png');
+        link.click();
+        mostrarToast('Imagen descargada ✓');
+    });
 }
 
 [$id('btnDescargar'), $id('latDescargar')].forEach(b => b?.addEventListener('click', descargarResultado));
@@ -881,42 +1448,42 @@ async function guardarEnBackend() {
     const btns = [$id('btnGuardar'), $id('btnGuardarBottom')].filter(Boolean);
     btns.forEach(b => { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; });
 
-    // Renderizar todo al buffer
+    // Renderizar todo con transformación
     procesarEnBuffer();
-    redibujarTrazos(ctxBuffer);
+    exportarConTransformacion(function(tempCanvas) {
+        tempCanvas.toBlob(async (blob) => {
+            const editId   = $id('editNotaId')?.value;
+            const isUpdate = !!editId;
+            const url      = isUpdate ? `/actualizar-nota-imagen/${editId}` : '/guardar-nota-imagen';
 
-    canvasBuffer.toBlob(async (blob) => {
-        const editId   = $id('editNotaId')?.value;
-        const isUpdate = !!editId;
-        const url      = isUpdate ? `/actualizar-nota-imagen/${editId}` : '/guardar-nota-imagen';
+            const formData = new FormData();
+            formData.append('titulo',      titulo);
+            formData.append('descripcion', descripcion);
+            formData.append('etiquetas',   etiquetas);
+            formData.append('imagen',      blob, `${titulo.replace(/\s+/g,'_')}.png`);
 
-        const formData = new FormData();
-        formData.append('titulo',      titulo);
-        formData.append('descripcion', descripcion);
-        formData.append('etiquetas',   etiquetas);
-        formData.append('imagen',      blob, `${titulo.replace(/\s+/g,'_')}.png`);
+            try {
+                const resp = await fetch(url, { method:'POST', body: formData });
+                const data = await resp.json();
 
-        try {
-            const resp = await fetch(url, { method:'POST', body: formData });
-            const data = await resp.json();
-
-            if (data.success) {
-                notaGuardada = true;
-                mostrarToast(data.mensaje || '¡Nota guardada correctamente!', 'success');
-                const est = $id('estadoGuardado');
-                if (est) { est.classList.add('visible'); setTimeout(() => est.classList.remove('visible'), 3000); }
-                if (data.redirect) setTimeout(() => { window.location.href = data.redirect; }, 1200);
-            } else {
-                mostrarToast(data.error || 'Error al guardar', 'error');
+                if (data.success) {
+                    notaGuardada = true;
+                    mostrarToast(data.mensaje || '¡Nota guardada correctamente!', 'success');
+                    const est = $id('estadoGuardado');
+                    if (est) { est.classList.add('visible'); setTimeout(() => est.classList.remove('visible'), 3000); }
+                    if (data.redirect) setTimeout(() => { window.location.href = data.redirect; }, 1200);
+                } else {
+                    mostrarToast(data.error || 'Error al guardar', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                mostrarToast('Error de conexión', 'error');
+            } finally {
+                const label = isUpdate ? 'Actualizar nota' : 'Guardar nota';
+                btns.forEach(b => { if (b) { b.disabled = false; b.innerHTML = `<i class="fas fa-floppy-disk"></i> ${label}`; } });
             }
-        } catch (err) {
-            console.error(err);
-            mostrarToast('Error de conexión', 'error');
-        } finally {
-            const label = isUpdate ? 'Actualizar nota' : 'Guardar nota';
-            btns.forEach(b => { if (b) { b.disabled = false; b.innerHTML = `<i class="fas fa-floppy-disk"></i> ${label}`; } });
-        }
-    }, 'image/png');
+        }, 'image/png');
+    });
 }
 
 [$id('btnGuardar'), $id('btnGuardarBottom')].forEach(b => b?.addEventListener('click', guardarEnBackend));
@@ -969,8 +1536,29 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'r' || e.key === 'R') { if (e.shiftKey) rotar(90); else setHerramienta('rect'); }
     if (e.key === 'c' || e.key === 'C') setHerramienta('circulo');
     if (e.key === 'i' || e.key === 'I') setHerramienta('cuentagotas');
-    if (e.key === 'h' || e.key === 'H') voltear('h');
+    if (e.key === 'h' || e.key === 'H') { if (e.shiftKey) setHerramienta('mano'); else voltear('h'); }
     if (e.key === 'v' || e.key === 'V') voltear('v');
+    if (e.key === 'm' || e.key === 'M') setHerramienta('mano');
+    if (e.key === 's' || e.key === 'S') { if (!e.ctrlKey && !e.metaKey) setHerramienta('sticker'); }
+    if (e.key === 'q' || e.key === 'Q') setHerramienta('seleccion');
+
+    // Eliminar selección
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIndex >= 0) {
+        guardarHistorial();
+        trazosPaint.splice(selectedIndex, 1);
+        selectedIndex = -1;
+        syncTextPropsPanel();
+        actualizarLienzoCompleto();
+        actualizarStatsTrazos();
+        e.preventDefault();
+    }
+    // Escape: deseleccionar
+    if (e.key === 'Escape' && selectedIndex >= 0) {
+        selectedIndex = -1;
+        syncTextPropsPanel();
+        actualizarLienzoCompleto();
+        canvasContainer.style.cursor = 'default';
+    }
 });
 
 // ══════════════════════════════════════════════════════════════════
@@ -1008,6 +1596,150 @@ function formatBytes(bytes) {
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
+
+// ══════════════════════════════════════════════════════════════════
+//  PANEL DE EMOJIS / STICKERS
+// ══════════════════════════════════════════════════════════════════
+(function initEmojiPicker() {
+    var EMOJIS = [
+        '😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛',
+        '😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','🤥','😌','😔',
+        '😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥴','😵','🤯','🤠','🥳','🥺','😢','😭','😤','😠','😡','🤬',
+        '💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾',
+        '💋','👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇',
+        '👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💅','🤳','💪','🦵','🦶','👂','🦻',
+        '👀','🧠','🫀','🫁','🦷','👅','👄','👶','🧒','👦','👧','🧑','👨','👩','🧔','👴','👵','🧓','🙋','💁',
+        '👨‍💻','👩‍💻','👨‍🎓','👩‍🎓','👨‍🎨','👩‍🎨','👨‍🚀','👩‍🚀','👨‍⚕️','👩‍⚕️','👮','🕵️','💂','🥷','👷','🤴','👸','🤵','👰','🤰',
+        '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆',
+        '🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟','🦗','🦂','🐢','🐍','🦎','🦖',
+        '🦕','🐙','🦑','🦐','🦞','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🦭','🐅','🐆','🦓','🦍','🦧',
+        '🐘','🐪','🐫','🦒','🦘','🐃','🐂','🐄','🐎','🐖','🐏','🐑','🐐','🦌','🐕','🐩','🦮','🐕‍🦺','🐈','🐓',
+        '🌸','💮','🏵️','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌲','🌳','🌴','🌵','🌾','🌿','🍀','🍁','🍂','🍃',
+        '🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🫐','🥝','🍅','🫒','🥥','🥑',
+        '🍔','🍟','🍕','🌭','🥪','🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🫕','🥣','🥗','🍿','🧈','🧂','🥫',
+        '🍰','🎂','🍦','🍩','🍪','🍫','🍬','🍭','🍮','🎂','🍡','🥟','🦪','🍤','🍙','🍚','🍛','🍜','🍝','🍠',
+        '⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳',
+        '🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🛺','🚲','🛴','🛹',
+        '🚂','🚃','🚄','🚅','🚆','🚇','🚈','🚉','🚊','🚝','🚞','✈️','🛫','🛬','💺','🛰️','🚀','🛸','🚁','🛶',
+        '🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','💒','🗼','🗽','⛪','🕌',
+        '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️',
+        '⭐','🌟','✨','⚡','🔥','💥','💫','💨','💦','💤','🌟','🌈','☀️','🌤️','⛅','🌥️','☁️','🌦️','🌧️','⛈️',
+        '🎉','🎊','🎈','🎁','🎀','🪄','🕯️','💡','🔦','🏆','🏅','🥇','🥈','🥉','🎖️','🎗️','📯','🎵','🎶','🎤',
+        '📱','💻','🖥️','🖨️','⌨️','🖱️','🖲️','💽','💾','💿','📀','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟',
+        '🔒','🔓','🔐','🔑','🗝️','🔨','🪓','⛏️','⚒️','🛠️','🔧','🔩','⚙️','🗜️','⚖️','🪛','🔗','⛓️','🧰','🧲',
+        '🇨🇴','🇺🇸','🇬🇧','🇪🇸','🇫🇷','🇩🇪','🇮🇹','🇧🇷','🇯🇵','🇰🇷','🇨🇳','🇮🇳','🇷🇺','🇦🇷','🇲🇽','🇨🇱','🇵🇪','🇻🇪','🇨🇺','🇵🇦'
+    ];
+
+    var grid = document.getElementById('emojiGrid');
+    var search = document.getElementById('emojiSearch');
+    if (!grid) return;
+
+    function renderEmojis(filter) {
+        filter = filter.toLowerCase();
+        grid.innerHTML = '';
+        EMOJIS.forEach(function(e) {
+            if (filter && !e.toLowerCase().includes(filter)) return;
+            var el = document.createElement('div');
+            el.className = 'emoji-item';
+            el.textContent = e;
+            el.addEventListener('click', function() {
+                guardarHistorial();
+                var cx = canvasVisible.width / 2;
+                var cy = canvasVisible.height / 2;
+                var size = Math.max(getGrosor() * 5, 40);
+                ctxVisible.save();
+                ctxVisible.font = size + 'px sans-serif';
+                ctxVisible.globalAlpha = getOpacidad();
+                ctxVisible.fillText(e, cx - size/2, cy + size/3);
+                ctxVisible.restore();
+                trazosPaint.push({ tipo:'sticker', texto:e, x:cx - size/2, y:cy + size/3, color:'#000', grosor:getGrosor(), fuente:'sans-serif', opacidad:getOpacidad(), size:size, tamano: parseInt($id('textSizeSlider')?.value) || size });
+                actualizarStatsTrazos();
+                mostrarToast('Emoji colocado en el centro');
+            });
+            grid.appendChild(el);
+        });
+        if (grid.children.length === 0) {
+            grid.innerHTML = '<div style="padding:20px;color:#b39ddb;text-align:center;">Sin resultados</div>';
+        }
+    }
+
+    renderEmojis('');
+    if (search) {
+        search.addEventListener('input', function() { renderEmojis(search.value); });
+    }
+})();
+
+// ══════════════════════════════════════════════════════════════════
+//  MODAL DE TEXTO
+// ══════════════════════════════════════════════════════════════════
+function mostrarModalTexto(x, y) {
+    textoPosX = x;
+    textoPosY = y;
+    var modal = $id('modalTexto');
+    var input = $id('modalTextoInput');
+    if (!modal || !input) return;
+    input.value = '';
+    modal.classList.add('visible');
+    setTimeout(function() { input.focus(); }, 100);
+}
+
+$id('btnModalTextoInsertar')?.addEventListener('click', function() {
+    var modal = $id('modalTexto');
+    var input = $id('modalTextoInput');
+    if (!modal || !input) return;
+    var texto = input.value.trim();
+    if (texto) {
+        guardarHistorial();
+        var fuente  = $id('selectFuente')?.value || 'Nunito';
+        var grosor  = getGrosor();
+        var tamTxt  = parseInt($id('textSizeSlider')?.value) || 18;
+        // Si hay texto seleccionado (edición con doble clic), actualizarlo
+        if (selectedIndex >= 0 && selectedIndex < trazosPaint.length && trazosPaint[selectedIndex].tipo === 'texto') {
+            var t = trazosPaint[selectedIndex];
+            var oldTam = t.tamano || 18;
+            t.texto = texto;
+            t.fuente = fuente;
+            t.tamano = tamTxt;
+            ctxVisible.save();
+            ctxVisible.font = tamTxt + 'px ' + fuente;
+            t.width = Math.min(ctxVisible.measureText(texto).width + 10, 260);
+            ctxVisible.restore();
+            t.y += (t.tamano - oldTam);
+            actualizarLienzoCompleto();
+            syncTextPropsPanel();
+        } else {
+            ctxVisible.save();
+            ctxVisible.font         = tamTxt + 'px ' + fuente;
+            ctxVisible.fillStyle    = getColor();
+            ctxVisible.globalAlpha  = getOpacidad();
+            var txtWidth = Math.min(ctxVisible.measureText(texto).width + 10, 260);
+            ctxVisible.fillText(texto, textoPosX, textoPosY);
+            ctxVisible.restore();
+            trazosPaint.push({ tipo:'texto', texto:texto, x:textoPosX, y:textoPosY, color:getColor(), grosor:grosor, fuente:fuente, opacidad:getOpacidad(), tamano: tamTxt, width: txtWidth });
+        }
+        actualizarStatsTrazos();
+    }
+    modal.classList.remove('visible');
+});
+
+$id('btnModalTextoCancelar')?.addEventListener('click', function() {
+    var modal = $id('modalTexto');
+    if (modal) modal.classList.remove('visible');
+    // Si se canceló una edición, limpiar selección
+    syncTextPropsPanel();
+});
+
+$id('modalTexto')?.addEventListener('click', function(e) {
+    if (e.target.id === 'modalTexto') this.classList.remove('visible');
+});
+
+// Enter en el input inserta
+$id('modalTextoInput')?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        $id('btnModalTextoInsertar')?.click();
+    }
+});
 
 // ══════════════════════════════════════════════════════════════════
 //  INICIALIZACIÓN

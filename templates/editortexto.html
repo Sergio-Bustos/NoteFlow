@@ -49,9 +49,11 @@
         <div class="grupo">
             <button onmousedown="fmt('insertUnorderedList',event)" title="Lista"><i class="fas fa-list-ul"></i></button>
             <button onmousedown="fmt('insertOrderedList',event)" title="Lista numerada"><i class="fas fa-list-ol"></i></button>
+            <button onmousedown="insertChecklist(event)" title="Checklist" id="btn-checklist"><i class="fas fa-check-double"></i></button>
         </div>
 
         <div class="grupo">
+            <button onmousedown="abrirModalFuentes(event)" title="Fuentes" id="btn-fuentes" style="font-family: serif; font-weight: bold; font-size: 1.1rem;">A</button>
             <select onchange="cambiarTamano(this.value); this.value=''" title="Tamaño">
                 <option value="">Tamaño</option>
                 <option value="2">Pequeño</option>
