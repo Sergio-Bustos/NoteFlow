@@ -148,28 +148,8 @@ docker-compose up --build
 
 Esto levantará automáticamente el backend local (Flask) contenedorizado en el puerto `5000`, conectándose de forma segura a Supabase.
 
-### 4. Dominio de ngrok
 
-Primero asegúrate de estar autenticado con tu cuenta en ese otro equipo.
-Instala Ngrok y luego ejecuta ⚡: 
-
-```bash
-ngrok config add-authtoken TU_TOKEN
-```
-Ese token es el que conecta ese computador con tu cuenta (y con ese dominio que ya tienes)💻.
-
-Usa:
-
-```bash
-ngrok http --domain=stergimatic-shirlee-mollifiable.ngrok-free.dev 5000
-```
-
-Eso es lo que evita que cambie.
-Si no pones --domain, Ngrok siempre genera uno aleatorio ✅.
-
-Para usar ngrok tienes que tener si o si docker encendido para que el dominio asignado funcione 🐳.
-
-### 5. Acceder a la aplicación
+### 4. Acceder a la aplicación
 
 | Servicio | URL |
 |----------|-----|
@@ -177,7 +157,7 @@ Para usar ngrok tienes que tener si o si docker encendido para que el dominio as
 | 🗄️ Consola de Supabase | `https://supabase.com/dashboard` |
 | 🌐 Aplicativo principal web | `https://noteflow-production-a5ed.up.railway.app`|
 
-### 6. Acceso en red local
+### 5. Acceso en red local
 
 Para que otros dispositivos en tu red puedan acceder, obtén tu IP local:
 
@@ -197,7 +177,7 @@ http://<tu-ip-local>:5000
 ```
 
 
-### 7. Verificar la base de datos
+### 6. Verificar la base de datos
 
 Asegúrate de que el contenedor de Flask esté corriendo correctamente y de que las credenciales de Supabase en el archivo `.env` estén bien configuradas. Puedes verificar el estado con:
 
