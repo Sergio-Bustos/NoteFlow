@@ -220,22 +220,81 @@ docker logs "noteflow-app"
 
 ```
 NoteFlow/
-├── app.py                  # Aplicación principal Flask
-├── docker-compose.yml      # Configuración de servicios Docker
-├── .env                    # Variables de entorno (no incluido en el repo)
+├── app.py                      # Aplicación principal Flask
+├── Dockerfile                  # Build de Docker
+├── docker-compose.yml          # Servicios Docker
+├── requirements.txt            # Dependencias Python
+├── .env                        # Variables de entorno (no incluido en el repo)
+├── .gitignore                  # Ignorados de Git
+│
+├── admin-react/                # Panel admin en React (Vite)
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── index.html
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       ├── index.css
+│       └── components/
+│           ├── AnalyticsReport.jsx
+│           ├── DashboardStats.jsx
+│           ├── NfModal.jsx
+│           ├── SupportChat.jsx
+│           ├── UserActivityModal.jsx
+│           └── UsersManagement.jsx
+│
+├── init-db/
+│   └── schema.sql              # Schema de la base de datos
+│
+├── scratch/
+│   └── cleanup_storage.py      # Limpieza de archivos huérfanos en Supabase
+│
+├── Manuales-NoteFlow/          # Documentación PDF
+│   ├── Manual de Instalacion - NoteFlow- V01.pdf
+│   ├── Manual de Usuario - NoteFlow - V01.pdf
+│   └── Manual Tecnico - NoteFlow - V01.pdf
+│
 ├── static/
-│   ├── css/                # Hojas de estilo
-│   ├── js/                 # Lógica de cada editor (audio, video, imagen, etc.)
-│   └── uploads/            # Archivos subidos por los usuarios
-├── templates/              # Plantillas HTML (Jinja2)
+│   ├── admin-react/dist/       # Build del panel React
+│   ├── css/                    # Hojas de estilo
+│   ├── js/                     # Lógica de cada editor
+│   ├── images/                 # Assets gráficos
+│   ├── video/                  # Videos promocionales
+│   ├── perfil/                 # Fotos de perfil
+│   └── uploads/                # Archivos subidos por usuarios
+│       ├── audios/
+│       ├── dibujos/
+│       ├── imagenes/
+│       ├── textos/
+│       ├── videos/
+│       └── profile/
+│
+├── templates/                  # Plantillas HTML (Jinja2)
+│   ├── partials/
+│   │   ├── head_design.html
+│   │   └── support_widget.html
+│   ├── errors/
+│   │   ├── 404.html
+│   │   └── 500.html
 │   ├── dashboard.html
 │   ├── notas.html
 │   ├── editoraudio.html
 │   ├── editorvideo.html
 │   ├── editorimagen.html
 │   ├── editortexto.html
-│   └── dibujo.html
-└── requirements.txt        # Dependencias Python
+│   ├── editormixta.html
+│   ├── dibujo.html
+│   ├── papalera.html
+│   ├── pasarela.html
+│   ├── perfil.html
+│   ├── planes.html
+│   └── ... (+ otros)
+│
+└── tests/                      # Pruebas automatizadas
+    ├── conftest.py
+    ├── test_config.py
+    ├── test_rutas.py
+    └── test_utilidades.py
 ```
 
 ---

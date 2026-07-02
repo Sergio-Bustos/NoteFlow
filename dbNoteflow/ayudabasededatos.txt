@@ -1,6 +1,0 @@
-si llega a fallar algo en la base de datos que ya existia de antes o faltan columnas ejecutar esto en el localhost:5050 y querytools
-
-
-ALTER TABLE public."Carpetas"
-ADD COLUMN IF NOT EXISTS "Fecha_creacion" TIMESTAMP DEFAULT NOW(),
-ADD COLUMN IF NOT EXISTS "Fecha_edicion"  TIMESTAMP DEFAULT NOW();
