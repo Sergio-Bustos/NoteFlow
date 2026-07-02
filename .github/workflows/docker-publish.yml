@@ -1,0 +1,48 @@
+name: Publicar en GHCR
+
+# ¿CUÁNDO SE ACTIVA?
+on:
+  push:
+    branches: [main]          # Cada push a main
+    tags: ["v*"]              # Y cuando crees un tag como v1.0, v2.3, etc.
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    # PERMISOS: necesarios para poder escribir en GHCR
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # 1. Descarga el código del repo
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      # 2. Inicia sesión en GitHub Container Registry
+      #    Usa el GITHUB_TOKEN que GitHub genera automáticamente
+      - name: Login a GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # 3. Genera metadatos para la imagen (tags, etiquetas)
+      - name: Metadatos de la imagen
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}   # ghcr.io/Sergio-Bustos/NoteFlow
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      # 4. Construye la imagen usando el Dockerfile del repo
+      #    y la sube a GHCR
+      - name: Build y push a GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

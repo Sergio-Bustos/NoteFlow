@@ -142,11 +142,20 @@ Coloca el archivo `.env` en la raíz del proyecto una vez descargado.
 
 ### 3. Levantar los servicios con Docker
 
+**Opción A — Build local (tradicional):**
+
 ```bash
 docker-compose up --build
 ```
 
-Esto levantará automáticamente el backend local (Flask) contenedorizado en el puerto `5000`, conectándose de forma segura a Supabase.
+**Opción B — Imagen ya empaquetada (más rápido):**
+
+```bash
+docker pull ghcr.io/sergio-bustos/noteflow:latest
+docker run -p 5000:5000 --env-file .env ghcr.io/sergio-bustos/noteflow
+```
+
+La imagen se actualiza automáticamente con cada push a `main`. Cualquiera de las dos opciones levanta Flask en el puerto `5000` conectándose a Supabase.
 
 
 ### 4. Acceder a la aplicación
