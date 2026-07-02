@@ -151,11 +151,13 @@ docker-compose up --build
 **Opción B — Imagen ya empaquetada (más rápido):**
 
 ```bash
+git clone https://github.com/Sergio-Bustos/NoteFlow
+cd NoteFlow
 docker pull ghcr.io/sergio-bustos/noteflow:latest
 docker run -p 5000:5000 --env-file .env ghcr.io/sergio-bustos/noteflow
 ```
 
-> ⚠️ El archivo `.env` debe estar en la **raíz del proyecto** (junto al `docker-compose.yml`). Sin él la imagen no podrá conectarse a la base de datos. Es el mismo que descargaste en el paso 2.
+> ⚠️ El `--env-file` usa una ruta **desde donde ejecutas el comando**. Debes ejecutarlo desde la raíz del proyecto (donde está el `.env`). Sin el `.env` la imagen no podrá conectarse a la base de datos.
 
 La imagen se actualiza automáticamente con cada push a `main`. Cualquiera de las dos opciones levanta Flask en el puerto `5000` conectándose a Supabase.
 
