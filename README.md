@@ -115,7 +115,6 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 | Draw.io | Diagramas de casos de uso, flujo y base de datos |
 | SCRUM | Metodología ágil — Backlog, Sprints, Historias de Usuario |
 | Word | Documentación técnica y requerimientos |
-| ngrok | Dominio para uso de telefonos y tablets |
 
 ---
 
@@ -125,7 +124,6 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 
 - [Git](https://git-scm.com/)
 - [Docker](https://www.docker.com/) y Docker Compose
-- [NGrok](https://apps.microsoft.com/detail/9mvs1j51gmk6?hl=es-ES&gl=ES)
 
 ### 1. Clonar el repositorio
 
@@ -175,8 +173,9 @@ Para usar ngrok tienes que tener si o si docker encendido para que el dominio as
 
 | Servicio | URL |
 |----------|-----|
-| 🌐 Aplicación principal | `http://127.0.0.1:5000` |
+| 🖥️ Aplicativo principal local | `http://127.0.0.1:5000` |
 | 🗄️ Consola de Supabase | `https://supabase.com/dashboard` |
+| 🌐 Aplicativo principal web | `https://noteflow-production-a5ed.up.railway.app`|
 
 ### 6. Acceso en red local
 
@@ -196,13 +195,6 @@ Luego accede desde cualquier dispositivo con:
 http://<tu-ip-local>:5000
 # Ejemplo: http://192.168.1.100:5000
 ```
-Para usar Google o inicio de sesion en Moviles o tablets tener el Ngrok para sincronizarlo con el google la API 
-
-Lo iniciamos en segundo plano
-```
-ngrok http 5000
-```
-Lo dejamos en la terminal de visual o terminal de ngrok en segundo plano funcionando 
 
 
 ### 7. Verificar la base de datos
@@ -215,6 +207,7 @@ docker logs "noteflow-app"
 ```
 
 ---
+
 
 ## 📁 Estructura del proyecto
 
