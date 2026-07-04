@@ -17,11 +17,18 @@
 [![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Jinja2](https://img.shields.io/badge/Jinja2-Templates-B41717?style=for-the-badge&logo=jinja&logoColor=white)](https://jinja.palletsprojects.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-DB_%26_Storage-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/es/docs/Web/JavaScript)
 [![Fetch API](https://img.shields.io/badge/Fetch_API-Async-FF6B35?style=for-the-badge&logo=javascript&logoColor=white)](https://developer.mozilla.org/es/docs/Web/API/Fetch_API)
 [![Web Audio API](https://img.shields.io/badge/Web_Audio_API-Waveform-8B5CF6?style=for-the-badge&logo=audiomack&logoColor=white)](https://developer.mozilla.org/es/docs/Web/API/Web_Audio_API)
+[![Canvas API](https://img.shields.io/badge/Canvas_API-Drawing-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/es/docs/Web/API/Canvas_API)
+[![MediaRecorder](https://img.shields.io/badge/MediaRecorder-Recording-FF5722?style=for-the-badge&logo=javascript&logoColor=white)](https://developer.mozilla.org/es/docs/Web/API/MediaRecorder)
 [![Google OAuth](https://img.shields.io/badge/Google-OAuth_2.0-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/identity)
+[![Railway](https://img.shields.io/badge/Railway-Deployed-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)](https://railway.app/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/features/actions)
 [![HTML5](https://img.shields.io/badge/HTML5-Semántico-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/es/docs/Web/HTML)
 [![CSS3](https://img.shields.io/badge/CSS3-Custom_Design-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/es/docs/Web/CSS)
 
@@ -71,10 +78,14 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 | HTML5 | Estructura semántica de todas las vistas |
 | CSS3 | Sistema de diseño propio con variables y animaciones |
 | JavaScript ES6+ | Lógica de cada editor, validaciones y eventos |
+| React 18 | Panel administrativo con componentes reutilizables (admin-react) |
+| Vite 5 | Empaquetado del panel administrativo React |
 | Fetch API | Comunicación asíncrona con el backend (sin recargar página) |
 | Web Audio API | Decodificación y visualización de forma de onda en el editor de audio |
 | MediaRecorder API | Grabación de audio y video desde el micrófono/cámara del usuario |
 | Canvas API | Editor de dibujo e imagen con trazos, filtros y transformaciones |
+| Recharts | Gráficos y estadísticas en el panel de administración |
+| Lucide React | Iconografía del panel React |
 
 ### ⚙️ Backend
 
@@ -87,6 +98,12 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 | Flask-Mail | Envío de correos (verificación de cuenta, recuperación de contraseña) |
 | Werkzeug | Hashing seguro de contraseñas y utilidades HTTP |
 | python-dotenv | Carga de variables de entorno desde el archivo `.env` |
+| APScheduler | Tareas programadas en segundo plano (limpieza, seguridad) |
+| Bleach | Sanitización de HTML para prevenir XSS |
+| Flask-Talisman | Cabeceras de seguridad HTTP (CSP, HSTS) |
+| Flask-Limiter | Límite de peticiones para prevenir abusos |
+| Flask-WTF | Protección CSRF en formularios |
+| google-api-python-client | Envío de correos mediante Gmail API (OAuth, sin SMTP) |
 
 ### 🔐 Autenticación
 
@@ -103,15 +120,19 @@ NoteFlow es una aplicación web de gestión de notas personales que permite crea
 |------------|-----|
 | Supabase DB | Base de datos relacional (PostgreSQL administrado en la nube con SSL) |
 | Supabase Storage | Almacenamiento seguro en la nube para audios, videos, fotos y dibujos |
+| Supabase Dashboard | Panel en la nube para la gestión de base de datos y almacenamiento |
 | Docker | Contenedorización del backend (Flask) |
 | Docker Compose | Orquestación de los contenedores locales de la aplicación |
-| Supabase Dashboard | Panel en la nube para la gestión de base de datos y almacenamiento |
+| Railway | Plataforma de despliegue en producción |
+| GitHub Container Registry | Registro de imágenes Docker publicadas automáticamente |
+| GitHub Actions | CI/CD — build y push de imagen Docker en cada push a `main` |
 
 ### 🛠️ Herramientas y metodología
 
 | Herramienta | Uso |
 |------------|-----|
 | Git / GitHub | Control de versiones y colaboración del equipo |
+| Pytest | Pruebas automatizadas del backend (rutas, configuraciones, utilidades) |
 | Draw.io | Diagramas de casos de uso, flujo y base de datos |
 | SCRUM | Metodología ágil — Backlog, Sprints, Historias de Usuario |
 | Word | Documentación técnica y requerimientos |
