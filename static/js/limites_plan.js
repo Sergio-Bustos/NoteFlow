@@ -54,6 +54,26 @@
         'anual':     50,
     };
 
+    // ── Límites por tipo de adjunto en nota mixta ────────────────
+    const MAX_IMAGENES_MIXTA = {
+        'gratis':    2,
+        'quincenal': 4,
+        'mensual':   8,
+        'anual':     15,
+    };
+    const MAX_AUDIOS_MIXTA = {
+        'gratis':    1,
+        'quincenal': 2,
+        'mensual':   5,
+        'anual':     8,
+    };
+    const MAX_VIDEOS_MIXTA = {
+        'gratis':    1,
+        'quincenal': 2,
+        'mensual':   5,
+        'anual':     8,
+    };
+
     // Exponer globalmente
     window.PLAN_LIMITES = {
         plan,
@@ -63,6 +83,9 @@
         imagen:           IMAGEN[plan]            ?? IMAGEN['gratis'],
         grabacion:        DURACION_GRAB[plan]     ?? DURACION_GRAB['gratis'],
         maxAdjuntosMixta: MAX_ADJUNTOS_MIXTA[plan] ?? MAX_ADJUNTOS_MIXTA['gratis'],
+        maxImagenesMixta: MAX_IMAGENES_MIXTA[plan] ?? MAX_IMAGENES_MIXTA['gratis'],
+        maxAudiosMixta:   MAX_AUDIOS_MIXTA[plan]   ?? MAX_AUDIOS_MIXTA['gratis'],
+        maxVideosMixta:   MAX_VIDEOS_MIXTA[plan]   ?? MAX_VIDEOS_MIXTA['gratis'],
     };
 
     // Helper: nombre legible del plan

@@ -66,16 +66,43 @@ function totalArchivos() {
     return nuevos + existentes;
 }
 
+function totalPorTipo(tipo) {
+    const idx = { imagenes: 'imagenes', audios: 'audios', videos: 'videos' }[tipo];
+    const nuevos = idx ? archivos[idx].length : 0;
+    const containers = {
+        imagenes: '#gridImagenes .preview-existente',
+        audios:   '#listaAudios .archivo-item.existente',
+        videos:   '#listaVideos .archivo-item.existente',
+    };
+    const existentes = document.querySelectorAll(containers[tipo] || '').length;
+    return nuevos + existentes;
+}
+
 function limiteAdjuntos() {
     return window.PLAN_LIMITES?.maxAdjuntosMixta ?? 3;
 }
 
-function verificarLimite(cantidadNueva = 1) {
+function limitePorTipo(tipo) {
+    const map = { imagenes: 'maxImagenesMixta', audios: 'maxAudiosMixta', videos: 'maxVideosMixta' };
+    return window.PLAN_LIMITES?.[map[tipo]] ?? 3;
+}
+
+function verificarLimite(tipo, cantidadNueva = 1) {
+    // Verificar límite total
     const max   = limiteAdjuntos();
     const total = totalArchivos();
     if (total + cantidadNueva > max) {
         const plan = window.PLAN_LIMITES?.nombre ?? 'Gratis';
         mostrarToast(`Límite de ${max} archivos por nota mixta alcanzado (Plan ${plan}). Elimina un archivo o mejora tu plan.`, 'error');
+        return false;
+    }
+    // Verificar límite por tipo
+    const maxTipo = limitePorTipo(tipo);
+    const totalTipo = totalPorTipo(tipo);
+    if (totalTipo + cantidadNueva > maxTipo) {
+        const plan = window.PLAN_LIMITES?.nombre ?? 'Gratis';
+        const nombres = { imagenes: 'imágenes', audios: 'audios', videos: 'videos' };
+        mostrarToast(`Límite de ${maxTipo} ${nombres[tipo] || tipo} por nota mixta alcanzado (Plan ${plan}). Elimina un archivo o mejora tu plan.`, 'error');
         return false;
     }
     return true;
@@ -189,7 +216,7 @@ configurarDrop('zonaDropImg', files =>
 
 function procesarImagenes(files) {
     files.forEach(file => {
-        if (!verificarLimite(1)) return;
+        if (!verificarLimite('imagenes', 1)) return;
         const err = validarArchivo(file, 'imagen');
         if (err) { mostrarToast(err, 'error'); return; }
         const id = nuevoId();
@@ -232,7 +259,7 @@ configurarDrop('zonaDropAud', files => procesarAudios(files));
 
 function procesarAudios(files) {
     files.forEach(file => {
-        if (!verificarLimite(1)) return;
+        if (!verificarLimite('audios', 1)) return;
         const err = validarArchivo(file, 'audio');
         if (err) { mostrarToast(err, 'error'); return; }
         const id = nuevoId();
@@ -311,7 +338,7 @@ configurarDrop('zonaDropVid', files => procesarVideos(files));
 
 function procesarVideos(files) {
     files.forEach(file => {
-        if (!verificarLimite(1)) return;
+        if (!verificarLimite('videos', 1)) return;
         const err = validarArchivo(file, 'video');
         if (err) { mostrarToast(err, 'error'); return; }
         const id = nuevoId();
@@ -620,6 +647,187 @@ function formatBytes(bytes) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════
+//  CHECKLIST (como logicatexto.js)
+// ══════════════════════════════════════════
+window._checklistAlign = 'left';
+window._checklistBlock = null;
+
+(function inyectarModalChecklist() {
+    if (document.getElementById('modalChecklist')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'modalChecklist';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-box" style="max-width:400px;">
+            <div class="modal-icono"><i class="fas fa-check-double" style="color:var(--verde-acento);"></i></div>
+            <h3>Nuevo item de checklist</h3>
+            <input type="text" id="inputChecklistText" placeholder="Escribe el texto del item..."
+                   style="width:100%;padding:10px 14px;border:1.5px solid #d1c4e9;border-radius:10px;margin-bottom: 8px;
+                          font-family:"Nunito",sans-serif;font-size:14px;color:var(--morado-oscuro);
+                          outline:none;margin-bottom:16px;box-sizing:border-box;">
+            <div class="modal-btns">
+                <button class="btn-modal-cancelar" id="btnChkCancel">Cancelar</button>
+                <button class="btn-modal-salir" id="btnChkConfirm" style="background:var(--verde-acento);box-shadow:none;">Anadir</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+})();
+
+function alignmentFromBlock(block) {
+    if (!block) return '';
+    const inline = block.getAttribute('style');
+    if (inline) {
+        const m = inline.match(/text-align\s*:\s*(center|right)/i);
+        if (m) return m[1].toLowerCase();
+    }
+    const attr = block.getAttribute('align');
+    if (attr && (attr === 'center' || attr === 'right')) return attr;
+    const cs = window.getComputedStyle(block);
+    if (cs.textAlign === 'center') return 'center';
+    if (cs.textAlign === 'right') return 'right';
+    return '';
+}
+
+function findBlock(editor) {
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return null;
+    let n = sel.anchorNode;
+    while (n && n !== editor) {
+        if (['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'CENTER'].includes(n.nodeName)) return n;
+        n = n.parentNode;
+    }
+    return null;
+}
+
+function detectFullAlignment(block, editor) {
+    let n = block;
+    while (n && n !== editor) {
+        if (['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'CENTER'].includes(n.nodeName)) {
+            const a = alignmentFromBlock(n);
+            if (a) return a;
+        }
+        n = n.parentNode;
+    }
+    return '';
+}
+
+function insertChecklist(e) {
+    if (e) e.preventDefault();
+    const editor = document.getElementById('cuerpo-nota');
+    if (!editor) return;
+    const blocker = findBlock(editor);
+    window._checklistBlock = blocker;
+    window._checklistAlign = detectFullAlignment(blocker, editor);
+    const input = document.getElementById('inputChecklistText');
+    if (input) input.value = '';
+    document.getElementById('modalChecklist').classList.add('visible');
+    setTimeout(() => { if (input) input.focus(); }, 100);
+}
+
+function confirmChecklist() {
+    const input = document.getElementById('inputChecklistText');
+    const texto = input ? input.value.trim() : '';
+    if (!texto) { if (input) input.focus(); return; }
+
+    document.getElementById('modalChecklist').classList.remove('visible');
+    const editor = document.getElementById('cuerpo-nota');
+    if (!editor) return;
+    editor.focus();
+
+    const align = window._checklistAlign || '';
+
+    const li = document.createElement('li');
+    li.contentEditable = 'false';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    li.appendChild(cb);
+    li.appendChild(document.createTextNode(' ' + texto));
+
+    const ul = document.createElement('ul');
+    ul.className = 'checklist';
+    if (align === 'center') {
+        ul.style.textAlign = 'center';
+        ul.style.margin = '0 auto';
+        li.style.justifyContent = 'center';
+    } else if (align === 'right') {
+        ul.style.textAlign = 'right';
+        li.style.justifyContent = 'flex-end';
+    }
+    ul.appendChild(li);
+
+    const block = window._checklistBlock;
+    if (block && editor.contains(block)) {
+        block.parentNode.insertBefore(ul, block.nextSibling);
+    } else {
+        editor.appendChild(ul);
+    }
+
+    if (input) input.value = '';
+    actualizarContadorTextoMixta();
+}
+
+function cancelChecklist() {
+    document.getElementById('modalChecklist').classList.remove('visible');
+    const input = document.getElementById('inputChecklistText');
+    if (input) input.value = '';
+}
+
+document.addEventListener('change', function(e) {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+        const editor = document.getElementById('cuerpo-nota');
+        if (editor && editor.contains(e.target)) {
+            e.target.closest('li').classList.toggle('checked', e.target.checked);
+            e.target.blur();
+        }
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'btnChkConfirm') confirmChecklist();
+    if (e.target.id === 'btnChkCancel') cancelChecklist();
+    if (e.target.id === 'modalChecklist') cancelChecklist();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && document.getElementById('modalChecklist')?.classList.contains('visible')) {
+        const input = document.getElementById('inputChecklistText');
+        if (document.activeElement === input) {
+            e.preventDefault();
+            confirmChecklist();
+        }
+    }
+});
+
+document.addEventListener('dblclick', function(e) {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') return;
+    const li = e.target.closest('ul.checklist li');
+    if (!li) return;
+    if (li.contentEditable === 'true') return;
+    li.contentEditable = 'true';
+    li.focus();
+    const range = document.createRange();
+    range.selectNodeContents(li);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+});
+
+document.addEventListener('mousedown', function(e) {
+    const editing = document.querySelector('ul.checklist li[contenteditable="true"]');
+    if (editing && !editing.contains(e.target)) editing.contentEditable = 'false';
+});
+
+document.addEventListener('keydown', function(e) {
+    const editing = document.querySelector('ul.checklist li[contenteditable="true"]');
+    if (editing && e.key === 'Enter') {
+        e.preventDefault();
+        editing.contentEditable = 'false';
+    }
+});
+
 //  CARGAR NOTA EN MODO EDICIÓN
 // ══════════════════════════════════════════════════════════════════
 (function cargarModoEdicion() {

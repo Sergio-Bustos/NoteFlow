@@ -4220,10 +4220,30 @@ def guardar_nota_mixta():
                 plan_usuario = "gratis"
 
             MAX_ADJUNTOS_MIXTA = {"gratis": 3, "quincenal": 6, "mensual": 15, "anual": 50}
+            MAX_IMAGENES_MIXTA = {"gratis": 2, "quincenal": 4, "mensual": 8, "anual": 15}
+            MAX_AUDIOS_MIXTA   = {"gratis": 1, "quincenal": 2, "mensual": 5, "anual": 8}
+            MAX_VIDEOS_MIXTA   = {"gratis": 1, "quincenal": 2, "mensual": 5, "anual": 8}
+
+            plan_nombre = plan_usuario.capitalize()
+
+            # Validar límite total
             max_adj = MAX_ADJUNTOS_MIXTA.get(plan_usuario, 3)
             if total_nuevos > max_adj:
-                plan_nombre = plan_usuario.capitalize()
                 return jsonify({"error": f"Tu plan {plan_nombre} permite máximo {max_adj} archivos por nota mixta. Intentaste subir {total_nuevos}."}), 400
+
+            # Validar límite por tipo
+            LIM_POR_TIPO = {
+                "imagenes": MAX_IMAGENES_MIXTA,
+                "audios":   MAX_AUDIOS_MIXTA,
+                "videos":   MAX_VIDEOS_MIXTA,
+            }
+            for tipo_key, lista in archivos_por_tipo.items():
+                cant = sum(1 for f in lista if f.filename != "")
+                if cant == 0:
+                    continue
+                max_tipo = LIM_POR_TIPO[tipo_key].get(plan_usuario, 3)
+                if cant > max_tipo:
+                    return jsonify({"error": f"Tu plan {plan_nombre} permite máximo {max_tipo} {tipo_key} por nota mixta. Intentaste subir {cant}."}), 400
 
         adjuntos_a_insertar = []
 
