@@ -144,6 +144,73 @@ const UserActivityModal = ({ userId, onClose }) => {
                   </div>
                 </div>
 
+                {data.usuario.Es_premium && data.usuario.Premium_vence && (
+                  <div className="row g-3 mb-4">
+                    <div className="col-12">
+                      <div className="p-3 border rounded-3 act-info-card">
+                        <h6 className="text-uppercase text-muted mb-2" style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.05em' }}><i className="fas fa-crown text-warning"></i> Plan Premium</h6>
+                        <div className="d-flex align-items-center gap-4 flex-wrap">
+                          <p className="mb-0" style={{ fontSize: '0.88rem' }}>
+                            <strong>Vence:</strong>{' '}
+                            {new Date(data.usuario.Premium_vence).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <p className="mb-0" style={{ fontSize: '0.88rem' }}>
+                            <strong>Tiempo restante:</strong>{' '}
+                            <span className={`badge-hashed ${(() => {
+                              const diff = new Date(data.usuario.Premium_vence) - new Date();
+                              if (diff < 0) return 'vencido';
+                              const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+                              if (dias < 7) return 'proximo-vencer';
+                              return '';
+                            })()}`} style={{
+                              background: (() => {
+                                const diff = new Date(data.usuario.Premium_vence) - new Date();
+                                if (diff < 0) return 'rgba(231,76,60,0.15)';
+                                const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+                                if (dias < 7) return 'rgba(231,76,60,0.12)';
+                                return 'rgba(46,204,113,0.12)';
+                              })(),
+                              color: (() => {
+                                const diff = new Date(data.usuario.Premium_vence) - new Date();
+                                if (diff < 0) return '#e74c3c';
+                                const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+                                if (dias < 7) return '#e74c3c';
+                                return '#2ecc71';
+                              })(),
+                              borderColor: (() => {
+                                const diff = new Date(data.usuario.Premium_vence) - new Date();
+                                if (diff < 0) return 'rgba(231,76,60,0.25)';
+                                const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+                                if (dias < 7) return 'rgba(231,76,60,0.25)';
+                                return 'rgba(46,204,113,0.25)';
+                              })(),
+                              fontSize: '0.82rem', fontWeight: 700, padding: '4px 10px'
+                            }}>
+                              {(() => {
+                                const diff = new Date(data.usuario.Premium_vence) - new Date();
+                                if (diff < 0) return '⚠ Vencido';
+                                const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+                                const horas = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                if (dias === 0) return `${horas} hora${horas !== 1 ? 's' : ''} restante${horas !== 1 ? 's' : ''}`;
+                                if (dias === 1) return '1 día restante';
+                                if (dias < 7) return `${dias} días restantes`;
+                                if (dias < 31) return `${Math.floor(dias / 7)} semana${Math.floor(dias / 7) !== 1 ? 's' : ''} restante${Math.floor(dias / 7) !== 1 ? 's' : ''}`;
+                                if (dias < 365) return `${Math.floor(dias / 30)} mes${Math.floor(dias / 30) !== 1 ? 'es' : ''} restante${Math.floor(dias / 30) !== 1 ? 's' : ''}`;
+                                return `${Math.floor(dias / 365)} año${Math.floor(dias / 365) !== 1 ? 's' : ''} restante${Math.floor(dias / 365) !== 1 ? 's' : ''}`;
+                              })()}
+                            </span>
+                          </p>
+                          {data.usuario.Veces_premium != null && (
+                            <p className="mb-0" style={{ fontSize: '0.88rem' }}>
+                              <strong>Veces adquirido:</strong> {data.usuario.Veces_premium}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-4">
                   <h5 className="mb-3" style={{ fontWeight: 700, fontSize: '1rem' }}><i className="fas fa-folder-open text-warning me-2"></i> Carpetas Registradas</h5>
                   <div className="d-flex flex-wrap gap-2">

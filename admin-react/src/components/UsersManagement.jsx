@@ -217,8 +217,8 @@ const UsersManagement = () => {
                             ) : (
                               <img src={`/static/avatar_${(user.Avatar_plan || user.Plan_premium || 'quincenal').toLowerCase()}_animated.svg`} className={`avatar-frame ${(user.Avatar_plan === 'ninguno' || (!user.Avatar_plan && !user.Es_premium)) ? 'frame-hidden' : ''}`} alt="marco" />
                             )}
-                            <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" className="user-avatar" style={{ width: '43px', height: '40px', position: 'absolute', right: '-1px' }} />
-                          </div>
+                            <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" className="user-avatar" style={{ width: 'calc(100% + 2px)', height: 'calc(100% + 2px)', position: 'absolute', top: '-1px', left: '-1px', objectFit: 'cover' }} />
+d                           </div>
                         ) : (
                           <img src={user.Foto && user.Foto !== 'None' ? (user.Foto.startsWith('http') ? user.Foto : `/static/${user.Foto}`) : '/static/default_profile.png'} alt="" className="free-user-avatar" style={{ width: '40px', height: '40px', marginRight: '10px' }} />
                         )}

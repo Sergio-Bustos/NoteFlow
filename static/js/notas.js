@@ -23,6 +23,92 @@
     });
 
     /* ===========================================================
+       PREVISUALIZAR NOTA (plan vencido)
+       =========================================================== */
+    function abrirPreviewNota(notaId) {
+        var modalEl = document.getElementById('previewModal');
+        if (!modalEl) return;
+        var body = document.getElementById('previewModalBody');
+        body.innerHTML = '<div class="preview-loading"><div class="spinner-border" role="status"></div><p>Cargando nota...</p></div>';
+
+        var bsModal = new bootstrap.Modal(modalEl, { backdrop: true, keyboard: true });
+        bsModal.show();
+
+        fetch('/api/nota/' + notaId + '/previsualizar')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    if (data.redirect) { window.location.href = data.redirect; return; }
+                    body.innerHTML = '<div class="alert alert-danger m-3">' + data.error + '</div>';
+                    return;
+                }
+                body.innerHTML = renderPreviewContent(data);
+            })
+            .catch(function() {
+                body.innerHTML = '<div class="alert alert-danger m-3">Error al cargar la nota.</div>';
+            });
+    }
+
+    function renderPreviewContent(data) {
+        var fmtIconos = { texto:'fa-align-left', imagen:'fa-image', audio:'fa-microphone', video:'fa-video', dibujo:'fa-paint-brush', mixta:'fa-layer-group' };
+        var fmtColores = { texto:'#5452d3', imagen:'#27ae60', audio:'#e74c3c', video:'#2980b9', dibujo:'#f39c12', mixta:'#8e44ad' };
+        var icono = fmtIconos[data.formato] || 'fa-file-alt';
+        var color = fmtColores[data.formato] || '#888';
+        var html = '';
+
+        html += '<div class="preview-meta">';
+        html += '  <i class="fas ' + icono + '" style="color:' + color + ';font-size:1.2rem;"></i>';
+        html += '  <span class="badge-format-preview" style="background:' + color + '18;color:' + color + ';border:1px solid ' + color + '30;">' + data.formato.toUpperCase() + '</span>';
+        html += '</div>';
+        html += '<h4 class="preview-titulo">' + escapeHtml(data.titulo) + '</h4>';
+        if (data.descripcion) html += '<p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">' + escapeHtml(data.descripcion) + '</p>';
+
+        if (data.formato === 'texto') {
+            if (data.contenido) html += '<div class="preview-contenido-texto" style="border-left:4px solid ' + color + ';padding-left:16px;">' + data.contenido + '</div>';
+        } else if (data.formato === 'mixta') {
+            var mixtaHtml = '';
+            if (data.contenido) mixtaHtml += '<div class="preview-contenido-texto">' + data.contenido + '</div>';
+            if (data.adjuntos && data.adjuntos.length > 0) {
+                mixtaHtml += '<div class="preview-adjuntos">';
+                mixtaHtml += '  <h6 style="font-weight:700;font-size:0.85rem;color:var(--text-muted);"><i class="fas fa-paperclip"></i> Adjuntos (' + data.adjuntos.length + ')</h6>';
+                for (var i = 0; i < data.adjuntos.length; i++) {
+                    var a = data.adjuntos[i];
+                    mixtaHtml += '<div class="preview-adjunto">';
+                    mixtaHtml += '  <div class="adjunto-header"><i class="fas fa-file"></i> ' + escapeHtml(a.nombre) + ' <span class="badge bg-secondary text-uppercase" style="font-size:0.6rem;padding:2px 6px;">' + a.ext + '</span></div>';
+                    if (a.tipo === 'imagen') mixtaHtml += '<img src="' + a.ruta + '" alt="">';
+                    else if (a.tipo === 'audio') mixtaHtml += '<audio src="' + a.ruta + '" controls preload="metadata" style="width:100%;"></audio>';
+                    else if (a.tipo === 'video') mixtaHtml += '<video src="' + a.ruta + '" controls preload="metadata" style="max-height:250px;width:100%;"></video>';
+                    mixtaHtml += '</div>';
+                }
+                mixtaHtml += '</div>';
+            }
+            if (mixtaHtml) html += '<div style="border:3px solid ' + color + ';border-radius:12px;padding:16px;">' + mixtaHtml + '</div>';
+        } else if (data.formato === 'imagen' || data.formato === 'dibujo') {
+            var src = (data.adjuntos && data.adjuntos[0] ? data.adjuntos[0].ruta : '') || data.contenido;
+            if (src) html += '<div style="display:table;margin:0 auto;border:3px solid ' + color + ';border-radius:12px;line-height:0;"><img src="' + src + '" alt="' + escapeHtml(data.titulo) + '" style="border-radius:10px;display:block;"></div>';
+        } else if (data.formato === 'audio') {
+            var src = (data.adjuntos && data.adjuntos[0] ? data.adjuntos[0].ruta : '') || data.contenido;
+            if (src) html += '<div style="display:table;margin:0 auto;border:3px solid ' + color + ';border-radius:12px;padding:16px;background:var(--preview-adjunto-bg);"><audio src="' + src + '" controls preload="metadata" style="width:100%;"></audio></div>';
+        } else if (data.formato === 'video') {
+            var src = (data.adjuntos && data.adjuntos[0] ? data.adjuntos[0].ruta : '') || data.contenido;
+            if (src) {
+                var ext = src.split('.').pop().toLowerCase();
+                var mime = { mp4:'video/mp4', webm:'video/webm', ogg:'video/ogg', mov:'video/quicktime', avi:'video/x-msvideo', mkv:'video/x-matroska', wmv:'video/x-ms-wmv' }[ext] || 'video/mp4';
+                html += '<div style="display:table;margin:0 auto;border:3px solid ' + color + ';border-radius:12px;line-height:0;"><video controls preload="metadata" style="border-radius:10px;display:block;max-width:100%;"><source src="' + src + '" type="' + mime + '"></video></div>';
+            }
+        }
+
+        return html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    /* ===========================================================
        FLUJO DE PASOS
        =========================================================== */
     function elegirTipo(tipo) {
@@ -254,19 +340,26 @@
               '</span>'
             : '';
 
+        var esPremium = window.ES_PREMIUM !== undefined ? window.ES_PREMIUM : true;
+        var fmtLower = (nota.formato || '').toLowerCase();
+        var esPremiumFormat = window.PREMIUM_FORMATOS && window.PREMIUM_FORMATOS.indexOf(fmtLower) !== -1;
+        var bloqueada = !esPremium && esPremiumFormat;
+        var onClick = bloqueada ? 'abrirPreviewNota(' + nota.id + ')' : 'window.location.href=\'/editar-nota/' + nota.id + '\'';
+
         return (
-            '<div class="nota-card" data-id="' + nota.id + '" data-carpeta="' + (nota.carpeta || '') + '" draggable="true" ' +
-                    'ondragstart="onDragStartNota(event,' + nota.id + ')" ' +
-                    'ondragend="onDragEndNota(event)" ' +
-                    'onclick="window.location.href=\'/editar-nota/' + nota.id + '\'" ' +
+            '<div class="nota-card' + (bloqueada ? ' nota-bloqueada' : '') + '" data-id="' + nota.id + '" data-carpeta="' + (nota.carpeta || '') + '" draggable="' + (!bloqueada).toString() + '" ' +
+                    (bloqueada ? '' : 'ondragstart="onDragStartNota(event,' + nota.id + ')" ') +
+                    (bloqueada ? '' : 'ondragend="onDragEndNota(event)" ') +
+                    'onclick="' + onClick + '" ' +
                     'style="' + franjaStyle + '">' +
-                '<button class="btn-eliminar-nota" ' +
+                (bloqueada ? '' : '<button class="btn-eliminar-nota" ' +
                     'onclick="abrirModalEliminarNota(' + nota.id + ', \'' + (nota.titulo || 'Sin título').replace(/'/g, "\\'") + '\', event)" ' +
                     'title="Mover a papelera">' +
                     '<i class="fas fa-trash-alt"></i>' +
-                '</button>' +
-                '<div class="nota-drag-handle" title="Arrastra a una carpeta"><i class="fas fa-grip-vertical"></i></div>' +
+                '</button>') +
+                (bloqueada ? '' : '<div class="nota-drag-handle" title="Arrastra a una carpeta"><i class="fas fa-grip-vertical"></i></div>') +
                 '<div class="nota-card-header">' +
+                    (bloqueada ? '<i class="fas fa-lock" style="color:#e74c3c;font-size:1rem;margin-right:4px;" title="Plan vencido — solo previsualización"></i>' : '') +
                     '<i class="' + fmt.clase + '" style="color:' + fmt.color + ';font-size:1.2rem;"></i>' +
                     '<span class="nota-formato-badge">' + (nota.formato || '') + '</span>' +
                     carpetaHtml +
@@ -1375,31 +1468,27 @@
 
         var params = new URLSearchParams(window.location.search);
         var carpetaUrl = params.get('carpeta');
+        var previewId = params.get('preview');
 
         var promise = cargarCarpetasEnSelect(carpetaUrl);
-        if (promise && typeof promise.then === 'function') {
-            promise.then(function() {
-                if (carpetaUrl) {
-                    buscarNotas();
-                } else {
-                    cargarNotasRecientes();
-                }
-            }).catch(function() {
-                if (carpetaUrl) {
-                    buscarNotas();
-                } else {
-                    cargarNotasRecientes();
-                }
-            });
-        } else {
-            // Fallback en caso de que no devuelva promesa por alguna razón
+        function despuesDeCargar() {
             if (carpetaUrl) {
-                var sel = document.getElementById('nota-carpeta');
-                if (sel) sel.value = carpetaUrl;
                 buscarNotas();
             } else {
                 cargarNotasRecientes();
             }
+            if (previewId) {
+                setTimeout(function() { abrirPreviewNota(parseInt(previewId)); }, 500);
+            }
+        }
+        if (promise && typeof promise.then === 'function') {
+            promise.then(despuesDeCargar).catch(despuesDeCargar);
+        } else {
+            if (carpetaUrl) {
+                var sel = document.getElementById('nota-carpeta');
+                if (sel) sel.value = carpetaUrl;
+            }
+            despuesDeCargar();
         }
     });
 

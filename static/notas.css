@@ -2080,3 +2080,15 @@ body.tema-oscuro .zona-sacar-carpeta.activa {
     background: rgba(231, 76, 60, 1);
 }
 
+/* ── NOTA BLOQUEADA (plan premium vencido) ── */
+.nota-card.nota-bloqueada {
+    opacity: 0.8;
+    cursor: pointer !important;
+}
+
+.nota-card.nota-bloqueada:hover {
+    opacity: 1;
+    box-shadow: 0 4px 16px rgba(231, 76, 60, 0.15);
+    border-color: #e74c3c44 !important;
+}
+

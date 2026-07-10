@@ -69,12 +69,13 @@
         {% endif %}
     </ul>
  
-    <!-- Botón Mejorar plan — va ANTES del logout para ocupar el espacio libre -->
+    {% if not session.es_premium %}
     <a href="/planes" class="upgrade-btn">
         <i class="fas fa-crown"></i>
         <span>Mejorar plan</span>
         <small>Desbloquea todo Premium</small>
     </a>
+    {% endif %}
  
     <!-- Botón cerrar sesión -->
     <a href="#" class="logout-btn" data-bs-toggle="modal" data-bs-target="#logoutModal">
@@ -168,32 +169,39 @@
             {# Valores por defecto — evitan error si el formato no coincide #}
             {% set fmt_icon = 'fas fa-file-alt' %}
             {% set fmt_color = '#888' %}
-            {% if item.Formato|lower == 'texto' %}
+            {% set fmt_lower = item.Formato|lower %}
+            {% if fmt_lower == 'texto' %}
                 {% set fmt_icon = 'fas fa-align-left' %}
                 {% set fmt_color = '#5452d3' %}
-            {% elif item.Formato|lower == 'imagen' %}
+            {% elif fmt_lower == 'imagen' %}
                 {% set fmt_icon = 'fas fa-image' %}
                 {% set fmt_color = '#27ae60' %}
-            {% elif item.Formato|lower == 'audio' %}
+            {% elif fmt_lower == 'audio' %}
                 {% set fmt_icon = 'fas fa-microphone' %}
                 {% set fmt_color = '#e74c3c' %}
-            {% elif item.Formato|lower == 'video' %}
+            {% elif fmt_lower == 'video' %}
                 {% set fmt_icon = 'fas fa-video' %}
                 {% set fmt_color = '#2980b9' %}
-            {% elif item.Formato|lower == 'dibujo' %}
+            {% elif fmt_lower == 'dibujo' %}
                 {% set fmt_icon = 'fas fa-paint-brush' %}
                 {% set fmt_color = '#f39c12' %}
-            {% elif item.Formato|lower == 'mixta' %}
+            {% elif fmt_lower == 'mixta' %}
                 {% set fmt_icon = 'fas fa-layer-group' %}
                 {% set fmt_color = '#8e44ad' %}
             {% endif %}
 
-            <div class="nota-card"
+            {% set premium_formatos = ['imagen', 'audio', 'video', 'mixta'] %}
+            {% set nota_bloqueada = not session.es_premium and fmt_lower in premium_formatos %}
+
+            <div class="nota-card{% if nota_bloqueada %} nota-bloqueada{% endif %}"
                  data-note-id="{{ item.ID_Nota }}"
-                 onclick="window.location.href='/editar-nota/{{ item.ID_Nota }}'"
-                 style="border-left: 4px solid {{ fmt_color }}; cursor: pointer;">
+                 onclick="window.location.href={% if nota_bloqueada %}'/notas?preview={{ item.ID_Nota }}'{% else %}'/editar-nota/{{ item.ID_Nota }}'{% endif %}"
+                 style="border: 4px solid {{ fmt_color }}; border-radius: 16px; cursor: pointer;">
 
                 <div class="nota-card-header">
+                    {% if nota_bloqueada %}
+                    <i class="fas fa-lock" style="color:#e74c3c;font-size:0.9rem;margin-right:4px;" title="Plan vencido — solo previsualización"></i>
+                    {% endif %}
                     <i class="{{ fmt_icon }}" style="color: {{ fmt_color }}; font-size: 1.2rem;"></i>
                     <span class="nota-formato-badge">{{ item.Formato }}</span>
                     {% if item.Has_Adjuntos %}
@@ -217,7 +225,7 @@
 
                 <div class="nota-footer">
                     <span><i class="fas fa-clock"></i> {{ item.Fecha_deedicion.strftime('%d/%m/%Y') if item.Fecha_deedicion else 'Sin fecha' }}</span>
-                    <a href="/editar-nota/{{ item.ID_Nota }}" class="btn-carpeta-accion ver" onclick="event.stopPropagation()" title="Ver nota"><i class="fas fa-eye"></i></a>
+                    <a href="{% if nota_bloqueada %}/notas?preview={{ item.ID_Nota }}{% else %}/editar-nota/{{ item.ID_Nota }}{% endif %}" class="btn-carpeta-accion ver" onclick="event.stopPropagation()" title="Ver nota"><i class="fas fa-eye"></i></a>
                 </div>
             </div>
 

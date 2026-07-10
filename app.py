@@ -224,6 +224,9 @@ MIXTA_REGLAS = {
     },
 }
 
+# Formatos que requieren plan premium para crear/editar
+PREMIUM_FORMATOS = {'imagen', 'audio', 'video', 'mixta'}
+
 # Crear carpetas si no existen
 for _carpeta in [
     PROFILE_UPLOAD_FOLDER, DIBUJO_UPLOAD_FOLDER, IMAGEN_UPLOAD_FOLDER,
@@ -2379,6 +2382,64 @@ def mostrar_notas():
 # 9.2 Agregar Notas a Mis notas
 # ==============================================================================
 
+@app.route("/api/nota/<int:nota_id>/previsualizar")
+@login_required
+def api_nota_previsualizar(nota_id):
+    """Devuelve datos de una nota para previsualización en modal (plan vencido)."""
+    user_id  = session["usuario_id"]
+    conexion = conectar_db(dict_cursor=True)
+    if not conexion:
+        return jsonify({"error": "Error de conexión"}), 500
+    try:
+        cur = conexion.cursor()
+        cur.execute("""
+            SELECT "ID_Nota", "Titulo", "Descripcion", "Contenido", "Formato"
+            FROM public."Notas"
+            WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s AND "Estado" = 'Activa'
+        """, (nota_id, user_id))
+        nota = cur.fetchone()
+        if not nota:
+            return jsonify({"error": "Nota no encontrada"}), 404
+
+        formato = (nota["Formato"] or "texto").lower().strip()
+        if session.get("es_premium") or formato not in PREMIUM_FORMATOS:
+            return jsonify({"error": "Puedes editar esta nota normalmente", "redirect": url_for("editar_nota", nota_id=nota_id)}), 403
+
+        cur.execute('SELECT * FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
+        adjuntos_raw = cur.fetchall()
+
+        ext_imagen = {'png','jpg','jpeg','gif','webp','svg'}
+        ext_audio  = {'mp3','aac','ogg','wav','flac','wma','m4a'}
+        ext_video  = {'mp4','mkv','wmv','mov','avi'}
+
+        adjuntos = []
+        for a in adjuntos_raw:
+            ext = (a.get("Formato") or "").lower().strip(".")
+            if ext in ext_imagen:     tipo = "imagen"
+            elif ext in ext_audio:    tipo = "audio"
+            elif ext in ext_video:    tipo = "video"
+            else:                     tipo = "otro"
+            adjuntos.append({
+                "nombre": a.get("Nombre_archivo"),
+                "ruta":   a.get("Ruta_archivo"),
+                "tipo":   tipo,
+                "ext":    ext,
+            })
+
+        cerrar_db(cur, conexion)
+        return jsonify({
+            "id":       nota["ID_Nota"],
+            "titulo":   nota["Titulo"] or "Sin título",
+            "descripcion": nota["Descripcion"] or "",
+            "contenido": nota["Contenido"] or "",
+            "formato":  formato,
+            "adjuntos": adjuntos,
+        })
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/mis-notas")
 @login_required
 def api_mis_notas():
@@ -3270,6 +3331,12 @@ def crear_nota():
     return render_template("fasededesarrollo.html")
 
 
+@app.route("/previsualizar-nota/<int:nota_id>")
+@login_required
+def previsualizar_nota(nota_id):
+    return redirect(url_for("mostrar_notas", _external=True) + "?preview=" + str(nota_id))
+
+
 @app.route("/editar-nota/<int:nota_id>")
 @login_required
 def editar_nota(nota_id):
@@ -3292,6 +3359,12 @@ def editar_nota(nota_id):
 
         if not nota:
             return "La nota no existe o no tienes permiso para editarla.", 404
+
+        formato = (nota["Formato"] or "texto").lower().strip()
+
+        # Si el usuario ya no es premium y la nota es premium, redirigir a notas con preview
+        if not session.get("es_premium") and formato in PREMIUM_FORMATOS:
+            return redirect(url_for("mostrar_notas", _external=True) + "?preview=" + str(nota_id))
 
         # Obtener adjuntos si hay (para imagen, audio, video, mixta)
         cursor.execute('SELECT * FROM public."Adjuntos" WHERE "ID_Nota" = %s', (nota_id,))
@@ -3649,6 +3722,10 @@ def actualizar_nota_imagen(nota_id):
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso para editar esta nota"}), 403
 
+        # Verificar que el plan premium no haya expirado
+        if not session.get("es_premium"):
+            return jsonify({"error": "Tu plan premium ha expirado. No puedes modificar esta nota."}), 403
+
         # Generar un título único si ya existe otro con el mismo nombre
         titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
 
@@ -3850,6 +3927,10 @@ def actualizar_nota_audio(nota_id):
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso"}), 403
 
+        # Verificar que el plan premium no haya expirado
+        if not session.get("es_premium"):
+            return jsonify({"error": "Tu plan premium ha expirado. No puedes modificar esta nota."}), 403
+
         # Generar un título único si ya existe otro con el mismo nombre
         titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
 
@@ -4047,6 +4128,10 @@ def actualizar_nota_video(nota_id):
         cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso"}), 403
+
+        # Verificar que el plan premium no haya expirado
+        if not session.get("es_premium"):
+            return jsonify({"error": "Tu plan premium ha expirado. No puedes modificar esta nota."}), 403
 
         # Generar un título único si ya existe otro con el mismo nombre
         titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
@@ -4389,6 +4474,10 @@ def actualizar_nota_mixta(nota_id):
         cursor.execute('SELECT "ID_Nota" FROM public."Notas" WHERE "ID_Nota" = %s AND "ID_Cuenta" = %s', (nota_id, user_id))
         if not cursor.fetchone():
             return jsonify({"error": "No tienes permiso"}), 403
+
+        # Verificar que el plan premium no haya expirado
+        if not session.get("es_premium"):
+            return jsonify({"error": "Tu plan premium ha expirado. No puedes modificar esta nota."}), 403
 
         # Generar un título único si ya existe otro con el mismo nombre
         titulo = generar_titulo_unico_nota(cursor, user_id, titulo, exclude_id=nota_id)
@@ -5083,6 +5172,15 @@ def api_admin_usuarios():
             cerrar_db(cur, conexion)
             return jsonify({"error": "No autorizado"}), 403
 
+        # Vencer planes expirados antes de listar
+        cur.execute("""
+            UPDATE public."Cuentas"
+            SET "Es_premium" = FALSE, "Plan_premium" = 'gratis', "Avatar_plan" = 'ninguno'
+            WHERE "Es_premium" = TRUE AND "Premium_vence" IS NOT NULL AND "Premium_vence" < NOW()
+        """)
+        if cur.rowcount > 0:
+            conexion.commit()
+
         cur.execute("""
             SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan"
             FROM public."Cuentas"
@@ -5125,9 +5223,18 @@ def api_admin_usuario_detalles(target_user_id):
             cerrar_db(cur, conexion)
             return jsonify({"error": "No autorizado"}), 403
             
+        # Vencer plan si ya expiró
+        cur.execute("""
+            UPDATE public."Cuentas"
+            SET "Es_premium" = FALSE, "Plan_premium" = 'gratis', "Avatar_plan" = 'ninguno'
+            WHERE "ID_Cuenta" = %s AND "Es_premium" = TRUE AND "Premium_vence" IS NOT NULL AND "Premium_vence" < NOW()
+        """, (target_user_id,))
+        if cur.rowcount > 0:
+            conexion.commit()
+
         # 1. Obtener datos de la cuenta
         cur.execute("""
-            SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan"
+            SELECT "ID_Cuenta", "Usuario", "Nombres", "Apellidos", "Telefono", "Correo", "Foto", "Es_premium", "Plan_premium", "Es_admin", "Avatar_plan", "Premium_vence", "Veces_premium"
             FROM public."Cuentas"
             WHERE "ID_Cuenta" = %s
         """, (target_user_id,))

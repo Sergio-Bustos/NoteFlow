@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include 'partials/head_design.html' %}
+    <title>Previsualizar Nota — NoteFlow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logocircular.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='previsualizar.css') }}">
+ñ</head>
+<body>
+
+<div class="app-header">
+    <div class="app-titulo">
+        <i class="fas fa-lock" style="color: #e74c3c;"></i> Previsualizar Nota
+    </div>
+    <a href="/notas" class="btn-volver-ext">
+        <i class="fas fa-arrow-left"></i> Mis notas
+    </a>
+</div>
+
+<div class="preview-container">
+    <div class="preview-lock-banner">
+        <i class="fas fa-crown"></i>
+        <div>
+            <strong>Nota de plan premium vencido</strong><br>
+            <span style="font-size: 0.88rem;">Esta nota fue creada con un plan premium que ya expiró. Solo puedes previsualizarla, no modificarla.</span>
+        </div>
+        <i class="fas fa-lock" style="margin-left: auto; font-size: 1.4rem;"></i>
+    </div>
+
+    <div class="preview-header">
+        {% set fmt_icon = {'texto': 'fa-align-left', 'imagen': 'fa-image', 'audio': 'fa-microphone', 'video': 'fa-video', 'dibujo': 'fa-paint-brush', 'mixta': 'fa-layer-group'} %}
+        {% set fmt_color = {'texto': '#5452d3', 'imagen': '#27ae60', 'audio': '#e74c3c', 'video': '#2980b9', 'dibujo': '#f39c12', 'mixta': '#8e44ad'} %}
+        {% set f = (nota.Formato or 'texto')|lower %}
+        <i class="fas {{ fmt_icon.get(f, 'fa-file-alt') }}" style="color: {{ fmt_color.get(f, '#888') }}; font-size: 1.5rem;"></i>
+        <h2>{{ nota.Titulo or 'Sin título' }}</h2>
+    </div>
+
+    {% if nota.Descripcion %}
+    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.92rem;">{{ nota.Descripcion }}</p>
+    {% endif %}
+
+    <div class="preview-content">
+        {% set formato = (nota.Formato or 'texto')|lower %}
+
+        {% if formato == 'texto' %}
+            <div style="font-size: 1rem; line-height: 1.7; overflow-wrap: break-word;">
+                {{ nota.Contenido|safe }}
+            </div>
+
+        {% elif formato == 'imagen' %}
+            {% if nota.Contenido %}
+                <img src="{{ nota.Contenido }}" alt="Imagen de la nota">
+            {% elif adjuntos and adjuntos[0].Ruta_archivo %}
+                <img src="{{ adjuntos[0].Ruta_archivo }}" alt="Imagen de la nota">
+            {% endif %}
+
+        {% elif formato == 'audio' %}
+            {% if nota.Contenido %}
+                <audio src="{{ nota.Contenido }}" controls preload="metadata"></audio>
+            {% elif adjuntos and adjuntos[0].Ruta_archivo %}
+                <audio src="{{ adjuntos[0].Ruta_archivo }}" controls preload="metadata"></audio>
+            {% endif %}
+
+        {% elif formato == 'video' %}
+            {% if nota.Contenido %}
+                <video src="{{ nota.Contenido }}" controls preload="metadata"></video>
+            {% elif adjuntos and adjuntos[0].Ruta_archivo %}
+                <video src="{{ adjuntos[0].Ruta_archivo }}" controls preload="metadata"></video>
+            {% endif %}
+
+        {% elif formato == 'dibujo' %}
+            {% if nota.Contenido %}
+                <img src="{{ nota.Contenido }}" alt="Dibujo de la nota">
+            {% elif adjuntos and adjuntos[0].Ruta_archivo %}
+                <img src="{{ adjuntos[0].Ruta_archivo }}" alt="Dibujo de la nota">
+            {% endif %}
+
+        {% elif formato == 'mixta' %}
+            {% if nota.Contenido %}
+            <div style="font-size: 1rem; line-height: 1.7; overflow-wrap: break-word; margin-bottom: 20px;">
+                {{ nota.Contenido|safe }}
+            </div>
+            {% endif %}
+
+            {% if adjuntos %}
+            <div style="border-top: 1px solid var(--border-claro); padding-top: 16px;">
+                <h5 style="font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; color: var(--text-muted);">
+                    <i class="fas fa-paperclip"></i> Adjuntos ({{ adjuntos|length }})
+                </h5>
+                <div class="mixta-adjuntos">
+                    {% for adj in adjuntos %}
+                    {% set ext = (adj.Formato or '')|lower|trim('.') %}
+                    {% set img_exts = ['png','jpg','jpeg','gif','webp','svg'] %}
+                    {% set audio_exts = ['mp3','aac','ogg','wav','flac','wma','m4a'] %}
+                    {% set video_exts = ['mp4','mkv','wmv','mov','avi'] %}
+                    <div class="mixta-adjunto">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-file" style="color: var(--text-muted);"></i>
+                            <span style="font-weight: 600; font-size: 0.85rem;">{{ adj.Nombre_archivo }}</span>
+                            <span class="badge bg-secondary text-uppercase" style="font-size: 0.6rem; padding: 2px 6px;">{{ ext }}</span>
+                        </div>
+                        {% if ext in img_exts %}
+                            <img src="{{ adj.Ruta_archivo }}" alt="" style="max-height: 300px; object-fit: contain; border-radius: 8px;">
+                        {% elif ext in audio_exts %}
+                            <audio src="{{ adj.Ruta_archivo }}" controls preload="metadata" style="width: 100%;"></audio>
+                        {% elif ext in video_exts %}
+                            <video src="{{ adj.Ruta_archivo }}" controls preload="metadata" style="max-height: 300px; width: 100%;"></video>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="preview-meta">
+        <p><strong>Formato:</strong> {{ formato|capitalize }}</p>
+        {% if etiquetas %}
+        <p><strong>Etiquetas:</strong> {{ etiquetas }}</p>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>

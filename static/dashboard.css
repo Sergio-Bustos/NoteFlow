@@ -1473,3 +1473,19 @@ body.tema-oscuro .mobile-topbar-user { color: var(--texto-oscuro); }
     flex-direction: column;
 }
 
+/* ── NOTA BLOQUEADA (plan premium vencido) ── */
+.nota-card.nota-bloqueada {
+    opacity: 0.8;
+    cursor: pointer !important;
+}
+
+.nota-card.nota-bloqueada:hover {
+    opacity: 1;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+body.tema-oscuro .nota-card.nota-bloqueada:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+
+
