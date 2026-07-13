@@ -9,7 +9,6 @@ from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
 from google_auth_oauthlib.flow import Flow
 from functools import wraps
-from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
@@ -328,7 +327,7 @@ def conectar_db(dict_cursor=False):
             if "connection already closed" in str(e).lower() or "connection closed" in str(e).lower():
                 try:
                     DB_POOL.putconn(conexion, close=True)
-                except:
+                except Exception:
                     pass
                 retries -= 1
                 continue
@@ -459,7 +458,7 @@ def obtener_proximo_id(tabla, columna, cursor=None):
         if not cursor.fetchone():
             return 1
         return res
-    except:
+    except Exception:
         return 1
     finally:
         cerrar_db(cursor, conexion)
@@ -1476,7 +1475,8 @@ def procesar_olvide_contrasena():
     except Exception as e:
         if conexion:
             conexion.rollback()
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -1947,7 +1947,8 @@ def dashboard():
         )
 
     except Exception as e:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return _sanitizar_error(e, "Error al cargar el dashboard"), 500
 
     finally:
@@ -2068,7 +2069,8 @@ def cambiar_avatar():
         session["avatar_plan"] = avatar_plan
         return jsonify({"success": True})
     except Exception as e:
-        if conexion: conexion.rollback()
+        if conexion:
+            conexion.rollback()
         print(f"Error al cambiar avatar: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
@@ -2372,7 +2374,8 @@ def mostrar_notas():
         return render_template("notas.html", notas=[], carpetas=[], usuario=usuario)
 
     except Exception as e:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return _sanitizar_error(e, "Error al cargar la página de notas"), 500
 
     finally:
@@ -2415,10 +2418,14 @@ def api_nota_previsualizar(nota_id):
         adjuntos = []
         for a in adjuntos_raw:
             ext = (a.get("Formato") or "").lower().strip(".")
-            if ext in ext_imagen:     tipo = "imagen"
-            elif ext in ext_audio:    tipo = "audio"
-            elif ext in ext_video:    tipo = "video"
-            else:                     tipo = "otro"
+            if ext in ext_imagen:
+                tipo = "imagen"
+            elif ext in ext_audio:
+                tipo = "audio"
+            elif ext in ext_video:
+                tipo = "video"
+            else:
+                tipo = "otro"
             adjuntos.append({
                 "nombre": a.get("Nombre_archivo"),
                 "ruta":   a.get("Ruta_archivo"),
@@ -2436,7 +2443,8 @@ def api_nota_previsualizar(nota_id):
             "adjuntos": adjuntos,
         })
     except Exception as e:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -2553,8 +2561,9 @@ def api_mis_notas():
 
         return jsonify({"success": True, "notas": notas}), 200
 
-    except Exception as e:
-        import traceback; traceback.print_exc()
+    except Exception:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al obtener las notas"}), 500
 
     finally:
@@ -2637,8 +2646,9 @@ def api_mis_notas_y_carpetas():
 
         return jsonify({"success": True, "carpetas": carpetas, "notas": notas}), 200
 
-    except Exception as e:
-        import traceback; traceback.print_exc()
+    except Exception:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al obtener notas y carpetas"}), 500
 
     finally:
@@ -2670,8 +2680,9 @@ def mover_a_papelera(nota_id):
         conexion.commit()
         return jsonify({"success": True}), 200
 
-    except Exception as e:
-        if conexion: conexion.rollback()
+    except Exception:
+        if conexion:
+            conexion.rollback()
         return jsonify({"error": "Error interno"}), 500
 
     finally:
@@ -2771,7 +2782,8 @@ def api_mis_carpetas():
         return jsonify({"success": True, "carpetas": carpetas}), 200
 
     except Exception:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al obtener carpetas"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -2824,8 +2836,10 @@ def api_asignar_carpeta_nota(nota_id):
         return jsonify({"success": True}), 200
 
     except Exception:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al asignar carpeta"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -2867,11 +2881,14 @@ def api_crear_carpeta():
         vals = [nuevo_id, user_id, nombre]
 
         if "Fecha_creacion" in columnas:
-            cols.append('"Fecha_creacion"'); vals.append(ahora)
+            cols.append('"Fecha_creacion"')
+            vals.append(ahora)
         if "Fecha_edicion" in columnas:
-            cols.append('"Fecha_edicion"');  vals.append(ahora)
+            cols.append('"Fecha_edicion"')
+            vals.append(ahora)
         if "Estado" in columnas:
-            cols.append('"Estado"');          vals.append("Activa")
+            cols.append('"Estado"')
+            vals.append("Activa")
 
         placeholders = ", ".join(["%s"] * len(vals))
         sql = f'INSERT INTO public."Carpetas" ({", ".join(cols)}) VALUES ({placeholders}) RETURNING "ID_Carpeta"'
@@ -2882,8 +2899,10 @@ def api_crear_carpeta():
         return jsonify({"success": True, "id": nuevo_id, "nombre": nombre}), 201
 
     except Exception as e:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"Error al crear la carpeta: {str(e)}"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -2923,8 +2942,10 @@ def api_editar_carpeta(carpeta_id):
         return jsonify({"success": True}), 200
 
     except Exception:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al editar la carpeta"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -2964,8 +2985,10 @@ def api_eliminar_carpeta(carpeta_id):
         return jsonify({"success": True, "mensaje": "Carpeta y sus notas movidas a la papelera"}), 200
 
     except Exception:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al eliminar la carpeta"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3066,7 +3089,8 @@ def papelera():
         )
 
     except Exception as e:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return _sanitizar_error(e, "Error al cargar la papelera"), 500
 
     finally:
@@ -3102,8 +3126,9 @@ def restaurar_carpeta(carpeta_id):
         conexion.commit()
         return jsonify({"success": True, "mensaje": "Carpeta restaurada correctamente"}), 200
 
-    except Exception as e:
-        if conexion: conexion.rollback()
+    except Exception:
+        if conexion:
+            conexion.rollback()
         return jsonify({"error": "Error al restaurar carpeta"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3198,8 +3223,9 @@ def eliminar_carpeta_definitivo(carpeta_id):
         conexion.commit()
         return jsonify({"success": True, "mensaje": "Carpeta y sus notas eliminadas permanentemente"}), 200
 
-    except Exception as e:
-        if conexion: conexion.rollback()
+    except Exception:
+        if conexion:
+            conexion.rollback()
         return jsonify({"error": "Error al eliminar carpeta"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3390,7 +3416,8 @@ def editar_nota(nota_id):
         return render_template(template, nota=nota, adjuntos=adjuntos, etiquetas=etiquetas_str, edit_mode=True, plan_premium=plan)
 
     except Exception as e:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return _sanitizar_error(e, "Error al abrir el editor"), 500
 
 
@@ -3514,10 +3541,11 @@ def guardar_nota_texto():
         conexion.commit()
         return jsonify({"success": True, "mensaje": "Nota de texto guardada correctamente", "nota_id": nota_id, "redirect": "/notas"}), 201
 
-    except Exception as e:
+    except Exception:
         if conexion:
             conexion.rollback()
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error al guardar la nota de texto"}), 500
 
     finally:
@@ -3573,8 +3601,10 @@ def actualizar_nota_texto(nota_id):
         return jsonify({"success": True, "mensaje": "Nota actualizada correctamente", "redirect": "/notas"}), 200
 
     except Exception as e:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"Error al actualizar: {str(e)}"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3638,7 +3668,8 @@ def guardar_nota_audio():
         return jsonify({"success": True, "mensaje": "Audio guardado en la nube", "redirect": "/notas"}), 201
 
     except Exception as e:
-        if conexion: conexion.rollback()
+        if conexion:
+            conexion.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3695,7 +3726,8 @@ def guardar_nota_imagen():
         return jsonify({"success": True, "mensaje": "Imagen guardada en Supabase", "redirect": "/notas"}), 201
 
     except Exception as e:
-        if conexion: conexion.rollback()
+        if conexion:
+            conexion.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3768,8 +3800,10 @@ def actualizar_nota_imagen(nota_id):
         return jsonify({"success": True, "mensaje": "Imagen actualizada correctamente", "redirect": "/notas"}), 200
 
     except Exception as e:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"Error al actualizar imagen: {str(e)}"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3829,8 +3863,10 @@ def guardar_nota_dibujo():
         return jsonify({"success": True, "mensaje": "Dibujo guardado correctamente", "redirect": "/notas"}), 201
 
     except Exception as e:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -3961,12 +3997,14 @@ def actualizar_nota_audio(nota_id):
                         eliminar_archivo_de_supabase_por_ruta(old_path)
 
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
-        if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+        if etiquetas_raw:
+            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
 
         conexion.commit()
         return jsonify({"success": True, "mensaje": "Audio actualizado", "redirect": "/notas"}), 200
     except Exception as e:
-        if conexion: conexion.rollback()
+        if conexion:
+            conexion.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -4016,7 +4054,6 @@ def guardar_nota_video():
 
         filename      = f"video_{user_id}_{_uuid.uuid4().hex}{ext}"
         ruta_completa = os.path.join(VIDEO_UPLOAD_FOLDER, filename)
-        ruta_db       = f"uploads/videos/{filename}"
 
         CHUNK_SIZE     = 4 * 1024 * 1024  # 4 MB por chunk
         bytes_escritos = 0
@@ -4049,8 +4086,10 @@ def guardar_nota_video():
 
         # Borrar el archivo local temporal de inmediato
         if os.path.exists(ruta_completa):
-            try: os.remove(ruta_completa)
-            except: pass
+            try:
+                os.remove(ruta_completa)
+            except Exception:
+                pass
         ruta_fisica_guardada = None
 
         if not url_publica:
@@ -4097,13 +4136,16 @@ def guardar_nota_video():
     except Exception as e:
         if conexion:
             conexion.rollback()
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"Error interno: {str(e)}"}), 500
 
     finally:
         if ruta_fisica_guardada and os.path.exists(ruta_fisica_guardada):
-            try: os.remove(ruta_fisica_guardada)
-            except: pass
+            try:
+                os.remove(ruta_fisica_guardada)
+            except Exception:
+                pass
         cerrar_db(cursor, conexion)
 
 
@@ -4114,7 +4156,6 @@ def actualizar_nota_video(nota_id):
     user_id  = session["usuario_id"]
     conexion = None
     cursor   = None
-    ruta_fisica_guardada = None
     try:
         titulo        = request.form.get("titulo",      "").strip()
         descripcion   = request.form.get("descripcion", "").strip()
@@ -4164,12 +4205,14 @@ def actualizar_nota_video(nota_id):
                         eliminar_archivo_de_supabase_por_ruta(old_path)
 
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
-        if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+        if etiquetas_raw:
+            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
 
         conexion.commit()
         return jsonify({"success": True, "mensaje": "Video actualizado", "redirect": "/notas"}), 200
     except Exception as e:
-        if conexion: conexion.rollback()
+        if conexion:
+            conexion.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -4217,10 +4260,14 @@ def api_nota_mixta(nota_id):
         adjuntos = []
         for adj in adjuntos_raw:
             fmt = (adj["Formato"] or "").lower().strip(".")
-            if fmt in TIPOS_IMAGEN:   tipo = "imagen"
-            elif fmt in TIPOS_AUDIO:  tipo = "audio"
-            elif fmt in TIPOS_VIDEO:  tipo = "video"
-            else:                     tipo = "otro"
+            if fmt in TIPOS_IMAGEN:
+                tipo = "imagen"
+            elif fmt in TIPOS_AUDIO:
+                tipo = "audio"
+            elif fmt in TIPOS_VIDEO:
+                tipo = "video"
+            else:
+                tipo = "otro"
 
             adjuntos.append({
                 "id":      adj["ID_Adjunto"],
@@ -4237,7 +4284,8 @@ def api_nota_mixta(nota_id):
         }), 200
 
     except Exception:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({"success": False, "error": "Error al cargar la nota"}), 500
     finally:
         cerrar_db(cursor, conexion)
@@ -4348,7 +4396,6 @@ def guardar_nota_mixta():
 
                 filename      = f"{reglas['prefijo']}_{user_id}_{_uuid.uuid4().hex}{ext}"
                 ruta_completa = os.path.join(carpeta, filename)
-                ruta_db       = f"uploads/{tipo}/{filename}"
 
                 if tipo == "videos":
                     CHUNK    = 4 * 1024 * 1024
@@ -4386,8 +4433,10 @@ def guardar_nota_mixta():
 
                 # Borrar local de inmediato
                 if os.path.exists(ruta_completa):
-                    try: os.remove(ruta_completa)
-                    except: pass
+                    try:
+                        os.remove(ruta_completa)
+                    except Exception:
+                        pass
 
                 if not url_publica:
                     return jsonify({"error": f"Error al subir {tipo} a la nube"}), 500
@@ -4437,10 +4486,11 @@ def guardar_nota_mixta():
 
         return jsonify({"success": True, "mensaje": "Nota mixta guardada correctamente", "nota_id": int(nota_id), "redirect": "/notas"}), 201
 
-    except Exception as e:
+    except Exception:
         if conexion:
             conexion.rollback()
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Error interno al guardar la nota mixta"}), 500
 
     finally:
@@ -4496,8 +4546,10 @@ def actualizar_nota_mixta(nota_id):
                     
                     # Determinar carpeta según extensión
                     tipo = "imagenes"
-                    if ext in MIXTA_REGLAS["audios"]["exts"]: tipo = "audios"
-                    if ext in MIXTA_REGLAS["videos"]["exts"]: tipo = "videos"
+                    if ext in MIXTA_REGLAS["audios"]["exts"]:
+                        tipo = "audios"
+                    if ext in MIXTA_REGLAS["videos"]["exts"]:
+                        tipo = "videos"
                     
                     carpeta = MIXTA_CARPETAS[tipo]
                     filename = f"mixta_rev_{user_id}_{_uuid.uuid4().hex}{ext}"
@@ -4515,8 +4567,10 @@ def actualizar_nota_mixta(nota_id):
 
                     # Borrar local inmediato
                     if os.path.exists(ruta_completa):
-                        try: os.remove(ruta_completa)
-                        except: pass
+                        try:
+                            os.remove(ruta_completa)
+                        except Exception:
+                            pass
                     if ruta_completa in archivos_guardados:
                         archivos_guardados.remove(ruta_completa)
 
@@ -4529,19 +4583,24 @@ def actualizar_nota_mixta(nota_id):
                         """, (nuevo_id_adj, filename, ext.lstrip("."), url_publica, nota_id))
 
         cursor.execute('DELETE FROM public."Notas_etiquetas" WHERE "ID_Nota" = %s', (nota_id,))
-        if etiquetas_raw: _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
+        if etiquetas_raw:
+            _insertar_etiquetas(etiquetas_raw, nota_id, cursor)
 
         conexion.commit()
         archivos_guardados.clear()
         return jsonify({"success": True, "mensaje": "Nota mixta actualizada", "redirect": "/notas"}), 200
     except Exception as e:
-        if conexion: conexion.rollback()
-        import traceback; traceback.print_exc()
+        if conexion:
+            conexion.rollback()
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
         for ruta in archivos_guardados:
-            try: os.remove(ruta)
-            except: pass
+            try:
+                os.remove(ruta)
+            except Exception:
+                pass
         cerrar_db(cursor, conexion)
 
 
@@ -4613,7 +4672,7 @@ def procesar_pago():
     datos   = request.get_json(silent=True) or request.form
 
     plan   = datos.get("plan",   "mensual").lower()
-    precio = datos.get("precio", "24900")
+    datos.get("precio", "24900")
     metodo = datos.get("metodo", "")
     nombre = datos.get("nombre", "").strip()
     correo = datos.get("correo", "").strip()
@@ -5286,10 +5345,14 @@ def api_admin_usuario_detalles(target_user_id):
             TIPOS_IMAGEN = {'png','jpg','jpeg','gif','webp','svg','pntg','wmf'}
             TIPOS_AUDIO  = {'mp3','aac','ogg','wav','flac','wma','m4a','webm'}
             TIPOS_VIDEO  = {'mp4','mkv','wmv','mov','avi'}
-            if fmt in TIPOS_IMAGEN:   tipo = "imagen"
-            elif fmt in TIPOS_AUDIO:  tipo = "audio"
-            elif fmt in TIPOS_VIDEO:  tipo = "video"
-            else:                     tipo = "otro"
+            if fmt in TIPOS_IMAGEN:
+                tipo = "imagen"
+            elif fmt in TIPOS_AUDIO:
+                tipo = "audio"
+            elif fmt in TIPOS_VIDEO:
+                tipo = "video"
+            else:
+                tipo = "otro"
 
             adjuntos_por_nota[id_nota].append({
                 "id":      adj["ID_Adjunto"],

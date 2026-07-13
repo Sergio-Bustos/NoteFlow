@@ -1,4 +1,3 @@
-from conftest import flask_app
 
 
 def test_sanitizar_html_elimina_script():

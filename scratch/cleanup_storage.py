@@ -4,7 +4,7 @@ import sys
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from supabase import create_client
 
 # Cargar variables de entorno
 load_dotenv()
@@ -140,7 +140,7 @@ def main():
         for i in range(0, len(paths_to_delete), chunk_size):
             chunk = paths_to_delete[i:i + chunk_size]
             client.storage.from_(bucket_name).remove(chunk)
-        print(f"\n🎉 ¡Limpieza completada con éxito!")
+        print("\n🎉 ¡Limpieza completada con éxito!")
         print(f"✅ Se eliminaron {len(orphans)} archivos de forma segura.")
         print(f"💾 Espacio recuperado en el bucket: {format_size(total_freed_space)}")
     except Exception as e:

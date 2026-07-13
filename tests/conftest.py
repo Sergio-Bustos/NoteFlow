@@ -15,7 +15,7 @@ os.environ["ADMIN_EMAIL"] = "admin@noteflow.com"
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from app import app as flask_app, sanitizar_html, construir_email_html
+from app import app as flask_app
 
 
 @pytest.fixture
