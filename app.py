@@ -89,6 +89,12 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+# Health check endpoint (exento de rate limit para ping externo)
+@app.route("/health")
+@limiter.exempt
+def health_check():
+    return jsonify({"status": "ok"}), 200
+
 # Configuración de Logging de Seguridad
 security_logger = logging.getLogger('security')
 security_logger.setLevel(logging.INFO)
